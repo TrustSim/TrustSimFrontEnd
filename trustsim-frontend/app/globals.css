@@ -13,12 +13,17 @@
   --primary-subtle: rgba(228, 1, 30, 0.08);
   --primary-border: rgba(228, 1, 30, 0.2);
 
+  --secondary: #001743;
+  --secondary-light: #00266B;
+  --secondary-subtle: rgba(0, 23, 67, 0.06);
+  --secondary-border: rgba(0, 23, 67, 0.15);
+
   --bg-base: #FFFFFF;
   --bg-section: #F8F8F8;
   --bg-card: #FFFFFF;
 
-  --text-primary: #171717;
-  --text-secondary: #6B7280;
+  --text-primary: #001743;
+  --text-secondary: #4B5563;
   --text-muted: #9CA3AF;
 
   --border: #E5E7EB;
@@ -31,9 +36,9 @@
   --info: #2563EB;
   --info-subtle: rgba(37, 99, 235, 0.08);
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
   --radius-xl: 24px;
   --radius-full: 9999px;
 
@@ -146,62 +151,64 @@ body {
 }
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-12px); }
+  50% { transform: translateY(-10px); }
 }
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(24px); }
+  from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-@keyframes bar-grow-up {
-  from { transform: scaleY(0); }
-  to { transform: scaleY(1); }
+@keyframes ping-ring {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(2.5); opacity: 0; }
 }
-@keyframes line-draw {
-  from { stroke-dashoffset: 400; }
-  to { stroke-dashoffset: 0; }
+@keyframes pulse-cta {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(228, 1, 30, 0.4); }
+  50% { transform: scale(1.02); box-shadow: 0 0 0 8px rgba(228, 1, 30, 0); }
 }
-@keyframes step-pop {
-  0% { opacity: 0; transform: scale(0.7); }
-  70% { transform: scale(1.1); }
-  100% { opacity: 1; transform: scale(1); }
-}
-@keyframes price-flash {
-  0%, 100% { color: var(--text-primary); }
-  40% { color: var(--primary); }
+@keyframes shake-subtle {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-2px); }
+  40%, 80% { transform: translateX(2px); }
 }
 
-.animate-fade-up { animation: fade-up 0.6s var(--ease-smooth) both; }
-.animate-fade-in { animation: fade-in 0.4s var(--ease-smooth) both; }
+.animate-fade-up { animation: fade-up 0.5s var(--ease-smooth) both; }
+.animate-fade-in { animation: fade-in 0.35s var(--ease-smooth) both; }
 .animate-float { animation: float 5s ease-in-out infinite; }
+.animate-pulse-cta { animation: pulse-cta 2s infinite; }
+.animate-shake { animation: shake-subtle 0.3s ease; }
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(229, 231, 235, 0.8);
+}
 
 .delay-100 { animation-delay: 0.1s; }
 .delay-200 { animation-delay: 0.2s; }
 .delay-300 { animation-delay: 0.3s; }
 .delay-400 { animation-delay: 0.4s; }
 .delay-500 { animation-delay: 0.5s; }
-.delay-600 { animation-delay: 0.6s; }
-.delay-700 { animation-delay: 0.7s; }
-.delay-800 { animation-delay: 0.8s; }
 
 .countdown-box {
   display: flex; flex-direction: column; align-items: center;
-  min-width: 44px; padding: 6px 4px;
-  background: #F8F8F8; border-radius: var(--radius-sm); border: 1px solid var(--border);
+  min-width: 40px; padding: 5px 3px;
+  background: #F8F9FA; border-radius: 4px; border: 1px solid var(--border);
 }
-.countdown-num { font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; color: var(--text-primary); }
-.countdown-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+.countdown-num { font-size: 1.15rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; color: var(--secondary); }
+.countdown-label { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
 
-.status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
 .status-dot-live { background: var(--primary); animation: pulse-dot 1.5s ease-in-out infinite; }
 .status-dot-upcoming { background: var(--warning); }
 .status-dot-ended { background: #9CA3AF; }
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: #F3F4F6; }
-::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
-::selection { background: rgba(228,1,30,0.12); }
+::selection { background: rgba(228,1,30,0.12); color: var(--primary-dark); }

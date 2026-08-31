@@ -245,7 +245,7 @@ export default function AuctionDetailPage({ params }: { params: { id: string } }
                     <p>• Hệ thống tự động gia hạn 5 phút nếu có lượt đặt trong 2 phút cuối (tối đa 3 lần).</p>
                     <p>• Người thắng cuộc có 24 giờ để hoàn tất thanh toán và ký hợp đồng điện tử.</p>
                     <p>• Hợp đồng điện tử có chữ ký số, mã hash SHA-256, hiệu lực pháp lý đầy đủ.</p>
-                    <p>• Tiền được giữ escrow, giải ngân sau khi xác nhận chuyển nhượng số thành công.</p>
+                    <p>• Tiền được giữ tại tài khoản ký quỹ, giải ngân sau khi xác nhận chuyển nhượng số thành công.</p>
                   </div>
                 </div>
               )}

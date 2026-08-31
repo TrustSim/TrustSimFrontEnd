@@ -7,8 +7,8 @@ const Footer: React.FC = () => {
   return (
     <footer
       style={{
-        background: "#111827",
-        borderTop: "1px solid #1F2937",
+        background: "#001743",
+        borderTop: "1px solid rgba(255, 255, 255, 0.08)",
         padding: "56px 0 32px",
         color: "#9CA3AF",
       }}

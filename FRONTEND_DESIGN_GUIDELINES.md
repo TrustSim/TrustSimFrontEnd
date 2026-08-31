@@ -10,7 +10,10 @@
 TrustSim là **sàn giao dịch & đấu giá SIM số cao cấp kết hợp yếu tố tài chính (Fintech / Marketplace)**. Giao diện cần thể hiện:
 1. **Minh bạch & Đáng tin cậy (Trust & Transparency)**: Cấu trúc rõ ràng, thông số chính xác, không màu mè rườm rà.
 2. **Hiện đại, Tối giản & Sắc nét (Clean, Sharp & Minimalist)**: Ưu tiên đường nét dứt khoát, góc cạnh tinh tế, không lạm dụng hiệu ứng bóng đổ dày hoặc bo góc quá đà.
-3. **Bảng màu chuẩn hóa**: Tông nền trắng chủ đạo (~80%), điểm nhấn đỏ thương hiệu **`#E4011E`** (CTA, trạng thái Live, số liệu quan trọng).
+3. **Bảng màu chuẩn hóa**: 
+   - Nền trắng chủ đạo (~75 - 80% **`#FFFFFF`**).
+   - Màu chính (**Primary Red**): **`#E4011E`** (CTA, trạng thái Live, số liệu quan trọng, nút hành động chính).
+   - Màu phụ (**Secondary Navy**): **`#001743`** (Tiêu đề nhấn, Header/Dark surface, footer, thẻ cao cấp, icon/badge bổ trợ thể hiện sự vững chắc và uy tín tài chính).
 
 ---
 
@@ -19,13 +22,16 @@ TrustSim là **sàn giao dịch & đấu giá SIM số cao cấp kết hợp y�
 | Loại màu | Mã Hex / RGB | Mô tả & Ứng dụng |
 | :--- | :--- | :--- |
 | **Primary (Brand Red)** | `#E4011E` | Nút bấm chính (CTA), badge "Đang diễn ra", giá nổi bật, thanh tiến trình |
-| **Primary Hover / Dark** | `#B80018` | Trạng thái hover/active của nút bấm |
+| **Primary Hover / Dark** | `#B80018` | Trạng thái hover/active của nút bấm chính |
 | **Primary Subtle** | `rgba(228, 1, 30, 0.06)` | Nền tag, hover nhẹ trên các list item |
+| **Secondary (Navy Deep)** | `#001743` | Tiêu đề chính, thanh header/footer, card header cao cấp, badge bổ trợ, nền khối uy tín |
+| **Secondary Light** | `#002266` | Trạng thái hover của các element màu secondary |
+| **Secondary Subtle** | `rgba(0, 23, 67, 0.06)` | Nền tag phụ, icon container phụ |
 | **Neutral Base (White)** | `#FFFFFF` | Nền chính của toàn trang và thẻ Card |
 | **Neutral Surface** | `#F8F9FA` hoặc `#F3F4F6` | Nền phụ, phân tách các section, nền ô input |
 | **Border Normal** | `#E5E7EB` (Gray-200) | Viền bao quanh Card, table, divider |
 | **Border Strong** | `#D1D5DB` (Gray-300) | Viền input, viền button dạng outline |
-| **Text Primary** | `#111827` (Gray-900) | Tiêu đề, số SIM, giá tiền chính |
+| **Text Primary** | `#001743` / `#111827` | Tiêu đề, số SIM, giá tiền chính |
 | **Text Secondary** | `#4B5563` (Gray-600) | Đoạn văn bản, mô tả, thông số phụ |
 | **Text Muted** | `#9CA3AF` (Gray-400) | Nhãn phụ, placeholder, timestamp |
 
