@@ -13,6 +13,14 @@ export const metadata: Metadata = {
   description:
     "TrustSim là nền tảng đấu giá sim số đẹp uy tín, minh bạch và an toàn. Tham gia đấu giá sim số phong thủy, sim VIP với nhiều hình thức đấu giá hiện đại.",
   keywords: ["đấu giá sim", "sim số đẹp", "sim vip", "mua bán sim", "trustsim"],
+  icons: {
+    icon: [
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

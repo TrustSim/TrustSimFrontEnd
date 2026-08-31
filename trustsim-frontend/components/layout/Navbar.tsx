@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface NavbarProps {
   role?: "user" | "admin" | "consultant" | "guest";
@@ -26,56 +27,44 @@ const Navbar: React.FC<NavbarProps> = ({ role = "guest" }) => {
           left: 0,
           right: 0,
           zIndex: 1000,
-          transition: "all 0.3s ease",
-          background: scrolled
-            ? "rgba(10, 11, 26, 0.85)"
-            : "transparent",
-          backdropFilter: scrolled ? "blur(20px)" : "none",
-          borderBottom: scrolled ? "1px solid rgba(255,255,255,0.08)" : "none",
+          transition: "all 0.2s ease",
+          background: scrolled ? "rgba(255, 255, 255, 0.96)" : "#FFFFFF",
+          backdropFilter: scrolled ? "blur(12px)" : "none",
+          borderBottom: "1px solid #E5E7EB",
         }}
       >
-        <div className="container" style={{ display: "flex", alignItems: "center", height: 64, gap: 32 }}>
+        <div className="container" style={{ display: "flex", alignItems: "center", height: 60, gap: 32 }}>
           {/* Logo */}
-          <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              background: "linear-gradient(135deg, #312E81, #4F46E5, #06B6D4)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 16,
-              fontWeight: 800,
-              color: "#fff",
-              boxShadow: "0 4px 14px rgba(79,70,229,0.5)",
-            }}>
-              TS
-            </div>
-            <span style={{ fontWeight: 800, fontSize: 18, color: "#f1f5f9", letterSpacing: "-0.02em" }}>
-              Trust<span className="gradient-text">Sim</span>
-            </span>
+          <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            <Image
+              src="/logo/TrustSim-Logo.png"
+              alt="TrustSim Logo"
+              width={132}
+              height={36}
+              priority
+              style={{ height: 34, width: "auto", objectFit: "contain" }}
+            />
           </Link>
 
           {/* Nav Links */}
           <div className="nav-links" style={{ display: "flex", alignItems: "center", gap: 4, flex: 1 }}>
-            <NavLink href="/auctions">Đấu Giá</NavLink>
-            <NavLink href="/auctions?type=english">Kiểu Anh</NavLink>
-            <NavLink href="/auctions?type=dutch">Kiểu Hà Lan</NavLink>
-            <NavLink href="/auctions?type=sealed">Bí Mật</NavLink>
+            <NavLink href="/auctions">Khám phá SIM</NavLink>
+            <NavLink href="/auctions?type=english">Đấu giá kiểu Anh</NavLink>
+            <NavLink href="/auctions?type=dutch">Đấu giá kiểu Hà Lan</NavLink>
+            <NavLink href="/#how-it-works">Quy trình</NavLink>
             {(role === "admin" || role === "consultant") && (
               <NavLink href="/admin">Quản Trị</NavLink>
             )}
           </div>
 
           {/* Actions */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {role === "guest" ? (
               <>
-                <Link href="/login" className="btn-ghost" style={{ fontSize: 14 }}>
+                <Link href="/login" className="btn-ghost-nav" style={{ fontWeight: 600, color: "#111827" }}>
                   Đăng nhập
                 </Link>
-                <Link href="/register" className="btn-primary" style={{ padding: "8px 20px", fontSize: 13 }}>
+                <Link href="/register" className="btn-red" style={{ padding: "8px 18px", fontSize: 14 }}>
                   Đăng ký
                 </Link>
               </>
@@ -92,7 +81,7 @@ const Navbar: React.FC<NavbarProps> = ({ role = "guest" }) => {
               display: "none",
               background: "none",
               border: "none",
-              color: "var(--text-primary)",
+              color: "#111827",
               cursor: "pointer",
               padding: 4,
             }}
@@ -109,18 +98,19 @@ const Navbar: React.FC<NavbarProps> = ({ role = "guest" }) => {
             position: "fixed",
             inset: 0,
             zIndex: 999,
-            background: "rgba(10,11,26,0.95)",
-            backdropFilter: "blur(20px)",
+            background: "#FFFFFF",
             display: "flex",
             flexDirection: "column",
             padding: "80px 24px 24px",
             gap: 8,
           }}
         >
-          <MobileNavLink href="/auctions" onClick={() => setMobileOpen(false)}>Đấu Giá</MobileNavLink>
+          <MobileNavLink href="/auctions" onClick={() => setMobileOpen(false)}>Khám phá SIM</MobileNavLink>
+          <MobileNavLink href="/auctions?type=english" onClick={() => setMobileOpen(false)}>Đấu giá kiểu Anh</MobileNavLink>
+          <MobileNavLink href="/auctions?type=dutch" onClick={() => setMobileOpen(false)}>Đấu giá kiểu Hà Lan</MobileNavLink>
           <MobileNavLink href="/login" onClick={() => setMobileOpen(false)}>Đăng nhập</MobileNavLink>
           <MobileNavLink href="/register" onClick={() => setMobileOpen(false)}>Đăng ký</MobileNavLink>
-          <button onClick={() => setMobileOpen(false)} style={{ position: "absolute", top: 20, right: 20, background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer", fontSize: 24 }}>✕</button>
+          <button onClick={() => setMobileOpen(false)} style={{ position: "absolute", top: 20, right: 20, background: "none", border: "none", color: "#111827", cursor: "pointer", fontSize: 24 }}>✕</button>
         </div>
       )}
 
@@ -139,20 +129,20 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
     <Link
       href={href}
       style={{
-        padding: "6px 14px",
-        borderRadius: 8,
-        color: "var(--text-secondary)",
+        padding: "6px 12px",
+        borderRadius: 4,
+        color: "#4B5563",
         fontSize: 14,
         fontWeight: 500,
         textDecoration: "none",
         transition: "color 0.2s, background 0.2s",
       }}
       onMouseEnter={(e) => {
-        (e.target as HTMLElement).style.color = "var(--text-primary)";
-        (e.target as HTMLElement).style.background = "rgba(255,255,255,0.06)";
+        (e.target as HTMLElement).style.color = "#111827";
+        (e.target as HTMLElement).style.background = "#F3F4F6";
       }}
       onMouseLeave={(e) => {
-        (e.target as HTMLElement).style.color = "var(--text-secondary)";
+        (e.target as HTMLElement).style.color = "#4B5563";
         (e.target as HTMLElement).style.background = "transparent";
       }}
     >
@@ -167,14 +157,14 @@ function MobileNavLink({ href, onClick, children }: { href: string; onClick: () 
       href={href}
       onClick={onClick}
       style={{
-        padding: "14px 16px",
-        borderRadius: 12,
-        color: "var(--text-primary)",
-        fontSize: 16,
+        padding: "12px 16px",
+        borderRadius: 6,
+        color: "#111827",
+        fontSize: 15,
         fontWeight: 600,
         textDecoration: "none",
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        background: "#F8F9FA",
+        border: "1px solid #E5E7EB",
       }}
     >
       {children}
@@ -193,16 +183,16 @@ function UserMenu({ role }: { role: string }) {
           alignItems: "center",
           gap: 8,
           padding: "6px 12px",
-          background: "rgba(255,255,255,0.05)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: 10,
+          background: "#F8F9FA",
+          border: "1px solid #E5E7EB",
+          borderRadius: 6,
           cursor: "pointer",
-          color: "var(--text-primary)",
+          color: "#111827",
           fontSize: 14,
-          fontWeight: 500,
+          fontWeight: 600,
         }}
       >
-        <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg,#4F46E5,#06B6D4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 }}>
+        <div style={{ width: 26, height: 26, borderRadius: 4, background: "#E4011E", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff" }}>
           U
         </div>
         <span>Tài khoản</span>
@@ -214,12 +204,11 @@ function UserMenu({ role }: { role: string }) {
           top: "calc(100% + 8px)",
           right: 0,
           width: 200,
-          background: "rgba(15,16,36,0.98)",
-          backdropFilter: "blur(20px)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: 12,
-          padding: 8,
-          boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
+          background: "#FFFFFF",
+          border: "1px solid #E5E7EB",
+          borderRadius: 6,
+          padding: 6,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
         }}>
           {[
             { label: "Hồ sơ", href: "/profile" },
@@ -234,27 +223,27 @@ function UserMenu({ role }: { role: string }) {
               style={{
                 display: "block",
                 padding: "8px 12px",
-                borderRadius: 8,
-                color: "var(--text-secondary)",
+                borderRadius: 4,
+                color: "#4B5563",
                 fontSize: 13,
                 textDecoration: "none",
                 transition: "background 0.2s, color 0.2s",
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(79,70,229,0.15)"; (e.currentTarget as HTMLElement).style.color = "#fff"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#F3F4F6"; (e.currentTarget as HTMLElement).style.color = "#111827"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; (e.currentTarget as HTMLElement).style.color = "#4B5563"; }}
             >
               {item.label}
             </Link>
           ))}
-          <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "8px 0" }} />
+          <div style={{ height: 1, background: "#E5E7EB", margin: "6px 0" }} />
           <button
             onClick={() => setOpen(false)}
             style={{
               display: "block",
               width: "100%",
               padding: "8px 12px",
-              borderRadius: 8,
-              color: "#f87171",
+              borderRadius: 4,
+              color: "#E4011E",
               fontSize: 13,
               textAlign: "left",
               background: "none",

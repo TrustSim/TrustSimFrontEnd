@@ -1,153 +1,135 @@
 "use client";
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 const Footer: React.FC = () => {
   return (
     <footer
       style={{
-        background: "var(--bg-surface)",
-        borderTop: "1px solid var(--border-subtle)",
-        padding: "64px 0 32px",
-        position: "relative",
-        overflow: "hidden",
+        background: "#111827",
+        borderTop: "1px solid #1F2937",
+        padding: "56px 0 32px",
+        color: "#9CA3AF",
       }}
     >
-      {/* Subtle glow */}
-      <div style={{
-        position: "absolute",
-        top: 0,
-        left: "50%",
-        transform: "translateX(-50%)",
-        width: 600,
-        height: 1,
-        background: "linear-gradient(90deg, transparent, #4F46E5, #06B6D4, transparent)",
-      }} />
-
       <div className="container">
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 48, marginBottom: 48 }}>
           {/* Brand */}
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-              <div style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                background: "linear-gradient(135deg, #312E81, #4F46E5, #06B6D4)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 800,
-                color: "#fff",
-                fontSize: 14,
-              }}>TS</div>
-              <span style={{ fontWeight: 800, fontSize: 18, color: "#f1f5f9" }}>
-                Trust<span className="gradient-text">Sim</span>
-              </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+              <div style={{ background: "#FFFFFF", padding: "4px 8px", borderRadius: 4, display: "inline-flex", alignItems: "center" }}>
+                <Image
+                  src="/logo/TrustSim-Logo.png"
+                  alt="TrustSim Logo"
+                  width={110}
+                  height={28}
+                  style={{ height: 24, width: "auto", objectFit: "contain" }}
+                />
+              </div>
             </div>
-            <p style={{ color: "var(--text-muted)", fontSize: 13, lineHeight: 1.7, maxWidth: 280 }}>
-              Nền tảng đấu giá sim số đẹp hàng đầu Việt Nam. Minh bạch, an toàn, thời gian thực.
+            <p style={{ color: "#9CA3AF", fontSize: 14, lineHeight: 1.7, maxWidth: 280 }}>
+              Sàn đấu giá SIM số đẹp uy tín, minh bạch và an toàn hàng đầu Việt Nam.
             </p>
-            <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
-              {["fb", "tw", "tg"].map((icon) => (
-                <a
-                  key={icon}
-                  href="#"
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 8,
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "var(--text-muted)",
-                    textDecoration: "none",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    transition: "all 0.2s",
-                  }}
-                >
-                  {icon.toUpperCase()}
-                </a>
-              ))}
-            </div>
           </div>
 
           {/* Links */}
-          <FooterCol title="Nền tảng" links={[
-            { label: "Trang chủ", href: "/" },
-            { label: "Đấu giá", href: "/auctions" },
-            { label: "Đăng sim", href: "/profile?tab=sell" },
-            { label: "Hướng dẫn", href: "/guide" },
-          ]} />
-          <FooterCol title="Hình thức" links={[
-            { label: "Đấu giá kiểu Anh", href: "/auctions?type=english" },
-            { label: "Đấu giá kiểu Hà Lan", href: "/auctions?type=dutch" },
-            { label: "Đấu giá bí mật", href: "/auctions?type=sealed" },
-            { label: "So sánh hình thức", href: "/compare" },
-          ]} />
-          <FooterCol title="Hỗ trợ" links={[
-            { label: "Điều khoản dịch vụ", href: "/terms" },
-            { label: "Chính sách bảo mật", href: "/privacy" },
-            { label: "Liên hệ", href: "/contact" },
-            { label: "FAQ", href: "/faq" },
-          ]} />
+          <div>
+            <h4 style={{ color: "#FFFFFF", fontSize: 14, fontWeight: 700, marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+              Sản Phẩm
+            </h4>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+              {[
+                { label: "Khám phá SIM", href: "/auctions" },
+                { label: "Đấu giá kiểu Anh", href: "/auctions?type=english" },
+                { label: "Đấu giá kiểu Hà Lan", href: "/auctions?type=dutch" },
+                { label: "Bán SIM của bạn", href: "/register" },
+              ].map((item) => (
+                <li key={item.label}>
+                  <Link
+                    href={item.href}
+                    style={{ color: "#9CA3AF", textDecoration: "none", fontSize: 14, transition: "color 0.2s" }}
+                    onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#FFFFFF")}
+                    onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#9CA3AF")}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h4 style={{ color: "#FFFFFF", fontSize: 14, fontWeight: 700, marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+              Hỗ Trợ
+            </h4>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+              {[
+                { label: "Quy trình đấu giá", href: "/#how-it-works" },
+                { label: "Chính sách bảo mật", href: "#" },
+                { label: "Điều khoản dịch vụ", href: "#" },
+                { label: "Liên hệ hỗ trợ", href: "#" },
+              ].map((item) => (
+                <li key={item.label}>
+                  <Link
+                    href={item.href}
+                    style={{ color: "#9CA3AF", textDecoration: "none", fontSize: 14, transition: "color 0.2s" }}
+                    onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#FFFFFF")}
+                    onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#9CA3AF")}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h4 style={{ color: "#FFFFFF", fontSize: 14, fontWeight: 700, marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+              Về TrustSim
+            </h4>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+              {[
+                { label: "Giới thiệu sàn", href: "#" },
+                { label: "Tin tức thị trường", href: "#" },
+                { label: "Đối tác nhà mạng", href: "#" },
+                { label: "Tuyển dụng", href: "#" },
+              ].map((item) => (
+                <li key={item.label}>
+                  <Link
+                    href={item.href}
+                    style={{ color: "#9CA3AF", textDecoration: "none", fontSize: 14, transition: "color 0.2s" }}
+                    onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#FFFFFF")}
+                    onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#9CA3AF")}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
-        {/* Bottom bar */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingTop: 24,
-          borderTop: "1px solid var(--border-subtle)",
-        }}>
-          <p style={{ color: "var(--text-muted)", fontSize: 12 }}>
-            © 2026 TrustSim. All rights reserved.
-          </p>
-          <div style={{ display: "flex", gap: 16 }}>
-            <span style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
-              Hệ thống hoạt động bình thường
-            </span>
+        <div
+          style={{
+            borderTop: "1px solid #1F2937",
+            paddingTop: 24,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 16,
+            fontSize: 13,
+          }}
+        >
+          <span>© 2026 TrustSim. Bản quyền thuộc về TrustSim Auction Platform.</span>
+          <div style={{ display: "flex", gap: 20 }}>
+            <span>Hệ thống bảo vệ giao dịch đa tầng</span>
           </div>
         </div>
       </div>
-
-      <style>{`
-        @media (max-width: 768px) {
-          footer > div > div:first-child > div:first-child {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
     </footer>
   );
 };
-
-function FooterCol({ title, links }: { title: string; links: { label: string; href: string }[] }) {
-  return (
-    <div>
-      <h4 style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 16 }}>
-        {title}
-      </h4>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {links.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            style={{ color: "var(--text-muted)", fontSize: 13, textDecoration: "none", transition: "color 0.2s" }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
-          >
-            {link.label}
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export default Footer;
