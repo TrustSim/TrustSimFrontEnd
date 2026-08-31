@@ -142,6 +142,16 @@ const Icons = {
       <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
     </svg>
   ),
+  ZapSolid: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    </svg>
+  ),
+  Flame: () => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+    </svg>
+  ),
   Info: () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
@@ -181,62 +191,49 @@ function Countdown({ endTime }: { endTime: Date }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   1. TABBED AUCTION FORMATS SECTION (No Overlap, Focused UX)
+   1. TABBED AUCTION FORMATS SECTION (Isometric 3D & Auto-Story)
    ═══════════════════════════════════════════════════════════ */
 function AuctionFormatsSection() {
   const [activeTab, setActiveTab] = useState<"english" | "dutch">("english");
 
-  // English State
-  const [engBids, setEngBids] = useState<number[]>([10, 12, 14]);
-  const [engUserPlaced, setEngUserPlaced] = useState(false);
-  const [engShake, setEngShake] = useState(false);
+  // English Auto-Storyline State
+  const engMilestones = [10, 12, 14, 16, 18];
+  const [engStep, setEngStep] = useState(0);
 
-  // Dutch State
-  const dutchSteps = [30, 26, 22, 18, 14, 10];
-  const [dutchIdx, setDutchIdx] = useState(0);
-  const [dutchClaimed, setDutchClaimed] = useState(false);
-  const [dutchClaimedPrice, setDutchClaimedPrice] = useState<number | null>(null);
+  // Dutch Auto-Storyline State
+  const dutchMilestones = [30, 26, 22, 18];
+  const [dutchStep, setDutchStep] = useState(0);
 
-  // Auto-progression for English
+  // English 5-second Auto-Story Loop
   useEffect(() => {
     if (activeTab !== "english") return;
-    const timer = setInterval(() => {
-      setEngBids((prev) => {
-        if (prev.length >= 6) return [10, 12, 14];
-        return [...prev, prev[prev.length - 1] + 2];
-      });
-    }, 3200);
-    return () => clearInterval(timer);
-  }, [activeTab]);
+    const interval = setInterval(() => {
+      setEngStep((prev) => (prev + 1) % (engMilestones.length + 1));
+    }, 1200);
+    return () => clearInterval(interval);
+  }, [activeTab, engMilestones.length]);
 
-  // Auto-drop for Dutch
+  // Dutch 5-second Auto-Story Loop
   useEffect(() => {
-    if (activeTab !== "dutch" || dutchClaimed) return;
-    const timer = setInterval(() => {
-      setDutchIdx((prev) => (prev + 1) % dutchSteps.length);
-    }, 2800);
-    return () => clearInterval(timer);
-  }, [activeTab, dutchClaimed, dutchSteps.length]);
+    if (activeTab !== "dutch") return;
+    const interval = setInterval(() => {
+      setDutchStep((prev) => (prev + 1) % (dutchMilestones.length + 1));
+    }, 1300);
+    return () => clearInterval(interval);
+  }, [activeTab, dutchMilestones.length]);
 
-  const handlePlaceEngBid = () => {
-    setEngBids((prev) => [...prev.slice(-4), prev[prev.length - 1] + 1]);
-    setEngUserPlaced(true);
-    setEngShake(true);
-    setTimeout(() => setEngShake(false), 400);
-  };
+  const activeEngIdx = Math.min(engStep, engMilestones.length - 1);
+  const currentEngPrice = engMilestones[activeEngIdx];
+  const isEngFinished = engStep >= engMilestones.length - 1;
 
-  const handleClaimDutch = () => {
-    setDutchClaimed(true);
-    setDutchClaimedPrice(dutchSteps[dutchIdx]);
-  };
-
-  const currentEngPrice = engBids[engBids.length - 1];
-  const currentDutchPrice = dutchSteps[dutchIdx];
+  const activeDutchIdx = Math.min(dutchStep, dutchMilestones.length - 1);
+  const currentDutchPrice = dutchMilestones[activeDutchIdx];
+  const isDutchClaimed = dutchStep >= dutchMilestones.length - 1;
 
   return (
     <section className="section" style={{ background: "#F8F9FA", borderTop: "1px solid #E5E7EB", borderBottom: "1px solid #E5E7EB" }}>
       <div className="container">
-        {/* Section Header */}
+        {/* Section Header (Flat 2D & Clean) */}
         <div style={{ textAlign: "center", marginBottom: 36 }}>
           <div className="section-tag" style={{ marginBottom: 12 }}>Quy chế đấu giá</div>
           <h2 style={{ fontSize: 32, fontWeight: 900, color: "#001743", letterSpacing: "-0.02em", margin: "0 0 10px" }}>
@@ -247,7 +244,7 @@ function AuctionFormatsSection() {
           </p>
         </div>
 
-        {/* Tab Navigation Buttons (Focused & Clean) */}
+        {/* Tab Navigation (Flat 2D with Smooth Active State) */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
           <div
             style={{
@@ -259,7 +256,7 @@ function AuctionFormatsSection() {
             }}
           >
             <button
-              onClick={() => setActiveTab("english")}
+              onClick={() => { setActiveTab("english"); setEngStep(0); }}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -281,7 +278,7 @@ function AuctionFormatsSection() {
               Đấu giá kiểu Anh (Tăng dần)
             </button>
             <button
-              onClick={() => setActiveTab("dutch")}
+              onClick={() => { setActiveTab("dutch"); setDutchStep(0); }}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -305,7 +302,7 @@ function AuctionFormatsSection() {
           </div>
         </div>
 
-        {/* Tab Content Box (Claymorphism & Glassmorphism Highlights) */}
+        {/* Tab Content Card (Flat Left Side + Isometric 3D Right Side) */}
         <div
           className="card"
           style={{
@@ -318,8 +315,8 @@ function AuctionFormatsSection() {
         >
           {activeTab === "english" ? (
             /* ─── TAB 1: ENGLISH AUCTION ─── */
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1.3fr", gap: 40, alignItems: "center" }}>
-              {/* Left Column: Rules & Info */}
+            <div style={{ display: "grid", gridTemplateColumns: "1.05fr 1.25fr", gap: 40, alignItems: "center" }}>
+              {/* Left Column: Rules & Info (Completely Flat 2D for Best Readability) */}
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                   <span className="badge badge-english">English Auction</span>
@@ -353,113 +350,163 @@ function AuctionFormatsSection() {
                 </div>
               </div>
 
-              {/* Right Column: Interactive Simulation Dashboard (No Overlap) */}
-              <div
-                style={{
-                  background: "#F8F9FA",
-                  borderRadius: 6,
-                  padding: "24px",
-                  border: "1px solid #E5E7EB",
-                  boxShadow: "inset 0 1px 3px rgba(0,0,0,0.02)",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <div>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#001743", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-                      Mô phỏng đường giá tăng dần
-                    </span>
-                    <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>Biểu đồ giá cập nhật trực tiếp</div>
-                  </div>
-                  <div className="glass-panel" style={{ padding: "6px 12px", borderRadius: 6, display: "flex", alignItems: "center", gap: 6 }}>
-                    <span className="status-dot status-dot-live" />
-                    <span style={{ fontSize: 13, fontWeight: 900, color: "#E4011E", fontVariantNumeric: "tabular-nums" }}>
-                      {currentEngPrice}.000.000 ₫
-                    </span>
-                  </div>
+              {/* Right Column: Isometric 3D Floating Chart Card */}
+              <div className="chart-container-perspective" style={{ position: "relative" }}>
+                {/* Floating 3D Badge Layer (TranslateZ) */}
+                <div
+                  className="floating-badge-3d"
+                  style={{
+                    position: "absolute",
+                    top: -12,
+                    left: 20,
+                    background: "#FFFFFF",
+                    padding: "6px 12px",
+                    borderRadius: 6,
+                    border: "1px solid #E5E7EB",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: "#001743",
+                    zIndex: 10,
+                  }}
+                >
+                  <span style={{ color: "#E4011E" }}><Icons.Gavel /></span>
+                  <span>SIM VIP 0988.888.888</span>
                 </div>
 
-                {/* SVG Chart Container (Overflow Hidden, Contained Bounds) */}
-                <div style={{ height: 130, width: "100%", position: "relative", marginBottom: 18, overflow: "hidden", background: "#FFFFFF", borderRadius: 6, border: "1px solid #E5E7EB", padding: "10px 14px" }}>
-                  <svg width="100%" height="110" viewBox="0 0 400 110" preserveAspectRatio="none" style={{ overflow: "hidden" }}>
-                    <defs>
-                      <linearGradient id="engGradWide" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#2563EB" stopOpacity="0.2" />
-                        <stop offset="100%" stopColor="#2563EB" stopOpacity="0.0" />
-                      </linearGradient>
-                    </defs>
-
-                    {/* Grid lines */}
-                    <line x1="0" y1="25" x2="400" y2="25" stroke="#F3F4F6" strokeDasharray="4 4" />
-                    <line x1="0" y1="65" x2="400" y2="65" stroke="#F3F4F6" strokeDasharray="4 4" />
-                    <line x1="0" y1="95" x2="400" y2="95" stroke="#E5E7EB" />
-
-                    {/* Connected Path */}
-                    {(() => {
-                      const stepX = 400 / Math.max(engBids.length - 1, 1);
-                      const points = engBids.map((val, idx) => {
-                        const x = Math.min(Math.max(idx * stepX, 15), 385);
-                        const y = 88 - ((val - 10) / 14) * 65;
-                        return { x, y: Math.max(y, 18), val };
-                      });
-
-                      const pathD = points.reduce((acc, pt, i) => `${acc} ${i === 0 ? "M" : "L"} ${pt.x},${pt.y}`, "");
-                      const areaD = `${pathD} L ${points[points.length - 1].x},95 L ${points[0].x},95 Z`;
-
-                      return (
-                        <>
-                          <path d={areaD} fill="url(#engGradWide)" />
-                          <path d={pathD} fill="none" stroke="#2563EB" strokeWidth="2.5" strokeLinecap="round" style={{ transition: "all 0.3s ease" }} />
-                          {points.map((pt, i) => {
-                            const isLatest = i === points.length - 1;
-                            return (
-                              <g key={i}>
-                                {isLatest && (
-                                  <circle cx={pt.x} cy={pt.y} r="8" fill="#2563EB" opacity="0.3">
-                                    <animate attributeName="r" values="4;12;4" dur="1.8s" repeatCount="indefinite" />
-                                    <animate attributeName="opacity" values="0.6;0;0.6" dur="1.8s" repeatCount="indefinite" />
-                                  </circle>
-                                )}
-                                <circle cx={pt.x} cy={pt.y} r={isLatest ? 5.5 : 3.5} fill={isLatest ? "#E4011E" : "#2563EB"} stroke="#FFFFFF" strokeWidth="1.5" />
-                                <text x={pt.x} y={pt.y - 7} textAnchor={i === points.length - 1 ? "end" : "middle"} fontSize="10" fontWeight="700" fill={isLatest ? "#E4011E" : "#4B5563"}>
-                                  {pt.val}M
-                                </text>
-                              </g>
-                            );
-                          })}
-                        </>
-                      );
-                    })()}
-                  </svg>
-                </div>
-
-                {/* Interactive Controls & Tooltip */}
-                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                  <button
-                    onClick={handlePlaceEngBid}
-                    className={`btn-red ${engShake ? "animate-shake" : ""}`}
-                    style={{ padding: "10px 20px", fontSize: 13, flex: 1, justifyContent: "center", gap: 8, borderRadius: 6 }}
-                  >
-                    <Icons.Zap /> Thử đặt giá (+1.000.000 ₫)
-                  </button>
-                  <button
-                    onClick={() => { setEngBids([10, 12, 14]); setEngUserPlaced(false); }}
-                    style={{ padding: "10px 14px", fontSize: 13, background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: 6, color: "#4B5563", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
-                    title="Khởi động lại"
-                  >
-                    <Icons.RotateCcw />
-                  </button>
-                </div>
-
-                {engUserPlaced && (
-                  <div className="glass-panel" style={{ marginTop: 12, padding: "8px 12px", borderRadius: 6, display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#16A34A", fontWeight: 600 }}>
-                    <Icons.Check /> Bạn vừa nâng mức giá dẫn đầu lên {currentEngPrice}.000.000 ₫!
+                {/* 3D Tilted Card */}
+                <div
+                  className="chart-card-3d"
+                  style={{
+                    background: "#FFFFFF",
+                    borderRadius: 8,
+                    padding: "24px 20px 18px",
+                    border: "1px solid #E5E7EB",
+                    position: "relative",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                    <div>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: "#001743", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                        Diễn biến phiên đấu giá
+                      </span>
+                      <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>Tự động mô phỏng theo lượt trả giá</div>
+                    </div>
+                    {/* Glassmorphism Count-up Price Pill */}
+                    <div className="glass-panel" style={{ padding: "6px 12px", borderRadius: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                      <span className="status-dot status-dot-live" />
+                      <span style={{ fontSize: 14, fontWeight: 900, color: isEngFinished ? "#16A34A" : "#E4011E", fontVariantNumeric: "tabular-nums", transition: "color 0.3s" }}>
+                        {currentEngPrice}.000.000 ₫
+                      </span>
+                    </div>
                   </div>
-                )}
+
+                  {/* SVG Chart (Path Drawing Animation & Pop-up Ripples) */}
+                  <div style={{ height: 120, width: "100%", position: "relative", marginBottom: 14, overflow: "hidden", background: "#F8F9FA", borderRadius: 6, border: "1px solid #E5E7EB", padding: "10px 14px" }}>
+                    <svg width="100%" height="100" viewBox="0 0 380 100" preserveAspectRatio="none" style={{ overflow: "hidden" }}>
+                      <defs>
+                        <linearGradient id="engIsoGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#2563EB" stopOpacity="0.2" />
+                          <stop offset="100%" stopColor="#2563EB" stopOpacity="0.0" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* Grid lines */}
+                      <line x1="0" y1="20" x2="380" y2="20" stroke="#E5E7EB" strokeDasharray="3 3" />
+                      <line x1="0" y1="55" x2="380" y2="55" stroke="#E5E7EB" strokeDasharray="3 3" />
+                      <line x1="0" y1="85" x2="380" y2="85" stroke="#E5E7EB" />
+
+                      {/* Connected Animated Path */}
+                      {(() => {
+                        const total = engMilestones.length;
+                        const stepX = 380 / (total - 1);
+                        const allPoints = engMilestones.map((val, idx) => {
+                          const x = Math.min(Math.max(idx * stepX, 15), 365);
+                          const y = 80 - ((val - 10) / 9) * 60;
+                          return { x, y: Math.max(y, 16), val };
+                        });
+
+                        const drawnPoints = allPoints.slice(0, activeEngIdx + 1);
+                        const pathD = drawnPoints.reduce((acc, pt, i) => `${acc} ${i === 0 ? "M" : "L"} ${pt.x},${pt.y}`, "");
+                        const areaD = drawnPoints.length > 1 ? `${pathD} L ${drawnPoints[drawnPoints.length - 1].x},85 L ${drawnPoints[0].x},85 Z` : "";
+
+                        return (
+                          <>
+                            {areaD && <path d={areaD} fill="url(#engIsoGrad)" />}
+                            {pathD && <path d={pathD} fill="none" stroke="#2563EB" strokeWidth="2.5" strokeLinecap="round" style={{ transition: "all 0.4s ease" }} />}
+
+                            {/* Milestones / Pop-up Nodes */}
+                            {allPoints.map((pt, i) => {
+                              const isReached = i <= activeEngIdx;
+                              const isCurrent = i === activeEngIdx;
+                              return (
+                                <g key={i} style={{ opacity: isReached ? 1 : 0.25, transition: "opacity 0.3s ease" }}>
+                                  {/* Wave ripple on active node */}
+                                  {isCurrent && (
+                                    <circle cx={pt.x} cy={pt.y} r="8" fill="#2563EB" opacity="0.3">
+                                      <animate attributeName="r" values="4;14;4" dur="1.4s" repeatCount="indefinite" />
+                                      <animate attributeName="opacity" values="0.6;0;0.6" dur="1.4s" repeatCount="indefinite" />
+                                    </circle>
+                                  )}
+                                  <circle
+                                    cx={pt.x}
+                                    cy={pt.y}
+                                    r={isCurrent ? 5.5 : 3.5}
+                                    fill={isCurrent ? (isEngFinished ? "#16A34A" : "#E4011E") : "#2563EB"}
+                                    stroke="#FFFFFF"
+                                    strokeWidth="1.5"
+                                    style={{ transition: "all 0.3s ease" }}
+                                  />
+                                  <text x={pt.x} y={pt.y - 7} textAnchor={i === total - 1 ? "end" : i === 0 ? "start" : "middle"} fontSize="9.5" fontWeight="700" fill={isCurrent ? (isEngFinished ? "#16A34A" : "#E4011E") : "#6B7280"}>
+                                    {pt.val}M
+                                  </text>
+                                </g>
+                              );
+                            })}
+                          </>
+                        );
+                      })()}
+                    </svg>
+                  </div>
+
+                  {/* Refined Bottom Controls (Status Banner & Replay Button) */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 4 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: isEngFinished ? "#16A34A" : "#4B5563", fontWeight: 600 }}>
+                      <span className="status-dot" style={{ background: isEngFinished ? "#16A34A" : "#E4011E" }} />
+                      <span>
+                        {isEngFinished
+                          ? "Hoàn tất: Mức giá 18.000.000 ₫ chiến thắng phiên!"
+                          : `Đang trả giá: Lượt trả giá thứ #${activeEngIdx + 1} (+2.000.000 ₫)`}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setEngStep(0)}
+                      style={{
+                        padding: "5px 10px",
+                        fontSize: 12,
+                        borderRadius: 4,
+                        background: "#F3F4F6",
+                        border: "1px solid #E5E7EB",
+                        color: "#001743",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                        fontWeight: 600,
+                      }}
+                      title="Xem lại mô phỏng từ đầu"
+                    >
+                      <Icons.RotateCcw /> Phát lại
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
             /* ─── TAB 2: DUTCH AUCTION ─── */
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1.3fr", gap: 40, alignItems: "center" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1.05fr 1.25fr", gap: 40, alignItems: "center" }}>
               {/* Left Column: Rules & Info */}
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
@@ -494,135 +541,154 @@ function AuctionFormatsSection() {
                 </div>
               </div>
 
-              {/* Right Column: Interactive Simulation Dashboard */}
-              <div
-                style={{
-                  background: "#F8F9FA",
-                  borderRadius: 6,
-                  padding: "24px",
-                  border: "1px solid #E5E7EB",
-                  boxShadow: "inset 0 1px 3px rgba(0,0,0,0.02)",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <div>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#001743", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-                      Mô phỏng đường giá giảm dần
-                    </span>
-                    <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>Giá giảm tự động theo chu kỳ</div>
-                  </div>
-                  <div className="glass-panel" style={{ padding: "6px 12px", borderRadius: 6, display: "flex", alignItems: "center", gap: 6 }}>
-                    <span className="status-dot" style={{ background: dutchClaimed ? "#16A34A" : "#F59E0B" }} />
-                    <span style={{ fontSize: 13, fontWeight: 900, color: dutchClaimed ? "#16A34A" : "#001743", fontVariantNumeric: "tabular-nums" }}>
-                      {dutchClaimed ? `Đã chốt: ${dutchClaimedPrice}M` : `${currentDutchPrice}.000.000 ₫`}
-                    </span>
-                  </div>
+              {/* Right Column: Isometric 3D Floating Chart Card */}
+              <div className="chart-container-perspective" style={{ position: "relative" }}>
+                {/* Floating 3D Badge Layer (TranslateZ) */}
+                <div
+                  className="floating-badge-3d"
+                  style={{
+                    position: "absolute",
+                    top: -12,
+                    left: 20,
+                    background: "#FFFFFF",
+                    padding: "6px 12px",
+                    borderRadius: 6,
+                    border: "1px solid #E5E7EB",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: "#001743",
+                    zIndex: 10,
+                  }}
+                >
+                  <span style={{ color: "#16A34A" }}><Icons.TrendingDown /></span>
+                  <span>Khởi điểm: 30.000.000 ₫</span>
                 </div>
 
-                {/* SVG Chart Container (Overflow Hidden, Contained Bounds) */}
-                <div style={{ height: 130, width: "100%", position: "relative", marginBottom: 18, overflow: "hidden", background: "#FFFFFF", borderRadius: 6, border: "1px solid #E5E7EB", padding: "10px 14px" }}>
-                  <svg width="100%" height="110" viewBox="0 0 400 110" preserveAspectRatio="none" style={{ overflow: "hidden" }}>
-                    <defs>
-                      <linearGradient id="dutchGradWide" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#16A34A" stopOpacity="0.2" />
-                        <stop offset="100%" stopColor="#16A34A" stopOpacity="0.0" />
-                      </linearGradient>
-                    </defs>
+                {/* 3D Tilted Card */}
+                <div
+                  className="chart-card-3d"
+                  style={{
+                    background: "#FFFFFF",
+                    borderRadius: 8,
+                    padding: "24px 20px 18px",
+                    border: "1px solid #E5E7EB",
+                    position: "relative",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                    <div>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: "#001743", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                        Diễn biến giá tự động giảm
+                      </span>
+                      <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>Giá giảm tự động theo từng chu kỳ</div>
+                    </div>
+                    {/* Glassmorphism Price Pill */}
+                    <div className="glass-panel" style={{ padding: "6px 12px", borderRadius: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                      <span className="status-dot" style={{ background: isDutchClaimed ? "#16A34A" : "#F59E0B" }} />
+                      <span style={{ fontSize: 14, fontWeight: 900, color: isDutchClaimed ? "#16A34A" : "#001743", fontVariantNumeric: "tabular-nums" }}>
+                        {isDutchClaimed ? "Đã chốt: 18M" : `${currentDutchPrice}.000.000 ₫`}
+                      </span>
+                    </div>
+                  </div>
 
-                    {/* Grid lines */}
-                    <line x1="0" y1="25" x2="400" y2="25" stroke="#F3F4F6" strokeDasharray="4 4" />
-                    <line x1="0" y1="65" x2="400" y2="65" stroke="#F3F4F6" strokeDasharray="4 4" />
-                    <line x1="0" y1="95" x2="400" y2="95" stroke="#E5E7EB" />
+                  {/* SVG Chart (Stepped Curve Drawing) */}
+                  <div style={{ height: 120, width: "100%", position: "relative", marginBottom: 14, overflow: "hidden", background: "#F8F9FA", borderRadius: 6, border: "1px solid #E5E7EB", padding: "10px 14px" }}>
+                    <svg width="100%" height="100" viewBox="0 0 380 100" preserveAspectRatio="none" style={{ overflow: "hidden" }}>
+                      <defs>
+                        <linearGradient id="dutchIsoGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#16A34A" stopOpacity="0.2" />
+                          <stop offset="100%" stopColor="#16A34A" stopOpacity="0.0" />
+                        </linearGradient>
+                      </defs>
 
-                    {/* Stepped line */}
-                    {(() => {
-                      const stepW = 400 / dutchSteps.length;
-                      let pathD = "";
-                      dutchSteps.forEach((val, i) => {
-                        const x1 = i * stepW;
-                        const x2 = (i + 1) * stepW;
-                        const y = 25 + (i / (dutchSteps.length - 1)) * 60;
-                        if (i === 0) pathD += `M ${x1},${y} L ${x2},${y}`;
-                        else pathD += ` L ${x1},${y} L ${x2},${y}`;
-                      });
+                      {/* Grid lines */}
+                      <line x1="0" y1="20" x2="380" y2="20" stroke="#E5E7EB" strokeDasharray="3 3" />
+                      <line x1="0" y1="55" x2="380" y2="55" stroke="#E5E7EB" strokeDasharray="3 3" />
+                      <line x1="0" y1="85" x2="380" y2="85" stroke="#E5E7EB" />
 
-                      const activeX = (dutchIdx + 0.5) * stepW;
-                      const activeY = 25 + (dutchIdx / (dutchSteps.length - 1)) * 60;
+                      {/* Stepped line */}
+                      {(() => {
+                        const stepW = 380 / dutchMilestones.length;
+                        let pathD = "";
+                        dutchMilestones.forEach((val, i) => {
+                          if (i > activeDutchIdx) return;
+                          const x1 = i * stepW;
+                          const x2 = (i + 1) * stepW;
+                          const y = 25 + (i / (dutchMilestones.length - 1)) * 55;
+                          if (i === 0) pathD += `M ${x1},${y} L ${x2},${y}`;
+                          else pathD += ` L ${x1},${y} L ${x2},${y}`;
+                        });
 
-                      return (
-                        <>
-                          <path d={`${pathD} L 400,95 L 0,95 Z`} fill="url(#dutchGradWide)" />
-                          <path d={pathD} fill="none" stroke="#16A34A" strokeWidth="2.5" />
+                        const activeX = (activeDutchIdx + 0.5) * stepW;
+                        const activeY = 25 + (activeDutchIdx / (dutchMilestones.length - 1)) * 55;
 
-                          {dutchSteps.map((val, i) => {
-                            const x = (i + 0.5) * stepW;
-                            const y = 25 + (i / (dutchSteps.length - 1)) * 60;
-                            const isActive = i === dutchIdx;
-                            return (
-                              <g key={i}>
-                                <circle cx={x} cy={y} r={isActive ? 5.5 : 3.5} fill={isActive ? (dutchClaimed ? "#16A34A" : "#E4011E") : "#16A34A"} stroke="#FFFFFF" strokeWidth="1.5" />
-                                <text x={x} y={y - 7} textAnchor="middle" fontSize="9.5" fontWeight={isActive ? "800" : "600"} fill={isActive ? (dutchClaimed ? "#16A34A" : "#E4011E") : "#6B7280"}>
-                                  {val}M
-                                </text>
-                              </g>
-                            );
-                          })}
+                        return (
+                          <>
+                            {pathD && <path d={`${pathD} L ${(activeDutchIdx + 1) * stepW},85 L 0,85 Z`} fill="url(#dutchIsoGrad)" />}
+                            {pathD && <path d={pathD} fill="none" stroke="#16A34A" strokeWidth="2.5" />}
 
-                          {!dutchClaimed && (
-                            <circle cx={activeX} cy={activeY} r="9" fill="#E4011E" opacity="0.25">
-                              <animate attributeName="r" values="5;14;5" dur="1.5s" repeatCount="indefinite" />
-                              <animate attributeName="opacity" values="0.5;0;0.5" dur="1.5s" repeatCount="indefinite" />
-                            </circle>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </svg>
-                </div>
+                            {dutchMilestones.map((val, i) => {
+                              const x = (i + 0.5) * stepW;
+                              const y = 25 + (i / (dutchMilestones.length - 1)) * 55;
+                              const isReached = i <= activeDutchIdx;
+                              const isCurrent = i === activeDutchIdx;
+                              return (
+                                <g key={i} style={{ opacity: isReached ? 1 : 0.25, transition: "opacity 0.3s ease" }}>
+                                  <circle cx={x} cy={y} r={isCurrent ? 5.5 : 3.5} fill={isCurrent ? (isDutchClaimed ? "#16A34A" : "#E4011E") : "#16A34A"} stroke="#FFFFFF" strokeWidth="1.5" />
+                                  <text x={x} y={y - 7} textAnchor="middle" fontSize="9.5" fontWeight={isCurrent ? "800" : "600"} fill={isCurrent ? (isDutchClaimed ? "#16A34A" : "#E4011E") : "#6B7280"}>
+                                    {val}M
+                                  </text>
+                                </g>
+                              );
+                            })}
 
-                {/* Interactive Claim Button */}
-                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                  {!dutchClaimed ? (
+                            {/* Pulsing indicator at current step */}
+                            {!isDutchClaimed && (
+                              <circle cx={activeX} cy={activeY} r="9" fill="#E4011E" opacity="0.25">
+                                <animate attributeName="r" values="5;14;5" dur="1.3s" repeatCount="indefinite" />
+                                <animate attributeName="opacity" values="0.5;0;0.5" dur="1.3s" repeatCount="indefinite" />
+                              </circle>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </svg>
+                  </div>
+
+                  {/* Refined Bottom Controls */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 4 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: isDutchClaimed ? "#16A34A" : "#4B5563", fontWeight: 600 }}>
+                      <span className="status-dot" style={{ background: isDutchClaimed ? "#16A34A" : "#F59E0B" }} />
+                      <span>
+                        {isDutchClaimed
+                          ? "Người mua #892 vừa chốt mua thành công tại 18M!"
+                          : `Giá đang hạ nấc: ${currentDutchPrice}.000.000 ₫`}
+                      </span>
+                    </div>
                     <button
-                      onClick={handleClaimDutch}
-                      className="animate-pulse-cta"
+                      onClick={() => setDutchStep(0)}
                       style={{
-                        padding: "10px 20px",
-                        fontSize: 13,
-                        fontWeight: 700,
-                        flex: 1,
-                        background: "#16A34A",
-                        color: "#FFFFFF",
-                        border: "none",
-                        borderRadius: 6,
+                        padding: "5px 10px",
+                        fontSize: 12,
+                        borderRadius: 4,
+                        background: "#F3F4F6",
+                        border: "1px solid #E5E7EB",
+                        color: "#001743",
                         cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "center",
-                        gap: 8,
+                        gap: 4,
+                        fontWeight: 600,
                       }}
+                      title="Xem lại mô phỏng từ đầu"
                     >
-                      🔥 Chốt mua ngay ở mức {currentDutchPrice}.000.000 ₫!
+                      <Icons.RotateCcw /> Phát lại
                     </button>
-                  ) : (
-                    <div style={{ flex: 1, padding: "10px 16px", background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 6, color: "#16A34A", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
-                      <Icons.CheckCircle /> ĐÃ CHỐT THÀNH CÔNG TẠI {dutchClaimedPrice}.000.000 ₫!
-                    </div>
-                  )}
-                  <button
-                    onClick={() => { setDutchClaimed(false); setDutchClaimedPrice(null); setDutchIdx(0); }}
-                    style={{ padding: "10px 14px", fontSize: 13, background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: 6, color: "#4B5563", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
-                    title="Chạy lại"
-                  >
-                    <Icons.RotateCcw />
-                  </button>
-                </div>
-
-                {dutchClaimed && (
-                  <div className="glass-panel" style={{ marginTop: 12, padding: "8px 12px", borderRadius: 6, fontSize: 12, color: "#001743", lineHeight: 1.5 }}>
-                    ⚡ <strong>Cơ chế Dutch:</strong> Bạn là người đầu tiên chấp nhận mức giá, phiên đấu giá kết thúc ngay và SIM thuộc về bạn!
                   </div>
-                )}
+                </div>
               </div>
             </div>
           )}
@@ -837,8 +903,9 @@ function InteractiveHowItWorks() {
 
           {/* Checklist & Safety Highlights */}
           <div style={{ background: "#F8F9FA", borderRadius: 6, padding: "20px", border: "1px solid #E5E7EB" }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: "#001743", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 14 }}>
-              🛡️ BIỆN PHÁP BẢO ĐẢM MINH BẠCH
+            <div style={{ fontSize: 12, fontWeight: 800, color: "#001743", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 14, display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ color: "#E4011E" }}><Icons.ShieldCheck /></span>
+              <span>BIỆN PHÁP BẢO ĐẢM MINH BẠCH</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {activeStep.checklist.map((item, idx) => (
@@ -1005,7 +1072,7 @@ function Header() {
             <Link href="/register" className="btn-red" style={{ padding: "8px 18px", fontSize: 14 }}>Đăng ký</Link>
           </div>
           <button className="ts-mobile-btn" onClick={() => setMenuOpen(!menuOpen)} style={{ display: "none", background: "none", border: "none", cursor: "pointer", padding: 4, color: "#001743" }}>
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect y="4" width="22" height="2" rx="1" fill="currentColor"/><rect y="10" width="22" height="2" rx="1" fill="currentColor"/><rect y="16" width="22" height="2" rx="1" fill="currentColor"/></svg>
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect y="4" width="22" height="2" rx="1" fill="currentColor" /><rect y="10" width="22" height="2" rx="1" fill="currentColor" /><rect y="16" width="22" height="2" rx="1" fill="currentColor" /></svg>
           </button>
         </div>
       </nav>
@@ -1083,29 +1150,75 @@ export default function HomePage() {
     <div style={{ background: "#FFFFFF", minHeight: "100vh" }}>
       <Header />
 
-      {/* ═══ HERO ═══════════════════════════════════════════ */}
-      <section style={{ paddingTop: 96, paddingBottom: 72, position: "relative", borderBottom: "1px solid #E5E7EB" }}>
-        <div className="container">
+      {/* ═══ HERO WITH BANNER BACKGROUND ═══════════════════ */}
+      <section
+        style={{
+          paddingTop: 104,
+          paddingBottom: 80,
+          position: "relative",
+          background: "#001743 url('/banner.png') no-repeat right center / cover",
+          borderBottom: "1px solid #E5E7EB",
+          overflow: "hidden",
+        }}
+      >
+        {/* Gradient Overlay to guarantee crystal-clear text readability on left while showing glowing SIM art on right */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(90deg, rgba(0, 23, 67, 0.95) 0%, rgba(0, 23, 67, 0.88) 45%, rgba(0, 23, 67, 0.4) 100%)",
+            pointerEvents: "none",
+          }}
+        />
+
+        <div className="container" style={{ position: "relative", zIndex: 2 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 60, alignItems: "center" }}>
             {/* Left Copy */}
             <div style={{ maxWidth: 560 }}>
-              <div className="section-tag" style={{ marginBottom: 20 }}>Sàn đấu giá SIM số đẹp #1 Việt Nam</div>
-              <h1 style={{ fontSize: 48, fontWeight: 900, lineHeight: 1.15, letterSpacing: "-0.03em", color: "#001743", margin: "0 0 18px" }}>
+              <div
+                className="section-tag"
+                style={{
+                  marginBottom: 20,
+                  background: "rgba(228, 1, 30, 0.15)",
+                  color: "#FF4D6D",
+                  border: "1px solid rgba(228, 1, 30, 0.35)",
+                }}
+              >
+                Sàn đấu giá SIM số đẹp #1 Việt Nam
+              </div>
+              <h1 style={{ fontSize: 48, fontWeight: 900, lineHeight: 1.15, letterSpacing: "-0.03em", color: "#FFFFFF", margin: "0 0 18px" }}>
                 Săn SIM đẹp.<br /><span style={{ color: "#E4011E" }}>Đấu giá minh bạch.</span>
               </h1>
-              <p style={{ fontSize: 16, color: "#4B5563", lineHeight: 1.7, marginBottom: 32, maxWidth: 480 }}>
+              <p style={{ fontSize: 16, color: "rgba(255, 255, 255, 0.82)", lineHeight: 1.7, marginBottom: 32, maxWidth: 480 }}>
                 Tìm kiếm những số SIM phù hợp với bạn và tham gia các phiên đấu giá trực tuyến an toàn, minh bạch. Giao dịch được bảo vệ toàn diện.
               </p>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 <Link href="/auctions" className="btn-red">Khám phá SIM ngay</Link>
-                <Link href="/register" className="btn-outline">Bán SIM của bạn</Link>
+                <Link
+                  href="/register"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    padding: "10px 22px",
+                    borderRadius: 6,
+                    background: "rgba(255, 255, 255, 0.1)",
+                    border: "1px solid rgba(255, 255, 255, 0.3)",
+                    color: "#FFFFFF",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    textDecoration: "none",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  Bán SIM của bạn
+                </Link>
               </div>
               {/* Quick stats */}
-              <div style={{ display: "flex", gap: 32, marginTop: 40, paddingTop: 28, borderTop: "1px solid #E5E7EB", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 32, marginTop: 40, paddingTop: 28, borderTop: "1px solid rgba(255, 255, 255, 0.15)", flexWrap: "wrap" }}>
                 {[["10K+", "SIM đã đấu giá"], ["5K+", "Người dùng tin tưởng"], ["98%", "Giao dịch thành công"]].map(([n, l]) => (
                   <div key={l}>
                     <div style={{ fontSize: 22, fontWeight: 900, color: "#E4011E", letterSpacing: "-0.02em" }}>{n}</div>
-                    <div style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>{l}</div>
+                    <div style={{ fontSize: 13, color: "rgba(255, 255, 255, 0.7)", marginTop: 2 }}>{l}</div>
                   </div>
                 ))}
               </div>
@@ -1119,9 +1232,16 @@ export default function HomePage() {
       </section>
 
       {/* ═══ TRUST STRIP ════════════════════════════════════ */}
-      <section style={{ background: "#F8F9FA", padding: "20px 0", borderBottom: "1px solid #E5E7EB" }}>
+      <section style={{ background: "#F8F9FA", padding: "18px 0", borderBottom: "1px solid #E5E7EB" }}>
         <div className="container">
-          <div style={{ display: "flex", gap: 36, alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(5, 1fr)",
+              gap: 12,
+              alignItems: "center",
+            }}
+          >
             {[
               { icon: <Icons.Smartphone />, text: "Xác minh quyền sở hữu SIM" },
               { icon: <Icons.UserCheck />, text: "Định danh tài khoản chính chủ" },
@@ -1129,9 +1249,18 @@ export default function HomePage() {
               { icon: <Icons.FileText />, text: "Hợp đồng điện tử pháp lý" },
               { icon: <Icons.ShieldCheck />, text: "Giám sát chống gian lận 24/7" },
             ].map(({ icon, text }) => (
-              <div key={text} style={{ display: "flex", alignItems: "center", gap: 8, color: "#001743" }}>
-                <span style={{ color: "#E4011E" }}>{icon}</span>
-                <span style={{ fontSize: 13, fontWeight: 600 }}>{text}</span>
+              <div
+                key={text}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  color: "#001743",
+                }}
+              >
+                <span style={{ color: "#E4011E", flexShrink: 0, display: "flex", alignItems: "center" }}>{icon}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>{text}</span>
               </div>
             ))}
           </div>

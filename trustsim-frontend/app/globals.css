@@ -188,6 +188,29 @@ body {
   border: 1px solid rgba(229, 231, 235, 0.8);
 }
 
+/* ─── Isometric 3D Card Effects ───────────────────────────── */
+.chart-container-perspective {
+  perspective: 1200px;
+  perspective-origin: center center;
+}
+
+.chart-card-3d {
+  transform: rotateY(-10deg) rotateX(4deg);
+  transform-style: preserve-3d;
+  box-shadow: -16px 20px 30px rgba(0, 23, 67, 0.07), -4px 6px 12px rgba(0, 23, 67, 0.03);
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease;
+}
+
+.chart-card-3d:hover {
+  transform: rotateY(-3deg) rotateX(1deg) translateY(-6px);
+  box-shadow: -22px 28px 38px rgba(0, 23, 67, 0.11), -6px 8px 16px rgba(0, 23, 67, 0.05);
+}
+
+.floating-badge-3d {
+  transform: translateZ(28px);
+  box-shadow: 0 8px 24px rgba(0, 23, 67, 0.12);
+}
+
 .delay-100 { animation-delay: 0.1s; }
 .delay-200 { animation-delay: 0.2s; }
 .delay-300 { animation-delay: 0.3s; }
