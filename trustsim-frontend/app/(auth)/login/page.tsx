@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { authService } from "@/services/authService";
+import { ToastContainer, ToastMessage } from "@/components/ui/Toast";
 
 /* ─── Clean Line SVG Icons ────────────────────────────────── */
 const Icons = {
@@ -47,13 +48,6 @@ const Icons = {
       <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.29 2.57 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98Z" />
     </svg>
   ),
-  AlertCircle: () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" y1="8" x2="12" y2="12" />
-      <line x1="12" y1="16" x2="12.01" y2="16" />
-    </svg>
-  ),
 };
 
 export default function LoginPage() {
@@ -62,13 +56,19 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const addToast = (toast: Omit<ToastMessage, "id">) => {
+    const id = Date.now().toString() + Math.random().toString(36).substring(2, 5);
+    setToasts((prev) => [...prev, { ...toast, id }]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
-    setSuccessMessage(null);
     setLoading(true);
 
     try {
@@ -77,7 +77,12 @@ export default function LoginPage() {
         password: password,
       });
 
-      setSuccessMessage(`Đăng nhập thành công! Xin chào ${authData.fullName || authData.userName}.`);
+      addToast({
+        type: "success",
+        title: "Đăng nhập thành công",
+        message: `Xin chào ${authData.fullName || authData.userName}! Đang chuyển hướng...`,
+        duration: 2500,
+      });
 
       // Điều hướng tùy theo Role
       setTimeout(() => {
@@ -86,15 +91,23 @@ export default function LoginPage() {
         } else {
           window.location.href = "/";
         }
-      }, 700);
+      }, 800);
     } catch (err: any) {
-      setErrorMessage(err.message || "Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.");
+      addToast({
+        type: "error",
+        title: "Đăng nhập thất bại",
+        message: err.message || "Tên đăng nhập hoặc mật khẩu không chính xác.",
+        duration: 4000,
+      });
       setLoading(false);
     }
   };
 
   return (
     <div style={{ minHeight: "calc(100vh - 64px)", paddingTop: 84, paddingBottom: 64, background: "#F8F9FA", display: "flex", alignItems: "center" }}>
+      {/* Toast Notification Container */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+
       <div className="container" style={{ maxWidth: 1040, margin: "0 auto", padding: "0 16px" }}>
         {/* Main Card Container */}
         <div
@@ -216,48 +229,6 @@ export default function LoginPage() {
                 </Link>
               </p>
             </div>
-
-            {/* Error Message Alert */}
-            {errorMessage && (
-              <div
-                style={{
-                  background: "#FEF2F2",
-                  border: "1px solid #FECACA",
-                  borderRadius: 6,
-                  padding: "10px 14px",
-                  color: "#DC2626",
-                  fontSize: 13,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  marginBottom: 16,
-                }}
-              >
-                <Icons.AlertCircle />
-                <span>{errorMessage}</span>
-              </div>
-            )}
-
-            {/* Success Message Alert */}
-            {successMessage && (
-              <div
-                style={{
-                  background: "#F0FDF4",
-                  border: "1px solid #BBF7D0",
-                  borderRadius: 6,
-                  padding: "10px 14px",
-                  color: "#16A34A",
-                  fontSize: 13,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  marginBottom: 16,
-                }}
-              >
-                <Icons.ShieldCheck />
-                <span>{successMessage}</span>
-              </div>
-            )}
 
             <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {/* Field: UsernameOrEmail */}

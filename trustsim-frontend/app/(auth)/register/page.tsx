@@ -11,6 +11,7 @@ import {
   Ward,
 } from "@/services/vietnamAddressService";
 import { authService } from "@/services/authService";
+import { ToastContainer, ToastMessage } from "@/components/ui/Toast";
 
 /* ─── Line SVG Icons ──────────────────────────────────────── */
 const Icons = {
@@ -58,13 +59,6 @@ const Icons = {
       <polyline points="12 19 5 12 12 5" />
     </svg>
   ),
-  AlertCircle: () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" y1="8" x2="12" y2="12" />
-      <line x1="12" y1="16" x2="12.01" y2="16" />
-    </svg>
-  ),
 };
 
 type Step = "account_info" | "phone_verification";
@@ -72,8 +66,16 @@ type Step = "account_info" | "phone_verification";
 export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState<Step>("account_info");
   const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const addToast = (toast: Omit<ToastMessage, "id">) => {
+    const id = Date.now().toString() + Math.random().toString(36).substring(2, 5);
+    setToasts((prev) => [...prev, { ...toast, id }]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
 
   // Form State
   const [firstName, setFirstName] = useState("");
@@ -143,19 +145,30 @@ export default function RegisterPage() {
 
   const handleStep1Submit = (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
 
     // Validation cơ bản ở frontend
     if (password !== confirmPassword) {
-      setErrorMessage("Mật khẩu xác nhận không trùng khớp!");
+      addToast({
+        type: "error",
+        title: "Mật khẩu không khớp",
+        message: "Mật khẩu xác nhận không trùng khớp với mật khẩu đã nhập.",
+      });
       return;
     }
     if (password.length < 6) {
-      setErrorMessage("Mật khẩu phải có ít nhất 6 ký tự!");
+      addToast({
+        type: "error",
+        title: "Mật khẩu quá ngắn",
+        message: "Mật khẩu phải có độ dài tối thiểu từ 6 ký tự.",
+      });
       return;
     }
     if (!/^[0-9]{12}$/.test(identityNumber)) {
-      setErrorMessage("Số CCCD/CMND phải bao gồm chính xác 12 chữ số!");
+      addToast({
+        type: "error",
+        title: "Số CCCD không hợp lệ",
+        message: "Số CCCD/CMND phải bao gồm chính xác 12 chữ số.",
+      });
       return;
     }
 
@@ -163,20 +176,29 @@ export default function RegisterPage() {
     setTimeout(() => {
       setLoading(false);
       setCurrentStep("phone_verification");
-    }, 400);
+    }, 300);
   };
 
   const handleSendOtp = () => {
-    setErrorMessage(null);
     const cleanPhone = phoneNumber.replace(/\s/g, "");
     if (!/^(0[3|5|7|8|9])[0-9]{8}$/.test(cleanPhone)) {
-      setErrorMessage("Số điện thoại không đúng định dạng di động Việt Nam (10 chữ số, bắt đầu bằng 03, 05, 07, 08, 09).");
+      addToast({
+        type: "error",
+        title: "Số điện thoại không hợp lệ",
+        message: "Số điện thoại phải gồm 10 chữ số (bắt đầu bằng 03, 05, 07, 08, 09).",
+      });
       return;
     }
     setOtpSent(true);
     setCountdown(60);
-    // Tự động điền 6 số mô phỏng để test thuận tiện
+    // Điền mã xác thực mẫu
     setOtp(["1", "2", "3", "4", "5", "6"]);
+    addToast({
+      type: "info",
+      title: "Mã OTP đã được gửi",
+      message: `Mã xác thực gồm 6 chữ số đã được gửi đến số ${cleanPhone}.`,
+      duration: 3000,
+    });
   };
 
   const handleOtpChange = (index: number, value: string) => {
@@ -197,17 +219,24 @@ export default function RegisterPage() {
 
   const handleFinalRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
 
     const otpCode = otp.join("");
     if (otpCode.length < 6) {
-      setErrorMessage("Vui lòng nhập đầy đủ 6 chữ số mã xác thực OTP.");
+      addToast({
+        type: "error",
+        title: "Thiếu mã OTP",
+        message: "Vui lòng nhập đầy đủ 6 chữ số mã xác thực OTP.",
+      });
       return;
     }
 
     const cleanPhone = phoneNumber.replace(/\s/g, "");
     if (!/^(0[3|5|7|8|9])[0-9]{8}$/.test(cleanPhone)) {
-      setErrorMessage("Số điện thoại không hợp lệ.");
+      addToast({
+        type: "error",
+        title: "Số điện thoại không hợp lệ",
+        message: "Số điện thoại không đúng định dạng di động Việt Nam.",
+      });
       return;
     }
 
@@ -229,13 +258,23 @@ export default function RegisterPage() {
         dateOfBirth: dateOfBirth ? new Date(dateOfBirth).toISOString() : undefined,
       });
 
-      setSuccessMessage(`Đăng ký tài khoản thành công! Xin chào ${authData.fullName}.`);
+      addToast({
+        type: "success",
+        title: "Đăng ký thành công",
+        message: `Chào mừng ${authData.fullName || authData.userName}! Đang chuyển hướng...`,
+        duration: 3000,
+      });
 
       setTimeout(() => {
         window.location.href = "/";
       }, 900);
     } catch (err: any) {
-      setErrorMessage(err.message || "Đăng ký không thành công. Vui lòng kiểm tra lại thông tin.");
+      addToast({
+        type: "error",
+        title: "Đăng ký thất bại",
+        message: err.message || "Đăng ký không thành công. Vui lòng kiểm tra lại thông tin.",
+        duration: 4500,
+      });
       setLoading(false);
     }
   };
@@ -251,6 +290,9 @@ export default function RegisterPage() {
 
   return (
     <div style={{ minHeight: "calc(100vh - 64px)", paddingTop: 76, paddingBottom: 40, background: "#F8F9FA", display: "flex", alignItems: "center" }}>
+      {/* Toast Notification Container */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+
       <div className="container" style={{ maxWidth: 1040, margin: "0 auto", padding: "0 16px" }}>
         {/* Main Split Grid Card */}
         <div
@@ -319,7 +361,7 @@ export default function RegisterPage() {
                     stepKey: "account_info",
                     number: "1",
                     title: "Thông tin tài khoản & Địa chỉ",
-                    desc: "Họ tên, Username, Email, Mật khẩu, CCCD & Địa chỉ",
+                    desc: "Họ tên, Username, Email, Mật khẩu, CCCD, Ngày sinh & Địa chỉ",
                     active: currentStep === "account_info",
                     done: currentStep === "phone_verification",
                   },
@@ -382,48 +424,6 @@ export default function RegisterPage() {
 
           {/* ─── RIGHT FORM PANEL (Optimized Zero-Overflow Layout) ─── */}
           <div style={{ padding: "28px 32px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-            {/* Error Message Alert */}
-            {errorMessage && (
-              <div
-                style={{
-                  background: "#FEF2F2",
-                  border: "1px solid #FECACA",
-                  borderRadius: 6,
-                  padding: "9px 12px",
-                  color: "#DC2626",
-                  fontSize: 12,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  marginBottom: 12,
-                }}
-              >
-                <Icons.AlertCircle />
-                <span>{errorMessage}</span>
-              </div>
-            )}
-
-            {/* Success Message Alert */}
-            {successMessage && (
-              <div
-                style={{
-                  background: "#F0FDF4",
-                  border: "1px solid #BBF7D0",
-                  borderRadius: 6,
-                  padding: "9px 12px",
-                  color: "#16A34A",
-                  fontSize: 12,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  marginBottom: 12,
-                }}
-              >
-                <Icons.ShieldCheck />
-                <span>{successMessage}</span>
-              </div>
-            )}
-
             {currentStep === "account_info" ? (
               <div>
                 <div style={{ marginBottom: 12 }}>
@@ -634,7 +634,7 @@ export default function RegisterPage() {
                       marginTop: 2,
                     }}
                   >
-                    {loading ? "Đang xử lý..." : "Tiếp tục: Xác minh Số điện thoại (Bước cuối) →"}
+                    {loading ? "Đang xử lý..." : "Tiếp tục: Xác minh Số điện thoại →"}
                   </button>
                 </form>
 
@@ -650,10 +650,7 @@ export default function RegisterPage() {
               <div>
                 <button
                   type="button"
-                  onClick={() => {
-                    setErrorMessage(null);
-                    setCurrentStep("account_info");
-                  }}
+                  onClick={() => setCurrentStep("account_info")}
                   style={{
                     background: "none",
                     border: "none",
