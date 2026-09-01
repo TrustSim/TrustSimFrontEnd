@@ -156,24 +156,6 @@ export const SimAuctionCard: React.FC<SimAuctionCardProps> = ({ data, featured =
             justifyContent: "space-between",
           }}
         >
-          {/* SIM Card Notch Corner Accent Line (Đường nhấn vát góc trên cùng bên phải) */}
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              right: 0,
-              width: 34,
-              height: 34,
-              background: hovered
-                ? "linear-gradient(135deg, transparent 50%, #E4011E 50%)"
-                : "linear-gradient(135deg, transparent 50%, #001743 50%)",
-              opacity: 0.85,
-              transition: "all 0.25s ease",
-              pointerEvents: "none",
-              zIndex: 3,
-            }}
-          />
-
           {/* Microchip Watermark in Background */}
           <MicrochipWatermark isHovered={hovered} />
 
@@ -346,7 +328,7 @@ export const SimAuctionCard: React.FC<SimAuctionCardProps> = ({ data, featured =
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: 4,
+                gap: 5,
                 padding: "7px 12px",
                 borderRadius: 4,
                 background: hovered ? "#E4011E" : "rgba(0, 23, 67, 0.05)",
@@ -354,6 +336,8 @@ export const SimAuctionCard: React.FC<SimAuctionCardProps> = ({ data, featured =
                 fontSize: 12,
                 fontWeight: 700,
                 border: `1px solid ${hovered ? "#E4011E" : "#E5E7EB"}`,
+                whiteSpace: "nowrap",
+                flexShrink: 0,
                 transition: "all 0.2s ease",
               }}
             >

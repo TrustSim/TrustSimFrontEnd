@@ -4,21 +4,39 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { authService } from "@/services/authService";
+import { AuthResponseDto } from "@/types/auth";
 
 export interface NavbarProps {
   role?: "user" | "admin" | "consultant" | "guest";
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ role = "guest" }) => {
+export const Navbar: React.FC<NavbarProps> = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [user, setUser] = useState<AuthResponseDto | null>(null);
   const pathname = usePathname();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
+
+    // Đồng bộ trạng thái user khi component mount
+    setUser(authService.getUser());
+
+    // Lắng nghe sự kiện đăng nhập / đăng xuất tức thì
+    const syncUser = () => setUser(authService.getUser());
+    window.addEventListener("trustsim_auth_change", syncUser);
+    window.addEventListener("storage", syncUser);
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("trustsim_auth_change", syncUser);
+      window.removeEventListener("storage", syncUser);
+    };
   }, []);
+
+  const isAdmin = user?.role?.toUpperCase() === "ADMIN";
 
   const navLinks = [
     { href: "/auctions", label: "Khám phá SIM" },
@@ -91,7 +109,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role = "guest" }) => {
                 </Link>
               );
             })}
-            {(role === "admin" || role === "consultant") && (
+            {isAdmin && (
               <Link
                 href="/admin"
                 style={{
@@ -99,19 +117,20 @@ export const Navbar: React.FC<NavbarProps> = ({ role = "guest" }) => {
                   borderRadius: 6,
                   color: "#001743",
                   fontSize: 14,
-                  fontWeight: 600,
+                  fontWeight: 700,
                   textDecoration: "none",
                   background: "#F3F4F6",
+                  border: "1px solid #E5E7EB",
                 }}
               >
-                Quản Trị
+                Quản Trị Hệ Thống
               </Link>
             )}
           </nav>
 
           {/* Actions */}
           <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {role === "guest" ? (
+            {!user ? (
               <>
                 <Link
                   href="/login"
@@ -147,7 +166,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role = "guest" }) => {
                 </Link>
               </>
             ) : (
-              <UserMenu role={role} />
+              <UserMenu user={user} />
             )}
           </div>
 
@@ -163,7 +182,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role = "guest" }) => {
               color: "#001743",
               cursor: "pointer",
               padding: 6,
-              borderRadius: 6,
+              marginLeft: "auto",
             }}
           >
             <MenuIcon />
@@ -171,7 +190,7 @@ export const Navbar: React.FC<NavbarProps> = ({ role = "guest" }) => {
         </div>
       </header>
 
-      {/* Mobile Drawer / Overlay */}
+      {/* Mobile Drawer */}
       {mobileOpen && (
         <div
           style={{
@@ -205,39 +224,94 @@ export const Navbar: React.FC<NavbarProps> = ({ role = "guest" }) => {
             </Link>
           ))}
 
+          {isAdmin && (
+            <Link
+              href="/admin"
+              onClick={() => setMobileOpen(false)}
+              style={{
+                padding: "12px 16px",
+                borderRadius: 6,
+                color: "#001743",
+                fontSize: 15,
+                fontWeight: 700,
+                textDecoration: "none",
+                background: "#FEF2F2",
+                border: "1px solid #FECACA",
+              }}
+            >
+              Trang Quản Trị (Admin)
+            </Link>
+          )}
+
           <div style={{ height: 1, background: "#E5E7EB", margin: "12px 0" }} />
 
-          <Link
-            href="/login"
-            onClick={() => setMobileOpen(false)}
-            style={{
-              padding: "12px 16px",
-              borderRadius: 6,
-              color: "#001743",
-              fontSize: 15,
-              fontWeight: 600,
-              textAlign: "center",
-              textDecoration: "none",
-              background: "#F3F4F6",
-            }}
-          >
-            Đăng nhập
-          </Link>
-          <Link
-            href="/register"
-            onClick={() => setMobileOpen(false)}
-            className="btn-red"
-            style={{
-              padding: "12px 16px",
-              borderRadius: 6,
-              fontSize: 15,
-              fontWeight: 700,
-              textAlign: "center",
-              justifyContent: "center",
-            }}
-          >
-            Đăng ký tài khoản
-          </Link>
+          {!user ? (
+            <>
+              <Link
+                href="/login"
+                onClick={() => setMobileOpen(false)}
+                style={{
+                  padding: "12px 16px",
+                  borderRadius: 6,
+                  color: "#001743",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  textAlign: "center",
+                  textDecoration: "none",
+                  background: "#F3F4F6",
+                }}
+              >
+                Đăng nhập
+              </Link>
+              <Link
+                href="/register"
+                onClick={() => setMobileOpen(false)}
+                className="btn-red"
+                style={{
+                  padding: "12px 16px",
+                  borderRadius: 6,
+                  fontSize: 15,
+                  fontWeight: 700,
+                  textAlign: "center",
+                  justifyContent: "center",
+                }}
+              >
+                Đăng ký tài khoản
+              </Link>
+            </>
+          ) : (
+            <>
+              <div style={{ padding: "10px 14px", background: "#F8F9FA", borderRadius: 6, fontSize: 13, color: "#001743", fontWeight: 700 }}>
+                Xin chào, {user.fullName || user.userName}
+              </div>
+              <Link
+                href="/profile"
+                onClick={() => setMobileOpen(false)}
+                style={{ padding: "10px 14px", color: "#4B5563", textDecoration: "none", fontSize: 14 }}
+              >
+                Hồ sơ cá nhân
+              </Link>
+              <button
+                onClick={() => {
+                  authService.clearSession();
+                  setMobileOpen(false);
+                  window.location.href = "/login";
+                }}
+                style={{
+                  padding: "10px 14px",
+                  color: "#E4011E",
+                  background: "none",
+                  border: "none",
+                  textAlign: "left",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Đăng xuất
+              </button>
+            </>
+          )}
 
           <button
             onClick={() => setMobileOpen(false)}
@@ -271,8 +345,17 @@ export const Navbar: React.FC<NavbarProps> = ({ role = "guest" }) => {
   );
 };
 
-function UserMenu({ role }: { role: string }) {
+function UserMenu({ user }: { user: AuthResponseDto }) {
   const [open, setOpen] = useState(false);
+  const displayName = user.fullName || user.userName || "User";
+  const initialChar = displayName.charAt(0).toUpperCase();
+  const isAdmin = user.role?.toUpperCase() === "ADMIN";
+
+  const handleLogout = () => {
+    authService.clearSession();
+    window.location.href = "/login";
+  };
+
   return (
     <div style={{ position: "relative" }}>
       <button
@@ -281,7 +364,7 @@ function UserMenu({ role }: { role: string }) {
           display: "flex",
           alignItems: "center",
           gap: 8,
-          padding: "6px 12px",
+          padding: "5px 12px 5px 6px",
           background: "#F8F9FA",
           border: "1px solid #E5E7EB",
           borderRadius: 6,
@@ -289,6 +372,7 @@ function UserMenu({ role }: { role: string }) {
           color: "#001743",
           fontSize: 14,
           fontWeight: 600,
+          transition: "all 0.2s ease",
         }}
       >
         <div
@@ -296,18 +380,20 @@ function UserMenu({ role }: { role: string }) {
             width: 28,
             height: 28,
             borderRadius: 6,
-            background: "#E4011E",
+            background: isAdmin ? "#001743" : "#E4011E",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             fontSize: 13,
-            fontWeight: 700,
+            fontWeight: 800,
             color: "#FFFFFF",
           }}
         >
-          U
+          {initialChar}
         </div>
-        <span>Tài khoản</span>
+        <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {displayName}
+        </span>
         <span style={{ fontSize: 10, opacity: 0.6 }}>▼</span>
       </button>
 
@@ -317,7 +403,7 @@ function UserMenu({ role }: { role: string }) {
             position: "absolute",
             top: "calc(100% + 8px)",
             right: 0,
-            width: 210,
+            width: 220,
             background: "#FFFFFF",
             border: "1px solid #E5E7EB",
             borderRadius: 8,
@@ -326,12 +412,22 @@ function UserMenu({ role }: { role: string }) {
             zIndex: 1001,
           }}
         >
+          <div style={{ padding: "8px 12px", borderBottom: "1px solid #F3F4F6", marginBottom: 4 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#001743" }}>{displayName}</div>
+            <div style={{ fontSize: 11, color: "#6B7280" }}>{user.email}</div>
+            {isAdmin && (
+              <span style={{ fontSize: 10, background: "#FEF2F2", color: "#E4011E", padding: "1px 6px", borderRadius: 4, fontWeight: 700, marginTop: 4, display: "inline-block" }}>
+                ADMIN
+              </span>
+            )}
+          </div>
+
           {[
             { label: "Hồ sơ cá nhân", href: "/profile" },
             { label: "Đấu giá của tôi", href: "/profile?tab=auctions" },
             { label: "Lịch sử đặt giá", href: "/profile?tab=bids" },
             { label: "Lịch sử giao dịch", href: "/profile?tab=transactions" },
-            ...(role === "admin" ? [{ label: "Trang quản trị", href: "/admin" }] : []),
+            ...(isAdmin ? [{ label: "Trang quản trị", href: "/admin" }] : []),
           ].map((item) => (
             <Link
               key={item.href}
@@ -360,7 +456,7 @@ function UserMenu({ role }: { role: string }) {
           ))}
           <div style={{ height: 1, background: "#E5E7EB", margin: "6px 0" }} />
           <button
-            onClick={() => setOpen(false)}
+            onClick={handleLogout}
             style={{
               display: "block",
               width: "100%",
