@@ -11,16 +11,13 @@ interface AppShellProps {
 
 /**
  * AppShell handles top-level Layout logic:
- * - Automatically renders public Navbar & Footer for storefront pages (/, /auctions, /profile, etc.)
- * - Bypasses storefront Navbar & Footer on Admin and Auth pages (/admin, /login, /register) which manage their own dedicated layouts.
+ * - Automatically renders public Navbar & Footer for storefront pages, including Login & Register
+ * - Bypasses storefront Navbar & Footer only on Admin pages (/admin) which manage their own dedicated sidebar layouts.
  */
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const pathname = usePathname();
 
-  const isExcludedRoute =
-    pathname?.startsWith("/admin") ||
-    pathname === "/login" ||
-    pathname === "/register";
+  const isExcludedRoute = pathname?.startsWith("/admin");
 
   if (isExcludedRoute) {
     return <>{children}</>;
