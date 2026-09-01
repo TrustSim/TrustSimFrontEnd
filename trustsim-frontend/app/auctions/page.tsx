@@ -1,7 +1,5 @@
 "use client";
 import React from "react";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import AuctionCard, { AuctionCardData, AuctionType, AuctionStatus } from "@/components/ui/AuctionCard";
 
 // --- Mock Data ---
@@ -71,7 +69,6 @@ export default function AuctionsPage() {
   return (
     <div style={{ minHeight: "100vh" }}>
       <div className="mesh-bg" />
-      <Navbar />
 
       <main style={{ position: "relative", zIndex: 1, paddingTop: 80 }}>
         {/* Page Header */}
@@ -258,8 +255,6 @@ export default function AuctionsPage() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

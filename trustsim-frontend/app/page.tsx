@@ -1039,100 +1039,6 @@ function HeroSimCard() {
   );
 }
 
-/* ─── Header with TrustSim-Logo.png ───────────────────────── */
-function Header() {
-  const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", fn); return () => window.removeEventListener("scroll", fn);
-  }, []);
-  return (
-    <>
-      <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 1000, background: scrolled ? "rgba(255,255,255,0.96)" : "#FFFFFF", borderBottom: "1px solid #E5E7EB", transition: "all 0.2s ease" }}>
-        <div className="container" style={{ display: "flex", alignItems: "center", height: 60, gap: 32 }}>
-          {/* Logo with TrustSim-Logo.png */}
-          <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            <Image
-              src="/logo/TrustSim-Logo.png"
-              alt="TrustSim Logo"
-              width={132}
-              height={36}
-              priority
-              style={{ height: 34, width: "auto", objectFit: "contain" }}
-            />
-          </Link>
-          <div className="ts-desktop-nav" style={{ display: "flex", alignItems: "center", gap: 4, flex: 1 }}>
-            {[["Khám phá SIM", "/auctions"], ["Đấu giá", "/auctions?tab=all"], ["Quy trình", "#how-it-works"]].map(([l, h]) => (
-              <a key={l} href={h} className="btn-ghost-nav">{l}</a>
-            ))}
-          </div>
-          <div className="ts-desktop-nav" style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Link href="/login" className="btn-ghost-nav" style={{ fontWeight: 600, color: "#001743" }}>Đăng nhập</Link>
-            <Link href="/register" className="btn-red" style={{ padding: "8px 18px", fontSize: 14 }}>Đăng ký</Link>
-          </div>
-          <button className="ts-mobile-btn" onClick={() => setMenuOpen(!menuOpen)} style={{ display: "none", background: "none", border: "none", cursor: "pointer", padding: 4, color: "#001743" }}>
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect y="4" width="22" height="2" rx="1" fill="currentColor" /><rect y="10" width="22" height="2" rx="1" fill="currentColor" /><rect y="16" width="22" height="2" rx="1" fill="currentColor" /></svg>
-          </button>
-        </div>
-      </nav>
-      {menuOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 999, background: "#FFFFFF", display: "flex", flexDirection: "column", padding: "80px 24px 24px", gap: 8 }}>
-          {[["Khám phá SIM", "/auctions"], ["Đấu giá", "/auctions?tab=all"], ["Đăng nhập", "/login"], ["Đăng ký", "/register"]].map(([l, h]) => (
-            <a key={l} href={h} onClick={() => setMenuOpen(false)} style={{ padding: "12px 16px", borderRadius: 6, color: "#001743", fontSize: 15, fontWeight: 600, textDecoration: "none", background: "#F8F9FA", border: "1px solid #E5E7EB", display: "block" }}>{l}</a>
-          ))}
-          <button onClick={() => setMenuOpen(false)} style={{ position: "absolute", top: 20, right: 20, background: "none", border: "none", cursor: "pointer", fontSize: 22, color: "#001743" }}>✕</button>
-        </div>
-      )}
-      <style>{`.ts-desktop-nav { display: flex !important; } .ts-mobile-btn { display: none !important; } @media (max-width: 768px) { .ts-desktop-nav { display: none !important; } .ts-mobile-btn { display: flex !important; } }`}</style>
-    </>
-  );
-}
-
-/* ─── Footer Component ────────────────────────────────────── */
-function Footer() {
-  return (
-    <footer style={{ background: "#001743", color: "#FFFFFF", padding: "56px 0 32px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-      <div className="container">
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 40, marginBottom: 48 }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-              <div style={{ background: "#FFFFFF", padding: "4px 8px", borderRadius: 4, display: "inline-flex" }}>
-                <Image
-                  src="/logo/TrustSim-Logo.png"
-                  alt="TrustSim Logo"
-                  width={110}
-                  height={28}
-                  style={{ height: 24, width: "auto", objectFit: "contain" }}
-                />
-              </div>
-            </div>
-            <p style={{ color: "#9CA3AF", fontSize: 14, lineHeight: 1.8, maxWidth: 280 }}>Sàn đấu giá SIM số đẹp uy tín, minh bạch và an toàn hàng đầu Việt Nam.</p>
-          </div>
-          {[
-            { title: "Sản phẩm", links: ["Khám phá SIM", "Đấu giá đang diễn ra", "Bán SIM của bạn", "Định giá SIM"] },
-            { title: "Hỗ trợ", links: ["Hướng dẫn đấu giá", "Câu hỏi thường gặp", "Liên hệ hỗ trợ", "Chính sách"] },
-            { title: "Về chúng tôi", links: ["Giới thiệu", "Tin tức", "Đối tác", "Tuyển dụng"] },
-          ].map((col) => (
-            <div key={col.title}>
-              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 14, color: "#FFFFFF" }}>{col.title}</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {col.links.map((l) => <a key={l} href="#" style={{ color: "#9CA3AF", fontSize: 14, textDecoration: "none" }}>{l}</a>)}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 24, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-          <span style={{ color: "#6B7280", fontSize: 13 }}>© 2026 TrustSim. Bảo lưu mọi quyền.</span>
-          <div style={{ display: "flex", gap: 20 }}>
-            {["Điều khoản dịch vụ", "Chính sách bảo mật"].map((l) => <a key={l} href="#" style={{ color: "#6B7280", fontSize: 13, textDecoration: "none" }}>{l}</a>)}
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
 /* ═══════════════════════════════════════════════════════════
    MAIN HOMEPAGE
    ═══════════════════════════════════════════════════════════ */
@@ -1148,8 +1054,6 @@ export default function HomePage() {
 
   return (
     <div style={{ background: "#FFFFFF", minHeight: "100vh" }}>
-      <Header />
-
       {/* ═══ HERO WITH BANNER BACKGROUND ═══════════════════ */}
       <section
         style={{
@@ -1366,8 +1270,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 }

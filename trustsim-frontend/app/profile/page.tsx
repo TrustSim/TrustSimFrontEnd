@@ -1,7 +1,5 @@
 "use client";
 import React from "react";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import Link from "next/link";
 
 const MOCK_USER = {
@@ -63,7 +61,6 @@ export default function ProfilePage() {
   return (
     <div style={{ minHeight: "100vh" }}>
       <div className="mesh-bg" />
-      <Navbar role="user" />
 
       <main style={{ position: "relative", zIndex: 1, paddingTop: 80 }}>
         {/* Profile Header Banner */}
@@ -175,8 +172,6 @@ export default function ProfilePage() {
           {activeTab === "settings" && <SettingsTab user={user} />}
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }
