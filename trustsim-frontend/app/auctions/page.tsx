@@ -1,9 +1,9 @@
 "use client";
 import React from "react";
-import AuctionCard, { AuctionCardData, AuctionType, AuctionStatus } from "@/components/ui/AuctionCard";
+import SimAuctionCard, { SimAuctionCardData } from "@/components/ui/SimAuctionCard";
 
 // --- Mock Data ---
-const ALL_AUCTIONS: AuctionCardData[] = [
+const ALL_AUCTIONS: SimAuctionCardData[] = [
   { id: "1", simNumber: "0901234567", carrier: "Viettel", type: "english", status: "live", currentPrice: 15000000, startPrice: 10000000, bidCount: 24, endTime: new Date(Date.now() + 2 * 3600000), seller: "TrustSim", featuredReason: "Sim tứ quý 7" },
   { id: "2", simNumber: "0777777777", carrier: "Mobifone", type: "sealed", status: "live", currentPrice: 42000000, startPrice: 30000000, bidCount: 8, endTime: new Date(Date.now() + 4 * 3600000), seller: "NguyenA", featuredReason: "Sảnh 7 cực hiếm" },
   { id: "3", simNumber: "0888555000", carrier: "Vinaphone", type: "dutch", status: "live", currentPrice: 8500000, startPrice: 12000000, bidCount: 0, endTime: new Date(Date.now() + 45 * 60000), seller: "SimVIP" },
@@ -57,11 +57,16 @@ export default function AuctionsPage() {
     if (maxPrice && a.currentPrice > Number(maxPrice) * 1e6) return false;
     return true;
   }).sort((a, b) => {
+    const timeA = a.endTime ? new Date(a.endTime).getTime() : 0;
+    const timeB = b.endTime ? new Date(b.endTime).getTime() : 0;
+    const bidsA = a.bidCount || 0;
+    const bidsB = b.bidCount || 0;
+
     switch (sortBy) {
-      case "endTime": return a.endTime.getTime() - b.endTime.getTime();
+      case "endTime": return timeA - timeB;
       case "priceAsc": return a.currentPrice - b.currentPrice;
       case "priceDesc": return b.currentPrice - a.currentPrice;
-      case "bidCount": return b.bidCount - a.bidCount;
+      case "bidCount": return bidsB - bidsA;
       default: return 0;
     }
   });
@@ -249,7 +254,7 @@ export default function AuctionsPage() {
                 gridTemplateColumns: "repeat(auto-fill, minmax(268px, 1fr))",
                 gap: 18,
               }}>
-                {filtered.map((a) => <AuctionCard key={a.id} data={a} />)}
+                {filtered.map((a) => <SimAuctionCard key={a.id} data={a} />)}
               </div>
             )}
           </div>

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import SimAuctionCard, { SimAuctionCardData } from "@/components/ui/SimAuctionCard";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 function useInView(threshold = 0.15) {
@@ -926,44 +927,105 @@ function InteractiveHowItWorks() {
   );
 }
 
-/* ─── Sim Auction Card (Clean Sharp Border) ──────────────── */
-interface AuctionItem { id: string; simNumber: string; carrier: string; type: string; status: string; currentPrice: number; bidCount: number; endTime: Date; category: string; }
-const mockAuctions: AuctionItem[] = [
-  { id: "1", simNumber: "0901 234 567", carrier: "Viettel", type: "english", status: "live", currentPrice: 15_000_000, bidCount: 24, endTime: new Date(Date.now() + 2.6 * 3_600_000), category: "Sảnh tiến" },
-  { id: "2", simNumber: "0777 777 777", carrier: "Mobifone", type: "dutch", status: "live", currentPrice: 42_000_000, bidCount: 8, endTime: new Date(Date.now() + 4 * 3_600_000), category: "Lục quý" },
-  { id: "3", simNumber: "0988 123 456", carrier: "Vinaphone", type: "english", status: "live", currentPrice: 8_500_000, bidCount: 15, endTime: new Date(Date.now() + 1.5 * 3_600_000), category: "Lộc phát" },
-  { id: "4", simNumber: "0969 696 969", carrier: "Viettel", type: "dutch", status: "upcoming", currentPrice: 25_000_000, bidCount: 0, endTime: new Date(Date.now() + 8 * 3_600_000), category: "Lặp đôi" },
+/* ─── Mock Featured Auctions ──────────────────────────────── */
+const mockAuctions: SimAuctionCardData[] = [
+  {
+    id: "1",
+    simNumber: "0901 234 567",
+    carrier: "Viettel",
+    type: "english",
+    status: "live",
+    currentPrice: 15_000_000,
+    startPrice: 10_000_000,
+    bidCount: 24,
+    endTime: new Date(Date.now() + 2.6 * 3_600_000),
+    category: "Sảnh tiến 234567",
+  },
+  {
+    id: "2",
+    simNumber: "0777 777 777",
+    carrier: "Mobifone",
+    type: "dutch",
+    status: "live",
+    currentPrice: 42_000_000,
+    startPrice: 55_000_000,
+    bidCount: 8,
+    endTime: new Date(Date.now() + 4 * 3_600_000),
+    category: "Lục quý 7 VIP",
+  },
+  {
+    id: "3",
+    simNumber: "0988 123 456",
+    carrier: "Vinaphone",
+    type: "english",
+    status: "live",
+    currentPrice: 8_500_000,
+    startPrice: 5_000_000,
+    bidCount: 15,
+    endTime: new Date(Date.now() + 1.5 * 3_600_000),
+    category: "Lộc phát · Phong thủy",
+  },
+  {
+    id: "4",
+    simNumber: "0969 696 969",
+    carrier: "Viettel",
+    type: "dutch",
+    status: "upcoming",
+    currentPrice: 25_000_000,
+    startPrice: 30_000_000,
+    bidCount: 0,
+    endTime: new Date(Date.now() + 8 * 3_600_000),
+    category: "Lặp đôi 696969",
+  },
+  {
+    id: "5",
+    simNumber: "0933 888 888",
+    carrier: "Mobifone",
+    type: "english",
+    status: "live",
+    currentPrice: 38_000_000,
+    startPrice: 20_000_000,
+    bidCount: 31,
+    endTime: new Date(Date.now() + 3.2 * 3_600_000),
+    category: "Lục quý 8 Phát tài",
+  },
+  {
+    id: "6",
+    simNumber: "0922 999 999",
+    carrier: "Vietnamobile",
+    type: "english",
+    status: "live",
+    currentPrice: 19_500_000,
+    startPrice: 12_000_000,
+    bidCount: 19,
+    endTime: new Date(Date.now() + 5 * 3_600_000),
+    category: "Lục quý 9 Trường cửu",
+  },
+  {
+    id: "7",
+    simNumber: "0888 666 888",
+    carrier: "Vinaphone",
+    type: "dutch",
+    status: "live",
+    currentPrice: 14_000_000,
+    startPrice: 18_000_000,
+    bidCount: 6,
+    endTime: new Date(Date.now() + 1.8 * 3_600_000),
+    category: "Lộc phát Đại cát",
+  },
+  {
+    id: "8",
+    simNumber: "0909 090 909",
+    carrier: "Mobifone",
+    type: "english",
+    status: "upcoming",
+    currentPrice: 22_000_000,
+    startPrice: 22_000_000,
+    bidCount: 0,
+    endTime: new Date(Date.now() + 12 * 3_600_000),
+    category: "Gánh đảo siêu phẩm",
+  },
 ];
-
-function SimAuctionCard({ data }: { data: AuctionItem }) {
-  return (
-    <Link href={`/auction/${data.id}`} style={{ textDecoration: "none" }}>
-      <div className="card" style={{ padding: "18px 20px", cursor: "pointer", borderRadius: 6 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-          <div>
-            {data.status === "live" ? <span className="badge badge-live" style={{ marginBottom: 8, display: "inline-flex" }}>Đang diễn ra</span>
-              : data.status === "upcoming" ? <span className="badge badge-upcoming" style={{ marginBottom: 8, display: "inline-flex" }}>Sắp diễn ra</span>
-                : <span className="badge badge-ended" style={{ marginBottom: 8, display: "inline-flex" }}>Đã kết thúc</span>}
-            <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "0.08em", color: "#001743", fontVariantNumeric: "tabular-nums" }}>{data.simNumber}</div>
-          </div>
-          {data.type === "english" ? <span className="badge badge-english">English</span> : <span className="badge badge-dutch">Dutch</span>}
-        </div>
-        <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
-          <span style={{ fontSize: 12, color: "#4B5563", background: "#F3F4F6", padding: "2px 8px", borderRadius: 4, fontWeight: 500 }}>{data.carrier}</span>
-          <span style={{ fontSize: 12, color: "#4B5563", background: "#F3F4F6", padding: "2px 8px", borderRadius: 4, fontWeight: 500 }}>{data.category}</span>
-        </div>
-        <div style={{ borderTop: "1px solid #F3F4F6", paddingTop: 14, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-          <div>
-            <div style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 700, marginBottom: 2 }}>GIÁ HIỆN TẠI</div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: "#E4011E", fontVariantNumeric: "tabular-nums" }}>{data.currentPrice.toLocaleString("vi-VN")} ₫</div>
-            <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>{data.bidCount} lượt đặt giá</div>
-          </div>
-          {data.status !== "ended" && <Countdown endTime={data.endTime} />}
-        </div>
-      </div>
-    </Link>
-  );
-}
 
 /* ─── Hero SIM Card Visual (Clean & Sharp) ───────────────── */
 function HeroSimCard() {
