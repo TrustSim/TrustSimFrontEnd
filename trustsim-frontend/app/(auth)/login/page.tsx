@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { authService } from "@/services/authService";
 import { ToastContainer, ToastMessage } from "@/components/ui/Toast";
 
@@ -50,7 +51,11 @@ const Icons = {
   ),
 };
 
-export default function LoginPage() {
+function LoginFormContent() {
+  const searchParams = useSearchParams();
+  const isExpired = searchParams?.get("expired") === "1";
+  const redirectUrl = searchParams?.get("redirect");
+
   const [userNameOrEmail, setUserNameOrEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
@@ -66,6 +71,17 @@ export default function LoginPage() {
   const removeToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
+
+  useEffect(() => {
+    if (isExpired) {
+      addToast({
+        type: "warning",
+        title: "Hết phiên đăng nhập",
+        message: "Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.",
+        duration: 5000,
+      });
+    }
+  }, [isExpired]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,9 +100,11 @@ export default function LoginPage() {
         duration: 2500,
       });
 
-      // Điều hướng tùy theo Role
+      // Điều hướng tùy theo Role hoặc redirect URL
       setTimeout(() => {
-        if (authData.role?.toUpperCase() === "ADMIN") {
+        if (redirectUrl) {
+          window.location.href = decodeURIComponent(redirectUrl);
+        } else if (authData.role?.toUpperCase() === "ADMIN") {
           window.location.href = "/admin";
         } else {
           window.location.href = "/";
@@ -409,3 +427,18 @@ export default function LoginPage() {
     </div>
   );
 }
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div style={{ minHeight: "calc(100vh - 64px)", paddingTop: 84, textAlign: "center", fontSize: 13, color: "#6B7280" }}>
+          Đang tải thông tin đăng nhập...
+        </div>
+      }
+    >
+      <LoginFormContent />
+    </Suspense>
+  );
+}
+

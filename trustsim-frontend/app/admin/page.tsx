@@ -1,6 +1,9 @@
 "use client";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { AdminCategoriesTab } from "@/components/admin/AdminCategoriesTab";
+import { AdminCarriersTab } from "@/components/admin/AdminCarriersTab";
+import { AdminAuctionsTab } from "@/components/admin/AdminAuctionsTab";
 import {
   Smartphone,
   Gavel,
@@ -35,7 +38,19 @@ import {
   SlidersHorizontal,
   ExternalLink,
   RotateCcw,
+  MoreHorizontal,
 } from "lucide-react";
+import {
+  RightDrawer,
+  DrawerBody,
+  DrawerFooter,
+  DrawerSection,
+  FormField,
+  BtnPrimary,
+  BtnSecondary,
+} from "@/components/ui/RightDrawer";
+import { Pagination } from "@/components/ui/Pagination";
+import { PhysicalSimCard } from "@/components/ui/PhysicalSimCard";
 
 // --- FORMATTERS ---
 const formatVND = (value: number) =>
@@ -48,6 +63,49 @@ const formatPhone = (phone: string) => {
   }
   return phone;
 };
+
+// --- ANIMATED COUNTER (MICRO-INTERACTION) ---
+function AnimatedNumber({
+  value,
+  isCurrency = false,
+  suffix = "",
+}: {
+  value: number;
+  isCurrency?: boolean;
+  suffix?: string;
+}) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let startTimestamp: number | null = null;
+    const duration = 800; // ms
+
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      // Easing: easeOutExpo
+      const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      setCount(Math.round(ease * value));
+
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      }
+    };
+
+    const frameId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frameId);
+  }, [value]);
+
+  if (isCurrency) {
+    return <span>{formatVND(count)}</span>;
+  }
+  return (
+    <span>
+      {count}
+      {suffix}
+    </span>
+  );
+}
 
 // --- DATA TYPES ---
 interface SimItem {
@@ -277,9 +335,23 @@ export default function AdminControlCenter() {
   };
 
   // Modals & Panels
-  const [simModalOpen, setSimModalOpen] = useState(false);
+  const [simDrawerOpen, setSimDrawerOpen] = useState(false);
+  const [simDrawerTab, setSimDrawerTab] = useState<"info" | "auctionHistory">("info");
   const [editingSim, setEditingSim] = useState<SimItem | null>(null);
-  const [selectedSimDrawer, setSelectedSimDrawer] = useState<SimItem | null>(null);
+  const [updatedSimId, setUpdatedSimId] = useState<string | null>(null);
+  const [simMenuOpenId, setSimMenuOpenId] = useState<string | null>(null);
+
+  const openSimDrawer = (sim: SimItem | null, tab: "info" | "auctionHistory" = "info") => {
+    setEditingSim(sim);
+    setSimDrawerTab(tab);
+    setSimDrawerOpen(true);
+  };
+
+  useEffect(() => {
+    const handleCloseMenu = () => setSimMenuOpenId(null);
+    document.addEventListener("click", handleCloseMenu);
+    return () => document.removeEventListener("click", handleCloseMenu);
+  }, []);
 
   const [auctionModalOpen, setAuctionModalOpen] = useState(false);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
@@ -307,6 +379,8 @@ export default function AdminControlCenter() {
   const [searchSim, setSearchSim] = useState("");
   const [carrierFilter, setCarrierFilter] = useState("all");
   const [simStatusFilter, setSimStatusFilter] = useState("all");
+  const [simPageIndex, setSimPageIndex] = useState(1);
+  const [simPageSize, setSimPageSize] = useState(10);
 
   const [searchAuction, setSearchAuction] = useState("");
   const [auctionTypeFilter, setAuctionTypeFilter] = useState("all");
@@ -314,6 +388,13 @@ export default function AdminControlCenter() {
 
   const [searchUser, setSearchUser] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState("all");
+
+  // Hover state for interactive Donut Chart inspection
+  const [hoveredDonutSegment, setHoveredDonutSegment] = useState<{
+    label: string;
+    count: string;
+    color: string;
+  } | null>(null);
 
   // =========================================================================
   // VIEW: 1. DASHBOARD (OPERATIONAL SUMMARY & PRIORITY ACTIONS)
@@ -328,323 +409,588 @@ export default function AdminControlCenter() {
 
     return (
       <div className="space-y-6">
-        {/* Daily Operational Summary Banner */}
-        <div className="bg-white border border-[#E5E7EB] rounded-[12px] p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* 1. PAGE HEADER (OPEN & BREATHING - NO ENCLOSING CARD BOX) */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <h1 className="text-xl font-extrabold text-[#001743] tracking-tight">
-                Tổng quan vận hành hệ thống
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl lg:text-2xl font-bold text-[#001743] tracking-tight">
+                Trung tâm điều hành TrustSim
               </h1>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200/60">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span>Vận hành ổn định</span>
+              </span>
             </div>
-            <p className="text-xs text-[#6B7280] mt-1.5 font-medium">
+            <p className="text-xs text-slate-500 mt-1 font-normal">
               {new Date().toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })}
               {" · "}
-              <span className="font-bold text-[#001743]">{liveCount} phiên live</span>
+              <span>{liveCount} phiên đang diễn ra</span>
               {" · "}
-              <span className="font-bold text-amber-700">{pendingKycCount} việc cần phê duyệt</span>
-              {" · "}
-              <span className="font-bold text-[#E4011E]">{highRiskAlerts} cảnh báo rủi ro cao</span>
+              <span>{pendingKycCount} hồ sơ eKYC chờ duyệt</span>
+              {highRiskAlerts > 0 && (
+                <>
+                  {" · "}
+                  <span className="text-[#E4011E] font-medium">{highRiskAlerts} cảnh báo rủi ro</span>
+                </>
+              )}
             </p>
           </div>
 
-          {/* Action Hierarchy: 1 Primary, 1 Secondary */}
-          <div className="flex items-center gap-3">
+          {/* Action Hierarchy: 1 Primary CTA (Navy), 1 Secondary Subtle (Outline) */}
+          <div className="flex items-center gap-2.5">
             <button
-              onClick={() => setAuctionModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[8px] transition-colors shadow-sm"
+              onClick={() => openSimDrawer(null, "info")}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-medium rounded-lg transition-colors shadow-2xs"
             >
-              <Gavel size={16} strokeWidth={1.75} />
-              <span>+ Mở phiên đấu giá</span>
-            </button>
-            <button
-              onClick={() => {
-                setEditingSim(null);
-                setSimModalOpen(true);
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-[#001743] border border-[#D1D5DB] text-xs font-semibold rounded-[8px] transition-colors"
-            >
-              <Plus size={16} strokeWidth={1.75} />
+              <Plus size={14} strokeWidth={1.75} />
               <span>Thêm SIM mới</span>
             </button>
+            <button
+              onClick={() => setAuctionModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-semibold rounded-lg transition-all shadow-xs"
+            >
+              <Gavel size={14} strokeWidth={1.75} />
+              <span>+ Mở phiên đấu giá</span>
+            </button>
           </div>
         </div>
 
-        {/* 4 Priority Actionable KPIs (Top Row) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* KPI 1: Ký quỹ */}
-          <div className="bg-white border border-[#E5E7EB] rounded-[12px] p-5 shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between">
-            <div className="flex items-center justify-between text-[#6B7280]">
-              <span className="text-xs font-bold uppercase tracking-wider">Tổng ký quỹ đang giữ</span>
-              <div className="w-8 h-8 rounded-[8px] bg-slate-100 text-[#001743] flex items-center justify-center">
-                <CreditCard size={18} strokeWidth={1.5} />
+        {/* 2. UNIFIED KPI OVERVIEW (HERO METRIC + 3 SECONDARY METRICS, NO HEAVY GRIDS) */}
+        <div className="bg-white border border-slate-200/70 rounded-xl p-5 shadow-xs elevation-card">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 items-center">
+            {/* Hero Metric: Tổng ký quỹ đang giữ (Chiếm ưu thế thị giác) */}
+            <div className="lg:col-span-3 flex flex-col justify-between pr-0 lg:pr-4">
+              <div className="flex items-center justify-between text-slate-500">
+                <span className="text-xs font-medium text-slate-500">Tổng ký quỹ đang giữ</span>
+                <div className="p-1.5 rounded-md bg-blue-50 text-[#001743]">
+                  <CreditCard size={15} strokeWidth={1.75} />
+                </div>
               </div>
-            </div>
-            <div className="mt-3">
-              <div className="text-2xl font-black text-[#001743] tabular-nums tracking-tight">
-                {formatVND(totalHeldEscrow)}
-              </div>
-              <div className="text-[11px] text-emerald-700 font-semibold mt-1 flex items-center gap-1">
-                <CheckCircle2 size={13} />
-                <span>Bảo chứng 100% tài chính người mua</span>
-              </div>
-            </div>
-          </div>
-
-          {/* KPI 2: Phiên Live */}
-          <div className="bg-white border border-[#E5E7EB] rounded-[12px] p-5 shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between">
-            <div className="flex items-center justify-between text-[#6B7280]">
-              <span className="text-xs font-bold uppercase tracking-wider">Phiên đấu giá đang Live</span>
-              <div className="w-8 h-8 rounded-[8px] bg-indigo-50 text-indigo-700 flex items-center justify-center">
-                <Gavel size={18} strokeWidth={1.5} />
-              </div>
-            </div>
-            <div className="mt-3">
-              <div className="text-2xl font-black text-[#001743] tabular-nums tracking-tight">
-                {liveCount} <span className="text-sm font-semibold text-[#6B7280]">phiên</span>
-              </div>
-              <div className="text-[11px] text-amber-700 font-semibold mt-1 flex items-center gap-1">
-                <Clock size={13} />
-                <span>1 phiên còn lại dưới 5 phút</span>
-              </div>
-            </div>
-          </div>
-
-          {/* KPI 3: eKYC Chờ Duyệt */}
-          <div className="bg-white border border-[#E5E7EB] rounded-[12px] p-5 shadow-sm hover:border-gray-300 transition-all flex flex-col justify-between">
-            <div className="flex items-center justify-between text-[#6B7280]">
-              <span className="text-xs font-bold uppercase tracking-wider">Hồ sơ eKYC chờ duyệt</span>
-              <div className="w-8 h-8 rounded-[8px] bg-amber-50 text-amber-700 flex items-center justify-center">
-                <ShieldCheck size={18} strokeWidth={1.5} />
-              </div>
-            </div>
-            <div className="mt-3">
-              <div className="text-2xl font-black text-amber-800 tabular-nums tracking-tight">
-                {pendingKycCount} <span className="text-sm font-semibold text-[#6B7280]">hồ sơ</span>
-              </div>
-              <div className="text-[11px] text-[#6B7280] font-medium mt-1">
-                Thời gian chờ trung bình: <strong className="text-[#001743]">2.5h</strong>
-              </div>
-            </div>
-          </div>
-
-          {/* KPI 4: Cảnh báo AI khẩn cấp */}
-          <div className="bg-white border border-rose-200 rounded-[12px] p-5 shadow-sm hover:border-rose-300 transition-all flex flex-col justify-between">
-            <div className="flex items-center justify-between text-[#6B7280]">
-              <span className="text-xs font-bold uppercase tracking-wider text-rose-700">Cảnh báo rủi ro AI</span>
-              <div className="w-8 h-8 rounded-[8px] bg-rose-50 text-rose-700 flex items-center justify-center">
-                <Bot size={18} strokeWidth={1.5} />
-              </div>
-            </div>
-            <div className="mt-3">
-              <div className="text-2xl font-black text-[#E4011E] tabular-nums tracking-tight">
-                {highRiskAlerts} <span className="text-sm font-semibold text-[#6B7280]">khẩn cấp</span>
-              </div>
-              <div className="text-[11px] text-rose-700 font-bold mt-1 flex items-center gap-1">
-                <AlertTriangle size={13} />
-                <span>Nghi vấn Shill Bidding & Trùng IP</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Secondary Operational Metrics Strip */}
-        <div className="bg-white border border-[#E5E7EB] rounded-[10px] px-5 py-3 text-xs text-[#4B5563] flex flex-wrap items-center justify-between gap-4 shadow-sm">
-          <div className="flex items-center gap-6 flex-wrap">
-            <div>
-              <span className="text-[#9CA3AF]">Kho SIM hiện tại:</span>{" "}
-              <strong className="text-[#001743] tabular-nums">11.820 SIM</strong>
-            </div>
-            <div>
-              <span className="text-[#9CA3AF]">Thành viên đã định danh:</span>{" "}
-              <strong className="text-[#001743] tabular-nums">1.842 tài khoản</strong>
-            </div>
-            <div>
-              <span className="text-[#9CA3AF]">Tỷ lệ giao dịch an toàn:</span>{" "}
-              <strong className="text-emerald-700 font-bold tabular-nums">99.1%</strong>
-            </div>
-          </div>
-          <div className="text-[11px] text-[#6B7280]">
-            Chu kỳ đối soát ký quỹ tiếp theo: <strong className="text-[#001743]">20:00 hôm nay</strong>
-          </div>
-        </div>
-
-        {/* Urgent AI Risk Alerts Box (Left-accent red bar) */}
-        {highRiskAlerts > 0 && (
-          <div className="bg-white border border-rose-200 border-l-4 border-l-rose-600 rounded-[10px] p-5 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-rose-100">
-              <div className="flex items-center gap-2">
-                <ShieldAlert size={18} className="text-[#E4011E]" />
-                <h3 className="text-sm font-bold text-[#001743] uppercase tracking-wider">
-                  Cảnh báo AI Phòng chống Gian lận & Rủi ro Vi phạm
-                </h3>
-              </div>
-              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-[6px] bg-rose-100 text-rose-800">
-                1 nghiêm trọng · 1 cần xem xét
-              </span>
-            </div>
-
-            <div className="mt-3 space-y-3">
-              {anomalies
-                .filter((a) => a.status === "open")
-                .map((anom) => (
-                  <div
-                    key={anom.id}
-                    className="p-3.5 bg-rose-50/40 border border-rose-100 rounded-[8px] flex flex-col md:flex-row md:items-center justify-between gap-3"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-rose-600 text-white">
-                          {anom.level === "high" ? "Khẩn cấp" : "Cần xem xét"}
-                        </span>
-                        <span className="font-bold text-xs text-[#001743]">{anom.title}</span>
-                        <span className="text-[11px] text-[#9CA3AF]">· {anom.time}</span>
-                      </div>
-                      <p className="text-xs text-[#4B5563] leading-relaxed">
-                        {anom.desc}
-                      </p>
-                      <div className="text-[11px] text-[#6B7280]">
-                        Đối tượng: <strong className="text-[#001743] font-mono">{anom.actor}</strong> · SIM liên quan:{" "}
-                        <strong className="text-[#001743] font-mono">{formatPhone(anom.sim)}</strong>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => showToast(`Đã ra lệnh phong tỏa khẩn cấp phiên đấu giá SIM ${anom.sim}.`)}
-                        className="px-3 py-1.5 bg-[#E4011E] hover:bg-[#B80018] text-white text-xs font-bold rounded-[6px] transition-colors shadow-sm"
-                      >
-                        Phong tỏa phiên
-                      </button>
-                      <button
-                        onClick={() => {
-                          setAnomalies(anomalies.map((a) => (a.id === anom.id ? { ...a, status: "resolved" } : a)));
-                          showToast(`Đã đánh dấu xử lý xong cảnh báo ${anom.id}.`);
-                        }}
-                        className="px-3 py-1.5 bg-white border border-[#D1D5DB] hover:bg-gray-50 text-[#4B5563] text-xs font-semibold rounded-[6px] transition-colors"
-                      >
-                        Bỏ qua
-                      </button>
-                    </div>
+              <div className="mt-2">
+                <div className="text-2xl lg:text-3xl font-bold text-[#001743] tabular-nums tracking-tight">
+                  <AnimatedNumber value={totalHeldEscrow} isCurrency />
+                </div>
+                {/* Mini Sparkline Chart với Glowing Dot */}
+                <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between gap-3">
+                  <div className="text-[11px] text-emerald-700 font-medium flex items-center gap-1 shrink-0">
+                    <TrendingUp size={12} />
+                    <span>+12.4% tuần này</span>
                   </div>
-                ))}
+                  <svg className="w-24 h-5 overflow-visible" viewBox="0 0 100 22" fill="none">
+                    <polyline
+                      className="animate-sparkline"
+                      points="0,17 18,15 35,18 52,11 68,14 84,7 100,4"
+                      fill="none"
+                      stroke="#059669"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <g>
+                      <circle cx="100" cy="4" r="4" fill="#059669" className="animate-ping opacity-75 origin-center" />
+                      <circle cx="100" cy="4" r="2" fill="#059669" />
+                    </g>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Subtle Divider */}
+            <div className="hidden lg:block lg:col-span-1 h-14 w-px bg-slate-100 mx-auto" />
+
+            {/* Metric 2 (Thứ cấp): Phiên đấu giá trực tiếp */}
+            <div className="lg:col-span-2 flex flex-col justify-between">
+              <div className="text-xs font-medium text-slate-500">Phiên trực tiếp</div>
+              <div className="mt-2">
+                <div className="text-xl font-bold text-slate-900 tabular-nums tracking-tight flex items-baseline gap-1.5">
+                  <AnimatedNumber value={liveCount} />
+                  <span className="text-xs font-normal text-slate-500">phiên</span>
+                </div>
+                <div className="mt-2.5 pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1">
+                    <span className="text-amber-700 font-medium flex items-center gap-1">
+                      <Clock size={11} />
+                      <span>1 sắp hết (&lt; 5p)</span>
+                    </span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-1 overflow-hidden">
+                    <div className="bg-amber-500 h-1 rounded-full" style={{ width: "25%" }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Subtle Divider */}
+            <div className="hidden lg:block lg:col-span-1 h-14 w-px bg-slate-100 mx-auto" />
+
+            {/* Metric 3 (Thứ cấp): eKYC chờ duyệt */}
+            <div className="lg:col-span-2 flex flex-col justify-between">
+              <div className="text-xs font-medium text-slate-500">eKYC chờ duyệt</div>
+              <div className="mt-2">
+                <div className="text-xl font-bold text-slate-900 tabular-nums tracking-tight flex items-baseline gap-1.5">
+                  <AnimatedNumber value={pendingKycCount} />
+                  <span className="text-xs font-normal text-slate-500">hồ sơ</span>
+                </div>
+                <div className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-slate-500 space-y-0.5">
+                  <div>Thời gian chờ: <span className="font-medium text-slate-700">~2.5 giờ</span></div>
+                  <div className="text-emerald-700 font-medium flex items-center gap-1">
+                    <CheckCircle2 size={11} />
+                    <span>3 đã duyệt hôm nay</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Subtle Divider */}
+            <div className="hidden lg:block lg:col-span-1 h-14 w-px bg-slate-100 mx-auto" />
+
+            {/* Metric 4 (Thứ cấp): Cảnh báo rủi ro AI - Nền trắng tinh gọn, thanh nhấn đỏ bên trái */}
+            <div className="lg:col-span-2 flex flex-col justify-between pl-3 border-l-2 border-rose-500/80">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-slate-700">Rủi ro AI</span>
+                <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200/60">
+                  KHẨN CẤP
+                </span>
+              </div>
+              <div className="mt-2">
+                <div className="text-xl font-bold text-[#E4011E] tabular-nums tracking-tight flex items-baseline gap-1.5">
+                  <AnimatedNumber value={highRiskAlerts} />
+                  <span className="text-xs font-normal text-slate-500">cảnh báo</span>
+                </div>
+                <div className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-slate-500">
+                  <div className="flex items-center gap-1 text-rose-700 font-medium truncate">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-600 shrink-0"></span>
+                    <span className="truncate">Shill Bidding / IP</span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Quét 30s/lần</div>
+                </div>
+              </div>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Live Auctions Table (Financial Control Center Format) */}
-        <div className="bg-white border border-[#E5E7EB] rounded-[12px] overflow-hidden shadow-sm">
-          <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between bg-white">
+        {/* 3. LAYOUT 2/3 + 1/3: CẢNH BÁO CẦN XỬ LÝ & TRẠNG THÁI PHIÊN */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+          {/* CỘT TRÁI (2/3 - 8/12): CẢNH BÁO CẦN XỬ LÝ (BẢNG PHẲNG, CHỈ DIVIDER NGANG) */}
+          <div className="lg:col-span-8 bg-white border border-slate-200/70 rounded-xl overflow-hidden elevation-card flex flex-col justify-between">
+            <div>
+              <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-white">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert size={16} className="text-[#E4011E]" />
+                  <h2 className="text-sm font-semibold text-[#001743]">
+                    Cảnh báo rủi ro AI &amp; Gian lận
+                  </h2>
+                </div>
+                <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200/60">
+                  {anomalies.filter((a) => a.status === "open").length} cảnh báo đang mở
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-slate-400 font-medium text-[11px] h-9">
+                      <th className="py-2 px-4">Thời gian</th>
+                      <th className="py-2 px-3">Mức độ</th>
+                      <th className="py-2 px-3">Loại vi phạm</th>
+                      <th className="py-2 px-3">Đối tượng</th>
+                      <th className="py-2 px-3">SIM liên quan</th>
+                      <th className="py-2 px-4 text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {anomalies
+                      .filter((a) => a.status === "open")
+                      .map((anom) => (
+                        <tr
+                          key={anom.id}
+                          className="hover:bg-slate-50/60 transition-colors duration-150 h-12"
+                        >
+                          <td className="py-2 px-4 text-xs text-slate-500 font-mono whitespace-nowrap">
+                            {anom.time}
+                          </td>
+                          <td className="py-2 px-3 whitespace-nowrap">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                                anom.level === "high"
+                                  ? "bg-rose-50 text-rose-700 border border-rose-200/60"
+                                  : "bg-amber-50 text-amber-800 border border-amber-200/60"
+                              }`}
+                            >
+                              {anom.level === "high" ? "Khẩn cấp" : "Theo dõi"}
+                            </span>
+                          </td>
+                          <td className="py-2 px-3">
+                            <div className="font-medium text-xs text-[#001743]">{anom.title}</div>
+                            <div className="text-[11px] text-slate-400 truncate max-w-[240px]">{anom.desc}</div>
+                          </td>
+                          <td className="py-2 px-3 font-mono text-xs text-slate-600 whitespace-nowrap">
+                            {anom.actor}
+                          </td>
+                          <td className="py-2 px-3 font-mono font-bold text-xs text-[#001743] whitespace-nowrap">
+                            {formatPhone(anom.sim)}
+                          </td>
+                          <td className="py-2 px-4 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => showToast(`Đã ra lệnh khóa khẩn cấp phiên đấu giá SIM ${anom.sim}.`)}
+                                className="px-2.5 py-1 text-xs font-medium text-rose-600 hover:text-white hover:bg-[#E4011E] rounded-md border border-rose-200 hover:border-[#E4011E] transition-all"
+                              >
+                                Khóa phiên
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setAnomalies(anomalies.map((a) => (a.id === anom.id ? { ...a, status: "resolved" } : a)));
+                                  showToast(`Đã bỏ qua cảnh báo ${anom.id}.`);
+                                }}
+                                className="px-2 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors"
+                              >
+                                Bỏ qua
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="px-5 py-2.5 border-t border-slate-100 text-[11px] text-slate-400 flex items-center justify-between">
+              <span>Hệ thống phân tích hành vi tự động gắn cờ tài khoản nghi vấn liên minh đặt giá</span>
+              <span className="font-medium text-slate-500">Độ tin cậy AI: 98.6%</span>
+            </div>
+          </div>
+
+          {/* CỘT PHẢI (1/3 - 4/12): TRẠNG THÁI PHIÊN ĐẤU GIÁ (DONUT CHART & SOFT LEGEND) */}
+          <div className="lg:col-span-4 bg-white border border-slate-200/70 rounded-xl p-5 elevation-card flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h2 className="text-sm font-semibold text-[#001743]">
+                  Trạng thái phiên đấu giá
+                </h2>
+                <span className="text-xs text-slate-400">Thời gian thực</span>
+              </div>
+
+              {/* Donut Chart SVG với Hover Morphing Center Content */}
+              <div className="flex items-center justify-center my-4 relative">
+                <svg width="125" height="125" viewBox="0 0 120 120" className="-rotate-90">
+                  {/* Background track */}
+                  <circle cx="60" cy="60" r="42" fill="none" stroke="#F8FAFC" strokeWidth="13" />
+                  {/* Segment 1: Đang bid sôi nổi (2 phiên = 50%) */}
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="42"
+                    fill="none"
+                    stroke="#001743"
+                    strokeWidth={hoveredDonutSegment?.label === "Đang bid sôi nổi" ? 16 : 13}
+                    strokeDasharray="131.9 263.9"
+                    strokeDashoffset="0"
+                    className="cursor-pointer transition-all duration-300 ease-out"
+                    onMouseEnter={() =>
+                      setHoveredDonutSegment({
+                        label: "Đang bid sôi nổi",
+                        count: "2 phiên (50%)",
+                        color: "#001743",
+                      })
+                    }
+                    onMouseLeave={() => setHoveredDonutSegment(null)}
+                  />
+                  {/* Segment 2: Sắp kết thúc (1 phiên = 25%) */}
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="42"
+                    fill="none"
+                    stroke="#F59E0B"
+                    strokeWidth={hoveredDonutSegment?.label === "Sắp kết thúc" ? 16 : 13}
+                    strokeDasharray="65.9 263.9"
+                    strokeDashoffset="-131.9"
+                    className="cursor-pointer transition-all duration-300 ease-out"
+                    onMouseEnter={() =>
+                      setHoveredDonutSegment({
+                        label: "Sắp kết thúc",
+                        count: "1 phiên (25%)",
+                        color: "#F59E0B",
+                      })
+                    }
+                    onMouseLeave={() => setHoveredDonutSegment(null)}
+                  />
+                  {/* Segment 3: Nghi vấn rủi ro (1 phiên = 25%) */}
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="42"
+                    fill="none"
+                    stroke="#E4011E"
+                    strokeWidth={hoveredDonutSegment?.label === "Nghi vấn rủi ro" ? 16 : 13}
+                    strokeDasharray="65.9 263.9"
+                    strokeDashoffset="-197.8"
+                    className="cursor-pointer transition-all duration-300 ease-out"
+                    onMouseEnter={() =>
+                      setHoveredDonutSegment({
+                        label: "Nghi vấn rủi ro",
+                        count: "1 phiên (25%)",
+                        color: "#E4011E",
+                      })
+                    }
+                    onMouseLeave={() => setHoveredDonutSegment(null)}
+                  />
+                </svg>
+
+                {/* Center Content: Chuyển đổi mượt mà giữa Tổng số và Chi tiết mảng màu khi hover */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none transition-all duration-200">
+                  {hoveredDonutSegment ? (
+                    <div className="text-center px-1">
+                      <span
+                        className="text-xs font-bold tabular-nums block leading-tight truncate max-w-[80px]"
+                        style={{ color: hoveredDonutSegment.color }}
+                      >
+                        {hoveredDonutSegment.count}
+                      </span>
+                      <span className="text-[9px] font-normal text-slate-500 block mt-0.5 truncate max-w-[80px]">
+                        {hoveredDonutSegment.label}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <span className="text-xl font-bold text-[#001743] tabular-nums leading-none block">
+                        <AnimatedNumber value={liveCount} />
+                      </span>
+                      <span className="text-[10px] font-normal text-slate-400 block mt-1">
+                        Phiên live
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Status Legend Breakdown */}
+              <div className="space-y-1.5 pt-1 text-xs">
+                <div
+                  className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${
+                    hoveredDonutSegment?.label === "Đang bid sôi nổi" ? "bg-slate-50" : "hover:bg-slate-50/70"
+                  }`}
+                  onMouseEnter={() =>
+                    setHoveredDonutSegment({
+                      label: "Đang bid sôi nổi",
+                      count: "2 phiên (50%)",
+                      color: "#001743",
+                    })
+                  }
+                  onMouseLeave={() => setHoveredDonutSegment(null)}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#001743]"></span>
+                    <span className="text-slate-600 font-normal">Đang bid sôi nổi</span>
+                  </div>
+                  <span className="font-semibold text-[#001743] tabular-nums">2 phiên (50%)</span>
+                </div>
+
+                <div
+                  className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${
+                    hoveredDonutSegment?.label === "Sắp kết thúc" ? "bg-amber-50/60" : "hover:bg-slate-50/70"
+                  }`}
+                  onMouseEnter={() =>
+                    setHoveredDonutSegment({
+                      label: "Sắp kết thúc",
+                      count: "1 phiên (25%)",
+                      color: "#F59E0B",
+                    })
+                  }
+                  onMouseLeave={() => setHoveredDonutSegment(null)}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                    <span className="text-slate-600 font-normal">Sắp kết thúc (&lt; 5p)</span>
+                  </div>
+                  <span className="font-semibold text-amber-700 tabular-nums">1 phiên (25%)</span>
+                </div>
+
+                <div
+                  className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${
+                    hoveredDonutSegment?.label === "Nghi vấn rủi ro" ? "bg-rose-50/60" : "hover:bg-slate-50/70"
+                  }`}
+                  onMouseEnter={() =>
+                    setHoveredDonutSegment({
+                      label: "Nghi vấn rủi ro",
+                      count: "1 phiên (25%)",
+                      color: "#E4011E",
+                    })
+                  }
+                  onMouseLeave={() => setHoveredDonutSegment(null)}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-rose-600"></span>
+                    <span className="text-slate-600 font-normal">Nghi vấn rủi ro</span>
+                  </div>
+                  <span className="font-semibold text-rose-700 tabular-nums">1 phiên (25%)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 mt-4">
+              <div className="text-xs text-slate-400 flex items-center justify-between">
+                <span>Tỷ lệ hoàn thành phiên:</span>
+                <span className="font-semibold text-emerald-700">96.8%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 4. LIVE AUCTIONS TABLE: TINH GỌN 7 CỘT CHÍNH (FLAT, BREADCRUMB HEADER) */}
+        <div className="bg-white border border-slate-200/70 rounded-xl overflow-hidden elevation-card">
+          <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-white">
             <div className="flex items-center gap-2.5">
-              {/* Strictly Deep Navy for Auction Live, NOT plain red */}
-              <span className="px-2.5 py-0.5 rounded-[6px] bg-[#001743] text-white text-[11px] font-black uppercase flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Phiên Live</span>
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <h2 className="text-sm font-bold text-[#001743] uppercase tracking-wider">
-                Giám sát trả giá trực tiếp (Real-Time Control)
+              <h2 className="text-sm font-semibold text-[#001743]">
+                Giám sát trả giá trực tiếp
               </h2>
             </div>
             <a
               href="/admin?tab=auctions"
-              className="text-xs font-bold text-[#001743] hover:text-[#E4011E] inline-flex items-center gap-1"
+              className="text-xs font-medium text-slate-500 hover:text-[#001743] inline-flex items-center gap-1 transition-colors"
             >
-              <span>Xem toàn bộ phiên</span>
-              <ChevronRight size={14} />
+              <span>Xem tất cả {auctions.length} phiên</span>
+              <ChevronRight size={13} />
             </a>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-[#E5E7EB] bg-[#F8F9FA] text-[#6B7280] font-bold uppercase text-[10px] tracking-wider h-11">
-                  <th className="py-3 px-4">Số SIM / Người bán</th>
-                  <th className="py-3 px-4">Hình thức</th>
-                  <th className="py-3 px-4 text-right">Giá hiện tại</th>
-                  <th className="py-3 px-4">Người dẫn đầu</th>
-                  <th className="py-3 px-4 text-center">Lượt bid</th>
-                  <th className="py-3 px-4">Thời gian còn lại</th>
-                  <th className="py-3 px-4 text-center">Mức rủi ro AI</th>
-                  <th className="py-3 px-4 text-right">Thao tác</th>
+                <tr className="border-b border-slate-100 text-slate-400 font-medium text-[11px] h-9">
+                  <th className="py-2 px-4">SIM &amp; Người bán</th>
+                  <th className="py-2 px-3 text-right">Giá hiện tại</th>
+                  <th className="py-2 px-3">Người dẫn đầu</th>
+                  <th className="py-2 px-3 text-center">Lượt bid</th>
+                  <th className="py-2 px-3">Thời gian còn lại</th>
+                  <th className="py-2 px-3">Mức rủi ro AI</th>
+                  <th className="py-2 px-4 text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E5E7EB]">
+              <tbody className="divide-y divide-slate-100">
                 {auctions
                   .filter((a) => a.status === "live")
-                  .map((a) => (
-                    <tr key={a.id} className="hover:bg-slate-50/80 transition-colors h-16">
-                      <td className="py-3 px-4">
-                        <div className="font-extrabold text-sm text-[#001743] tabular-nums font-mono tracking-wider">
-                          {formatPhone(a.sim)}
-                        </div>
-                        <div className="text-[11px] text-[#6B7280]">Bởi: {a.seller}</div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase bg-blue-50 text-blue-700 border border-blue-200">
-                          {a.type === "english" ? "Kiểu Anh" : a.type === "dutch" ? "Hà Lan" : "Bí mật"}
-                        </span>
-                      </td>
-                      {/* Strongest Visual Focal Point */}
-                      <td className="py-3 px-4 text-right">
-                        <div className="font-black text-base text-[#001743] tabular-nums tracking-tight">
-                          {formatVND(a.currentPrice)}
-                        </div>
-                        <div className="text-[10px] text-[#9CA3AF] tabular-nums">Sàn: {formatVND(a.startPrice)}</div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-[#001743]">{a.leader}</div>
-                      </td>
-                      <td className="py-3 px-4 text-center font-bold text-[#001743] tabular-nums">
-                        {a.bids}
-                      </td>
-                      <td className="py-3 px-4">
-                        <div
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-xs font-bold ${
-                            a.isUrgentCountdown
-                              ? "bg-amber-100 text-amber-900 border border-amber-300 animate-pulse"
-                              : "bg-gray-100 text-[#001743]"
-                          }`}
-                        >
-                          <Clock size={13} className={a.isUrgentCountdown ? "text-amber-800" : "text-[#6B7280]"} />
-                          <span className="tabular-nums font-mono">{a.timeLeft}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span
-                          className={`px-2 py-0.5 rounded-[4px] text-[10px] font-bold ${
-                            a.riskLevel === "safe"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : a.riskLevel === "monitor"
-                              ? "bg-amber-50 text-amber-700 border border-amber-200"
-                              : "bg-rose-50 text-rose-700 border border-rose-200"
-                          }`}
-                        >
-                          {a.riskLevel === "safe" ? "An toàn" : a.riskLevel === "monitor" ? "Theo dõi" : "Rủi ro cao"}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {a.isUrgentCountdown && (
-                            <button
-                              onClick={() => showToast(`Đã gia hạn phiên đấu giá ${a.sim} thêm 15 phút.`)}
-                              className="px-2.5 py-1 text-xs font-bold text-[#001743] border border-[#001743] hover:bg-[#001743] hover:text-white rounded-[6px] transition-colors"
-                            >
-                              Gia hạn
-                            </button>
+                  .map((a) => {
+                    const priceDiffPct =
+                      a.startPrice > 0
+                        ? Math.round(((a.currentPrice - a.startPrice) / a.startPrice) * 100)
+                        : 0;
+
+                    return (
+                      <tr key={a.id} className="hover:bg-slate-50/60 transition-colors duration-150 h-14">
+                        {/* 1. SIM & Người bán (Kèm badge hình thức đấu giá phụ) */}
+                        <td className="py-2.5 px-4">
+                          <div className="font-bold text-sm text-[#001743] tabular-nums font-mono tracking-wider">
+                            {formatPhone(a.sim)}
+                          </div>
+                          <div className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                            <span className="px-1.5 py-0.2 rounded text-[10px] bg-slate-100 text-slate-600">
+                              {a.type === "english" ? "Kiểu Anh" : a.type === "dutch" ? "Hà Lan" : "Bí mật"}
+                            </span>
+                            <span>· Bởi: {a.seller}</span>
+                          </div>
+                        </td>
+
+                        {/* 2. Giá hiện tại (Dòng phụ là giá sàn và % chênh lệch) */}
+                        <td className="py-2.5 px-3 text-right">
+                          <div className="font-bold text-sm text-[#001743] tabular-nums tracking-tight">
+                            {formatVND(a.currentPrice)}
+                          </div>
+                          <div className="text-[10px] text-slate-400 tabular-nums flex items-center justify-end gap-1 mt-0.5">
+                            <span>Sàn: {formatVND(a.startPrice)}</span>
+                            {priceDiffPct > 0 ? (
+                              <span className="text-emerald-700 font-medium">(+{priceDiffPct}%)</span>
+                            ) : (
+                              <span className="text-slate-400">(Khởi điểm)</span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* 3. Người dẫn đầu */}
+                        <td className="py-2.5 px-3">
+                          <div className="font-normal text-xs text-slate-700">{a.leader}</div>
+                        </td>
+
+                        {/* 4. Lượt bid */}
+                        <td className="py-2.5 px-3 text-center font-medium text-slate-700 tabular-nums">
+                          {a.bids}
+                        </td>
+
+                        {/* 5. Thời gian còn lại */}
+                        <td className="py-2.5 px-3">
+                          {a.isUrgentCountdown ? (
+                            <div>
+                              <div className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 font-mono">
+                                <Clock size={12} className="text-amber-600 animate-pulse" />
+                                <span>{a.timeLeft}</span>
+                              </div>
+                              <div className="w-16 bg-amber-100 rounded-full h-1 mt-1 overflow-hidden">
+                                <div className="bg-amber-500 h-1 rounded-full animate-pulse" style={{ width: "40%" }} />
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="inline-flex items-center gap-1 text-xs font-normal text-slate-500 font-mono">
+                              <Clock size={12} className="text-slate-400" />
+                              <span>{a.timeLeft}</span>
+                            </div>
                           )}
-                          <button
-                            onClick={() => {
-                              setSelectedSimDrawer(sims.find((s) => s.phone === a.sim) || null);
-                            }}
-                            className="p-1.5 text-[#4B5563] hover:text-[#001743] hover:bg-gray-100 rounded-[6px] transition-colors"
-                            title="Xem chi tiết SIM & Lịch sử"
-                          >
-                            <Eye size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+
+                        {/* 6. Mức rủi ro AI */}
+                        <td className="py-2.5 px-3">
+                          {a.riskLevel === "safe" ? (
+                            <span className="inline-flex items-center gap-1.5 text-xs text-slate-600 font-normal">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                              <span>Bình thường</span>
+                            </span>
+                          ) : a.riskLevel === "monitor" ? (
+                            <span className="inline-flex items-center gap-1.5 text-xs text-amber-700 font-medium">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                              <span>Theo dõi</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 text-xs text-rose-700 font-medium">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-ping mr-[-6px]"></span>
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                              <span>Rủi ro cao</span>
+                            </span>
+                          )}
+                        </td>
+
+                        {/* 7. Thao tác */}
+                        <td className="py-2.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {a.isUrgentCountdown && (
+                              <button
+                                onClick={() => showToast(`Đã gia hạn phiên đấu giá ${a.sim} thêm 15 phút.`)}
+                                className="px-2 py-0.5 text-xs font-medium text-amber-800 bg-amber-50 hover:bg-amber-100 rounded-md border border-amber-200/60 transition-colors"
+                              >
+                                Gia hạn
+                              </button>
+                            )}
+                            <button
+                              onClick={() => {
+                                openSimDrawer(sims.find((s) => s.phone === a.sim) || null, "auctionHistory");
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-[#001743] hover:bg-slate-100 rounded-md transition-colors"
+                              title="Xem chi tiết phiên đấu giá"
+                            >
+                              <Eye size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
               </tbody>
             </table>
           </div>
@@ -671,19 +1017,16 @@ export default function AdminControlCenter() {
   const renderSims = () => (
     <div className="space-y-4">
       {/* Header & Controls */}
-      <div className="bg-white border border-[#E5E7EB] rounded-[12px] p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-lg font-bold text-[#001743]">Kho SIM & Mô Hình Định Giá AI</h1>
+          <h1 className="text-base font-bold text-[#001743]">Kho SIM &amp; Mô Hình Định Giá AI</h1>
           <p className="text-xs text-[#6B7280] mt-0.5">
             Cơ sở dữ liệu toàn bộ SIM số đẹp, phân tích quy luật phong thủy và đối soát giá thị trường với AI Engine.
           </p>
         </div>
         <button
-          onClick={() => {
-            setEditingSim(null);
-            setSimModalOpen(true);
-          }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[8px] transition-colors shadow-sm"
+          onClick={() => openSimDrawer(null, "info")}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors shadow-xs"
         >
           <Plus size={15} strokeWidth={1.75} />
           <span>Thêm SIM vào kho</span>
@@ -691,7 +1034,7 @@ export default function AdminControlCenter() {
       </div>
 
       {/* Filter Toolbar */}
-      <div className="bg-white border border-[#E5E7EB] rounded-[10px] p-3.5 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3 flex flex-wrap items-center justify-between gap-3 shadow-xs">
         <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
           <div className="relative w-72">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -699,15 +1042,21 @@ export default function AdminControlCenter() {
               type="text"
               placeholder="Tìm theo số SIM, mã định danh, thế số..."
               value={searchSim}
-              onChange={(e) => setSearchSim(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-[#D1D5DB] rounded-[8px] focus:border-[#001743] focus:outline-none"
+              onChange={(e) => {
+                setSearchSim(e.target.value);
+                setSimPageIndex(1);
+              }}
+              className="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
             />
           </div>
 
           <select
             value={carrierFilter}
-            onChange={(e) => setCarrierFilter(e.target.value)}
-            className="text-xs py-1.5 px-3 bg-white border border-[#D1D5DB] rounded-[8px] focus:border-[#001743] focus:outline-none"
+            onChange={(e) => {
+              setCarrierFilter(e.target.value);
+              setSimPageIndex(1);
+            }}
+            className="text-xs py-1.5 px-3 bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
           >
             <option value="all">Tất cả nhà mạng</option>
             <option value="Viettel">Viettel</option>
@@ -718,8 +1067,11 @@ export default function AdminControlCenter() {
 
           <select
             value={simStatusFilter}
-            onChange={(e) => setSimStatusFilter(e.target.value)}
-            className="text-xs py-1.5 px-3 bg-white border border-[#D1D5DB] rounded-[8px] focus:border-[#001743] focus:outline-none"
+            onChange={(e) => {
+              setSimStatusFilter(e.target.value);
+              setSimPageIndex(1);
+            }}
+            className="text-xs py-1.5 px-3 bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
           >
             <option value="all">Tất cả trạng thái</option>
             <option value="Available">Sẵn sàng bán (Available)</option>
@@ -735,11 +1087,11 @@ export default function AdminControlCenter() {
       </div>
 
       {/* Main SIM Table */}
-      <div className="bg-white border border-[#E5E7EB] rounded-[12px] overflow-hidden shadow-sm">
+      <div className="bg-white border border-[#E2E8F0] rounded-[8px] overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-[#E5E7EB] bg-[#F8F9FA] text-[#6B7280] font-bold uppercase text-[10px] tracking-wider h-11">
+              <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
                 <th className="py-3 px-4">Số SIM / Mã kho</th>
                 <th className="py-3 px-4">Nhà mạng</th>
                 <th className="py-3 px-4">Thế số (Pattern)</th>
@@ -751,14 +1103,23 @@ export default function AdminControlCenter() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5E7EB]">
-              {filteredSims.map((s) => {
-                const canDelete = s.status === "Available";
-                return (
-                  <tr
-                    key={s.id}
-                    onClick={() => setSelectedSimDrawer(s)}
-                    className="hover:bg-slate-50/80 transition-colors h-16 cursor-pointer"
-                  >
+              {(() => {
+                const pagedSims = filteredSims.slice(
+                  (simPageIndex - 1) * simPageSize,
+                  simPageIndex * simPageSize
+                );
+                return pagedSims.map((s) => {
+                  const canDelete = s.status === "Available";
+                  const isUpdated = updatedSimId === s.id;
+                  return (
+                    <tr
+                      key={s.id}
+                      onClick={() => openSimDrawer(s, "info")}
+                      className={`transition-colors h-16 cursor-pointer ${
+                        isUpdated ? "bg-emerald-50" : "hover:bg-slate-50/80"
+                      }`}
+                      style={{ transition: isUpdated ? "background-color 1500ms ease-out" : undefined }}
+                    >
                     <td className="py-3 px-4">
                       <div className="font-extrabold text-sm text-[#001743] tabular-nums font-mono tracking-wider">
                         {formatPhone(s.phone)}
@@ -810,32 +1171,47 @@ export default function AdminControlCenter() {
                     </td>
                     <td className="py-3 px-4 text-[#9CA3AF] text-[11px]">{s.created}</td>
                     <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-1.5">
+                      <div className="flex items-center justify-end gap-1">
                         <button
-                          onClick={() => {
-                            setEditingSim(s);
-                            setSimModalOpen(true);
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openSimDrawer(s, "info");
                           }}
                           className="p-1.5 text-[#4B5563] hover:text-[#001743] hover:bg-gray-100 rounded-[6px] transition-colors"
-                          title="Chỉnh sửa SIM"
+                          title="Chỉnh sửa thông tin SIM"
                         >
                           <Edit3 size={15} strokeWidth={1.5} />
                         </button>
                         <button
-                          onClick={() => {
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openSimDrawer(s, "auctionHistory");
+                          }}
+                          className="p-1.5 text-[#4B5563] hover:text-blue-600 hover:bg-blue-50 rounded-[6px] transition-colors"
+                          title="Lịch sử đấu giá SIM"
+                        >
+                          <Gavel size={15} strokeWidth={1.5} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
                             const newStatus = s.status === "Locked" ? "Available" : "Locked";
                             setSims(sims.map((item) => (item.id === s.id ? { ...item, status: newStatus } : item)));
                             showToast(`Đã ${newStatus === "Locked" ? "khóa" : "mở khóa"} SIM ${s.phone}.`);
                           }}
                           className="p-1.5 text-[#4B5563] hover:text-amber-600 hover:bg-amber-50 rounded-[6px] transition-colors"
-                          title={s.status === "Locked" ? "Mở khóa" : "Khóa SIM"}
+                          title={s.status === "Locked" ? "Mở khóa SIM" : "Tạm khóa SIM"}
                         >
                           {s.status === "Locked" ? <Unlock size={15} /> : <Lock size={15} />}
                         </button>
-                        {/* Nút Xóa chỉ sáng khi SIM chưa vào phiên đấu giá hoặc chưa bán */}
                         <button
+                          type="button"
                           disabled={!canDelete}
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             if (canDelete) {
                               setDeleteConfirm({ type: "sim", id: s.id, name: s.phone });
                             }
@@ -853,133 +1229,24 @@ export default function AdminControlCenter() {
                     </td>
                   </tr>
                 );
-              })}
+              });
+            })()}
             </tbody>
           </table>
         </div>
+
+        {/* ── Standard Pagination Bar ── */}
+        <Pagination
+          pageIndex={simPageIndex}
+          pageSize={simPageSize}
+          totalCount={filteredSims.length}
+          onPageChange={(page) => setSimPageIndex(page)}
+          onPageSizeChange={(size) => {
+            setSimPageSize(size);
+            setSimPageIndex(1);
+          }}
+        />
       </div>
-
-      {/* =========================================================================
-          SLIDE-IN SIM DETAIL DRAWER
-      ========================================================================= */}
-      {selectedSimDrawer && (
-        <div className="fixed inset-0 z-50 overflow-hidden bg-black/30 backdrop-blur-sm flex justify-end animate-fade-in">
-          <div className="w-full max-w-[480px] bg-white h-full shadow-2xl flex flex-col justify-between border-l border-[#E5E7EB] p-6 overflow-y-auto animate-fade-up">
-            <div className="space-y-5">
-              {/* Drawer Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-[#E5E7EB]">
-                <div>
-                  <span className="text-[10px] font-bold text-[#9CA3AF] uppercase">Hồ sơ chi tiết SIM</span>
-                  <div className="text-xl font-black text-[#001743] font-mono tracking-wider">
-                    {formatPhone(selectedSimDrawer.phone)}
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedSimDrawer(null)}
-                  className="p-1.5 rounded-[8px] text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              {/* SIM Graphic Card */}
-              <div className="bg-[#001743] text-white p-5 rounded-[12px] shadow-md relative overflow-hidden">
-                <div className="flex justify-between items-center mb-6">
-                  <span className="text-xs font-bold uppercase tracking-widest text-slate-300">
-                    {selectedSimDrawer.carrier}
-                  </span>
-                  <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded">
-                    {selectedSimDrawer.type}
-                  </span>
-                </div>
-                <div className="text-2xl font-black tracking-widest font-mono mb-4 text-center">
-                  {formatPhone(selectedSimDrawer.phone)}
-                </div>
-                <div className="flex justify-between items-end text-xs text-slate-300 border-t border-white/15 pt-3">
-                  <div>
-                    <span className="text-[10px] block text-slate-400">Thế số nhận diện</span>
-                    <span className="font-bold text-white">{selectedSimDrawer.category}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] block text-slate-400">Giá niêm yết</span>
-                    <span className="font-extrabold text-white text-sm tabular-nums">
-                      {formatVND(selectedSimDrawer.price)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* AI Valuation Engine Deep Dive */}
-              <div className="border border-indigo-100 bg-indigo-50/40 p-4 rounded-[10px] space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#001743]">
-                    <Bot size={15} className="text-indigo-700" />
-                    <span>Mô hình định giá AI (TrustSim AI Valuation)</span>
-                  </div>
-                  <span className="text-xs font-black text-indigo-700 tabular-nums">
-                    {formatVND(selectedSimDrawer.aiValuation)}
-                  </span>
-                </div>
-                <p className="text-xs text-[#4B5563] leading-relaxed">
-                  {selectedSimDrawer.patternDesc}
-                </p>
-                <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
-                  <div className="bg-white p-2 rounded-[6px] border border-indigo-100">
-                    <span className="text-[#6B7280] block">Hệ số độ hiếm</span>
-                    <strong className="text-[#001743] font-bold">{selectedSimDrawer.aiMultiplier}x Base Price</strong>
-                  </div>
-                  <div className="bg-white p-2 rounded-[6px] border border-indigo-100">
-                    <span className="text-[#6B7280] block">Dự báo thanh khoản</span>
-                    <strong className="text-emerald-700 font-bold">Rất cao (A+)</strong>
-                  </div>
-                </div>
-              </div>
-
-              {/* Verification & Legal Status */}
-              <div className="border border-[#E5E7EB] p-4 rounded-[10px] space-y-2 text-xs">
-                <h4 className="font-bold text-[#001743] uppercase text-[11px] tracking-wider">
-                  Trạng thái pháp lý & Sang tên
-                </h4>
-                <div className="flex justify-between items-center py-1 border-b border-[#E5E7EB]">
-                  <span className="text-[#6B7280]">Chủ thể đăng ký:</span>
-                  <span className="font-bold text-[#001743]">Chính chủ đã xác thực eKYC</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-[#E5E7EB]">
-                  <span className="text-[#6B7280]">Cam kết chuyển nhượng:</span>
-                  <span className="font-bold text-emerald-700">Hợp đồng điện tử ký số</span>
-                </div>
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-[#6B7280]">Trạng thái kho:</span>
-                  <span className="font-bold text-[#001743]">{selectedSimDrawer.status}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Drawer Actions */}
-            <div className="pt-4 border-t border-[#E5E7EB] space-y-2">
-              <button
-                onClick={() => {
-                  setSelectedSimDrawer(null);
-                  setAuctionModalOpen(true);
-                }}
-                className="w-full py-2.5 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[8px] transition-colors"
-              >
-                Mở phiên đấu giá cho SIM này
-              </button>
-              <button
-                onClick={() => {
-                  setEditingSim(selectedSimDrawer);
-                  setSelectedSimDrawer(null);
-                  setSimModalOpen(true);
-                }}
-                className="w-full py-2 bg-white border border-[#D1D5DB] hover:bg-gray-50 text-[#001743] text-xs font-semibold rounded-[8px] transition-colors"
-              >
-                Chỉnh sửa giá & thông số
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 
@@ -989,14 +1256,14 @@ export default function AdminControlCenter() {
   const renderEkycWorkspace = () => (
     <div className="space-y-4">
       {/* Header */}
-      <div className="bg-white border border-[#E5E7EB] rounded-[12px] p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-lg font-bold text-[#001743]">Không Gian Thẩm Định Hồ Sơ eKYC (Review Workspace)</h1>
+          <h1 className="text-base font-bold text-[#001743]">Không Gian Thẩm Định Hồ Sơ eKYC (Review Workspace)</h1>
           <p className="text-xs text-[#6B7280] mt-0.5">
             Quy trình đối chiếu 3 lớp: Bóc tách OCR thẻ căn cước gắn chip, phát hiện gian lận giả mạo (Anti-spoofing) và đối soát sinh trắc học khuôn mặt.
           </p>
         </div>
-        <div className="px-3 py-1.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-[8px] text-xs font-bold">
+        <div className="px-3 py-1.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-[6px] text-xs font-bold">
           {ekycQueue.length} hồ sơ đang chờ quyết định
         </div>
       </div>
@@ -1004,7 +1271,7 @@ export default function AdminControlCenter() {
       {/* 3-Column Review Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
         {/* CỘT 1: Danh sách hồ sơ chờ duyệt (3 / 12) */}
-        <div className="lg:col-span-3 bg-white border border-[#E5E7EB] rounded-[12px] p-3.5 shadow-sm space-y-2">
+        <div className="lg:col-span-3 bg-white border border-[#E2E8F0] rounded-[8px] p-3 shadow-xs space-y-2">
           <div className="text-xs font-bold text-[#001743] uppercase tracking-wider mb-2">
             Hàng đợi kiểm tra ({ekycQueue.length})
           </div>
@@ -1015,15 +1282,15 @@ export default function AdminControlCenter() {
                 <div
                   key={item.id}
                   onClick={() => setActiveEkycId(item.id)}
-                  className={`p-3 rounded-[8px] border transition-all cursor-pointer ${
+                  className={`p-2.5 rounded-[6px] border transition-all cursor-pointer ${
                     isActive
-                      ? "bg-slate-100 border-[#001743] shadow-sm"
-                      : "bg-[#F8F9FA] border-[#E5E7EB] hover:border-gray-300"
+                      ? "bg-slate-100 border-[#001743] shadow-xs"
+                      : "bg-[#F8F9FA] border-[#E2E8F0] hover:border-gray-300"
                   }`}
                 >
                   <div className="flex justify-between items-start mb-1">
                     <span className="font-bold text-xs text-[#001743]">{item.userName}</span>
-                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">
+                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-[3px] bg-amber-100 text-amber-800">
                       Chờ duyệt
                     </span>
                   </div>
@@ -1039,16 +1306,16 @@ export default function AdminControlCenter() {
         </div>
 
         {/* CỘT 2: Khu vực ảnh CCCD & Selfie đối soát (5 / 12) */}
-        <div className="lg:col-span-5 bg-white border border-[#E5E7EB] rounded-[12px] p-4 shadow-sm space-y-4">
+        <div className="lg:col-span-5 bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs space-y-4">
           <div className="text-xs font-bold text-[#001743] uppercase tracking-wider">
             Tài liệu ảnh gốc chụp từ thiết bị công dân
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             {/* Front Card */}
-            <div className="border border-[#E5E7EB] rounded-[8px] p-2.5 bg-[#F8F9FA] text-center">
+            <div className="border border-[#E2E8F0] rounded-[6px] p-2.5 bg-[#F8F9FA] text-center">
               <span className="text-[11px] font-bold text-[#001743] block mb-1.5">1. Mặt trước CCCD</span>
-              <div className="h-32 bg-slate-200 rounded-[6px] flex flex-col items-center justify-center text-[#6B7280] text-[11px] border border-dashed border-slate-300 relative group">
+              <div className="h-32 bg-slate-200 rounded-[4px] flex flex-col items-center justify-center text-[#6B7280] text-[11px] border border-dashed border-slate-300 relative group">
                 <FileText size={24} className="text-slate-400 mb-1" />
                 <span>Ảnh mặt trước</span>
                 <span className="text-[10px] text-emerald-700 font-bold mt-1">✓ Bóc tách OCR đạt</span>
@@ -1056,9 +1323,9 @@ export default function AdminControlCenter() {
             </div>
 
             {/* Back Card */}
-            <div className="border border-[#E5E7EB] rounded-[8px] p-2.5 bg-[#F8F9FA] text-center">
+            <div className="border border-[#E2E8F0] rounded-[6px] p-2.5 bg-[#F8F9FA] text-center">
               <span className="text-[11px] font-bold text-[#001743] block mb-1.5">2. Mặt sau CCCD</span>
-              <div className="h-32 bg-slate-200 rounded-[6px] flex flex-col items-center justify-center text-[#6B7280] text-[11px] border border-dashed border-slate-300">
+              <div className="h-32 bg-slate-200 rounded-[4px] flex flex-col items-center justify-center text-[#6B7280] text-[11px] border border-dashed border-slate-300">
                 <FileText size={24} className="text-slate-400 mb-1" />
                 <span>Ảnh mặt sau</span>
                 <span className="text-[10px] text-emerald-700 font-bold mt-1">✓ Chip NFC hợp lệ</span>
@@ -1067,14 +1334,14 @@ export default function AdminControlCenter() {
           </div>
 
           {/* Selfie Portrait Card */}
-          <div className="border border-[#E5E7EB] rounded-[8px] p-3 bg-[#F8F9FA]">
+          <div className="border border-[#E2E8F0] rounded-[6px] p-3 bg-[#F8F9FA]">
             <div className="flex justify-between items-center mb-2">
               <span className="text-[11px] font-bold text-[#001743]">3. Video chân dung động (Liveness Check)</span>
-              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-[4px]">
                 Live Video Verified
               </span>
             </div>
-            <div className="h-36 bg-slate-200 rounded-[6px] flex flex-col items-center justify-center text-[#6B7280] text-xs border border-dashed border-slate-300">
+            <div className="h-36 bg-slate-200 rounded-[4px] flex flex-col items-center justify-center text-[#6B7280] text-xs border border-dashed border-slate-300">
               <UserCheck size={28} className="text-slate-400 mb-1" />
               <span>Chân dung sinh trắc học trực diện</span>
               <span className="text-[10px] text-emerald-700 font-extrabold mt-1">
@@ -1085,7 +1352,7 @@ export default function AdminControlCenter() {
         </div>
 
         {/* CỘT 3: Dữ liệu bóc tách & Phân tích rủi ro AI (4 / 12) */}
-        <div className="lg:col-span-4 bg-white border border-[#E5E7EB] rounded-[12px] p-4 shadow-sm flex flex-col justify-between h-full space-y-4">
+        <div className="lg:col-span-4 bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col justify-between h-full space-y-4">
           <div>
             <div className="text-xs font-bold text-[#001743] uppercase tracking-wider mb-3">
               Kết quả so khớp tự động
@@ -1093,7 +1360,7 @@ export default function AdminControlCenter() {
 
             {activeEkycRecord ? (
               <div className="space-y-3 text-xs">
-                <div className="bg-[#F8F9FA] p-3 rounded-[8px] border border-[#E5E7EB] space-y-2">
+                <div className="bg-[#F8F9FA] p-3 rounded-[6px] border border-[#E2E8F0] space-y-2">
                   <div>
                     <span className="text-[10px] text-[#6B7280] uppercase">Họ và tên theo CCCD</span>
                     <div className="font-extrabold text-sm text-[#001743]">{activeEkycRecord.userName}</div>
@@ -1185,9 +1452,9 @@ export default function AdminControlCenter() {
   const renderTransactions = () => (
     <div className="space-y-4">
       {/* Header */}
-      <div className="bg-white border border-[#E5E7EB] rounded-[12px] p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-lg font-bold text-[#001743]">Quản Lý Giao Dịch Ký Quỹ (Financial Control)</h1>
+          <h1 className="text-base font-bold text-[#001743]">Quản Lý Giao Dịch Ký Quỹ (Financial Control)</h1>
           <p className="text-xs text-[#6B7280] mt-0.5">
             Sàn nắm giữ 100% dòng tiền thanh toán trong tài khoản ký quỹ trung gian. Tiền chỉ được giải ngân cho bên bán sau khi hoàn tất sang tên chính chủ viễn thông.
           </p>
@@ -1195,11 +1462,11 @@ export default function AdminControlCenter() {
       </div>
 
       {/* Transactions Table */}
-      <div className="bg-white border border-[#E5E7EB] rounded-[12px] overflow-hidden shadow-sm">
+      <div className="bg-white border border-[#E2E8F0] rounded-[8px] overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-[#E5E7EB] bg-[#F8F9FA] text-[#6B7280] font-bold uppercase text-[10px] tracking-wider h-11">
+              <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
                 <th className="py-3 px-4">Mã đơn / SIM</th>
                 <th className="py-3 px-4">Người mua</th>
                 <th className="py-3 px-4">Người bán</th>
@@ -1210,9 +1477,9 @@ export default function AdminControlCenter() {
                 <th className="py-3 px-4 text-right">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E5E7EB]">
+            <tbody className="divide-y divide-[#E2E8F0]">
               {transactions.map((tx) => (
-                <tr key={tx.id} className="hover:bg-slate-50/80 transition-colors h-16">
+                <tr key={tx.id} className="hover:bg-slate-50/80 transition-colors h-14">
                   <td className="py-3 px-4">
                     <div className="font-extrabold text-sm text-[#001743] tabular-nums font-mono tracking-wider">
                       {formatPhone(tx.sim)}
@@ -1229,7 +1496,7 @@ export default function AdminControlCenter() {
                   </td>
                   <td className="py-3 px-4 text-center">
                     <span
-                      className={`px-2.5 py-0.5 rounded-[4px] text-[10px] font-bold ${
+                      className={`px-2 py-0.5 rounded-[4px] text-[10px] font-bold ${
                         tx.status === "Held"
                           ? "bg-amber-50 text-amber-800 border border-amber-200"
                           : tx.status === "Released"
@@ -1252,7 +1519,7 @@ export default function AdminControlCenter() {
                   <td className="py-3 px-4 text-right">
                     <button
                       onClick={() => setSelectedTxForPipeline(tx)}
-                      className="px-3 py-1.5 text-xs font-bold text-[#001743] hover:text-white bg-slate-100 hover:bg-[#001743] rounded-[6px] transition-colors"
+                      className="px-2.5 py-1 text-xs font-bold text-[#001743] hover:text-white bg-slate-100 hover:bg-[#001743] rounded-[4px] transition-colors"
                     >
                       Tiến độ 5 bước
                     </button>
@@ -1269,11 +1536,11 @@ export default function AdminControlCenter() {
       ========================================================================= */}
       {selectedTxForPipeline && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white border border-[#E5E7EB] rounded-[12px] w-full max-w-2xl shadow-xl overflow-hidden animate-fade-up">
-            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
+          <div className="bg-white border border-[#E2E8F0] rounded-[8px] w-full max-w-2xl shadow-xl overflow-hidden animate-fade-up">
+            <div className="px-5 py-4 border-b border-[#E2E8F0] flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold text-[#001743]">
-                  Quy trình ký quỹ & chuyển nhượng: {formatPhone(selectedTxForPipeline.sim)}
+                  Quy trình ký quỹ &amp; chuyển nhượng: {formatPhone(selectedTxForPipeline.sim)}
                 </h3>
                 <span className="text-xs text-[#6B7280]">Mã giao dịch: {selectedTxForPipeline.orderCode}</span>
               </div>
@@ -1316,7 +1583,7 @@ export default function AdminControlCenter() {
               </div>
 
               {/* Conditions Checklist Card */}
-              <div className="border border-[#E5E7EB] bg-[#F8F9FA] p-4 rounded-[10px] space-y-2 text-xs">
+              <div className="border border-[#E2E8F0] bg-[#F8F9FA] p-4 rounded-[6px] space-y-2 text-xs">
                 <h4 className="font-bold text-[#001743] uppercase text-[11px]">
                   Điều kiện bắt buộc trước khi kích hoạt giải ngân
                 </h4>
@@ -1347,7 +1614,7 @@ export default function AdminControlCenter() {
                 <button
                   type="button"
                   onClick={() => setSelectedTxForPipeline(null)}
-                  className="px-4 py-2 border border-[#D1D5DB] text-xs font-semibold text-[#4B5563] rounded-[8px]"
+                  className="px-3.5 py-1.5 border border-[#D1D5DB] text-xs font-semibold text-[#4B5563] rounded-[6px]"
                 >
                   Đóng
                 </button>
@@ -1363,7 +1630,7 @@ export default function AdminControlCenter() {
                       setSelectedTxForPipeline(null);
                       showToast(`Đã duyệt giải ngân ${formatVND(selectedTxForPipeline.amount - selectedTxForPipeline.fee)} cho người bán.`);
                     }}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-[8px] transition-colors"
+                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-[6px] transition-colors"
                   >
                     Duyệt giải ngân người bán
                   </button>
@@ -1389,26 +1656,66 @@ export default function AdminControlCenter() {
       {/* Tab Router */}
       {currentTab === "dashboard" && renderDashboard()}
       {currentTab === "sims" && renderSims()}
-      {currentTab === "auctions" && renderDashboard()} {/* Shared operational overview */}
+      {currentTab === "auctions" && <AdminAuctionsTab />}
       {currentTab === "ekyc" && renderEkycWorkspace()}
       {currentTab === "transactions" && renderTransactions()}
+      {currentTab === "categories" && <AdminCategoriesTab />}
+      {currentTab === "carriers" && <AdminCarriersTab />}
 
       {/* =========================================================================
-          MODAL: THÊM / SỬA SIM
+          RIGHT DRAWER: THÊM / CHỈNH SỬA / CHI TIẾT SIM (CRUD WORKSPACE PATTERN)
       ========================================================================= */}
-      {simModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white border border-[#E5E7EB] rounded-[12px] w-full max-w-lg shadow-xl overflow-hidden animate-fade-up">
-            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
-              <h3 className="text-sm font-bold text-[#001743]">
-                {editingSim ? "Chỉnh sửa thông tin SIM" : "Thêm SIM mới vào kho"}
-              </h3>
-              <button onClick={() => setSimModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-1">
-                <X size={16} />
-              </button>
-            </div>
+      <RightDrawer
+        open={simDrawerOpen}
+        onClose={() => setSimDrawerOpen(false)}
+        title={editingSim ? "Hồ sơ & Chỉnh sửa SIM" : "Thêm SIM mới vào kho"}
+        badge={editingSim ? editingSim.id : "MỚI"}
+        badgeCls={
+          editingSim?.status === "Available"
+            ? "bg-emerald-50 text-emerald-700"
+            : editingSim?.status === "InAuction"
+            ? "bg-[#001743] text-white"
+            : editingSim?.status === "Sold"
+            ? "bg-gray-100 text-gray-600"
+            : "bg-slate-100 text-slate-700"
+        }
+        size="lg"
+      >
+        {/* Drawer Tabs (chỉ hiện khi đang xem/sửa SIM đã có) */}
+        {editingSim && (
+          <div className="flex border-b border-slate-200 px-6 bg-slate-50/50 shrink-0">
+            <button
+              type="button"
+              onClick={() => setSimDrawerTab("info")}
+              className={`py-3 px-4 text-xs font-semibold border-b-2 transition-colors ${
+                simDrawerTab === "info"
+                  ? "border-[#001743] text-[#001743]"
+                  : "border-transparent text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              Thông tin &amp; Định giá AI
+            </button>
+            <button
+              type="button"
+              onClick={() => setSimDrawerTab("auctionHistory")}
+              className={`py-3 px-4 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${
+                simDrawerTab === "auctionHistory"
+                  ? "border-[#001743] text-[#001743]"
+                  : "border-transparent text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              <span>Lịch sử đấu giá</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-700 font-mono">
+                {auctions.filter((a) => a.sim === editingSim.phone).length}
+              </span>
+            </button>
+          </div>
+        )}
 
+        <DrawerBody>
+          {simDrawerTab === "info" ? (
             <form
+              id="sim-drawer-form"
               onSubmit={(e) => {
                 e.preventDefault();
                 const formData = new FormData(e.currentTarget);
@@ -1426,6 +1733,8 @@ export default function AdminControlCenter() {
                     )
                   );
                   showToast(`Đã cập nhật SIM ${phone} thành công!`);
+                  setUpdatedSimId(editingSim.id);
+                  setTimeout(() => setUpdatedSimId(null), 1600);
                 } else {
                   const newSim: SimItem = {
                     id: `SIM-${String(sims.length + 1).padStart(2, "0")}`,
@@ -1435,125 +1744,283 @@ export default function AdminControlCenter() {
                     price,
                     aiValuation: Math.round(price * 1.05),
                     aiMultiplier: 2.0,
-                    type,
                     status,
+                    type,
                     created: new Date().toLocaleDateString("vi-VN"),
-                    patternDesc: `Thế số phong thủy ${category}`,
+                    patternDesc: `Dòng SIM số đẹp dạng ${category}`,
                   };
                   setSims([newSim, ...sims]);
-                  showToast(`Đã thêm mới SIM ${phone} vào hệ thống!`);
+                  showToast(`Đã thêm mới SIM ${phone} vào kho thành công!`);
+                  setUpdatedSimId(newSim.id);
+                  setTimeout(() => setUpdatedSimId(null), 1600);
                 }
-                setSimModalOpen(false);
+                setSimDrawerOpen(false);
               }}
-              className="p-5 space-y-4"
+              className="space-y-5"
             >
-              <div>
-                <label className="block text-xs font-semibold text-[#001743] mb-1">Số thuê bao (SIM)</label>
-                <input
-                  required
-                  name="phone"
-                  defaultValue={editingSim?.phone || ""}
-                  placeholder="0988888888"
-                  className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[8px] focus:border-[#001743] focus:outline-none font-mono"
+              {/* Physical SIM Hero Card Preview nếu đang xem/sửa */}
+              {editingSim && (
+                <PhysicalSimCard
+                  phoneNumber={editingSim.phone}
+                  carrierName={editingSim.carrier}
+                  categoryName={editingSim.category}
+                  patternDesc={editingSim.patternDesc}
+                  price={editingSim.price}
+                  badgeText={editingSim.type}
                 />
-              </div>
+              )}
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-[#001743] mb-1">Nhà mạng</label>
-                  <select
-                    name="carrier"
-                    defaultValue={editingSim?.carrier || "Viettel"}
-                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[8px] focus:border-[#001743] focus:outline-none"
-                  >
-                    <option value="Viettel">Viettel</option>
-                    <option value="Vinaphone">Vinaphone</option>
-                    <option value="Mobifone">Mobifone</option>
-                    <option value="Vietnamobile">Vietnamobile</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[#001743] mb-1">Danh mục phong thủy</label>
-                  <select
-                    name="category"
-                    defaultValue={editingSim?.category || "Tứ quý"}
-                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[8px] focus:border-[#001743] focus:outline-none"
-                  >
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.name}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-[#001743] mb-1">Giá niêm yết (VNĐ)</label>
+              {/* Form Section: Nhận diện SIM */}
+              <DrawerSection title="Thông tin nhận diện SIM" subtitle="Số điện thoại, nhà mạng và phân loại thế số">
+                <FormField label="Số điện thoại" required hint="Định dạng chuẩn 10 chữ số">
                   <input
                     required
-                    type="number"
-                    name="price"
-                    defaultValue={editingSim?.price || 15000000}
-                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[8px] focus:border-[#001743] focus:outline-none"
+                    type="text"
+                    name="phone"
+                    defaultValue={editingSim?.phone || ""}
+                    placeholder="Ví dụ: 0988888888"
+                    className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:border-[#001743] focus:outline-none font-mono font-bold"
                   />
+                </FormField>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField label="Nhà mạng">
+                    <select
+                      name="carrier"
+                      defaultValue={editingSim?.carrier || "Viettel"}
+                      className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:border-[#001743] focus:outline-none"
+                    >
+                      <option value="Viettel">Viettel</option>
+                      <option value="Vinaphone">Vinaphone</option>
+                      <option value="Mobifone">Mobifone</option>
+                      <option value="Vietnamobile">Vietnamobile</option>
+                      <option value="Wintel">Wintel</option>
+                    </select>
+                  </FormField>
+
+                  <FormField label="Thế số (Danh mục)">
+                    <select
+                      name="category"
+                      defaultValue={editingSim?.category || "Bát quý"}
+                      className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:border-[#001743] focus:outline-none"
+                    >
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.name.split(" ")[0]}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </FormField>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-[#001743] mb-1">Gói cước</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField label="Giá niêm yết (VNĐ)" required>
+                    <input
+                      required
+                      type="number"
+                      name="price"
+                      defaultValue={editingSim?.price || 15000000}
+                      className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:border-[#001743] focus:outline-none tabular-nums font-semibold"
+                    />
+                  </FormField>
+
+                  <FormField label="Gói cước">
+                    <select
+                      name="type"
+                      defaultValue={editingSim?.type || "Trả trước"}
+                      className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:border-[#001743] focus:outline-none"
+                    >
+                      <option value="Trả trước">Trả trước</option>
+                      <option value="Trả sau">Trả sau</option>
+                    </select>
+                  </FormField>
+                </div>
+
+                <FormField label="Trạng thái kho">
                   <select
-                    name="type"
-                    defaultValue={editingSim?.type || "Trả trước"}
-                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[8px] focus:border-[#001743] focus:outline-none"
+                    name="status"
+                    defaultValue={editingSim?.status || "Available"}
+                    className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:border-[#001743] focus:outline-none"
                   >
-                    <option value="Trả trước">Trả trước</option>
-                    <option value="Trả sau">Trả sau</option>
+                    <option value="Available">Sẵn sàng bán (Available)</option>
+                    <option value="InAuction">Đang đấu giá (InAuction)</option>
+                    <option value="Sold">Đã bán (Sold)</option>
+                    <option value="Locked">Đang khóa (Locked)</option>
                   </select>
-                </div>
-              </div>
+                </FormField>
+              </DrawerSection>
 
-              <div>
-                <label className="block text-xs font-semibold text-[#001743] mb-1">Trạng thái kho</label>
-                <select
-                  name="status"
-                  defaultValue={editingSim?.status || "Available"}
-                  className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[8px] focus:border-[#001743] focus:outline-none"
+              {/* AI Valuation Engine & Pháp lý nếu là editing */}
+              {editingSim && (
+                <DrawerSection
+                  title="Mô hình định giá AI & Pháp lý"
+                  subtitle="Phân tích phong thủy và tình trạng sang tên"
                 >
-                  <option value="Available">Sẵn sàng bán (Available)</option>
-                  <option value="InAuction">Đang đấu giá (InAuction)</option>
-                  <option value="Sold">Đã bán (Sold)</option>
-                  <option value="Locked">Đang khóa (Locked)</option>
-                </select>
-              </div>
+                  <div className="border border-indigo-100 bg-indigo-50/50 p-4 rounded-lg space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#001743]">
+                        <Bot size={15} className="text-indigo-600" />
+                        <span>TrustSim AI Valuation</span>
+                      </div>
+                      <span className="text-xs font-black text-indigo-700 tabular-nums">
+                        {formatVND(editingSim.aiValuation)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      {editingSim.patternDesc}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                      <div className="bg-white p-2.5 rounded border border-indigo-100">
+                        <span className="text-slate-400 block text-[10px]">Hệ số độ hiếm</span>
+                        <strong className="text-[#001743] font-bold">{editingSim.aiMultiplier}x Base Price</strong>
+                      </div>
+                      <div className="bg-white p-2.5 rounded border border-indigo-100">
+                        <span className="text-slate-400 block text-[10px]">Dự báo thanh khoản</span>
+                        <strong className="text-emerald-700 font-bold">Rất cao (A+)</strong>
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="pt-3 border-t border-[#E5E7EB] flex justify-end gap-2">
+                  <div className="border border-slate-200 p-3.5 rounded-lg space-y-2 text-xs">
+                    <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                      <span className="text-slate-500">Chủ thể đăng ký:</span>
+                      <span className="font-semibold text-[#001743]">Chính chủ đã xác thực eKYC</span>
+                    </div>
+                    <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                      <span className="text-slate-500">Cam kết chuyển nhượng:</span>
+                      <span className="font-semibold text-emerald-700">Hợp đồng điện tử ký số</span>
+                    </div>
+                    <div className="flex justify-between items-center py-1">
+                      <span className="text-slate-500">Ngày nhập kho:</span>
+                      <span className="font-mono text-slate-700">{editingSim.created}</span>
+                    </div>
+                  </div>
+                </DrawerSection>
+              )}
+            </form>
+          ) : (
+            /* Tab Lịch sử đấu giá */
+            <div className="space-y-4">
+              {editingSim &&
+                (() => {
+                  const matchAuctions = auctions.filter((a) => a.sim === editingSim.phone);
+                  if (matchAuctions.length === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+                        <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+                          <Gavel size={22} strokeWidth={1.5} />
+                        </div>
+                        <h4 className="text-sm font-bold text-slate-800">Chưa có phiên đấu giá nào</h4>
+                        <p className="text-xs text-slate-500 mt-1 max-w-xs">
+                          SIM này chưa từng được đưa lên sàn đấu giá TrustSim.
+                        </p>
+                        {editingSim.status === "Available" && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSimDrawerOpen(false);
+                              setAuctionModalOpen(true);
+                            }}
+                            className="mt-4 px-4 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-lg transition-colors"
+                          >
+                            Tạo phiên đấu giá ngay
+                          </button>
+                        )}
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="space-y-3">
+                      {matchAuctions.map((auc) => (
+                        <div key={auc.id} className="p-4 border border-slate-200 rounded-xl bg-white shadow-xs space-y-3">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-bold text-xs text-[#001743]">{auc.id}</span>
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-700">
+                                {auc.type === "english" ? "Đấu giá Anh" : auc.type === "dutch" ? "Đấu giá Hà Lan" : "Đấu giá kín"}
+                              </span>
+                            </div>
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                auc.status === "live"
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  : auc.status === "upcoming"
+                                  ? "bg-amber-50 text-amber-800 border border-amber-200"
+                                  : "bg-slate-100 text-slate-600"
+                              }`}
+                            >
+                              {auc.status === "live" ? "Đang live" : auc.status === "upcoming" ? "Sắp diễn ra" : "Đã kết thúc"}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                            <div>
+                              <span className="text-[10px] text-slate-400 block">Giá khởi điểm</span>
+                              <span className="font-semibold text-slate-700">{formatVND(auc.startPrice)}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-slate-400 block">Giá hiện tại</span>
+                              <span className="font-bold text-[#001743] text-sm tabular-nums">{formatVND(auc.currentPrice)}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-slate-400 block">Lượt trả giá</span>
+                              <span className="font-semibold text-slate-700">{auc.bids} lượt</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-slate-400 block">Dẫn đầu hiện tại</span>
+                              <span className="font-semibold text-emerald-700 truncate block">{auc.leader}</span>
+                            </div>
+                          </div>
+
+                          <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-[11px] text-slate-500">
+                            <span>Thời gian: <strong className="text-slate-700">{auc.timeLeft}</strong></span>
+                            <span>Người bán: <strong className="text-slate-700">{auc.seller}</strong></span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+            </div>
+          )}
+        </DrawerBody>
+
+        <DrawerFooter>
+          <div className="flex items-center justify-between w-full">
+            <div>
+              {editingSim && editingSim.status === "Available" && (
                 <button
                   type="button"
-                  onClick={() => setSimModalOpen(false)}
-                  className="px-3.5 py-2 border border-[#D1D5DB] text-xs font-semibold text-[#4B5563] rounded-[8px]"
+                  onClick={() => {
+                    setSimDrawerOpen(false);
+                    setAuctionModalOpen(true);
+                  }}
+                  className="px-3.5 py-2 text-xs font-semibold text-[#001743] hover:bg-slate-100 border border-[#001743]/20 rounded-lg transition-colors"
                 >
-                  Hủy
+                  Mở phiên đấu giá
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[8px] transition-colors"
-                >
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <BtnSecondary onClick={() => setSimDrawerOpen(false)}>
+                Hủy bỏ
+              </BtnSecondary>
+              {simDrawerTab === "info" && (
+                <BtnPrimary type="submit" form="sim-drawer-form">
                   {editingSim ? "Lưu thay đổi" : "Thêm vào kho"}
-                </button>
-              </div>
-            </form>
+                </BtnPrimary>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        </DrawerFooter>
+      </RightDrawer>
 
       {/* =========================================================================
           MODAL: TỪ CHỐI eKYC VỚI LÝ DO BẮT BUỘC
       ========================================================================= */}
       {rejectReasonModal.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white border border-[#E5E7EB] rounded-[12px] w-full max-w-md shadow-xl p-5 animate-fade-up">
+          <div className="bg-white border border-[#E2E8F0] rounded-[8px] w-full max-w-md shadow-xl p-5 animate-fade-up">
             <h3 className="text-sm font-bold text-[#001743] mb-1">Từ chối hồ sơ eKYC: {rejectReasonModal.userName}</h3>
             <p className="text-xs text-[#6B7280] mb-3">
               Vui lòng nhập lý do cụ thể để gửi thông báo hướng dẫn công dân nộp lại tài liệu hợp lệ.
@@ -1577,20 +2044,20 @@ export default function AdminControlCenter() {
                 name="reason"
                 rows={3}
                 placeholder="Ví dụ: Ảnh mặt sau CCCD bị lóa chip NFC, hoặc ảnh selfie không trùng khớp góc mặt..."
-                className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[8px] focus:border-rose-500 focus:outline-none"
+                className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-rose-500 focus:outline-none"
               ></textarea>
 
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setRejectReasonModal({ open: false, kycId: "", userName: "" })}
-                  className="px-3 py-1.5 border border-[#D1D5DB] text-xs font-semibold text-[#4B5563] rounded-[8px]"
+                  className="px-3 py-1.5 border border-[#D1D5DB] text-xs font-semibold text-[#4B5563] rounded-[6px]"
                 >
                   Hủy bỏ
                 </button>
                 <button
                   type="submit"
-                  className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-[8px] transition-colors"
+                  className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-[6px] transition-colors"
                 >
                   Xác nhận từ chối
                 </button>
@@ -1605,8 +2072,8 @@ export default function AdminControlCenter() {
       ========================================================================= */}
       {auctionModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white border border-[#E5E7EB] rounded-[12px] w-full max-w-lg shadow-xl overflow-hidden animate-fade-up">
-            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
+          <div className="bg-white border border-[#E2E8F0] rounded-[8px] w-full max-w-lg shadow-xl overflow-hidden animate-fade-up">
+            <div className="px-5 py-4 border-b border-[#E2E8F0] flex items-center justify-between">
               <h3 className="text-sm font-bold text-[#001743]">Tạo Phiên Đấu Giá Mới (TrustSim Auction)</h3>
               <button onClick={() => setAuctionModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-1">
                 <X size={16} />
@@ -1648,7 +2115,7 @@ export default function AdminControlCenter() {
                 <select
                   required
                   name="sim"
-                  className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[8px] focus:border-[#001743] focus:outline-none font-mono font-bold"
+                  className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-mono font-bold"
                 >
                   {sims
                     .filter((s) => s.status === "Available")
@@ -1664,7 +2131,7 @@ export default function AdminControlCenter() {
                 <label className="block text-xs font-semibold text-[#001743] mb-1">Hình thức đấu giá</label>
                 <select
                   name="type"
-                  className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[8px] focus:border-[#001743] focus:outline-none"
+                  className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
                 >
                   <option value="english">Đấu giá kiểu Anh (Tăng dần công khai)</option>
                   <option value="dutch">Đấu giá kiểu Hà Lan (Giảm dần theo thời gian)</option>
@@ -1680,7 +2147,7 @@ export default function AdminControlCenter() {
                     type="number"
                     name="startPrice"
                     defaultValue={10000000}
-                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[8px] focus:border-[#001743] focus:outline-none"
+                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
                   />
                 </div>
 
@@ -1691,22 +2158,22 @@ export default function AdminControlCenter() {
                     type="number"
                     name="step"
                     defaultValue={500000}
-                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[8px] focus:border-[#001743] focus:outline-none"
+                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
                   />
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-[#E5E7EB] flex justify-end gap-2">
+              <div className="pt-3 border-t border-[#E2E8F0] flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setAuctionModalOpen(false)}
-                  className="px-3.5 py-2 border border-[#D1D5DB] text-xs font-semibold text-[#4B5563] rounded-[8px]"
+                  className="px-3.5 py-1.5 border border-[#D1D5DB] text-xs font-semibold text-[#4B5563] rounded-[6px]"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[8px] transition-colors"
+                  className="px-4 py-1.5 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors"
                 >
                   Bắt đầu phiên đấu giá
                 </button>
@@ -1721,7 +2188,7 @@ export default function AdminControlCenter() {
       ========================================================================= */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white border border-[#E5E7EB] rounded-[12px] w-full max-w-sm shadow-xl p-5 animate-fade-up">
+          <div className="bg-white border border-[#E2E8F0] rounded-[8px] w-full max-w-sm shadow-xl p-5 animate-fade-up">
             <div className="flex items-center gap-2.5 mb-2 text-rose-600">
               <AlertTriangle size={20} />
               <h3 className="text-sm font-bold text-[#001743]">Xác nhận xóa tài nguyên</h3>
@@ -1732,7 +2199,7 @@ export default function AdminControlCenter() {
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="px-3 py-1.5 border border-[#D1D5DB] text-xs font-semibold text-[#4B5563] rounded-[8px]"
+                className="px-3 py-1.5 border border-[#D1D5DB] text-xs font-semibold text-[#4B5563] rounded-[6px]"
               >
                 Hủy bỏ
               </button>
@@ -1744,7 +2211,7 @@ export default function AdminControlCenter() {
                   showToast(`Đã xóa ${deleteConfirm.name} thành công!`);
                   setDeleteConfirm(null);
                 }}
-                className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-[8px] transition-colors"
+                className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-[6px] transition-colors"
               >
                 Xác nhận xóa
               </button>

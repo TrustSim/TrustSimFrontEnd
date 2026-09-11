@@ -36,22 +36,22 @@ export interface NavSection {
 
 export const ADMIN_NAV_SECTIONS: NavSection[] = [
   {
-    title: "TỔNG QUAN",
+    title: "Tổng quan",
     items: [
       { id: "dashboard", label: "Tổng quan", tab: "dashboard", icon: LayoutDashboard },
     ],
   },
   {
-    title: "KHO SIM & ĐẤU GIÁ",
+    title: "Kho SIM & Đấu giá",
     items: [
       { id: "sims", label: "Quản lý SIM", tab: "sims", icon: Smartphone },
-      { id: "auctions", label: "Phiên đấu giá", tab: "auctions", icon: Gavel, badge: 24, badgeType: "info" },
+      { id: "auctions", label: "Phiên đấu giá", tab: "auctions", icon: Gavel },
       { id: "categories", label: "Danh mục SIM", tab: "categories", icon: FolderTree },
       { id: "carriers", label: "Nhà mạng & Đầu số", tab: "carriers", icon: Radio },
     ],
   },
   {
-    title: "TÀI CHÍNH & TÀI KHOẢN",
+    title: "Tài chính & Tài khoản",
     items: [
       { id: "transactions", label: "Giao dịch Ký quỹ", tab: "transactions", icon: CreditCard },
       { id: "users", label: "Người dùng", tab: "users", icon: Users },
@@ -59,7 +59,7 @@ export const ADMIN_NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    title: "VẬN HÀNH & AN TOÀN",
+    title: "Vận hành & An toàn",
     items: [
       { id: "disputes", label: "Khiếu nại", tab: "disputes", icon: AlertOctagon, badge: 2, badgeType: "danger" },
       { id: "anomalies", label: "Giám sát AI Fraud", tab: "anomalies", icon: Bot, badge: 2, badgeType: "danger" },
@@ -81,28 +81,28 @@ export default function AdminSidebar({
 }: AdminSidebarProps) {
   return (
     <aside
-      className={`fixed top-0 bottom-0 left-0 z-40 bg-white border-r border-[#E5E7EB] flex flex-col transition-all duration-300 ease-in-out select-none ${
-        collapsed ? "w-[68px]" : "w-[250px]"
+      className={`fixed top-0 bottom-0 left-0 z-40 bg-white border-r border-slate-200/70 flex flex-col transition-all duration-300 ease-in-out select-none ${
+        collapsed ? "w-[68px]" : "w-[245px]"
       }`}
     >
       {/* Brand Header with Asset 14 Logo */}
-      <div className="h-16 border-b border-[#E5E7EB] flex items-center px-3.5 justify-center">
+      <div className="h-14 border-b border-slate-100 flex items-center px-4 justify-center">
         <Link href="/admin" className="flex items-center justify-center w-full">
           {!collapsed ? (
             <Image
               src={asset14Logo}
               alt="TrustSim Logo"
-              height={38}
-              className="h-[38px] w-auto object-contain max-w-[200px]"
+              height={28}
+              className="h-[28px] w-auto object-contain max-w-[170px]"
               priority
             />
           ) : (
             <Image
               src="/logo/S-Logo.png"
               alt="TrustSim"
-              width={26}
-              height={32}
-              className="h-7 w-auto object-contain"
+              width={24}
+              height={28}
+              className="h-6 w-auto object-contain"
               priority
             />
           )}
@@ -110,11 +110,11 @@ export default function AdminSidebar({
       </div>
 
       {/* Navigation Sections */}
-      <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-4">
+      <nav className="flex-1 overflow-y-auto px-2.5 py-4 space-y-5">
         {ADMIN_NAV_SECTIONS.map((section) => (
           <div key={section.title}>
             {!collapsed && (
-              <div className="px-2 pb-1.5 text-[10px] font-bold tracking-wider text-[#9CA3AF] uppercase">
+              <div className="px-3 pb-1 text-[11px] font-semibold text-slate-400 tracking-normal">
                 {section.title}
               </div>
             )}
@@ -128,23 +128,31 @@ export default function AdminSidebar({
                     key={item.id}
                     href={`/admin?tab=${item.tab}`}
                     title={collapsed ? item.label : undefined}
-                    className={`flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[13px] font-medium transition-all duration-150 relative ${
+                    className={`group flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 relative ${
                       isActive
-                        ? "bg-slate-100 text-[#001743] font-bold border border-slate-200 shadow-xs"
-                        : "text-[#4B5563] hover:text-[#001743] hover:bg-slate-50 border border-transparent"
+                        ? "bg-slate-100 text-[#001743] font-semibold"
+                        : "text-slate-600 hover:text-[#001743] hover:bg-slate-50"
                     }`}
                   >
-                    <Icon
-                      size={18}
-                      strokeWidth={1.5}
-                      className={`shrink-0 ${isActive ? "text-[#001743]" : "text-[#6B7280]"}`}
-                    />
+                    <div
+                      className={`p-1 rounded-md transition-all duration-150 flex items-center justify-center ${
+                        isActive
+                          ? "bg-white text-[#001743] shadow-2xs"
+                          : "group-hover:bg-slate-100 group-hover:text-blue-600 group-hover:scale-105"
+                      }`}
+                    >
+                      <Icon
+                        size={17}
+                        strokeWidth={1.5}
+                        className={`shrink-0 transition-transform ${isActive ? "text-[#001743]" : "text-slate-500"}`}
+                      />
+                    </div>
                     {!collapsed && (
                       <span className="flex-1 truncate tracking-normal">{item.label}</span>
                     )}
                     {!collapsed && item.badge !== undefined && (
                       <span
-                        className={`text-[10px] font-bold px-1.5 py-0.2 rounded-[4px] ${
+                        className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
                           item.badgeType === "danger"
                             ? "bg-rose-100 text-rose-700"
                             : item.badgeType === "warning"
@@ -164,35 +172,38 @@ export default function AdminSidebar({
       </nav>
 
       {/* Minimalist Sidebar Footer */}
-      <div className="p-2 border-t border-[#E5E7EB] bg-white">
+      <div className="p-2.5 border-t border-slate-100 bg-white">
         {/* Administrator Status Pill */}
         {!collapsed ? (
-          <div className="p-2 rounded-[8px] bg-[#F8F9FA] border border-[#E5E7EB] flex items-center justify-between gap-2 mb-2">
+          <div
+            title="admin@trustsim.vn"
+            className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between gap-2 mb-2"
+          >
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-7 h-7 rounded-[6px] bg-[#001743] flex items-center justify-center p-1 shrink-0 shadow-xs">
+              <div className="w-7 h-7 rounded-md bg-[#001743] flex items-center justify-center p-1 shrink-0 shadow-2xs">
                 <Image
                   src="/logo/S-White-Logo.png"
                   alt="Admin"
-                  width={16}
-                  height={16}
+                  width={15}
+                  height={15}
                   className="object-contain"
                 />
               </div>
               <div className="overflow-hidden leading-tight flex-1">
-                <div className="text-xs font-bold text-[#001743] truncate">Administrator</div>
-                <div className="text-[10px] text-[#9CA3AF] truncate">admin@trustsim.vn</div>
+                <div className="text-xs font-semibold text-[#001743] truncate">Administrator</div>
+                <div className="text-[10px] text-slate-400 truncate">Admin Core</div>
               </div>
             </div>
             <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Đang trực tuyến"></div>
           </div>
         ) : (
           <div className="flex justify-center mb-2">
-            <div className="w-8 h-8 rounded-[6px] bg-[#001743] flex items-center justify-center p-1.5 shadow-xs">
+            <div className="w-8 h-8 rounded-md bg-[#001743] flex items-center justify-center p-1.5 shadow-2xs">
               <Image
                 src="/logo/S-White-Logo.png"
                 alt="Admin"
-                width={18}
-                height={18}
+                width={16}
+                height={16}
                 className="object-contain"
               />
             </div>

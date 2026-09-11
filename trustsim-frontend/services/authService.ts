@@ -180,10 +180,95 @@ export const authService = {
   },
 
   /**
-   * Kiểm tra xem người dùng đã đăng nhập chưa
+   * Giải mã JWT payload an toàn
+   */
+  parseJwt(token?: string): any {
+    const rawToken = token || this.getToken();
+    if (!rawToken) return null;
+    try {
+      const parts = rawToken.split(".");
+      if (parts.length < 2) return null;
+      const base64Url = parts[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+      return JSON.parse(jsonPayload);
+    } catch {
+      return null;
+    }
+  },
+
+  /**
+   * Kiểm tra xem JWT Token đã hết hạn chưa
+   */
+  isTokenExpired(token?: string): boolean {
+    const payload = this.parseJwt(token);
+    if (!payload || !payload.exp) {
+      // Nếu không có token hoặc không đọc được exp, xem như hết hạn nếu người dùng đang lưu session
+      return !this.getToken();
+    }
+    // exp tính bằng giây, so sánh với thời gian thực (trừ hao 5 giây để tránh lệch đồng hồ)
+    return Date.now() >= (payload.exp - 5) * 1000;
+  },
+
+  /**
+   * Lấy số giây còn lại của phiên làm việc
+   */
+  getTokenRemainingSeconds(token?: string): number {
+    const payload = this.parseJwt(token);
+    if (!payload || !payload.exp) return 0;
+    const remaining = payload.exp - Math.floor(Date.now() / 1000);
+    return Math.max(0, remaining);
+  },
+
+  /**
+   * Kiểm tra phiên đăng nhập hiện tại; nếu hết hạn thì tự động xóa và logout
+   */
+  checkSessionAndAutoLogout(autoRedirect: boolean = true): boolean {
+    if (typeof window === "undefined") return true;
+
+    const token = this.getToken();
+    const user = this.getUser();
+
+    // Không có user đăng nhập
+    if (!token && !user) return false;
+
+    // Token đã hết hạn
+    if (this.isTokenExpired(token || undefined)) {
+      this.clearSession();
+
+      // Bắn event chuyên biệt cho toàn ứng dụng
+      window.dispatchEvent(
+        new CustomEvent("trustsim_session_expired", {
+          detail: { message: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại." },
+        })
+      );
+
+      if (
+        autoRedirect &&
+        !window.location.pathname.startsWith("/login") &&
+        !window.location.pathname.startsWith("/register")
+      ) {
+        const currentPath = window.location.pathname + window.location.search;
+        window.location.href = `/login?expired=1&redirect=${encodeURIComponent(currentPath)}`;
+      }
+      return false;
+    }
+
+    return true;
+  },
+
+  /**
+   * Kiểm tra xem người dùng đã đăng nhập và token còn hiệu lực không
    */
   isAuthenticated(): boolean {
-    return !!this.getUser();
+    const user = this.getUser();
+    if (!user) return false;
+    return !this.isTokenExpired();
   },
 
   /**
@@ -191,6 +276,8 @@ export const authService = {
    */
   isAdmin(): boolean {
     const user = this.getUser();
+    if (!user || this.isTokenExpired()) return false;
     return user?.role?.toUpperCase() === "ADMIN";
   },
 };
+

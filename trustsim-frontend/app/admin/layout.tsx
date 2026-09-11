@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Bell } from "lucide-react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import { AuthSessionGuard } from "@/components/auth/AuthSessionGuard";
 
 const TAB_LABELS: Record<string, string> = {
   dashboard: "Tổng quan hệ thống",
@@ -42,20 +43,20 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         }`}
       >
         {/* Top Header */}
-        <header className="sticky top-0 z-30 h-16 bg-white/95 backdrop-blur-md border-b border-[#E5E7EB] px-6 flex items-center justify-between">
+        <header className="sticky top-0 z-30 h-14 bg-white/90 backdrop-blur-md border-b border-slate-200/60 px-6 flex items-center justify-between">
           {/* Breadcrumb / Title */}
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-[#6B7280] font-medium">Bảng quản trị</span>
-            <span className="text-[#D1D5DB]">/</span>
-            <span className="font-semibold text-[#001743] text-sm tracking-tight">
+            <span className="text-slate-400 font-normal">Quản trị</span>
+            <span className="text-slate-300">/</span>
+            <span className="font-semibold text-[#001743] text-xs tracking-tight">
               {TAB_LABELS[currentTab] || "Quản trị"}
             </span>
           </div>
 
           {/* Header Utilities */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3.5">
             {/* System Health Pulse */}
-            <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-[6px] text-xs font-medium">
+            <div className="hidden sm:flex items-center gap-2 px-2.5 py-0.5 bg-emerald-50/80 text-emerald-700 border border-emerald-200/60 rounded-full text-xs font-medium">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -67,28 +68,28 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
             <div className="relative">
               <button
                 type="button"
-                className="p-2 rounded-[6px] text-[#4B5563] hover:text-[#001743] hover:bg-gray-100 transition-colors relative"
+                className="p-1.5 rounded-lg text-slate-500 hover:text-[#001743] hover:bg-slate-100 transition-colors relative"
                 aria-label="Thông báo"
               >
-                <Bell size={18} strokeWidth={1.5} />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#E4011E] ring-2 ring-white"></span>
+                <Bell size={17} strokeWidth={1.5} />
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#E4011E] ring-2 ring-white"></span>
               </button>
             </div>
 
             {/* Role Badge with S-Logo */}
-            <div className="flex items-center gap-2.5 pl-3 border-l border-[#E5E7EB]">
-              <div className="w-8 h-8 rounded-[6px] bg-[#001743] flex items-center justify-center p-1.5 shadow-xs">
+            <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200/60">
+              <div className="w-7 h-7 rounded-md bg-[#001743] flex items-center justify-center p-1 shadow-2xs">
                 <Image
                   src="/logo/S-White-Logo.png"
                   alt="Admin"
-                  width={20}
-                  height={20}
+                  width={16}
+                  height={16}
                   className="object-contain"
                 />
               </div>
               <div className="hidden md:block text-left leading-none">
-                <div className="text-xs font-bold text-[#001743]">Admin Center</div>
-                <div className="text-[10px] text-[#6B7280] mt-0.5">TrustSim Core v2.0</div>
+                <div className="text-xs font-semibold text-[#001743]">Admin Center</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">TrustSim Core</div>
               </div>
             </div>
           </div>
@@ -112,7 +113,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       }
     >
-      <AdminLayoutInner>{children}</AdminLayoutInner>
+      <AuthSessionGuard>
+        <AdminLayoutInner>{children}</AdminLayoutInner>
+      </AuthSessionGuard>
     </Suspense>
   );
 }

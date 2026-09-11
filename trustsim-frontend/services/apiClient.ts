@@ -110,6 +110,19 @@ export async function apiFetch<T = any>(
           localStorage.removeItem("trustsim_token");
           localStorage.removeItem("trustsim_user");
           window.dispatchEvent(new Event("trustsim_auth_change"));
+          window.dispatchEvent(
+            new CustomEvent("trustsim_session_expired", {
+              detail: { message: "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại." },
+            })
+          );
+
+          if (
+            !window.location.pathname.startsWith("/login") &&
+            !window.location.pathname.startsWith("/register")
+          ) {
+            const redirectUrl = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = `/login?expired=1&redirect=${redirectUrl}`;
+          }
         }
       } catch (refreshErr) {
         processQueue(refreshErr);
