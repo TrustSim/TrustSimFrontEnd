@@ -18,9 +18,28 @@ export class ApiError extends Error {
   }
 }
 
+// Cờ chống lặp vô hạn khi refresh token
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value: any) => void;
+  reject: (reason?: any) => void;
+}> = [];
+
+const processQueue = (error: any = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(true);
+    }
+  });
+  failedQueue = [];
+};
+
 export async function apiFetch<T = any>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  isRetry: boolean = false
 ): Promise<ApiResponse<T>> {
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
   const url = `${API_BASE_URL}${cleanEndpoint}`;
@@ -31,7 +50,7 @@ export async function apiFetch<T = any>(
     ...(options.headers as Record<string, string>),
   };
 
-  // Tự động đính kèm Token nếu có trong localStorage
+  // Tự động đính kèm Token nếu có trong localStorage (Hỗ trợ cơ chế Hybrid: Header + Cookie)
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("trustsim_token");
     if (token && !headers["Authorization"]) {
@@ -42,8 +61,61 @@ export async function apiFetch<T = any>(
   try {
     const res = await fetch(url, {
       ...options,
+      // BẮT BUỘC: credentials: "include" cho phép trình duyệt gửi & lưu trữ HttpOnly Cookies (accessToken, refreshToken)
+      credentials: "include",
       headers,
     });
+
+    // Xử lý tự động Refresh Token khi gặp 401 Unauthorized
+    const isAuthEndpoint =
+      cleanEndpoint.toLowerCase().includes("/auth/login") ||
+      cleanEndpoint.toLowerCase().includes("/auth/register") ||
+      cleanEndpoint.toLowerCase().includes("/auth/refresh-token") ||
+      cleanEndpoint.toLowerCase().includes("/auth/logout");
+
+    if (res.status === 401 && !isAuthEndpoint && !isRetry && typeof window !== "undefined") {
+      if (isRefreshing) {
+        // Nếu đang trong quá trình refresh token, đưa request vào hàng chờ
+        return new Promise((resolve, reject) => {
+          failedQueue.push({
+            resolve: () => resolve(apiFetch<T>(endpoint, options, true)),
+            reject,
+          });
+        });
+      }
+
+      isRefreshing = true;
+
+      try {
+        const refreshRes = await fetch(`${API_BASE_URL}/Auth/refresh-token`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+
+        if (refreshRes.ok) {
+          const refreshData = await refreshRes.json();
+          if (refreshData?.data?.token) {
+            localStorage.setItem("trustsim_token", refreshData.data.token);
+          }
+          processQueue(null);
+          isRefreshing = false;
+          // Thử lại request ban đầu với token mới
+          return apiFetch<T>(endpoint, options, true);
+        } else {
+          // Refresh thất bại -> Phiên đăng nhập đã hết hạn
+          processQueue(new Error("Phiên đăng nhập đã hết hạn"));
+          isRefreshing = false;
+          localStorage.removeItem("trustsim_token");
+          localStorage.removeItem("trustsim_user");
+          window.dispatchEvent(new Event("trustsim_auth_change"));
+        }
+      } catch (refreshErr) {
+        processQueue(refreshErr);
+        isRefreshing = false;
+      }
+    }
 
     let data: any;
     const contentType = res.headers.get("content-type");
@@ -71,7 +143,6 @@ export async function apiFetch<T = any>(
           errorMessage = errors.join(", ");
         }
       } else if (typeof data?.errors === "object" && data?.errors !== null) {
-        // FluentValidation object style: { field: ["error1", "error2"] }
         const fieldErrors = Object.values(data.errors).flat() as string[];
         errors = fieldErrors;
         if (fieldErrors.length > 0) {

@@ -4,7 +4,6 @@ import {
   LoginRequest,
   RegisterRequest,
   UserProfileDto,
-  ApiResponse,
 } from "@/types/auth";
 
 const TOKEN_KEY = "trustsim_token";
@@ -12,7 +11,7 @@ const USER_KEY = "trustsim_user";
 
 export const authService = {
   /**
-   * Đăng ký tài khoản người dùng mới
+   * Đăng ký tài khoản người dùng mới (Backend tự động ghi HttpOnly Cookies)
    */
   async register(data: RegisterRequest): Promise<AuthResponseDto> {
     const res = await apiFetch<AuthResponseDto>("/Auth/register", {
@@ -28,7 +27,7 @@ export const authService = {
   },
 
   /**
-   * Đăng nhập hệ thống bằng Username/Email và Mật khẩu
+   * Đăng nhập hệ thống (Backend tự động ghi HttpOnly Cookies accessToken & refreshToken)
    */
   async login(data: LoginRequest): Promise<AuthResponseDto> {
     const res = await apiFetch<AuthResponseDto>("/Auth/login", {
@@ -44,7 +43,39 @@ export const authService = {
   },
 
   /**
-   * Lấy thông tin hồ sơ của người dùng đang đăng nhập
+   * Làm mới Access Token thủ công qua Refresh Token Cookie
+   */
+  async refreshToken(): Promise<AuthResponseDto> {
+    const res = await apiFetch<AuthResponseDto>("/Auth/refresh-token", {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+
+    if (res.data) {
+      this.saveSession(res.data);
+      return res.data;
+    }
+    throw new Error(res.message || "Làm mới phiên đăng nhập thất bại");
+  },
+
+  /**
+   * Đăng xuất khỏi hệ thống (Gọi API Backend để xóa HttpOnly Cookies và thu hồi Refresh Token)
+   */
+  async logout(): Promise<void> {
+    try {
+      await apiFetch("/Auth/logout", {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+    } catch {
+      // Vẫn tiếp tục xóa phiên ở client nếu API gặp lỗi mạng
+    } finally {
+      this.clearSession();
+    }
+  },
+
+  /**
+   * Lấy thông tin hồ sơ của người dùng đang đăng nhập qua HttpOnly Cookie
    */
   async getProfile(): Promise<UserProfileDto> {
     const res = await apiFetch<UserProfileDto>("/Auth/profile", {
@@ -73,7 +104,6 @@ export const authService = {
     });
 
     if (res.data) {
-      // Cập nhật lại thông tin user trong local storage nếu cần
       const current = this.getUser();
       if (current) {
         this.saveSession({
@@ -103,19 +133,21 @@ export const authService = {
   },
 
   /**
-   * Lưu phiên đăng nhập vào LocalStorage
+   * Lưu phiên đăng nhập người dùng vào LocalStorage (Token dự phòng + Thông tin hiển thị)
    */
   saveSession(authData: AuthResponseDto) {
     if (typeof window === "undefined") return;
-    localStorage.setItem(TOKEN_KEY, authData.token);
+    if (authData.token) {
+      localStorage.setItem(TOKEN_KEY, authData.token);
+    }
     localStorage.setItem(USER_KEY, JSON.stringify(authData));
 
-    // Dispatch event để các component (Navbar, v.v.) phản ứng tức thì
+    // Bắn sự kiện để Navbar và các component đồng bộ giao diện
     window.dispatchEvent(new Event("trustsim_auth_change"));
   },
 
   /**
-   * Xóa phiên đăng nhập (Đăng xuất)
+   * Xóa phiên đăng nhập ở LocalStorage
    */
   clearSession() {
     if (typeof window === "undefined") return;
@@ -140,7 +172,7 @@ export const authService = {
   },
 
   /**
-   * Lấy JWT Token hiện tại
+   * Lấy JWT Token dự phòng
    */
   getToken(): string | null {
     if (typeof window === "undefined") return null;
@@ -151,7 +183,7 @@ export const authService = {
    * Kiểm tra xem người dùng đã đăng nhập chưa
    */
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    return !!this.getUser();
   },
 
   /**

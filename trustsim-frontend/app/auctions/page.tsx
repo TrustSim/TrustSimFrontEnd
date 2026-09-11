@@ -1,300 +1,493 @@
 "use client";
-import React from "react";
+
+import React, { useState, useMemo } from "react";
+import Link from "next/link";
 import SimAuctionCard, { SimAuctionCardData } from "@/components/ui/SimAuctionCard";
 
-// --- Mock Data ---
+/* ─── Line SVG Icons ──────────────────────────────────────── */
+const Icons = {
+  Flame: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+    </svg>
+  ),
+  Gavel: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m14 13-7.5 7.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0a2.12 2.12 0 0 1 0-3L11 10" />
+      <path d="m16 16 6-6" />
+      <path d="m8 8 6-6" />
+      <path d="m9 7 8 8" />
+      <path d="m21 11-8-8" />
+    </svg>
+  ),
+  Eye: () => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  ),
+  Clock: () => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  ),
+  ChevronLeft: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
+  ),
+  ChevronRight: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  ),
+};
+
 const ALL_AUCTIONS: SimAuctionCardData[] = [
-  { id: "1", simNumber: "0901234567", carrier: "Viettel", type: "english", status: "live", currentPrice: 15000000, startPrice: 10000000, bidCount: 24, endTime: new Date(Date.now() + 2 * 3600000), seller: "TrustSim", featuredReason: "Sim tứ quý 7" },
-  { id: "2", simNumber: "0777777777", carrier: "Mobifone", type: "sealed", status: "live", currentPrice: 42000000, startPrice: 30000000, bidCount: 8, endTime: new Date(Date.now() + 4 * 3600000), seller: "NguyenA", featuredReason: "Sảnh 7 cực hiếm" },
+  { id: "1", simNumber: "0901234567", carrier: "Viettel", type: "english", status: "live", currentPrice: 15000000, startPrice: 10000000, bidCount: 24, endTime: new Date(Date.now() + 2 * 3600000), seller: "TrustSim", featuredReason: "Sim sảnh rồng tiến lên" },
+  { id: "2", simNumber: "0777777777", carrier: "Mobifone", type: "sealed", status: "live", currentPrice: 42000000, startPrice: 30000000, bidCount: 18, endTime: new Date(Date.now() + 4 * 3600000), seller: "NguyenA", featuredReason: "Bát quý 7 cực hiếm" },
   { id: "3", simNumber: "0888555000", carrier: "Vinaphone", type: "dutch", status: "live", currentPrice: 8500000, startPrice: 12000000, bidCount: 0, endTime: new Date(Date.now() + 45 * 60000), seller: "SimVIP" },
-  { id: "4", simNumber: "0909090909", carrier: "Viettel", type: "english", status: "live", currentPrice: 22000000, startPrice: 15000000, bidCount: 37, endTime: new Date(Date.now() + 1 * 3600000), seller: "MinhTuan", featuredReason: "Sảnh 9 siêu hiếm" },
+  { id: "4", simNumber: "0909090909", carrier: "Viettel", type: "english", status: "live", currentPrice: 22000000, startPrice: 15000000, bidCount: 37, endTime: new Date(Date.now() + 1 * 3600000), seller: "MinhTuan", featuredReason: "Ngũ quý 09 siêu VIP" },
   { id: "5", simNumber: "0338866688", carrier: "Viettel", type: "english", status: "live", currentPrice: 6800000, startPrice: 5000000, bidCount: 11, endTime: new Date(Date.now() + 3 * 3600000), seller: "HoangLe" },
   { id: "6", simNumber: "0911119999", carrier: "Mobifone", type: "sealed", status: "upcoming", currentPrice: 20000000, startPrice: 20000000, bidCount: 0, endTime: new Date(Date.now() + 24 * 3600000), seller: "KhanhSim" },
   { id: "7", simNumber: "0799888777", carrier: "Vinaphone", type: "dutch", status: "upcoming", currentPrice: 11000000, startPrice: 11000000, bidCount: 0, endTime: new Date(Date.now() + 48 * 3600000), seller: "TrustSim" },
   { id: "8", simNumber: "0352468024", carrier: "Viettel", type: "english", status: "ended", currentPrice: 8500000, startPrice: 5000000, bidCount: 19, endTime: new Date(Date.now() - 2 * 3600000), seller: "TrungPT" },
   { id: "9", simNumber: "0987654321", carrier: "Mobifone", type: "sealed", status: "ended", currentPrice: 35000000, startPrice: 25000000, bidCount: 12, endTime: new Date(Date.now() - 5 * 3600000), seller: "LuckyNum" },
   { id: "10", simNumber: "0666999888", carrier: "Vinaphone", type: "dutch", status: "live", currentPrice: 5200000, startPrice: 9000000, bidCount: 0, endTime: new Date(Date.now() + 20 * 60000), seller: "NamSim" },
-  { id: "11", simNumber: "0944488888", carrier: "Vietnamobile", type: "english", status: "live", currentPrice: 16000000, startPrice: 12000000, bidCount: 7, endTime: new Date(Date.now() + 90 * 60000), seller: "HuuLoc", featuredReason: "Sảnh 8 phát tài" },
+  { id: "11", simNumber: "0944488888", carrier: "Vietnamobile", type: "english", status: "live", currentPrice: 16000000, startPrice: 12000000, bidCount: 7, endTime: new Date(Date.now() + 90 * 60000), seller: "HuuLoc", featuredReason: "Ngũ quý 8 phát tài" },
   { id: "12", simNumber: "0355577799", carrier: "Viettel", type: "sealed", status: "upcoming", currentPrice: 7500000, startPrice: 7500000, bidCount: 0, endTime: new Date(Date.now() + 36 * 3600000), seller: "BaoNguyen" },
 ];
 
-const CARRIERS = ["Tất cả", "Viettel", "Mobifone", "Vinaphone", "Vietnamobile"];
-const TYPES = [
-  { key: "all", label: "Tất cả" },
-  { key: "english", label: "Kiểu Anh" },
-  { key: "dutch", label: "Kiểu Hà Lan" },
-  { key: "sealed", label: "Bí Mật" },
+const FEATURED_HERO_AUCTIONS = [
+  {
+    id: "2",
+    simNumber: "0777 777 777",
+    carrier: "Mobifone",
+    title: "Siêu Phẩm Bát Quý 7 – Bảo Vật Phong Thủy Độc Bản",
+    type: "sealed" as const,
+    typeLabel: "Đấu Giá Bí Mật",
+    currentPrice: 42_000_000,
+    startPrice: 30_000_000,
+    bids: 18,
+    watchers: 245,
+    timeLeft: "03:45:12",
+    bgGradient: "linear-gradient(135deg, #001743 0%, #002B7A 50%, #061938 100%)",
+    accentColor: "#F59E0B",
+  },
+  {
+    id: "4",
+    simNumber: "0909 0909 09",
+    carrier: "Viettel",
+    title: "Đại Sảnh 09 Tối Thượng – Biểu Tượng Uy Quyền Doanh Nhân",
+    type: "english" as const,
+    typeLabel: "Đấu Giá Kiểu Anh (Live)",
+    currentPrice: 22_000_000,
+    startPrice: 15_000_000,
+    bids: 37,
+    watchers: 412,
+    timeLeft: "00:58:24",
+    bgGradient: "linear-gradient(135deg, #450A0A 0%, #7F1D1D 50%, #001743 100%)",
+    accentColor: "#EF4444",
+  },
 ];
-const STATUSES = [
-  { key: "all", label: "Tất cả" },
-  { key: "live", label: "🔴 Đang diễn ra" },
-  { key: "upcoming", label: "🟡 Sắp diễn ra" },
-  { key: "ended", label: "⚫ Đã kết thúc" },
-];
-const SORT_OPTIONS = [
-  { key: "endTime", label: "Sắp kết thúc" },
-  { key: "priceAsc", label: "Giá tăng dần" },
-  { key: "priceDesc", label: "Giá giảm dần" },
-  { key: "bidCount", label: "Nhiều lượt đặt" },
-];
+
+type StatusTab = "all" | "live" | "upcoming" | "ended";
+type TypeFilter = "all" | "english" | "dutch" | "sealed";
 
 export default function AuctionsPage() {
-  const [typeFilter, setTypeFilter] = React.useState<string>("all");
-  const [statusFilter, setStatusFilter] = React.useState<string>("all");
-  const [carrierFilter, setCarrierFilter] = React.useState<string>("Tất cả");
-  const [sortBy, setSortBy] = React.useState<string>("endTime");
-  const [search, setSearch] = React.useState<string>("");
-  const [minPrice, setMinPrice] = React.useState<string>("");
-  const [maxPrice, setMaxPrice] = React.useState<string>("");
-  const [sidebarOpen, setSidebarOpen] = React.useState(true);
+  const [statusTab, setStatusTab] = useState<StatusTab>("live");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [carrierFilter, setCarrierFilter] = useState<string>("Tất cả");
+  const [featuredIndex, setFeaturedIndex] = useState(0);
 
-  const filtered = ALL_AUCTIONS.filter((a) => {
-    if (typeFilter !== "all" && a.type !== typeFilter) return false;
-    if (statusFilter !== "all" && a.status !== statusFilter) return false;
-    if (carrierFilter !== "Tất cả" && a.carrier !== carrierFilter) return false;
-    if (search && !a.simNumber.includes(search.replace(/\s/g, ""))) return false;
-    if (minPrice && a.currentPrice < Number(minPrice) * 1e6) return false;
-    if (maxPrice && a.currentPrice > Number(maxPrice) * 1e6) return false;
-    return true;
-  }).sort((a, b) => {
-    const timeA = a.endTime ? new Date(a.endTime).getTime() : 0;
-    const timeB = b.endTime ? new Date(b.endTime).getTime() : 0;
-    const bidsA = a.bidCount || 0;
-    const bidsB = b.bidCount || 0;
+  const currentHero = FEATURED_HERO_AUCTIONS[featuredIndex];
 
-    switch (sortBy) {
-      case "endTime": return timeA - timeB;
-      case "priceAsc": return a.currentPrice - b.currentPrice;
-      case "priceDesc": return b.currentPrice - a.currentPrice;
-      case "bidCount": return bidsB - bidsA;
-      default: return 0;
-    }
-  });
+  // Filtering
+  const filteredAuctions = useMemo(() => {
+    return ALL_AUCTIONS.filter((a) => {
+      if (statusTab !== "all" && a.status !== statusTab) return false;
+      if (typeFilter !== "all" && a.type !== typeFilter) return false;
+      if (carrierFilter !== "Tất cả" && a.carrier !== carrierFilter) return false;
+      return true;
+    });
+  }, [statusTab, typeFilter, carrierFilter]);
+
+  const liveCount = ALL_AUCTIONS.filter((a) => a.status === "live").length;
+  const upcomingCount = ALL_AUCTIONS.filter((a) => a.status === "upcoming").length;
+  const endedCount = ALL_AUCTIONS.filter((a) => a.status === "ended").length;
 
   return (
-    <div style={{ minHeight: "100vh" }}>
-      <div className="mesh-bg" />
+    <div style={{ minHeight: "100vh", background: "#F8F9FA", paddingTop: 64 }}>
+      
+      {/* ═══════════════════════════════════════════════════════════
+          1. FEATURED CAROUSEL: TÂM ĐIỂM SIÊU PHẨM ĐẤU GIÁ (GLOWING REALTIME)
+      ═══════════════════════════════════════════════════════════ */}
+      <section
+        style={{
+          background: currentHero.bgGradient,
+          color: "#FFFFFF",
+          padding: "32px 0 28px",
+          position: "relative",
+          overflow: "hidden",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          transition: "background 0.4s ease",
+        }}
+      >
+        {/* Subtle Glowing Rings */}
+        <div
+          style={{
+            position: "absolute",
+            right: "5%",
+            top: "50%",
+            transform: "translateY(-50%)",
+            width: 400,
+            height: 400,
+            background: `radial-gradient(circle, ${currentHero.accentColor}25 0%, transparent 70%)`,
+            filter: "blur(50px)",
+            pointerEvents: "none",
+          }}
+        />
 
-      <main style={{ position: "relative", zIndex: 1, paddingTop: 80 }}>
-        {/* Page Header */}
-        <div style={{ padding: "40px 0 24px", borderBottom: "1px solid var(--border-subtle)" }}>
-          <div className="container">
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
-              <div>
-                <h1 style={{ fontSize: "clamp(1.6rem, 3vw, 2.2rem)", fontWeight: 800, marginBottom: 6 }}>
-                  Phiên Đấu Giá{" "}
-                  <span className="gradient-text">Sim Số</span>
-                </h1>
-                <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
-                  {filtered.length} phiên{" "}
-                  <span style={{ color: "var(--text-muted)" }}>
-                    {ALL_AUCTIONS.filter((a) => a.status === "live").length} đang live
-                  </span>
-                </p>
+        <div className="container" style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px", position: "relative", zIndex: 2 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 36, alignItems: "center" }}>
+            
+            {/* Left Column: Hero SIM Showcase */}
+            <div>
+              {/* Badge & Live Pulse */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "4px 10px",
+                    borderRadius: 4,
+                    background: "rgba(228, 1, 30, 0.25)",
+                    border: "1px solid rgba(228, 1, 30, 0.5)",
+                    color: "#FF4D6D",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: "50%",
+                      background: "#FF4D6D",
+                      boxShadow: "0 0 8px #FF4D6D",
+                      animation: "pulse-hero 1.5s infinite",
+                    }}
+                  />
+                  Tâm Điểm Đấu Giá Realtime
+                </span>
+
+                <span style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.7)", display: "flex", alignItems: "center", gap: 4 }}>
+                  <Icons.Eye /> {currentHero.watchers} người đang theo dõi
+                </span>
               </div>
 
-              {/* Sort + Search row */}
-              <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-                <input
-                  placeholder="🔍 Tìm số sim..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="input-field"
-                  style={{ width: 180 }}
-                />
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  style={{
-                    padding: "10px 14px",
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid var(--border-subtle)",
-                    borderRadius: 10,
-                    color: "var(--text-primary)",
-                    fontSize: 13,
-                    outline: "none",
-                    cursor: "pointer",
-                    fontFamily: "Inter, sans-serif",
-                  }}
-                >
-                  {SORT_OPTIONS.map((o) => (
-                    <option key={o.key} value={o.key} style={{ background: "#0f1024" }}>{o.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
+              <h1 style={{ fontSize: "clamp(1.8rem, 3.2vw, 2.6rem)", fontWeight: 900, color: "#FFFFFF", margin: "0 0 6px", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
+                {currentHero.simNumber}
+              </h1>
+              <p style={{ fontSize: 14, color: "rgba(255, 255, 255, 0.8)", margin: "0 0 20px", lineHeight: 1.5 }}>
+                {currentHero.title} · <strong style={{ color: "#FDE047" }}>{currentHero.carrier}</strong>
+              </p>
 
-            {/* Quick type tabs */}
-            <div style={{ display: "flex", gap: 8, marginTop: 20, flexWrap: "wrap" }}>
-              {TYPES.map((t) => (
-                <button
-                  key={t.key}
-                  onClick={() => setTypeFilter(t.key)}
-                  style={{
-                    padding: "6px 16px",
-                    borderRadius: 999,
-                    border: "1px solid",
-                    borderColor: typeFilter === t.key ? "var(--indigo-mid)" : "var(--border-subtle)",
-                    background: typeFilter === t.key ? "rgba(79,70,229,0.2)" : "transparent",
-                    color: typeFilter === t.key ? "var(--text-accent)" : "var(--text-secondary)",
-                    fontSize: 13,
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    fontFamily: "Inter, sans-serif",
-                  }}
-                >
-                  {t.label}
-                </button>
-              ))}
-              <div style={{ width: 1, background: "var(--border-subtle)", margin: "0 4px" }} />
-              {STATUSES.map((s) => (
-                <button
-                  key={s.key}
-                  onClick={() => setStatusFilter(s.key)}
-                  style={{
-                    padding: "6px 16px",
-                    borderRadius: 999,
-                    border: "1px solid",
-                    borderColor: statusFilter === s.key ? "rgba(6,182,212,0.5)" : "var(--border-subtle)",
-                    background: statusFilter === s.key ? "rgba(6,182,212,0.1)" : "transparent",
-                    color: statusFilter === s.key ? "var(--cyan-light)" : "var(--text-secondary)",
-                    fontSize: 13,
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    fontFamily: "Inter, sans-serif",
-                  }}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="container" style={{ padding: "32px 24px", display: "flex", gap: 28, alignItems: "flex-start" }}>
-          {/* Sidebar */}
-          {sidebarOpen && (
-            <aside style={{
-              width: 240,
-              flexShrink: 0,
-              position: "sticky",
-              top: 90,
-              display: "flex",
-              flexDirection: "column",
-              gap: 20,
-            }}>
-              {/* Carrier filter */}
-              <FilterGroup title="Nhà mạng">
-                {CARRIERS.map((c) => (
-                  <FilterChip
-                    key={c}
-                    active={carrierFilter === c}
-                    onClick={() => setCarrierFilter(c)}
-                  >
-                    {c}
-                  </FilterChip>
-                ))}
-              </FilterGroup>
-
-              {/* Price filter */}
-              <FilterGroup title="Khoảng giá (triệu VNĐ)">
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <input
-                    placeholder="Từ"
-                    value={minPrice}
-                    onChange={(e) => setMinPrice(e.target.value)}
-                    type="number"
-                    className="input-field"
-                    style={{ flex: 1, padding: "8px 10px", fontSize: 12 }}
-                  />
-                  <span style={{ color: "var(--text-muted)", fontSize: 12 }}>–</span>
-                  <input
-                    placeholder="Đến"
-                    value={maxPrice}
-                    onChange={(e) => setMaxPrice(e.target.value)}
-                    type="number"
-                    className="input-field"
-                    style={{ flex: 1, padding: "8px 10px", fontSize: 12 }}
-                  />
-                </div>
-                {(minPrice || maxPrice) && (
-                  <button
-                    onClick={() => { setMinPrice(""); setMaxPrice(""); }}
-                    style={{ fontSize: 11, color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontFamily: "Inter, sans-serif" }}
-                  >
-                    × Xóa bộ lọc giá
-                  </button>
-                )}
-              </FilterGroup>
-
-              {/* Reset all */}
-              <button
-                onClick={() => { setTypeFilter("all"); setStatusFilter("all"); setCarrierFilter("Tất cả"); setMinPrice(""); setMaxPrice(""); setSearch(""); }}
-                className="btn-ghost"
-                style={{ width: "100%", justifyContent: "center", fontSize: 12 }}
+              {/* Countdown Timer & Price Bar */}
+              <div
+                style={{
+                  background: "rgba(255, 255, 255, 0.08)",
+                  backdropFilter: "blur(12px)",
+                  border: "1px solid rgba(255, 255, 255, 0.15)",
+                  borderRadius: 10,
+                  padding: "14px 18px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  maxWidth: 520,
+                  marginBottom: 20,
+                }}
               >
-                ↺ Xóa tất cả bộ lọc
-              </button>
-            </aside>
-          )}
+                <div>
+                  <div style={{ fontSize: 11, color: "rgba(255, 255, 255, 0.65)", fontWeight: 700, textTransform: "uppercase" }}>
+                    Thời gian còn lại
+                  </div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#FDE047", fontVariantNumeric: "tabular-nums", letterSpacing: "0.05em" }}>
+                    {currentHero.timeLeft}
+                  </div>
+                </div>
 
-          {/* Grid */}
-          <div style={{ flex: 1 }}>
-            {filtered.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "80px 0", color: "var(--text-muted)" }}>
-                <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
-                <p style={{ fontSize: 16 }}>Không tìm thấy phiên đấu giá phù hợp</p>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 11, color: "rgba(255, 255, 255, 0.65)", fontWeight: 700, textTransform: "uppercase" }}>
+                    Giá trả cao nhất
+                  </div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
+                    {currentHero.currentPrice.toLocaleString("vi-VN")} <span style={{ fontSize: 14, fontWeight: 700 }}>₫</span>
+                  </div>
+                </div>
               </div>
-            ) : (
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(268px, 1fr))",
-                gap: 18,
-              }}>
-                {filtered.map((a) => <SimAuctionCard key={a.id} data={a} />)}
+
+              {/* Action Button */}
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <Link
+                  href={`/auctions/${currentHero.id}`}
+                  className="btn-red"
+                  style={{
+                    padding: "11px 24px",
+                    fontSize: 14,
+                    fontWeight: 800,
+                    borderRadius: 6,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    boxShadow: "0 8px 24px rgba(228, 1, 30, 0.4)",
+                  }}
+                >
+                  <Icons.Gavel /> Vào Phòng Trả Giá Ngay →
+                </Link>
+
+                {/* Carousel Navigation Arrows */}
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button
+                    onClick={() => setFeaturedIndex((prev) => (prev === 0 ? FEATURED_HERO_AUCTIONS.length - 1 : prev - 1))}
+                    aria-label="Previous featured"
+                    style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: 6,
+                      background: "rgba(255, 255, 255, 0.1)",
+                      border: "1px solid rgba(255, 255, 255, 0.2)",
+                      color: "#FFFFFF",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Icons.ChevronLeft />
+                  </button>
+                  <button
+                    onClick={() => setFeaturedIndex((prev) => (prev === FEATURED_HERO_AUCTIONS.length - 1 ? 0 : prev + 1))}
+                    aria-label="Next featured"
+                    style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: 6,
+                      background: "rgba(255, 255, 255, 0.1)",
+                      border: "1px solid rgba(255, 255, 255, 0.2)",
+                      color: "#FFFFFF",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Icons.ChevronRight />
+                  </button>
+                </div>
               </div>
-            )}
+            </div>
+
+            {/* Right Column: Live Room Activity Box */}
+            <div
+              style={{
+                background: "rgba(0, 0, 0, 0.35)",
+                backdropFilter: "blur(16px)",
+                border: "1px solid rgba(255, 255, 255, 0.12)",
+                borderRadius: 12,
+                padding: "20px",
+              }}
+            >
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#FFFFFF", borderBottom: "1px solid rgba(255, 255, 255, 0.1)", paddingBottom: 10, marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
+                <span>🔥 Diễn biến trả giá trực tiếp</span>
+                <span style={{ color: "#86EFAC", fontSize: 11, fontWeight: 700 }}>Đang diễn ra</span>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {[
+                  { user: "Đỗ *** Long", price: currentHero.currentPrice, time: "1 phút trước", isTop: true },
+                  { user: "Trần *** Nam", price: currentHero.currentPrice - 1_500_000, time: "4 phút trước", isTop: false },
+                  { user: "Nguyễn *** Hùng", price: currentHero.currentPrice - 3_000_000, time: "12 phút trước", isTop: false },
+                ].map((bid, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "8px 10px",
+                      background: bid.isTop ? "rgba(228, 1, 30, 0.2)" : "rgba(255, 255, 255, 0.04)",
+                      border: `1px solid ${bid.isTop ? "rgba(228, 1, 30, 0.4)" : "rgba(255, 255, 255, 0.06)"}`,
+                      borderRadius: 6,
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: "#FFFFFF" }}>{bid.user}</div>
+                      <div style={{ fontSize: 10.5, color: "rgba(255, 255, 255, 0.6)" }}>{bid.time}</div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 14, fontWeight: 900, color: bid.isTop ? "#FDE047" : "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
+                        {bid.price.toLocaleString("vi-VN")} ₫
+                      </div>
+                      {bid.isTop && <span style={{ fontSize: 9.5, color: "#FF4D6D", fontWeight: 800 }}>DẪN ĐẦU 👑</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
         </div>
-      </main>
-    </div>
-  );
-}
+      </section>
 
-function FilterGroup({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: 14, padding: 16 }}>
-      <h3 style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
-        {title}
-      </h3>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-        {children}
+      {/* ═══════════════════════════════════════════════════════════
+          2. AUCTION TABS BAR (STATUS & AUCTION MECHANISMS)
+      ═══════════════════════════════════════════════════════════ */}
+      <div
+        style={{
+          background: "#FFFFFF",
+          borderBottom: "1px solid #E5E7EB",
+          position: "sticky",
+          top: 64,
+          zIndex: 30,
+          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.03)",
+        }}
+      >
+        <div className="container" style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+            
+            {/* Status Tabs */}
+            <div style={{ display: "flex", gap: 6 }}>
+              {[
+                { key: "live" as StatusTab, label: "Đang Diễn Ra", count: liveCount, color: "#E4011E", pulse: true },
+                { key: "upcoming" as StatusTab, label: "Sắp Bắt Đầu", count: upcomingCount, color: "#D97706", pulse: false },
+                { key: "ended" as StatusTab, label: "Đã Kết Thúc", count: endedCount, color: "#4B5563", pulse: false },
+                { key: "all" as StatusTab, label: "Tất Cả Phiên", count: ALL_AUCTIONS.length, color: "#001743", pulse: false },
+              ].map((tab) => {
+                const isActive = statusTab === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => setStatusTab(tab.key)}
+                    style={{
+                      padding: "14px 16px",
+                      background: "none",
+                      border: "none",
+                      borderBottom: `3px solid ${isActive ? tab.color : "transparent"}`,
+                      color: isActive ? "#001743" : "#6B7280",
+                      fontSize: 13.5,
+                      fontWeight: isActive ? 800 : 500,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    {tab.pulse && (
+                      <span
+                        style={{
+                          width: 7,
+                          height: 7,
+                          borderRadius: "50%",
+                          background: "#E4011E",
+                          boxShadow: "0 0 6px #E4011E",
+                          display: "inline-block",
+                        }}
+                      />
+                    )}
+                    <span>{tab.label}</span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        padding: "1px 6px",
+                        borderRadius: 999,
+                        background: isActive ? `${tab.color}15` : "#F3F4F6",
+                        color: isActive ? tab.color : "#6B7280",
+                      }}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Sub-Filter: Mechanism (English / Dutch / Sealed) */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0" }}>
+              <span style={{ fontSize: 12, color: "#6B7280", fontWeight: 600 }}>Hình thức:</span>
+              {[
+                { key: "all" as TypeFilter, label: "Tất cả" },
+                { key: "english" as TypeFilter, label: "Kiểu Anh (Tăng)" },
+                { key: "dutch" as TypeFilter, label: "Kiểu Hà Lan (Giảm)" },
+                { key: "sealed" as TypeFilter, label: "Bí Mật (Kín)" },
+              ].map((m) => (
+                <button
+                  key={m.key}
+                  onClick={() => setTypeFilter(m.key)}
+                  style={{
+                    padding: "5px 10px",
+                    borderRadius: 4,
+                    fontSize: 12,
+                    fontWeight: typeFilter === m.key ? 700 : 500,
+                    background: typeFilter === m.key ? "#001743" : "#F3F4F6",
+                    color: typeFilter === m.key ? "#FFFFFF" : "#4B5563",
+                    border: "none",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+
+          </div>
+        </div>
       </div>
-    </div>
-  );
-}
 
-function FilterChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: "5px 12px",
-        borderRadius: 999,
-        border: `1px solid ${active ? "rgba(79,70,229,0.5)" : "rgba(255,255,255,0.08)"}`,
-        background: active ? "rgba(79,70,229,0.15)" : "transparent",
-        color: active ? "var(--text-accent)" : "var(--text-muted)",
-        fontSize: 12,
-        cursor: "pointer",
-        transition: "all 0.2s",
-        fontFamily: "Inter, sans-serif",
-        fontWeight: active ? 600 : 400,
-      }}
-    >
-      {children}
-    </button>
+      {/* ═══════════════════════════════════════════════════════════
+          3. REALTIME AUCTION GRID (GLOWING CARDS)
+      ═══════════════════════════════════════════════════════════ */}
+      <main className="container" style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 20px 80px" }}>
+        {filteredAuctions.length === 0 ? (
+          <div
+            style={{
+              background: "#FFFFFF",
+              border: "1px solid #E5E7EB",
+              borderRadius: 8,
+              padding: "48px 24px",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: 36, marginBottom: 8 }}>🔨</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#001743", marginBottom: 6 }}>
+              Không có phiên đấu giá nào trong danh mục này
+            </div>
+            <p style={{ fontSize: 13, color: "#6B7280", margin: 0 }}>
+              Vui lòng chọn tab trạng thái hoặc hình thức đấu giá khác.
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
+            {filteredAuctions.map((item) => (
+              <SimAuctionCard key={item.id} data={item} />
+            ))}
+          </div>
+        )}
+      </main>
+
+      <style>{`
+        @keyframes pulse-hero {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.4; transform: scale(1.3); }
+        }
+      `}</style>
+    </div>
   );
 }
