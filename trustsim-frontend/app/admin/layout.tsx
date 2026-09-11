@@ -1,6 +1,5 @@
 "use client";
 import React, { Suspense, useState } from "react";
-import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Bell } from "lucide-react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
@@ -13,7 +12,9 @@ const TAB_LABELS: Record<string, string> = {
   categories: "Danh mục & Định giá SIM",
   carriers: "Nhà mạng & Dải đầu số",
   transactions: "Giao dịch ký quỹ",
-  users: "Quản lý người dùng & Phân quyền",
+  customers: "Quản lý Khách hàng & Tài chính Ví",
+  staff: "Quản lý Nhân sự & Quản trị viên",
+  users: "Quản lý Khách hàng",
   ekyc: "Phê duyệt hồ sơ eKYC",
   disputes: "Giải quyết khiếu nại & Trọng tài",
   anomalies: "AI Giám sát bất thường & Gian lận",
@@ -43,7 +44,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         }`}
       >
         {/* Top Header */}
-        <header className="sticky top-0 z-30 h-14 bg-white/90 backdrop-blur-md border-b border-slate-200/60 px-6 flex items-center justify-between">
+        <header className="sticky top-0 z-30 h-14 bg-white border-b border-slate-200 shadow-[0_1px_4px_0_rgba(0,23,67,0.06)] px-6 flex items-center justify-between">
           {/* Breadcrumb / Title */}
           <div className="flex items-center gap-2 text-xs">
             <span className="text-slate-400 font-normal">Quản trị</span>
@@ -76,20 +77,15 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
               </button>
             </div>
 
-            {/* Role Badge with S-Logo */}
+            {/* Admin Avatar + Info */}
             <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200/60">
-              <div className="w-7 h-7 rounded-md bg-[#001743] flex items-center justify-center p-1 shadow-2xs">
-                <Image
-                  src="/logo/S-White-Logo.png"
-                  alt="Admin"
-                  width={16}
-                  height={16}
-                  className="object-contain"
-                />
+              {/* Initials Avatar */}
+              <div className="w-8 h-8 rounded-full bg-[#001743] flex items-center justify-center shrink-0 shadow-sm">
+                <span className="text-white text-[11px] font-bold tracking-wide select-none">AD</span>
               </div>
               <div className="hidden md:block text-left leading-none">
-                <div className="text-xs font-semibold text-[#001743]">Admin Center</div>
-                <div className="text-[10px] text-slate-400 mt-0.5">TrustSim Core</div>
+                <div className="text-xs font-semibold text-[#001743]">Administrator</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">admin@trustsim.vn</div>
               </div>
             </div>
           </div>

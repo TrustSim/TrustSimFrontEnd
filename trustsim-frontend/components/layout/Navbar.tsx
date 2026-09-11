@@ -147,289 +147,231 @@ export const Navbar: React.FC<NavbarProps> = () => {
           boxShadow: scrolled ? "0 2px 12px rgba(0, 23, 67, 0.05)" : "none",
         }}
       >
-        <div className="container" style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", height: "100%", justifyContent: "space-between" }}>
-          
-          {/* ═══ 1. BÊN TRÁI: LOGO BRAND ═══ */}
-          <div style={{ display: "flex", alignItems: "center", gap: 36 }}>
-            <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-              <Image
-                src="/logo/TrustSim-Logo.png"
-                alt="TrustSim Logo"
-                width={130}
-                height={34}
-                priority
-                style={{ height: 32, width: "auto", objectFit: "contain" }}
-              />
+        {/* 3-column layout: Left | Center (absolute) | Right */}
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", height: "100%", width: "100%", position: "relative" }}>
+
+          {/* ═══ 1. BÊN TRÁI: LOGO ═══ */}
+          <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", flexShrink: 0 }}>
+            <Image
+              src="/logo/TrustSim-Logo.png"
+              alt="TrustSim Logo"
+              width={130}
+              height={34}
+              priority
+              style={{ height: 32, width: "auto", objectFit: "contain" }}
+            />
+          </Link>
+
+          {/* ═══ 2. CENTER (ABSOLUTE): NAV LINKS ═══ */}
+          <nav className="desktop-nav" style={{
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)",
+            display: "flex",
+            alignItems: "center",
+            gap: 0,
+          }}>
+            {/* Thị Trường */}
+            <Link
+              href="/market"
+              style={{
+                padding: "8px 16px",
+                borderRadius: 6,
+                color: pathname === "/market" ? "#E4011E" : "#4B5563",
+                background: pathname === "/market" ? "rgba(228,1,30,0.06)" : "transparent",
+                fontSize: 14,
+                fontWeight: pathname === "/market" ? 700 : 500,
+                textDecoration: "none",
+                transition: "color 0.15s",
+                whiteSpace: "nowrap",
+              }}
+              onMouseEnter={(e) => { if (pathname !== "/market") e.currentTarget.style.color = "#001743"; }}
+              onMouseLeave={(e) => { if (pathname !== "/market") e.currentTarget.style.color = "#4B5563"; }}
+            >
+              Thị Trường
             </Link>
 
-            {/* ═══ 2. Ở GIỮA: MENU CHÍNH (TỐI GIẢN & CHUẨN UX) ═══ */}
-            <nav className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              {/* Item 1: Thị Trường */}
-              <Link
-                href="/market"
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: 6,
-                  color: pathname === "/market" ? "#E4011E" : "#4B5563",
-                  background: pathname === "/market" ? "rgba(228, 1, 30, 0.06)" : "transparent",
-                  fontSize: 14,
-                  fontWeight: pathname === "/market" ? 700 : 600,
-                  textDecoration: "none",
-                  transition: "all 0.15s ease",
-                }}
-                onMouseEnter={(e) => {
-                  if (pathname !== "/market") e.currentTarget.style.color = "#001743";
-                }}
-                onMouseLeave={(e) => {
-                  if (pathname !== "/market") e.currentTarget.style.color = "#4B5563";
-                }}
-              >
-                Thị Trường
-              </Link>
+            {/* Sàn Đấu Giá */}
+            <Link
+              href="/auctions"
+              style={{
+                padding: "8px 16px",
+                borderRadius: 6,
+                color: pathname?.startsWith("/auctions") ? "#E4011E" : "#4B5563",
+                background: pathname?.startsWith("/auctions") ? "rgba(228,1,30,0.06)" : "transparent",
+                fontSize: 14,
+                fontWeight: 500,
+                textDecoration: "none",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                transition: "color 0.15s",
+                whiteSpace: "nowrap",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "#001743"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = pathname?.startsWith("/auctions") ? "#E4011E" : "#4B5563"; }}
+            >
+              Sàn Đấu Giá
+              {/* Solid live dot — no glow */}
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#E4011E", flexShrink: 0, display: "inline-block" }} />
+            </Link>
 
-              {/* Item 2: Sàn Đấu Giá */}
-              <Link
-                href="/auctions"
+            {/* Định Giá AI */}
+            <Link
+              href="/#ai-valuation"
+              style={{
+                padding: "8px 16px",
+                borderRadius: 6,
+                color: "#4B5563",
+                fontSize: 14,
+                fontWeight: 500,
+                textDecoration: "none",
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+                transition: "color 0.15s",
+                whiteSpace: "nowrap",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "#001743"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "#4B5563"; }}
+            >
+              <span style={{ color: "#8B5CF6", display: "flex" }}><Icons.Sparkles /></span>
+              Định Giá AI
+              {/* Tighter pill badge */}
+              <span style={{
+                fontSize: 9,
+                fontWeight: 800,
+                color: "#7C3AED",
+                background: "#EDE9FE",
+                padding: "1px 4px",
+                borderRadius: 99,
+                textTransform: "uppercase",
+                letterSpacing: "0.02em",
+                lineHeight: 1.4,
+              }}>MỚI</span>
+            </Link>
+
+            {/* Hỗ Trợ dropdown */}
+            <div ref={supportRef} style={{ position: "relative" }}>
+              <button
+                onClick={() => setSupportOpen(!supportOpen)}
                 style={{
-                  padding: "8px 14px",
+                  padding: "8px 16px",
                   borderRadius: 6,
-                  color: pathname?.startsWith("/auctions") ? "#E4011E" : "#4B5563",
-                  background: pathname?.startsWith("/auctions") ? "rgba(228, 1, 30, 0.06)" : "transparent",
+                  color: supportOpen ? "#001743" : "#4B5563",
+                  background: "transparent",
                   fontSize: 14,
-                  fontWeight: 600,
-                  textDecoration: "none",
+                  fontWeight: 500,
+                  border: "none",
+                  cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
-                  gap: 6,
-                  transition: "all 0.15s ease",
+                  gap: 5,
+                  transition: "color 0.15s",
+                  whiteSpace: "nowrap",
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "#001743";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "#4B5563";
-                }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = "#001743"; }}
+                onMouseLeave={(e) => { if (!supportOpen) e.currentTarget.style.color = "#4B5563"; }}
               >
-                <span>Sàn Đấu Giá</span>
-                {/* Live pulse dot */}
-                <span
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: "50%",
-                    background: "#E4011E",
-                    boxShadow: "0 0 6px #E4011E",
-                    display: "inline-block",
-                  }}
-                />
-              </Link>
-
-              {/* Item 3: Định Giá AI */}
-              <Link
-                href="/#ai-valuation"
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: 6,
-                  color: "#4B5563",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  textDecoration: "none",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  transition: "all 0.15s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "#001743";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "#4B5563";
-                }}
-              >
-                <span style={{ color: "#8B5CF6" }}><Icons.Sparkles /></span>
-                <span>Định Giá AI</span>
-                <span
-                  style={{
-                    fontSize: 9,
-                    fontWeight: 800,
-                    color: "#8B5CF6",
-                    background: "#F5F3FF",
-                    border: "1px solid #DDD6FE",
-                    padding: "1px 5px",
-                    borderRadius: 4,
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Mới
+                Hỗ Trợ
+                <span style={{ transform: supportOpen ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s", display: "flex" }}>
+                  <Icons.ChevronDown />
                 </span>
-              </Link>
-
-              {/* Item 4: Hỗ Trợ (Dropdown) */}
-              <div ref={supportRef} style={{ position: "relative" }}>
-                <button
-                  onClick={() => setSupportOpen(!supportOpen)}
-                  style={{
-                    padding: "8px 14px",
-                    borderRadius: 6,
-                    color: supportOpen ? "#001743" : "#4B5563",
-                    background: supportOpen ? "#F8F9FA" : "transparent",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    border: "none",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    transition: "all 0.15s ease",
-                  }}
-                >
-                  <span>Hỗ Trợ</span>
-                  <span style={{ transform: supportOpen ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}>
-                    <Icons.ChevronDown />
-                  </span>
-                </button>
-
-                {supportOpen && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "calc(100% + 6px)",
-                      left: 0,
-                      width: 220,
-                      background: "#FFFFFF",
-                      border: "1px solid #E5E7EB",
-                      borderRadius: 8,
-                      padding: 6,
-                      boxShadow: "0 10px 28px rgba(0, 23, 67, 0.08)",
-                      zIndex: 1001,
-                    }}
-                  >
-                    {[
-                      { label: "Quy trình 5 bước", desc: "Đấu giá & chuyển nhượng", href: "/#how-it-works" },
-                      { label: "Quy chế & Bảo mật", desc: "Cơ chế ký quỹ bảo đảm", href: "/#security" },
-                      { label: "Câu hỏi thường gặp", desc: "Giải đáp thắc mắc (FAQ)", href: "/#faq" },
-                      { label: "Liên hệ hỗ trợ", desc: "Tổng đài & Tư vấn viên", href: "/#contact" },
-                    ].map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setSupportOpen(false)}
-                        style={{
-                          display: "block",
-                          padding: "8px 12px",
-                          borderRadius: 6,
-                          textDecoration: "none",
-                          transition: "background 0.15s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = "#F8F9FA";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = "transparent";
-                        }}
-                      >
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#001743" }}>{item.label}</div>
-                        <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{item.desc}</div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Admin Portal Shortcut (Chỉ hiển thị nếu là Admin) */}
-              {isAdmin && (
-                <Link
-                  href="/admin"
-                  style={{
-                    padding: "6px 12px",
-                    borderRadius: 6,
-                    color: "#001743",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    textDecoration: "none",
-                    background: "#F3F4F6",
-                    border: "1px solid #E5E7EB",
-                    marginLeft: 6,
-                  }}
-                >
-                  Quản Trị Hệ Thống
-                </Link>
+              </button>
+              {supportOpen && (
+                <div style={{
+                  position: "absolute",
+                  top: "calc(100% + 6px)",
+                  left: 0,
+                  width: 220,
+                  background: "#FFFFFF",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: 8,
+                  padding: 6,
+                  boxShadow: "0 10px 28px rgba(0,23,67,0.08)",
+                  zIndex: 1001,
+                }}>
+                  {[
+                    { label: "Quy trình 5 bước", desc: "Đấu giá & chuyển nhượng", href: "/#how-it-works" },
+                    { label: "Quy chế & Bảo mật", desc: "Cơ chế ký quỹ bảo đảm", href: "/#security" },
+                    { label: "Câu hỏi thường gặp", desc: "Giải đáp thắc mắc (FAQ)", href: "/#faq" },
+                    { label: "Liên hệ hỗ trợ", desc: "Tổng đài & Tư vấn viên", href: "/#contact" },
+                  ].map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setSupportOpen(false)}
+                      style={{ display: "block", padding: "8px 12px", borderRadius: 6, textDecoration: "none", transition: "background 0.15s" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "#F8F9FA"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                    >
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#001743" }}>{item.label}</div>
+                      <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{item.desc}</div>
+                    </Link>
+                  ))}
+                </div>
               )}
-            </nav>
-          </div>
+            </div>
+          </nav>
 
           {/* ═══ 3. BÊN PHẢI: ACTIONS & ACCOUNT MENU ═══ */}
-          <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
             {!user ? (
               <>
                 <Link
                   href="/login"
                   style={{
-                    padding: "8px 16px",
+                    padding: "7px 14px",
                     borderRadius: 6,
-                    color: "#001743",
+                    color: "#374151",
                     fontSize: 14,
-                    fontWeight: 600,
+                    fontWeight: 500,
                     textDecoration: "none",
-                    transition: "background 0.15s ease",
+                    transition: "background 0.15s",
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#F8F9FA";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "transparent";
-                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#F3F4F6"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                 >
                   Đăng nhập
                 </Link>
                 <Link
                   href="/register"
                   className="btn-red"
-                  style={{
-                    padding: "8px 18px",
-                    fontSize: 14,
-                    fontWeight: 700,
-                    borderRadius: 6,
-                  }}
+                  style={{ padding: "7px 16px", fontSize: 14, fontWeight: 700, borderRadius: 6 }}
                 >
                   Đăng ký
                 </Link>
               </>
             ) : (
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                {/* 1. Nút Đăng bán SIM */}
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                {/* Compact icon-only: Đăng bán SIM */}
                 <Link
                   href="/profile?tab=auctions"
+                  title="Đăng bán SIM"
+                  aria-label="Đăng bán SIM"
                   style={{
-                    padding: "6px 12px",
-                    borderRadius: 6,
-                    background: "rgba(228, 1, 30, 0.08)",
-                    border: "1px solid rgba(228, 1, 30, 0.3)",
-                    color: "#E4011E",
-                    fontSize: 12.5,
-                    fontWeight: 700,
-                    textDecoration: "none",
+                    width: 34,
+                    height: 34,
+                    borderRadius: "50%",
+                    background: "#001743",
+                    color: "#FFFFFF",
                     display: "flex",
                     alignItems: "center",
-                    gap: 4,
-                    transition: "all 0.2s ease",
+                    justifyContent: "center",
+                    textDecoration: "none",
+                    flexShrink: 0,
+                    transition: "background 0.15s",
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#E4011E";
-                    e.currentTarget.style.color = "#FFFFFF";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(228, 1, 30, 0.08)";
-                    e.currentTarget.style.color = "#E4011E";
-                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#002a6b"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "#001743"; }}
                 >
-                  <Icons.Plus /> Đăng bán SIM
+                  <Icons.Plus />
                 </Link>
 
-                {/* 2. Icon Thông Báo Realtime (Chuông) */}
+                {/* Bell notification */}
                 <NotificationDropdown />
 
-                {/* 3. User Menu Dropdown Xịn Sò */}
+                {/* User avatar */}
                 <UserMenuDropdown user={user} isAdmin={isAdmin} />
               </div>
             )}
@@ -593,22 +535,24 @@ function NotificationDropdown() {
         onClick={() => setOpen(!open)}
         aria-label="Thông báo"
         style={{
-          width: 36,
-          height: 36,
-          borderRadius: 6,
-          background: open ? "#F8F9FA" : "transparent",
-          border: "1px solid #E5E7EB",
+          width: 34,
+          height: 34,
+          borderRadius: "50%",
+          background: open ? "#F3F4F6" : "transparent",
+          border: "none",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "#001743",
+          color: "#374151",
           cursor: "pointer",
           position: "relative",
-          transition: "all 0.2s ease",
+          transition: "background 0.15s",
         }}
+        onMouseEnter={(e) => { if (!open) e.currentTarget.style.background = "#F3F4F6"; }}
+        onMouseLeave={(e) => { if (!open) e.currentTarget.style.background = "transparent"; }}
       >
         <Icons.Bell />
-        {/* Red notification dot badge */}
+        {/* Solid red notification dot — no glow */}
         <span
           style={{
             position: "absolute",
@@ -720,38 +664,42 @@ function UserMenuDropdown({ user, isAdmin }: { user: AuthResponseDto; isAdmin: b
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 8,
-          padding: "4px 10px 4px 4px",
-          background: "#F8F9FA",
-          border: "1px solid #E5E7EB",
-          borderRadius: 6,
+          gap: 7,
+          padding: "3px 8px 3px 3px",
+          background: "transparent",
+          border: "none",
+          borderRadius: 99,
           cursor: "pointer",
           color: "#001743",
-          fontSize: 13.5,
-          fontWeight: 600,
-          transition: "all 0.2s ease",
+          fontSize: 13,
+          fontWeight: 500,
+          transition: "background 0.15s",
         }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = "#F3F4F6"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
       >
+        {/* Circle avatar */}
         <div
           style={{
-            width: 28,
-            height: 28,
-            borderRadius: 6,
+            width: 30,
+            height: 30,
+            borderRadius: "50%",
             background: isAdmin ? "#001743" : "#E4011E",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: 800,
             color: "#FFFFFF",
+            flexShrink: 0,
           }}
         >
           {initialChar}
         </div>
-        <span style={{ maxWidth: 110, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <span style={{ maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {displayName}
         </span>
-        <span style={{ transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}>
+        <span style={{ transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s", display: "flex", color: "#6B7280" }}>
           <Icons.ChevronDown />
         </span>
       </button>

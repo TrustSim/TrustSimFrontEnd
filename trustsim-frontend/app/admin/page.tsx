@@ -4,6 +4,8 @@ import { useSearchParams } from "next/navigation";
 import { AdminCategoriesTab } from "@/components/admin/AdminCategoriesTab";
 import { AdminCarriersTab } from "@/components/admin/AdminCarriersTab";
 import { AdminAuctionsTab } from "@/components/admin/AdminAuctionsTab";
+import { AdminCustomersTab } from "@/components/admin/AdminCustomersTab";
+import { AdminStaffTab } from "@/components/admin/AdminStaffTab";
 import {
   Smartphone,
   Gavel,
@@ -1661,6 +1663,9 @@ export default function AdminControlCenter() {
       {currentTab === "transactions" && renderTransactions()}
       {currentTab === "categories" && <AdminCategoriesTab />}
       {currentTab === "carriers" && <AdminCarriersTab />}
+      {currentTab === "customers" && <AdminCustomersTab />}
+      {currentTab === "staff" && <AdminStaffTab />}
+      {currentTab === "users" && <AdminCustomersTab />}
 
       {/* =========================================================================
           RIGHT DRAWER: THÊM / CHỈNH SỬA / CHI TIẾT SIM (CRUD WORKSPACE PATTERN)
