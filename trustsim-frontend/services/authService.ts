@@ -5,6 +5,7 @@ import {
   RegisterRequest,
   UserProfileDto,
 } from "@/types/auth";
+import type { SendOtpResponseDto, VerifyOtpResponseDto } from "@/types/common";
 
 const TOKEN_KEY = "trustsim_token";
 const USER_KEY = "trustsim_user";
@@ -278,6 +279,57 @@ export const authService = {
     const user = this.getUser();
     if (!user || this.isTokenExpired()) return false;
     return user?.role?.toUpperCase() === "ADMIN";
+  },
+
+  /**
+   * Gửi OTP xác thực tới email (dùng trước bước đăng ký)
+   */
+  async sendEmailOtp(
+    email: string,
+    purpose: string = "đăng ký tài khoản"
+  ): Promise<SendOtpResponseDto> {
+    const res = await apiFetch<SendOtpResponseDto>("/Auth/send-email-otp", {
+      method: "POST",
+      body: JSON.stringify({ email, purpose }),
+    });
+    if (res.data) return res.data;
+    throw new Error(res.message || "Không thể gửi mã OTP");
+  },
+
+  /**
+   * Gửi mã OTP xác thực qua SMS tới số điện thoại (SpeedSMS Gateway)
+   * @param phoneNumber Số điện thoại định dạng 10 chữ số VN
+   * @param purpose Mục đích xác thực (mặc định 2 = Registration)
+   */
+  async sendPhoneOtp(
+    phoneNumber: string,
+    purpose: number = 2
+  ): Promise<SendOtpResponseDto> {
+    const res = await apiFetch<SendOtpResponseDto>("/Otp/send-phone-otp", {
+      method: "POST",
+      body: JSON.stringify({ phoneNumber, purpose }),
+    });
+    if (res.data) return res.data;
+    throw new Error(res.message || "Không thể gửi mã OTP qua SMS");
+  },
+
+  /**
+   * Xác thực mã OTP 6 chữ số gửi qua số điện thoại (SpeedSMS)
+   * @param phoneNumber Số điện thoại đã nhận mã
+   * @param otpCode Mã OTP 6 chữ số
+   * @param purpose Mục đích xác thực (mặc định 2 = Registration)
+   */
+  async verifyPhoneOtp(
+    phoneNumber: string,
+    otpCode: string,
+    purpose: number = 2
+  ): Promise<VerifyOtpResponseDto> {
+    const res = await apiFetch<VerifyOtpResponseDto>("/Otp/verify-phone-otp", {
+      method: "POST",
+      body: JSON.stringify({ phoneNumber, otpCode, purpose }),
+    });
+    if (res.data) return res.data;
+    throw new Error(res.message || "Xác thực mã OTP thất bại");
   },
 };
 

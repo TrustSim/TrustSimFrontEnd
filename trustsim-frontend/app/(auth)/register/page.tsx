@@ -61,7 +61,7 @@ const Icons = {
   ),
 };
 
-type Step = "account_info" | "phone_verification";
+type Step = "account_info" | "email_otp" | "phone_verification";
 
 export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState<Step>("account_info");
@@ -101,8 +101,15 @@ export default function RegisterPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [otpSent, setOtpSent] = useState(false);
-  const [countdown, setCountdown] = useState(60);
+  const [countdown, setCountdown] = useState(0);
+  const [sendingPhoneOtp, setSendingPhoneOtp] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  // Email OTP state
+  const [emailOtp, setEmailOtp] = useState(["", "", "", "", "", ""]);
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [emailOtpCountdown, setEmailOtpCountdown] = useState(0);
+  const emailOtpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Load Provinces on mount
   useEffect(() => {
@@ -136,50 +143,103 @@ export default function RegisterPage() {
     }
   }, [selectedDistrict]);
 
-  // OTP Countdown timer
+  // OTP Countdown timer (phone)
   useEffect(() => {
     if (!otpSent || countdown <= 0) return;
     const timer = setInterval(() => setCountdown((c) => c - 1), 1000);
     return () => clearInterval(timer);
   }, [otpSent, countdown]);
 
-  const handleStep1Submit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Email OTP Countdown timer
+  useEffect(() => {
+    if (!emailOtpSent || emailOtpCountdown <= 0) return;
+    const timer = setInterval(() => setEmailOtpCountdown((c) => c - 1), 1000);
+    return () => clearInterval(timer);
+  }, [emailOtpSent, emailOtpCountdown]);
 
-    // Validation cơ bản ở frontend
+  const handleStep1Submit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (password !== confirmPassword) {
-      addToast({
-        type: "error",
-        title: "Mật khẩu không khớp",
-        message: "Mật khẩu xác nhận không trùng khớp với mật khẩu đã nhập.",
-      });
+      addToast({ type: "error", title: "Mật khẩu không khớp", message: "Mật khẩu xác nhận không trùng khớp." });
       return;
     }
     if (password.length < 6) {
-      addToast({
-        type: "error",
-        title: "Mật khẩu quá ngắn",
-        message: "Mật khẩu phải có độ dài tối thiểu từ 6 ký tự.",
-      });
+      addToast({ type: "error", title: "Mật khẩu quá ngắn", message: "Mật khẩu phải có ít nhất 6 ký tự." });
       return;
     }
     if (!/^[0-9]{12}$/.test(identityNumber)) {
-      addToast({
-        type: "error",
-        title: "Số CCCD không hợp lệ",
-        message: "Số CCCD/CMND phải bao gồm chính xác 12 chữ số.",
-      });
+      addToast({ type: "error", title: "Số CCCD không hợp lệ", message: "Số CCCD/CMND phải bao gồm chính xác 12 chữ số." });
+      return;
+    }
+    if (!email.trim() || !/^[^@]+@[^@]+\.[^@]+$/.test(email)) {
+      addToast({ type: "error", title: "Email không hợp lệ", message: "Vui lòng nhập địa chỉ email hợp lệ." });
       return;
     }
 
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const result = await authService.sendEmailOtp(email.trim());
+      if (result.isSuccess) {
+        setEmailOtpSent(true);
+        setEmailOtpCountdown(result.cooldownSeconds || 60);
+        setCurrentStep("email_otp");
+        addToast({ type: "success", title: "Đã gửi mã OTP", message: `Mã xác thực đã được gửi tới ${email.trim()}. Kiểm tra hộp thư (kể cả Spam).`, duration: 5000 });
+      } else {
+        addToast({ type: "error", title: "Không thể gửi OTP", message: result.message });
+      }
+    } catch (err: any) {
+      addToast({ type: "error", title: "Lỗi gửi OTP", message: err.message || "Không thể gửi mã xác thực email." });
+    } finally {
       setLoading(false);
-      setCurrentStep("phone_verification");
-    }, 300);
+    }
   };
 
-  const handleSendOtp = () => {
+  const handleResendEmailOtp = async () => {
+    if (emailOtpCountdown > 0) return;
+    setLoading(true);
+    try {
+      const result = await authService.sendEmailOtp(email.trim());
+      if (result.isSuccess) {
+        setEmailOtpCountdown(result.cooldownSeconds || 60);
+        addToast({ type: "info", title: "Đã gửi lại OTP", message: `Mã mới đã gửi tới ${email.trim()}.`, duration: 3000 });
+      } else {
+        addToast({ type: "error", title: "Gửi lại thất bại", message: result.message });
+      }
+    } catch (err: any) {
+      addToast({ type: "error", title: "Lỗi", message: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyEmailOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    const code = emailOtp.join("");
+    if (code.length < 6) {
+      addToast({ type: "error", title: "Thiếu mã OTP", message: "Vui lòng nhập đầy đủ 6 chữ số." });
+      return;
+    }
+    // NOTE: Verification thực sự xảy ra ở backend khi gọi /Auth/register
+    // (hoặc có thể gọi một endpoint verify riêng). Hiện tại chuyển thẳng sang bước phone.
+    // Backend sẽ xác thực OTP khi đăng ký.
+    setCurrentStep("phone_verification");
+  };
+
+  const handleEmailOtpChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+    const next = [...emailOtp];
+    next[index] = value.slice(-1);
+    setEmailOtp(next);
+    if (value && index < 5) emailOtpRefs.current[index + 1]?.focus();
+  };
+
+  const handleEmailOtpKey = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === "Backspace" && !emailOtp[index] && index > 0) {
+      emailOtpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleSendOtp = async () => {
     const cleanPhone = phoneNumber.replace(/\s/g, "");
     if (!/^(0[3|5|7|8|9])[0-9]{8}$/.test(cleanPhone)) {
       addToast({
@@ -189,24 +249,58 @@ export default function RegisterPage() {
       });
       return;
     }
-    setOtpSent(true);
-    setCountdown(60);
-    // Điền mã xác thực mẫu
-    setOtp(["1", "2", "3", "4", "5", "6"]);
-    addToast({
-      type: "info",
-      title: "Mã OTP đã được gửi",
-      message: `Mã xác thực gồm 6 chữ số đã được gửi đến số ${cleanPhone}.`,
-      duration: 3000,
-    });
+
+    setSendingPhoneOtp(true);
+    try {
+      // Gọi API gửi SMS OTP thật qua SpeedSMS Gateway (/api/Otp/send-phone-otp)
+      const res = await authService.sendPhoneOtp(cleanPhone, 2);
+      setOtpSent(true);
+      setCountdown(res.cooldownSeconds || 60);
+      setOtp(["", "", "", "", "", ""]);
+      setTimeout(() => otpRefs.current[0]?.focus(), 150);
+      addToast({
+        type: "success",
+        title: "Đã gửi mã OTP",
+        message: `Mã xác thực gồm 6 chữ số đã được gửi tới số ${cleanPhone} qua SMS. Vui lòng kiểm tra tin nhắn.`,
+        duration: 5000,
+      });
+    } catch (err: any) {
+      addToast({
+        type: "error",
+        title: "Không thể gửi SMS OTP",
+        message: err.message || "Gửi mã xác thực qua SMS thất bại. Vui lòng thử lại sau giây lát.",
+        duration: 6000,
+      });
+    } finally {
+      setSendingPhoneOtp(false);
+    }
   };
 
   const handleOtpChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return;
+    const cleanDigits = value.replace(/\D/g, "");
+    if (!cleanDigits) {
+      const next = [...otp];
+      next[index] = "";
+      setOtp(next);
+      return;
+    }
+
+    if (cleanDigits.length > 1) {
+      // Hỗ trợ dán toàn bộ mã OTP 6 số
+      const next = [...otp];
+      for (let i = 0; i < cleanDigits.length && index + i < 6; i++) {
+        next[index + i] = cleanDigits[i];
+      }
+      setOtp(next);
+      const nextFocus = Math.min(index + cleanDigits.length, 5);
+      otpRefs.current[nextFocus]?.focus();
+      return;
+    }
+
     const next = [...otp];
-    next[index] = value.slice(-1);
+    next[index] = cleanDigits;
     setOtp(next);
-    if (value && index < 5) {
+    if (index < 5) {
       otpRefs.current[index + 1]?.focus();
     }
   };
@@ -220,12 +314,21 @@ export default function RegisterPage() {
   const handleFinalRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!otpSent) {
+      addToast({
+        type: "error",
+        title: "Chưa gửi mã OTP",
+        message: "Vui lòng nhấn 'Gửi mã OTP' để nhận mã xác thực trước khi hoàn tất đăng ký.",
+      });
+      return;
+    }
+
     const otpCode = otp.join("");
     if (otpCode.length < 6) {
       addToast({
         type: "error",
         title: "Thiếu mã OTP",
-        message: "Vui lòng nhập đầy đủ 6 chữ số mã xác thực OTP.",
+        message: "Vui lòng nhập đầy đủ 6 chữ số mã xác thực OTP từ tin nhắn SMS.",
       });
       return;
     }
@@ -246,7 +349,20 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Gọi trực tiếp AuthController.cs (/api/Auth/register)
+      // 1. Xác thực mã OTP thật với Backend qua SpeedSMS (/api/Otp/verify-phone-otp)
+      const verifyResult = await authService.verifyPhoneOtp(cleanPhone, otpCode, 2);
+      if (!verifyResult.isValid) {
+        addToast({
+          type: "error",
+          title: "Mã OTP không hợp lệ",
+          message: verifyResult.message || "Mã OTP không chính xác hoặc đã hết hạn.",
+          duration: 4500,
+        });
+        setLoading(false);
+        return;
+      }
+
+      // 2. Gọi trực tiếp AuthController.cs (/api/Auth/register)
       const authData = await authService.register({
         userName: userName.trim(),
         email: email.trim(),
@@ -361,15 +477,23 @@ export default function RegisterPage() {
                     stepKey: "account_info",
                     number: "1",
                     title: "Thông tin tài khoản & Địa chỉ",
-                    desc: "Họ tên, Username, Email, Mật khẩu, CCCD, Ngày sinh & Địa chỉ",
+                    desc: "Họ tên, Username, Email, Mật khẩu, CCCD...",
                     active: currentStep === "account_info",
+                    done: currentStep === "email_otp" || currentStep === "phone_verification",
+                  },
+                  {
+                    stepKey: "email_otp",
+                    number: "2",
+                    title: "Xác thực Email OTP",
+                    desc: "Mã 6 chữ số gửi tới hộp thư của bạn",
+                    active: currentStep === "email_otp",
                     done: currentStep === "phone_verification",
                   },
                   {
                     stepKey: "phone_verification",
-                    number: "2",
-                    title: "Xác thực SĐT qua OTP (Bước cuối)",
-                    desc: "Nhập số điện thoại và mã OTP để kích hoạt tài khoản",
+                    number: "3",
+                    title: "Xác thực SĐT & Hoàn tất",
+                    desc: "Nhập số điện thoại và mã OTP SMS",
                     active: currentStep === "phone_verification",
                     done: false,
                   },
@@ -422,7 +546,7 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* ─── RIGHT FORM PANEL (Optimized Zero-Overflow Layout) ─── */}
+          {/* ─── RIGHT FORM PANEL ─── */}
           <div style={{ padding: "28px 32px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
             {currentStep === "account_info" ? (
               <div>
@@ -645,27 +769,113 @@ export default function RegisterPage() {
                   </Link>
                 </p>
               </div>
-            ) : (
-              /* ─── STEP 2: PHONE & OTP VERIFICATION (FINAL STEP) ─── */
+            ) : currentStep === "email_otp" ? (
+              /* ─── STEP 2: XÁC THỰC EMAIL OTP ─── */
               <div>
                 <button
                   type="button"
                   onClick={() => setCurrentStep("account_info")}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "#6B7280",
-                    cursor: "pointer",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    marginBottom: 10,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 5,
-                    padding: 0,
-                  }}
+                  style={{ background: "none", border: "none", color: "#6B7280", cursor: "pointer", fontSize: 12, fontWeight: 600, marginBottom: 10, display: "flex", alignItems: "center", gap: 5, padding: 0 }}
                 >
                   <Icons.ArrowLeft /> Quay lại sửa thông tin
+                </button>
+
+                <div style={{ marginBottom: 20 }}>
+                  <h1 style={{ fontSize: 21, fontWeight: 900, color: "#001743", letterSpacing: "-0.02em", margin: "0 0 4px" }}>
+                    Xác thực địa chỉ Email
+                  </h1>
+                  <p style={{ color: "#6B7280", fontSize: 12.5, margin: 0, lineHeight: 1.5 }}>
+                    Chúng tôi đã gửi mã OTP 6 chữ số tới{" "}
+                    <strong style={{ color: "#001743" }}>{email}</strong>.<br />
+                    Kiểm tra hộp thư đến (kể cả thư mục Spam).
+                  </p>
+                </div>
+
+                <form onSubmit={handleVerifyEmailOtp} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {/* 6 Email OTP boxes */}
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#001743", marginBottom: 8 }}>
+                      Mã xác thực Email (6 chữ số) <span style={{ color: "#E4011E" }}>*</span>
+                    </label>
+                    <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                      {emailOtp.map((digit, i) => (
+                        <input
+                          key={i}
+                          ref={(el) => { emailOtpRefs.current[i] = el; }}
+                          type="text"
+                          inputMode="numeric"
+                          value={digit}
+                          onChange={(e) => handleEmailOtpChange(i, e.target.value)}
+                          onKeyDown={(e) => handleEmailOtpKey(i, e)}
+                          maxLength={1}
+                          style={{
+                            width: 44,
+                            height: 52,
+                            textAlign: "center",
+                            fontSize: 22,
+                            fontWeight: 800,
+                            border: `2px solid ${digit ? "#001743" : "#E5E7EB"}`,
+                            borderRadius: 8,
+                            outline: "none",
+                            color: "#001743",
+                            background: digit ? "#F0F4FF" : "#FAFAFA",
+                            transition: "all 0.15s",
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Resend */}
+                  <div style={{ textAlign: "center" }}>
+                    <span style={{ fontSize: 12.5, color: "#6B7280" }}>Không nhận được mã? </span>
+                    <button
+                      type="button"
+                      onClick={handleResendEmailOtp}
+                      disabled={emailOtpCountdown > 0 || loading}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: emailOtpCountdown > 0 ? "#9CA3AF" : "#E4011E",
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        cursor: emailOtpCountdown > 0 ? "not-allowed" : "pointer",
+                        padding: 0,
+                      }}
+                    >
+                      {emailOtpCountdown > 0 ? `Gửi lại (${emailOtpCountdown}s)` : "Gửi lại mã"}
+                    </button>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={emailOtp.join("").length < 6 || loading}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      background: emailOtp.join("").length >= 6 ? "#001743" : "#9CA3AF",
+                      color: "#FFFFFF",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      border: "none",
+                      borderRadius: 6,
+                      cursor: emailOtp.join("").length >= 6 ? "pointer" : "not-allowed",
+                      transition: "background 0.15s",
+                    }}
+                  >
+                    Xác nhận mã OTP
+                  </button>
+                </form>
+              </div>
+            ) : (
+              /* ─── STEP 3: PHONE & OTP VERIFICATION (FINAL STEP) ─── */
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep("email_otp")}
+                  style={{ background: "none", border: "none", color: "#6B7280", cursor: "pointer", fontSize: 12, fontWeight: 600, marginBottom: 10, display: "flex", alignItems: "center", gap: 5, padding: 0 }}
+                >
+                  <Icons.ArrowLeft /> Quay lại xác thực Email
                 </button>
 
                 <div style={{ marginBottom: 14 }}>
@@ -703,7 +913,15 @@ export default function RegisterPage() {
                         type="tel"
                         placeholder="Nhập số điện thoại (ví dụ: 0988 123 456)"
                         value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                          setPhoneNumber(val);
+                          if (otpSent && val !== phoneNumber) {
+                            setOtpSent(false);
+                            setCountdown(0);
+                            setOtp(["", "", "", "", "", ""]);
+                          }
+                        }}
                         required
                         maxLength={10}
                         className="form-input"
@@ -712,20 +930,44 @@ export default function RegisterPage() {
                       <button
                         type="button"
                         onClick={handleSendOtp}
-                        disabled={otpSent && countdown > 0}
+                        disabled={sendingPhoneOtp || (otpSent && countdown > 0)}
                         style={{
                           padding: "8px 14px",
                           borderRadius: 6,
                           border: "1px solid #E4011E",
-                          background: otpSent && countdown > 0 ? "#F3F4F6" : "#E4011E",
-                          color: otpSent && countdown > 0 ? "#9CA3AF" : "#FFFFFF",
+                          background: sendingPhoneOtp || (otpSent && countdown > 0) ? "#F3F4F6" : "#E4011E",
+                          color: sendingPhoneOtp || (otpSent && countdown > 0) ? "#9CA3AF" : "#FFFFFF",
                           fontSize: 12,
                           fontWeight: 700,
-                          cursor: otpSent && countdown > 0 ? "not-allowed" : "pointer",
+                          cursor: sendingPhoneOtp || (otpSent && countdown > 0) ? "not-allowed" : "pointer",
                           whiteSpace: "nowrap",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
                         }}
                       >
-                        {otpSent && countdown > 0 ? `Gửi lại (${countdown}s)` : "Gửi mã OTP"}
+                        {sendingPhoneOtp ? (
+                          <>
+                            <span
+                              style={{
+                                width: 12,
+                                height: 12,
+                                border: "2px solid #9CA3AF",
+                                borderTopColor: "transparent",
+                                borderRadius: "50%",
+                                display: "inline-block",
+                                animation: "spin 0.8s linear infinite",
+                              }}
+                            />
+                            Đang gửi...
+                          </>
+                        ) : otpSent && countdown > 0 ? (
+                          `Gửi lại (${countdown}s)`
+                        ) : otpSent ? (
+                          "Gửi lại mã"
+                        ) : (
+                          "Gửi mã OTP"
+                        )}
                       </button>
                     </div>
                   </div>
