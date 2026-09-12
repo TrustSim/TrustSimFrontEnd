@@ -170,28 +170,124 @@ function useCountUp(target: number, duration: number = 500) {
   return current;
 }
 
-/* ─── SIM Number Renderer (Clean Monospace, Light Theme) ─────────────── */
-function renderDigitalAssetSim(phone: string) {
+/* ─── Gold SIM Microchip (Matches Luxury Physical Card Spec) ────────── */
+function SimMicrochip() {
+  return (
+    <svg width="48" height="38" viewBox="0 0 48 38" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+      <defs>
+        <linearGradient id="chipBorderGrad" x1="0" y1="0" x2="48" y2="38" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#FDE68A" />
+          <stop offset="45%" stopColor="#D97706" />
+          <stop offset="100%" stopColor="#78350F" />
+        </linearGradient>
+        <linearGradient id="chipBgGrad" x1="0" y1="0" x2="48" y2="38" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#B45309" />
+          <stop offset="50%" stopColor="#78350F" />
+          <stop offset="100%" stopColor="#451A03" />
+        </linearGradient>
+        <linearGradient id="padGrad" x1="0" y1="0" x2="0" y2="100%">
+          <stop offset="0%" stopColor="#FEF08A" />
+          <stop offset="35%" stopColor="#FBBF24" />
+          <stop offset="100%" stopColor="#D97706" />
+        </linearGradient>
+      </defs>
+      {/* Chip base card */}
+      <rect x="0.75" y="0.75" width="46.5" height="36.5" rx="5.5" fill="url(#chipBgGrad)" stroke="url(#chipBorderGrad)" strokeWidth="1.5" />
+      {/* Top Row: 3 pads */}
+      <rect x="4.5" y="4.5" width="10" height="7.5" rx="2" fill="url(#padGrad)" />
+      <rect x="19" y="4.5" width="10" height="7.5" rx="2" fill="url(#padGrad)" />
+      <rect x="33.5" y="4.5" width="10" height="7.5" rx="2" fill="url(#padGrad)" />
+      {/* Middle Row: 2 side pads + 1 center pill pad */}
+      <rect x="4.5" y="15" width="10" height="8" rx="2" fill="url(#padGrad)" />
+      <rect x="18" y="15" width="12" height="8" rx="4" fill="url(#padGrad)" />
+      <rect x="33.5" y="15" width="10" height="8" rx="2" fill="url(#padGrad)" />
+      {/* Bottom Row: 3 pads */}
+      <rect x="4.5" y="26" width="10" height="7.5" rx="2" fill="url(#padGrad)" />
+      <rect x="19" y="26" width="10" height="7.5" rx="2" fill="url(#padGrad)" />
+      <rect x="33.5" y="26" width="10" height="7.5" rx="2" fill="url(#padGrad)" />
+    </svg>
+  );
+}
+
+/* ─── Luxury SIM Number Renderer (0909: Silver | 999 999: Vivid Gold) ──── */
+function renderLuxurySimNumber(phone?: string) {
+  if (!phone) return <span style={{ color: "#FACC15" }}>---</span>;
   const clean = phone.replace(/\D/g, "");
   if (clean.length === 10) {
     const prefix = clean.slice(0, 4);
-    const part1 = clean.slice(4, 7);
-    const part2 = clean.slice(7);
+    const middle = clean.slice(4, 7);
+    const suffix = clean.slice(7);
 
     return (
-      <span className="inline-flex items-baseline gap-2.5 font-mono select-all tracking-wider">
-        <span className="text-slate-400 font-semibold text-[0.75em]">{prefix}</span>
-        <span className="font-black text-gray-900 tracking-widest">
-          {part1} {part2}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "clamp(12px, 2.5vw, 24px)",
+          fontFamily: "var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+          fontWeight: 900,
+          fontSize: "clamp(2rem, 5.2vw, 3.25rem)",
+          letterSpacing: "0.08em",
+          lineHeight: 1,
+          userSelect: "all",
+        }}
+      >
+        {/* Prefix: Ice Silver / Cool White */}
+        <span style={{ color: "#CBD5E1", textShadow: "0 2px 10px rgba(0,0,0,0.5)" }}>
+          {prefix}
         </span>
-      </span>
+        {/* Middle: Vivid Gold */}
+        <span style={{ color: "#FACC15", textShadow: "0 0 25px rgba(250, 204, 21, 0.3)" }}>
+          {middle}
+        </span>
+        {/* Suffix: Vivid Gold */}
+        <span style={{ color: "#FACC15", textShadow: "0 0 25px rgba(250, 204, 21, 0.3)" }}>
+          {suffix}
+        </span>
+      </div>
+    );
+  }
+
+  if (clean.length === 11) {
+    const prefix = clean.slice(0, 5);
+    const middle = clean.slice(5, 8);
+    const suffix = clean.slice(8);
+
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "clamp(10px, 2vw, 20px)",
+          fontFamily: "var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+          fontWeight: 900,
+          fontSize: "clamp(1.75rem, 4.5vw, 2.75rem)",
+          letterSpacing: "0.08em",
+          lineHeight: 1,
+          userSelect: "all",
+        }}
+      >
+        <span style={{ color: "#CBD5E1", textShadow: "0 2px 10px rgba(0,0,0,0.5)" }}>{prefix}</span>
+        <span style={{ color: "#FACC15", textShadow: "0 0 25px rgba(250, 204, 21, 0.3)" }}>{middle}</span>
+        <span style={{ color: "#FACC15", textShadow: "0 0 25px rgba(250, 204, 21, 0.3)" }}>{suffix}</span>
+      </div>
     );
   }
 
   return (
-    <span className="font-mono font-extrabold text-gray-900 tracking-widest">
+    <div
+      style={{
+        color: "#FACC15",
+        fontWeight: 900,
+        fontSize: "clamp(2rem, 5vw, 3rem)",
+        fontFamily: "monospace",
+        letterSpacing: "0.08em",
+      }}
+    >
       {phone}
-    </span>
+    </div>
   );
 }
 
@@ -647,63 +743,295 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
               {/* ════ LEFT COLUMN ════ */}
               <div className="space-y-5">
 
-                {/* ── 1. HERO: SIM INFO ── */}
-                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                  {/* Top accent line — carrier color */}
-                  <div className="h-1" style={{ backgroundColor: carrierConfig.dot }} />
+                {/* ── 1. LUXURY PHYSICAL SIM ASSET CARD (MATCHING USER SPEC) ── */}
+                {(() => {
+                  const rawCarrier = (auction.carrierName || "").toUpperCase();
+                  let displayCarrierName = "MOBIFONE";
+                  if (rawCarrier.includes("MOBI")) displayCarrierName = "MOBIFONE";
+                  else if (rawCarrier.includes("VIETTEL")) displayCarrierName = "VIETTEL";
+                  else if (rawCarrier.includes("VINA")) displayCarrierName = "VINAPHONE";
+                  else if (rawCarrier.includes("VIETNAMOBILE") || rawCarrier.includes("VNM")) displayCarrierName = "VIETNAMOBILE";
+                  else if (rawCarrier.includes("WINTEL") || rawCarrier.includes("REDDI")) displayCarrierName = "WINTEL";
+                  else if (rawCarrier.includes("ITELECOM") || rawCarrier.includes("INDOCHINA")) displayCarrierName = "ITELECOM";
+                  else if (rawCarrier) displayCarrierName = rawCarrier;
 
-                  <div className="p-6 sm:p-8">
-                    {/* Status + badges */}
-                    <div className="flex flex-wrap items-center gap-2 mb-5">
-                      {statusBadge()}
+                  const typeStr = String(auction.auctionType).toUpperCase();
+                  let displayAuctionType = "Đấu giá Kiểu Anh";
+                  if (typeStr === "DUTCH" || typeStr === "1") displayAuctionType = "Đấu giá Hà Lan";
+                  else if (typeStr === "SEALED" || typeStr === "2") displayAuctionType = "Đấu giá Kín";
 
-                      <span
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold border"
-                        style={{ backgroundColor: carrierConfig.bg, color: carrierConfig.text, borderColor: carrierConfig.border }}
+                  return (
+                    <div className="space-y-3">
+                      {/* Luxury Physical SIM Asset Card */}
+                      <div
+                        style={{
+                          position: "relative",
+                          padding: "1px",
+                          borderRadius: "14px",
+                          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(234, 179, 8, 0.35) 100%)",
+                          clipPath: "polygon(0 0, calc(100% - 32px) 0, 100% 32px, 100% 100%, 0 100%)",
+                          boxShadow: "0 25px 50px -12px rgba(0, 15, 45, 0.65), 0 0 0 1px rgba(0, 23, 67, 0.15)",
+                        }}
                       >
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: carrierConfig.dot }} />
-                        {carrierConfig.label}
-                      </span>
+                        <div
+                          style={{
+                            background: "linear-gradient(145deg, #010A1A 0%, #00122E 55%, #010B1B 100%)",
+                            clipPath: "polygon(0 0, calc(100% - 31.5px) 0, 100% 31.5px, 100% 100%, 0 100%)",
+                            borderRadius: "13px",
+                            padding: "26px 30px 22px",
+                            position: "relative",
+                            overflow: "hidden",
+                            minHeight: 250,
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          {/* Subtle Dotted Matrix Pattern Overlay */}
+                          <div
+                            style={{
+                              position: "absolute",
+                              inset: 0,
+                              backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.08) 1.2px, transparent 1.2px)",
+                              backgroundSize: "16px 16px",
+                              pointerEvents: "none",
+                            }}
+                          />
 
-                      <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
-                        {auction.auctionType === "DUTCH" ? "Đấu giá Hà Lan" : "Đấu giá Kiểu Anh"}
-                      </span>
+                          {/* Diagonal Gold Accent Line at Chamfered Corner */}
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: 16,
+                              right: 16,
+                              width: 46,
+                              height: 1.5,
+                              background: "linear-gradient(90deg, transparent 0%, #FDE047 50%, #CA8A04 100%)",
+                              transform: "rotate(45deg)",
+                              transformOrigin: "center",
+                              boxShadow: "0 0 8px rgba(250, 204, 21, 0.6)",
+                              pointerEvents: "none",
+                            }}
+                          />
 
-                      {auction.formatRhythmName && (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200">
-                          {auction.formatRhythmName}
-                        </span>
-                      )}
+                          {/* Faint Massive Watermark in Bottom Right */}
+                          <div
+                            style={{
+                              position: "absolute",
+                              right: 16,
+                              bottom: -16,
+                              fontSize: "clamp(54px, 10vw, 86px)",
+                              fontWeight: 950,
+                              color: "rgba(255, 255, 255, 0.03)",
+                              letterSpacing: "0.06em",
+                              pointerEvents: "none",
+                              userSelect: "none",
+                              lineHeight: 1,
+                              zIndex: 1,
+                              textTransform: "uppercase",
+                              fontFamily: "var(--font-inter), sans-serif",
+                            }}
+                          >
+                            {displayCarrierName}
+                          </div>
 
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold bg-gray-50 text-gray-500 border border-gray-200 font-mono">
-                        <Icons.Tag /> {auction.auctionCode}
-                      </span>
+                          {/* ── CARD HEADER: CHIP + CARRIER + TYPE BADGE ── */}
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              position: "relative",
+                              zIndex: 2,
+                            }}
+                          >
+                            {/* Left: Gold Microchip & Carrier Header */}
+                            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                              <SimMicrochip />
+                              <div>
+                                <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}>
+                                  <span
+                                    style={{
+                                      color: "#FFFFFF",
+                                      fontWeight: 900,
+                                      fontSize: 16,
+                                      letterSpacing: "0.05em",
+                                      textTransform: "uppercase",
+                                      fontFamily: "var(--font-inter), sans-serif",
+                                    }}
+                                  >
+                                    {displayCarrierName}
+                                  </span>
+                                  <span
+                                    style={{
+                                      color: "#EAB308",
+                                      fontWeight: 700,
+                                      fontSize: 11,
+                                      letterSpacing: "0.06em",
+                                      textTransform: "uppercase",
+                                    }}
+                                  >
+                                    SIM-CARD
+                                  </span>
+                                </div>
+                                <div
+                                  style={{
+                                    color: "#F59E0B",
+                                    fontSize: 12.5,
+                                    fontWeight: 700,
+                                    marginTop: 1,
+                                    letterSpacing: "0.01em",
+                                  }}
+                                >
+                                  SIM Đấu Giá
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Right: Pill Badge for Auction Type */}
+                            <div
+                              style={{
+                                padding: "6px 16px",
+                                borderRadius: 9999,
+                                background: "rgba(234, 179, 8, 0.08)",
+                                border: "1px solid rgba(234, 179, 8, 0.35)",
+                                color: "#FACC15",
+                                fontSize: 12.5,
+                                fontWeight: 800,
+                                whiteSpace: "nowrap",
+                                letterSpacing: "0.02em",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              {displayAuctionType}
+                            </div>
+                          </div>
+
+                          {/* ── CARD CENTER: LARGE SIM NUMBER (0909 999 999) ── */}
+                          <div
+                            style={{
+                              margin: "34px 0 26px",
+                              textAlign: "center",
+                              position: "relative",
+                              zIndex: 2,
+                            }}
+                          >
+                            {renderLuxurySimNumber(auction.simPhoneNumber)}
+                          </div>
+
+                          {/* ── CARD FOOTER: GIÁ KHỞI ĐIỂM & GIÁ HIỆN TẠI ── */}
+                          <div
+                            style={{
+                              borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+                              paddingTop: 16,
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "flex-end",
+                              position: "relative",
+                              zIndex: 2,
+                            }}
+                          >
+                            {/* Left: Starting Price */}
+                            <div>
+                              <div
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  color: "#64748B",
+                                  letterSpacing: "0.1em",
+                                  textTransform: "uppercase",
+                                  fontFamily: "monospace",
+                                  marginBottom: 4,
+                                }}
+                              >
+                                GIÁ KHỞI ĐIỂM
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: "clamp(16px, 2.2vw, 20px)",
+                                  fontWeight: 800,
+                                  color: "#FFFFFF",
+                                  fontFamily: "monospace",
+                                  letterSpacing: "0.02em",
+                                }}
+                              >
+                                {formatPrice(auction.startingPrice).replace("₫", "").trim()}{" "}
+                                <span style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>đ</span>
+                              </div>
+                            </div>
+
+                            {/* Right: Current Price */}
+                            <div style={{ textAlign: "right" }}>
+                              <div
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  color: "#EAB308",
+                                  letterSpacing: "0.1em",
+                                  textTransform: "uppercase",
+                                  fontFamily: "monospace",
+                                  marginBottom: 4,
+                                }}
+                              >
+                                GIÁ HIỆN TẠI
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: "clamp(20px, 3.2vw, 28px)",
+                                  fontWeight: 900,
+                                  color: "#FACC15",
+                                  fontFamily: "monospace",
+                                  letterSpacing: "0.02em",
+                                  textShadow: "0 0 20px rgba(250, 204, 21, 0.35)",
+                                  transition: "transform 0.2s",
+                                  transform: priceFlash ? "scale(1.04)" : "scale(1)",
+                                }}
+                              >
+                                {formatPrice(animatedPrice).replace("₫", "").trim()}{" "}
+                                <span style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>đ</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ── Metadata & Trust Bar Below Card ── */}
+                      <div
+                        style={{
+                          background: "#FFFFFF",
+                          border: "1px solid #E5E7EB",
+                          borderRadius: 8,
+                          padding: "12px 18px",
+                          display: "flex",
+                          flexWrap: "wrap",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 12,
+                        }}
+                      >
+                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+                          {statusBadge()}
+                          {auction.formatRhythmName && (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200">
+                              {auction.formatRhythmName}
+                            </span>
+                          )}
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold bg-gray-50 text-gray-500 border border-gray-200 font-mono">
+                            <Icons.Tag /> {auction.auctionCode}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-gray-500 font-medium">
+                          <span className="flex items-center gap-1.5"><Icons.ShieldCheck /> Sang tên chính chủ</span>
+                          <span className="flex items-center gap-1.5"><Icons.CheckCircle /> Xác thực eKYC</span>
+                          <span className="flex items-center gap-1.5"><Icons.Lock /> Ký quỹ hợp đồng</span>
+                        </div>
+                      </div>
                     </div>
-
-                    {/* Label */}
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">
-                      Số SIM Đấu Giá
-                    </p>
-
-                    {/* SIM Number — headline */}
-                    <div className="text-4xl sm:text-5xl font-extrabold leading-tight mb-3">
-                      {renderDigitalAssetSim(auction.simPhoneNumber)}
-                    </div>
-
-                    {/* Description */}
-                    <p className="text-sm text-gray-500 leading-relaxed max-w-2xl mb-6">
-                      Số SIM VIP thuộc hạ tầng mạng {carrierConfig.label}, niêm yết đấu giá công khai trên hệ thống TrustSim.
-                      Toàn bộ quy trình đấu giá được kiểm toán tự động và minh bạch theo thời gian thực.
-                    </p>
-
-                    {/* Trust anchors */}
-                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-5 border-t border-gray-100 text-xs text-gray-500">
-                      <span className="flex items-center gap-1.5"><Icons.ShieldCheck /> Sang tên chính chủ tại điểm GD</span>
-                      <span className="flex items-center gap-1.5"><Icons.CheckCircle /> Xác minh danh tính eKYC</span>
-                      <span className="flex items-center gap-1.5"><Icons.Lock /> Ký quỹ qua hợp đồng TrustSim</span>
-                    </div>
-                  </div>
-                </div>
+                  );
+                })()}
 
                 {/* ── 2. BIDDING PANEL ── */}
                 <div className={`bg-white border rounded-lg overflow-hidden transition-all duration-300 ${

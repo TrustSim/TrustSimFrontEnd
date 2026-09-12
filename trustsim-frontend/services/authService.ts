@@ -119,6 +119,28 @@ export const authService = {
   },
 
   /**
+   * Cập nhật ảnh đại diện Avatar qua Backend API và đồng bộ session
+   */
+  async updateAvatar(avatarUrl: string): Promise<string> {
+    const res = await apiFetch<string>("/Auth/avatar", {
+      method: "PUT",
+      body: JSON.stringify({ avatarUrl }),
+    });
+
+    if (res.data !== undefined) {
+      const current = this.getUser();
+      if (current) {
+        this.saveSession({
+          ...current,
+          avatarImg: res.data,
+        });
+      }
+      return res.data;
+    }
+    throw new Error(res.message || "Cập nhật ảnh đại diện không thành công");
+  },
+
+  /**
    * Đổi mật khẩu
    */
   async changePassword(data: {

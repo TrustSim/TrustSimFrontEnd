@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -69,6 +69,30 @@ const Icons = {
       <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
     </svg>
   ),
+  ChevronDown: ({ size = 14 }: { size?: number }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  ),
+  Check: ({ size = 14 }: { size?: number }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  ),
+  Sliders: ({ size = 14 }: { size?: number }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" />
+      <line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" />
+      <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
+      <line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" />
+    </svg>
+  ),
+  ArrowUpDown: ({ size = 14 }: { size?: number }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m7 15 5 5 5-5" />
+      <path d="m7 9 5-5 5 5" />
+    </svg>
+  ),
 };
 
 type StatusTab = "all" | "live" | "upcoming" | "ended";
@@ -115,6 +139,139 @@ function toCardData(item: AuctionDto): SimAuctionCardData {
   };
 }
 
+interface CarrierOption {
+  key: string;
+  name: string;
+  code: string;
+  color: string;
+  bg: string;
+}
+
+const CARRIER_OPTIONS: CarrierOption[] = [
+  { key: "all", name: "Tất cả nhà mạng", code: "ALL", color: "#001743", bg: "#F3F4F6" },
+  { key: "viettel", name: "Viettel", code: "VTL", color: "#E4011E", bg: "#FEF2F2" },
+  { key: "mobifone", name: "MobiFone", code: "MBF", color: "#005BAA", bg: "#EFF6FF" },
+  { key: "vinaphone", name: "VinaPhone", code: "VNP", color: "#00A3E0", bg: "#F0F9FF" },
+  { key: "vietnamobile", name: "Vietnamobile", code: "VNM", color: "#FF6600", bg: "#FFF7ED" },
+  { key: "wintel", name: "Wintel", code: "WTL", color: "#7C3AED", bg: "#F5F3FF" },
+  { key: "itelecom", name: "Itelecom", code: "ITL", color: "#DC2626", bg: "#FEF2F2" },
+];
+
+interface PriceOption {
+  key: string;
+  label: string;
+  desc?: string;
+  min?: number;
+  max?: number;
+}
+
+const PRICE_OPTIONS: PriceOption[] = [
+  { key: "all", label: "Tất cả mức giá" },
+  { key: "under-10m", label: "Dưới 10 triệu", desc: "< 10.000.000 ₫", max: 10_000_000 },
+  { key: "10m-50m", label: "10 - 50 triệu", desc: "10M - 50M ₫", min: 10_000_000, max: 50_000_000 },
+  { key: "50m-100m", label: "50 - 100 triệu", desc: "50M - 100M ₫", min: 50_000_000, max: 100_000_000 },
+  { key: "above-100m", label: "Trên 100 triệu (VIP)", desc: "> 100.000.000 ₫", min: 100_000_000 },
+];
+
+interface CategoryOption {
+  key: string;
+  label: string;
+  tag?: string;
+}
+
+const CATEGORY_OPTIONS: CategoryOption[] = [
+  { key: "all", label: "Tất cả danh mục" },
+  { key: "tu-quy", label: "Tứ quý / Ngũ quý", tag: "8888, 9999..." },
+  { key: "tam-hoa", label: "Tam hoa", tag: "666, 888..." },
+  { key: "loc-phat", label: "Lộc phát", tag: "68, 86, 6868" },
+  { key: "than-tai", label: "Thần tài", tag: "39, 79, 7979" },
+  { key: "ong-dia", label: "Ông địa", tag: "38, 78" },
+  { key: "so-tien", label: "Số tiến / Sảnh", tag: "5678, 6789..." },
+  { key: "taxi", label: "SIM Taxi / Cặp đôi", tag: "7878, 8989..." },
+  { key: "nam-sinh", label: "SIM Năm sinh", tag: "19xx, 20xx" },
+  { key: "phong-thuy", label: "SIM Phong thủy", tag: "Hợp mệnh, đại cát" },
+];
+
+interface SortOption {
+  key: string;
+  label: string;
+}
+
+const SORT_OPTIONS: SortOption[] = [
+  { key: "default", label: "Mới nhất (Mặc định)" },
+  { key: "price-asc", label: "Giá thấp → cao" },
+  { key: "price-desc", label: "Giá cao → thấp" },
+  { key: "ending-soon", label: "Sắp kết thúc (Phút chót)" },
+  { key: "bids-desc", label: "Nhiều lượt trả giá nhất (Hot)" },
+];
+
+function matchPrice(sim: AuctionDto, priceKey: string): boolean {
+  if (priceKey === "all") return true;
+  const price = sim.currentPrice ?? sim.startingPrice ?? 0;
+  switch (priceKey) {
+    case "under-10m":
+      return price < 10_000_000;
+    case "10m-50m":
+      return price >= 10_000_000 && price <= 50_000_000;
+    case "50m-100m":
+      return price >= 50_000_000 && price <= 100_000_000;
+    case "above-100m":
+      return price > 100_000_000;
+    default:
+      return true;
+  }
+}
+
+function matchCategory(sim: AuctionDto, catKey: string): boolean {
+  if (catKey === "all") return true;
+  const rawNum = (sim.simPhoneNumber || "").replace(/\D/g, "");
+  const rhythm = (sim.formatRhythmName || "").toLowerCase();
+  const cats = (sim.categories || []).map((c) => c.toLowerCase());
+
+  const hasInMeta = (kw: string) => rhythm.includes(kw) || cats.some((c) => c.includes(kw));
+
+  switch (catKey) {
+    case "tu-quy":
+      return /(.)\1{3}/.test(rawNum) || hasInMeta("tứ quý") || hasInMeta("ngũ quý") || hasInMeta("lục quý");
+    case "tam-hoa":
+      return /(.)\1{2}/.test(rawNum) || hasInMeta("tam hoa");
+    case "loc-phat":
+      return /68|86/.test(rawNum) || hasInMeta("lộc phát");
+    case "than-tai":
+      return /39|79/.test(rawNum) || hasInMeta("thần tài");
+    case "ong-dia":
+      return /38|78/.test(rawNum) || hasInMeta("ông địa");
+    case "so-tien": {
+      const isSequential = /(?:0123|1234|2345|3456|4567|5678|6789|123|234|345|456|567|678|789)/.test(rawNum);
+      return isSequential || hasInMeta("tiến") || hasInMeta("sảnh");
+    }
+    case "taxi":
+      return /(\d{2})\1$/.test(rawNum) || /(\d{3})\1$/.test(rawNum) || hasInMeta("taxi") || hasInMeta("cặp");
+    case "nam-sinh":
+      return /(?:19[6-9]\d|20[0-2]\d)$/.test(rawNum) || hasInMeta("năm sinh");
+    case "phong-thuy":
+      return hasInMeta("phong thủy") || hasInMeta("đại cát") || /(?:68|86|39|79|88|99)$/.test(rawNum);
+    default:
+      return true;
+  }
+}
+
+function sortAuctions(list: AuctionDto[], sortKey: string): AuctionDto[] {
+  const arr = [...list];
+  switch (sortKey) {
+    case "price-asc":
+      return arr.sort((a, b) => (a.currentPrice ?? a.startingPrice) - (b.currentPrice ?? b.startingPrice));
+    case "price-desc":
+      return arr.sort((a, b) => (b.currentPrice ?? b.startingPrice) - (a.currentPrice ?? a.startingPrice));
+    case "ending-soon":
+      return arr.sort((a, b) => new Date(a.endAt).getTime() - new Date(b.endAt).getTime());
+    case "bids-desc":
+      return arr.sort((a, b) => (b.totalBids || 0) - (a.totalBids || 0));
+    default:
+      return arr;
+  }
+}
+
 export default function AuctionsPage() {
   // Filter & Search states
   const [searchInput, setSearchInput] = useState("");
@@ -122,6 +279,11 @@ export default function AuctionsPage() {
   const [statusTab, setStatusTab] = useState<StatusTab>("live");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [carrierFilter, setCarrierFilter] = useState<string>("all");
+  const [priceFilter, setPriceFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("default");
+  const [openDropdown, setOpenDropdown] = useState<"carrier" | "price" | "category" | "sort" | null>(null);
+  const filterToolbarRef = useRef<HTMLDivElement>(null);
 
   // Pagination states
   const [pageIndex, setPageIndex] = useState(1);
@@ -280,11 +442,56 @@ export default function AuctionsPage() {
     loadAuctions();
   }, [loadAuctions]);
 
-  // Carrier client filtering (if user chooses specific carrier)
+  // Handle click outside to close dropdowns
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (filterToolbarRef.current && !filterToolbarRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Multi-criteria client filtering & sorting
   const displayAuctions = useMemo(() => {
-    if (carrierFilter === "all") return auctions;
-    return auctions.filter((a) => formatCarrier(a.carrierName).toLowerCase() === carrierFilter.toLowerCase());
-  }, [auctions, carrierFilter]);
+    let list = auctions;
+
+    // 1. Carrier filter
+    if (carrierFilter !== "all") {
+      list = list.filter((a) => formatCarrier(a.carrierName).toLowerCase() === carrierFilter.toLowerCase());
+    }
+
+    // 2. Price filter
+    if (priceFilter !== "all") {
+      list = list.filter((a) => matchPrice(a, priceFilter));
+    }
+
+    // 3. Category filter
+    if (categoryFilter !== "all") {
+      list = list.filter((a) => matchCategory(a, categoryFilter));
+    }
+
+    // 4. Sort
+    return sortAuctions(list, sortBy);
+  }, [auctions, carrierFilter, priceFilter, categoryFilter, sortBy]);
+
+  // Active filter indicator
+  const hasActiveFilters = Boolean(
+    searchInput.trim() ||
+    debouncedKeyword.trim() ||
+    carrierFilter !== "all" ||
+    categoryFilter !== "all" ||
+    priceFilter !== "all" ||
+    sortBy !== "default" ||
+    typeFilter !== "all" ||
+    statusTab !== "live"
+  );
+
+  const selectedCarrier = CARRIER_OPTIONS.find((c) => c.key === carrierFilter) || CARRIER_OPTIONS[0];
+  const selectedCategory = CATEGORY_OPTIONS.find((c) => c.key === categoryFilter) || CATEGORY_OPTIONS[0];
+  const selectedPrice = PRICE_OPTIONS.find((p) => p.key === priceFilter) || PRICE_OPTIONS[0];
+  const selectedSort = SORT_OPTIONS.find((s) => s.key === sortBy) || SORT_OPTIONS[0];
 
   // Hero Countdown Timer
   const currentHero = heroAuctions[heroIndex];
@@ -316,6 +523,10 @@ export default function AuctionsPage() {
     setStatusTab("live");
     setTypeFilter("all");
     setCarrierFilter("all");
+    setPriceFilter("all");
+    setCategoryFilter("all");
+    setSortBy("default");
+    setOpenDropdown(null);
     setPageIndex(1);
   };
 
@@ -636,13 +847,13 @@ export default function AuctionsPage() {
             boxShadow: "0 2px 8px rgba(0, 0, 0, 0.03)",
           }}
         >
-          <div className="container" style={{ maxWidth: 1200, margin: "0 auto", padding: "12px 20px" }}>
+          <div ref={filterToolbarRef} className="container" style={{ maxWidth: 1200, margin: "0 auto", padding: "12px 20px" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               
-              {/* Row 1: Search Input & Action Badges */}
-              <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+              {/* Row 1: Search Input & Custom Filter Dropdowns */}
+              <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                 {/* Search Input Box */}
-                <div style={{ flex: "1 1 360px", position: "relative" }}>
+                <div style={{ flex: "1 1 260px", position: "relative" }}>
                   <div
                     style={{
                       position: "absolute",
@@ -662,10 +873,11 @@ export default function AuctionsPage() {
                     type="text"
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
-                    placeholder="Tìm theo mã phiên (VD: AUC-20260901-001) hoặc số SIM..."
+                    placeholder="Tìm theo mã phiên (AUC-...) hoặc số SIM..."
                     style={{
                       width: "100%",
-                      padding: "10px 38px 10px 42px",
+                      height: 40,
+                      padding: "0 38px 0 42px",
                       borderRadius: 6,
                       border: "1px solid #D1D5DB",
                       fontSize: 13.5,
@@ -708,52 +920,434 @@ export default function AuctionsPage() {
                   )}
                 </div>
 
-                {/* Carrier Filter */}
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 12, color: "#6B7280", fontWeight: 600 }}>Nhà mạng:</span>
-                  <select
-                    value={carrierFilter}
-                    onChange={(e) => setCarrierFilter(e.target.value)}
+                {/* ── 1. Custom Carrier Dropdown (Logo Badge) ── */}
+                <div style={{ position: "relative" }}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenDropdown(openDropdown === "carrier" ? null : "carrier")}
                     style={{
-                      padding: "8px 12px",
+                      height: 40,
+                      padding: "0 12px",
                       borderRadius: 6,
-                      border: "1px solid #D1D5DB",
-                      fontSize: 12.5,
+                      border: carrierFilter !== "all" ? "1.5px solid #001743" : "1px solid #D1D5DB",
+                      background: carrierFilter !== "all" ? "#F8FAFC" : "#FFFFFF",
                       color: "#001743",
-                      background: "#FFFFFF",
-                      outline: "none",
-                      cursor: "pointer",
+                      fontSize: 13,
                       fontWeight: 600,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 8,
+                      transition: "all 0.15s ease",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    <option value="all">Tất cả nhà mạng</option>
-                    <option value="viettel">Viettel</option>
-                    <option value="mobifone">MobiFone</option>
-                    <option value="vinaphone">VinaPhone</option>
-                    <option value="vietnamobile">Vietnamobile</option>
-                  </select>
+                    <span
+                      style={{
+                        width: 20,
+                        height: 20,
+                        borderRadius: "50%",
+                        background: selectedCarrier.color,
+                        color: "#FFFFFF",
+                        fontSize: 9,
+                        fontWeight: 900,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        letterSpacing: "-0.5px",
+                      }}
+                    >
+                      {selectedCarrier.code}
+                    </span>
+                    <span>{selectedCarrier.name}</span>
+                    <span style={{ transform: openDropdown === "carrier" ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s", display: "flex", color: "#6B7280" }}>
+                      <Icons.ChevronDown size={14} />
+                    </span>
+                  </button>
+
+                  {openDropdown === "carrier" && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "calc(100% + 6px)",
+                        left: 0,
+                        width: 210,
+                        background: "#FFFFFF",
+                        border: "1px solid #E5E7EB",
+                        borderRadius: 8,
+                        boxShadow: "0 10px 25px rgba(0, 23, 67, 0.12)",
+                        zIndex: 50,
+                        padding: 6,
+                      }}
+                    >
+                      <div style={{ padding: "6px 8px 4px", fontSize: 10.5, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        Chọn nhà mạng
+                      </div>
+                      {CARRIER_OPTIONS.map((item) => {
+                        const isSelected = carrierFilter === item.key;
+                        return (
+                          <button
+                            key={item.key}
+                            type="button"
+                            onClick={() => {
+                              setCarrierFilter(item.key);
+                              setOpenDropdown(null);
+                            }}
+                            style={{
+                              width: "100%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              padding: "7px 10px",
+                              borderRadius: 6,
+                              background: isSelected ? "rgba(0, 23, 67, 0.05)" : "transparent",
+                              border: "none",
+                              cursor: "pointer",
+                              textAlign: "left",
+                              transition: "background 0.15s",
+                            }}
+                            onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#F9FAFB"; }}
+                            onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                              <span
+                                style={{
+                                  width: 20,
+                                  height: 20,
+                                  borderRadius: "50%",
+                                  background: item.color,
+                                  color: "#FFFFFF",
+                                  fontSize: 9,
+                                  fontWeight: 900,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  flexShrink: 0,
+                                  letterSpacing: "-0.5px",
+                                }}
+                              >
+                                {item.code}
+                              </span>
+                              <span style={{ fontSize: 13, fontWeight: isSelected ? 700 : 500, color: isSelected ? "#001743" : "#374151" }}>
+                                {item.name}
+                              </span>
+                            </div>
+                            {isSelected && (
+                              <span style={{ color: "#E4011E", display: "flex" }}>
+                                <Icons.Check size={14} />
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
-                {/* Reset Filters button if any active filter */}
-                {(debouncedKeyword || typeFilter !== "all" || carrierFilter !== "all" || statusTab !== "live") && (
+                {/* ── 2. Custom Category Dropdown (Danh mục SIM) ── */}
+                <div style={{ position: "relative" }}>
                   <button
+                    type="button"
+                    onClick={() => setOpenDropdown(openDropdown === "category" ? null : "category")}
+                    style={{
+                      height: 40,
+                      padding: "0 12px",
+                      borderRadius: 6,
+                      border: categoryFilter !== "all" ? "1.5px solid #001743" : "1px solid #D1D5DB",
+                      background: categoryFilter !== "all" ? "#F8FAFC" : "#FFFFFF",
+                      color: "#001743",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 7,
+                      transition: "all 0.15s ease",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <span style={{ color: categoryFilter !== "all" ? "#E4011E" : "#6B7280", display: "flex" }}>
+                      <Icons.Sliders size={14} />
+                    </span>
+                    <span>{categoryFilter === "all" ? "Danh mục SIM" : selectedCategory.label}</span>
+                    <span style={{ transform: openDropdown === "category" ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s", display: "flex", color: "#6B7280" }}>
+                      <Icons.ChevronDown size={14} />
+                    </span>
+                  </button>
+
+                  {openDropdown === "category" && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "calc(100% + 6px)",
+                        left: 0,
+                        width: 250,
+                        maxHeight: 320,
+                        overflowY: "auto",
+                        background: "#FFFFFF",
+                        border: "1px solid #E5E7EB",
+                        borderRadius: 8,
+                        boxShadow: "0 10px 25px rgba(0, 23, 67, 0.12)",
+                        zIndex: 50,
+                        padding: 6,
+                      }}
+                    >
+                      <div style={{ padding: "6px 8px 4px", fontSize: 10.5, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        Loại số & Dòng SIM
+                      </div>
+                      {CATEGORY_OPTIONS.map((item) => {
+                        const isSelected = categoryFilter === item.key;
+                        return (
+                          <button
+                            key={item.key}
+                            type="button"
+                            onClick={() => {
+                              setCategoryFilter(item.key);
+                              setOpenDropdown(null);
+                            }}
+                            style={{
+                              width: "100%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              padding: "7px 10px",
+                              borderRadius: 6,
+                              background: isSelected ? "rgba(0, 23, 67, 0.05)" : "transparent",
+                              border: "none",
+                              cursor: "pointer",
+                              textAlign: "left",
+                              transition: "background 0.15s",
+                            }}
+                            onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#F9FAFB"; }}
+                            onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+                          >
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: isSelected ? 700 : 500, color: isSelected ? "#001743" : "#374151" }}>
+                                {item.label}
+                              </div>
+                              {item.tag && (
+                                <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{item.tag}</div>
+                              )}
+                            </div>
+                            {isSelected && (
+                              <span style={{ color: "#E4011E", display: "flex" }}>
+                                <Icons.Check size={14} />
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* ── 3. Custom Price Range Dropdown (Khoảng giá) ── */}
+                <div style={{ position: "relative" }}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenDropdown(openDropdown === "price" ? null : "price")}
+                    style={{
+                      height: 40,
+                      padding: "0 12px",
+                      borderRadius: 6,
+                      border: priceFilter !== "all" ? "1.5px solid #001743" : "1px solid #D1D5DB",
+                      background: priceFilter !== "all" ? "#F8FAFC" : "#FFFFFF",
+                      color: "#001743",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 7,
+                      transition: "all 0.15s ease",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <span style={{ fontSize: 13, color: priceFilter !== "all" ? "#E4011E" : "#6B7280", fontWeight: 700 }}>₫</span>
+                    <span>{priceFilter === "all" ? "Khoảng giá" : selectedPrice.label}</span>
+                    <span style={{ transform: openDropdown === "price" ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s", display: "flex", color: "#6B7280" }}>
+                      <Icons.ChevronDown size={14} />
+                    </span>
+                  </button>
+
+                  {openDropdown === "price" && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "calc(100% + 6px)",
+                        left: 0,
+                        width: 220,
+                        background: "#FFFFFF",
+                        border: "1px solid #E5E7EB",
+                        borderRadius: 8,
+                        boxShadow: "0 10px 25px rgba(0, 23, 67, 0.12)",
+                        zIndex: 50,
+                        padding: 6,
+                      }}
+                    >
+                      <div style={{ padding: "6px 8px 4px", fontSize: 10.5, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        Mức ngân sách
+                      </div>
+                      {PRICE_OPTIONS.map((item) => {
+                        const isSelected = priceFilter === item.key;
+                        return (
+                          <button
+                            key={item.key}
+                            type="button"
+                            onClick={() => {
+                              setPriceFilter(item.key);
+                              setOpenDropdown(null);
+                            }}
+                            style={{
+                              width: "100%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              padding: "7px 10px",
+                              borderRadius: 6,
+                              background: isSelected ? "rgba(0, 23, 67, 0.05)" : "transparent",
+                              border: "none",
+                              cursor: "pointer",
+                              textAlign: "left",
+                              transition: "background 0.15s",
+                            }}
+                            onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#F9FAFB"; }}
+                            onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+                          >
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: isSelected ? 700 : 500, color: isSelected ? "#001743" : "#374151" }}>
+                                {item.label}
+                              </div>
+                              {item.desc && (
+                                <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{item.desc}</div>
+                              )}
+                            </div>
+                            {isSelected && (
+                              <span style={{ color: "#E4011E", display: "flex" }}>
+                                <Icons.Check size={14} />
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* ── 4. Custom Sort Dropdown (Sắp xếp) ── */}
+                <div style={{ position: "relative" }}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenDropdown(openDropdown === "sort" ? null : "sort")}
+                    style={{
+                      height: 40,
+                      padding: "0 12px",
+                      borderRadius: 6,
+                      border: sortBy !== "default" ? "1.5px solid #001743" : "1px solid #D1D5DB",
+                      background: sortBy !== "default" ? "#F8FAFC" : "#FFFFFF",
+                      color: "#001743",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 7,
+                      transition: "all 0.15s ease",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <span style={{ color: sortBy !== "default" ? "#E4011E" : "#6B7280", display: "flex" }}>
+                      <Icons.ArrowUpDown size={14} />
+                    </span>
+                    <span>{sortBy === "default" ? "Sắp xếp" : selectedSort.label}</span>
+                    <span style={{ transform: openDropdown === "sort" ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s", display: "flex", color: "#6B7280" }}>
+                      <Icons.ChevronDown size={14} />
+                    </span>
+                  </button>
+
+                  {openDropdown === "sort" && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "calc(100% + 6px)",
+                        right: 0,
+                        width: 230,
+                        background: "#FFFFFF",
+                        border: "1px solid #E5E7EB",
+                        borderRadius: 8,
+                        boxShadow: "0 10px 25px rgba(0, 23, 67, 0.12)",
+                        zIndex: 50,
+                        padding: 6,
+                      }}
+                    >
+                      <div style={{ padding: "6px 8px 4px", fontSize: 10.5, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        Thứ tự hiển thị
+                      </div>
+                      {SORT_OPTIONS.map((item) => {
+                        const isSelected = sortBy === item.key;
+                        return (
+                          <button
+                            key={item.key}
+                            type="button"
+                            onClick={() => {
+                              setSortBy(item.key);
+                              setOpenDropdown(null);
+                            }}
+                            style={{
+                              width: "100%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              padding: "7px 10px",
+                              borderRadius: 6,
+                              background: isSelected ? "rgba(0, 23, 67, 0.05)" : "transparent",
+                              border: "none",
+                              cursor: "pointer",
+                              textAlign: "left",
+                              transition: "background 0.15s",
+                            }}
+                            onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#F9FAFB"; }}
+                            onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+                          >
+                            <span style={{ fontSize: 13, fontWeight: isSelected ? 700 : 500, color: isSelected ? "#001743" : "#374151" }}>
+                              {item.label}
+                            </span>
+                            {isSelected && (
+                              <span style={{ color: "#E4011E", display: "flex" }}>
+                                <Icons.Check size={14} />
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* ── 5. Clear Filters Button ── */}
+                {hasActiveFilters && (
+                  <button
+                    type="button"
                     onClick={handleResetFilters}
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
                       gap: 6,
-                      padding: "8px 12px",
+                      padding: "0 14px",
+                      height: 40,
                       borderRadius: 6,
-                      background: "#FEE2E2",
+                      background: "#FEF2F2",
                       border: "1px solid #FECACA",
                       color: "#DC2626",
-                      fontSize: 12,
+                      fontSize: 12.5,
                       fontWeight: 700,
                       cursor: "pointer",
                       transition: "all 0.15s",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    <Icons.Refresh /> Đặt lại lọc
+                    <Icons.Refresh /> Xóa lọc
                   </button>
                 )}
               </div>

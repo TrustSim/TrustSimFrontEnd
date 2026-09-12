@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   Plus,
   Edit3,
@@ -14,7 +14,13 @@ import {
   Search,
   Hash,
   CheckCircle2,
+  Cloud,
+  Upload,
+  Camera,
 } from "lucide-react";
+import ImportExportBar from "@/components/admin/ImportExportBar";
+import { ExcelColumnDef } from "@/services/excelService";
+import { uploadImageToCloudinary } from "@/services/cloudinaryService";
 import {
   getCarriers,
   createCarrier,
@@ -57,25 +63,45 @@ function brandColor(name: string) {
   return "#001743";
 }
 
+function isValidLogoUrl(url?: string): boolean {
+  if (!url || typeof url !== "string") return false;
+  const trimmed = url.trim();
+  if (!trimmed) return false;
+  // Ignore mock seed domain that causes ERR_NAME_NOT_RESOLVED
+  if (trimmed.includes("trustsim.vn")) return false;
+  return true;
+}
+
 // --- Avatar / Logo ---
 function CarrierAvatar({ name, logo, size = 9 }: { name: string; logo?: string; size?: number }) {
+  const [imgError, setImgError] = useState(false);
   const color = brandColor(name);
-  if (logo && logo.trim() !== "") {
+
+  useEffect(() => {
+    setImgError(false);
+  }, [logo]);
+
+  const pixelSize = size * 4;
+
+  if (isValidLogoUrl(logo) && !imgError) {
     return (
-      <img
-        src={logo}
-        alt={name}
-        className={`w-${size} h-${size} rounded-full object-contain border border-slate-200 bg-white p-1 shrink-0`}
-        onError={(e) => {
-          (e.target as HTMLImageElement).style.display = "none";
-        }}
-      />
+      <div
+        style={{ width: pixelSize, height: pixelSize }}
+        className="rounded-full overflow-hidden border border-slate-200 bg-white p-1 flex items-center justify-center shrink-0 shadow-2xs"
+      >
+        <img
+          src={logo}
+          alt={name}
+          className="w-full h-full object-contain"
+          onError={() => setImgError(true)}
+        />
+      </div>
     );
   }
   return (
     <div
-      className={`w-${size} h-${size} rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-xs`}
-      style={{ backgroundColor: color }}
+      style={{ width: pixelSize, height: pixelSize, backgroundColor: color }}
+      className="rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-xs uppercase font-mono"
     >
       {name.slice(0, 2).toUpperCase()}
     </div>
@@ -139,6 +165,7 @@ function CarrierForm({
   onSave,
   onAddPrefix,
   onDeletePrefix,
+  onToast,
   onClose,
 }: {
   initial?: SimCarrierDto | null;
@@ -146,6 +173,7 @@ function CarrierForm({
   onSave: (p: CreateCarrierPayload, id?: string) => Promise<void>;
   onAddPrefix: (carrierId: string, prefixValue: string) => Promise<void>;
   onDeletePrefix: (prefixId: string) => Promise<void>;
+  onToast?: (msg: string, type?: "success" | "error") => void;
   onClose: () => void;
 }) {
   const isEdit = !!initial;
@@ -154,8 +182,56 @@ function CarrierForm({
     carrierCode: initial?.carrierCode ?? "",
     logoImg: initial?.logoImg ?? "",
   });
+
+  useEffect(() => {
+    setForm({
+      carrierName: initial?.carrierName ?? "",
+      carrierCode: initial?.carrierCode ?? "",
+      logoImg: initial?.logoImg ?? "",
+    });
+    setErrors({});
+  }, [initial]);
   const [errors, setErrors] = useState<Partial<Record<keyof CreateCarrierPayload, string>>>({});
   const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoError, setLogoError] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setLogoError(false);
+  }, [form.logoImg]);
+
+  const handleLogoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      onToast?.("Vui lòng chọn tệp hình ảnh hợp lệ (PNG, JPG, SVG, WEBP).", "error");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      onToast?.("Kích thước tệp ảnh không được vượt quá 5MB.", "error");
+      return;
+    }
+
+    setUploadingLogo(true);
+
+    try {
+      const res = await uploadImageToCloudinary(file, "carriers");
+      if (res.success && res.url) {
+        set("logoImg", res.url);
+        onToast?.("Đã cập nhật ảnh logo nhà mạng thành công!");
+      } else {
+        onToast?.(res.error || "Tải ảnh lên không thành công. Vui lòng thử lại.", "error");
+      }
+    } catch (err: any) {
+      onToast?.("Lỗi kết nối khi tải ảnh. Vui lòng thử lại sau.", "error");
+    } finally {
+      setUploadingLogo(false);
+      if (logoInputRef.current) logoInputRef.current.value = "";
+    }
+  };
 
   // Mini state for adding prefix
   const [inputPrefix, setInputPrefix] = useState("");
@@ -246,7 +322,7 @@ function CarrierForm({
                   className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border"
                   style={{ color, backgroundColor: `${color}14`, borderColor: `${color}30` }}
                 >
-                  {form.carrierCode || "CODE"}
+                  {form.carrierCode || "MÃ"}
                 </span>
                 <span className="text-[11px] text-slate-500 font-mono">
                   {carrierPrefixes.length > 0
@@ -269,7 +345,7 @@ function CarrierForm({
               />
             </FormField>
 
-            <FormField label="Mã viết tắt (Carrier Code)" required error={errors.carrierCode} hint="Viết hoa, tối đa 10 ký tự. VD: VTL, MBF, VNP">
+            <FormField label="Mã viết tắt" required error={errors.carrierCode} hint="Viết hoa, tối đa 10 ký tự. VD: VTL, MBF, VNP">
               <input
                 type="text"
                 value={form.carrierCode}
@@ -281,23 +357,110 @@ function CarrierForm({
             </FormField>
           </DrawerSection>
 
-          {/* Section 2: Logo & Thương hiệu */}
-          <DrawerSection title="Thương hiệu & Hình ảnh" subtitle="Đường dẫn logo SVG/PNG sắc nét hiển thị trên sàn">
-            <FormField label="URL Logo" hint="Đường dẫn logo chính thức (CDN/Cloudinary/S3). Để trống nếu dùng huy hiệu tự động.">
-              <input
-                type="text"
-                value={form.logoImg}
-                onChange={(e) => set("logoImg", e.target.value)}
-                placeholder="https://assets.trustsim.vn/carriers/..."
-                className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none text-slate-700"
-              />
-            </FormField>
+          {/* Section 2: Logo & Nhận diện thương hiệu (Đổi ảnh trực quan kiểu Facebook) */}
+          <DrawerSection title="Ảnh Logo Nhà Mạng" subtitle="Nhận diện thương hiệu chính thức hiển thị trực quan trên sàn">
+            <input
+              type="file"
+              ref={logoInputRef}
+              onChange={handleLogoFileChange}
+              accept="image/*"
+              className="hidden"
+            />
+            <div className="flex items-center gap-5 p-4 bg-slate-50 border border-slate-200/90 rounded-xl">
+              {/* Facebook-style Avatar Circle with Camera Overlay */}
+              <div className="relative group shrink-0">
+                <div
+                  onClick={() => !uploadingLogo && logoInputRef.current?.click()}
+                  className="w-20 h-20 rounded-full border-2 border-white shadow-md bg-white flex items-center justify-center overflow-hidden cursor-pointer relative transition-transform hover:scale-105"
+                  style={{
+                    backgroundColor: form.logoImg ? "#FFFFFF" : `${color}14`,
+                  }}
+                  title="Nhấn để đổi ảnh logo"
+                >
+                  {isValidLogoUrl(form.logoImg) && !logoError ? (
+                    <img
+                      src={form.logoImg}
+                      alt={form.carrierName || "Logo"}
+                      className="w-full h-full object-contain p-2"
+                      onError={() => setLogoError(true)}
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full flex flex-col items-center justify-center font-bold text-base font-mono uppercase"
+                      style={{ color, backgroundColor: `${color}14` }}
+                    >
+                      {(form.carrierCode || form.carrierName || "SIM").slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+
+                  {/* Hover Overlay - like Facebook Profile Pic */}
+                  <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-semibold gap-1">
+                    <Camera size={18} />
+                    <span>Đổi ảnh</span>
+                  </div>
+
+                  {/* Uploading Spinner */}
+                  {uploadingLogo && (
+                    <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white z-10">
+                      <Loader2 size={20} className="animate-spin text-white mb-0.5" />
+                      <span className="text-[9px] font-medium">Đang tải...</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Camera Badge at bottom-right corner (Facebook style) */}
+                <button
+                  type="button"
+                  onClick={() => !uploadingLogo && logoInputRef.current?.click()}
+                  disabled={uploadingLogo}
+                  className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#001743] hover:bg-[#00266B] text-white border-2 border-white flex items-center justify-center shadow-md transition-transform hover:scale-110 disabled:opacity-50 cursor-pointer"
+                  title="Tải ảnh mới từ máy tính"
+                >
+                  <Camera size={13} strokeWidth={2.2} />
+                </button>
+              </div>
+
+              {/* Action Controls & Description */}
+              <div className="flex-1 min-w-0 space-y-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    disabled={uploadingLogo}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors shadow-2xs disabled:opacity-50 cursor-pointer"
+                  >
+                    <Upload size={13} strokeWidth={2} />
+                    <span>Tải ảnh mới</span>
+                  </button>
+
+                  {form.logoImg && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        set("logoImg", "");
+                        onToast?.("Đã gỡ bỏ ảnh logo, sử dụng huy hiệu mặc định.");
+                      }}
+                      disabled={uploadingLogo}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-slate-200 hover:border-rose-200 text-xs font-semibold rounded-[6px] transition-colors disabled:opacity-50 cursor-pointer"
+                      title="Gỡ ảnh logo, sử dụng huy hiệu mặc định"
+                    >
+                      <Trash2 size={13} />
+                      <span>Gỡ logo</span>
+                    </button>
+                  )}
+                </div>
+
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Nhấn vào ảnh đại diện hoặc nút <strong>Tải ảnh mới</strong> để cập nhật logo. Hỗ trợ định dạng PNG, JPG, SVG, WEBP (tối đa 5MB).
+                </p>
+              </div>
+            </div>
           </DrawerSection>
 
           {/* Section 3: QUẢN LÝ DẢI ĐẦU SỐ (Chỉ khả dụng khi sửa hoặc có ID) */}
           {isEdit && initial && (
             <DrawerSection
-              title="Dải đầu số trực thuộc (Phone Prefixes)"
+              title="Dải đầu số trực thuộc"
               subtitle={`Quản lý toàn bộ các đầu số đã đăng ký cho nhà mạng ${initial.carrierName}`}
             >
               {/* Danh sách các đầu số hiện có */}
@@ -311,7 +474,7 @@ function CarrierForm({
 
                 {carrierPrefixes.length === 0 ? (
                   <div className="p-4 border border-dashed border-slate-200 rounded-lg text-center bg-slate-50/50">
-                    <p className="text-xs text-slate-400">Nhà mạng này chưa có đầu số nào được gán trong database.</p>
+                    <p className="text-xs text-slate-400">Nhà mạng này chưa có đầu số nào được gán trong hệ thống.</p>
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-2.5 bg-slate-50 border border-slate-200/80 rounded-lg">
@@ -421,7 +584,7 @@ export function AdminCarriersTab() {
   const [search, setSearch] = useState("");
   const [pageIndex, setPageIndex] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [updatedId, setUpdatedId] = useState<string | null>(null);
 
   // Drawer state
@@ -433,8 +596,8 @@ export function AdminCarriersTab() {
   const [deleteTarget, setDeleteTarget] = useState<SimCarrierDto | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const showToast = (msg: string) => {
-    setToast(msg);
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToast({ message, type });
     setTimeout(() => setToast(null), 3500);
   };
 
@@ -508,7 +671,7 @@ export function AdminCarriersTab() {
       showToast(`Đã xóa nhà mạng "${deleteTarget.carrierName}" thành công.`);
       setDeleteTarget(null);
     } catch (e: any) {
-      showToast(`Lỗi: ${e.message}`);
+      showToast(`Lỗi: ${e.message}`, "error");
     } finally {
       setDeleteLoading(false);
     }
@@ -528,6 +691,97 @@ export function AdminCarriersTab() {
     await deletePrefix(prefixId);
     setPrefixes((prev) => prev.filter((p) => p.id !== prefixId));
     showToast("Đã xóa đầu số thành công!");
+  };
+
+  // Excel Export Columns Definition
+  const carrierExportColumns: ExcelColumnDef<SimCarrierDto>[] = useMemo(
+    () => [
+      { header: "Mã định danh", key: "id", width: 36 },
+      { header: "Tên nhà mạng", key: "carrierName", width: 24 },
+      { header: "Mã viết tắt", key: "carrierCode", width: 14 },
+      { header: "Đường dẫn Logo", key: "logoImg", width: 36 },
+      {
+        header: "Dải đầu số liên kết",
+        key: "id",
+        width: 32,
+        formatter: (_val, item) => {
+          const prefs = prefixesByCarrier[item.id] || [];
+          return prefs.map((p) => p.prefixValue).join(", ");
+        },
+      },
+      {
+        header: "Số lượng đầu số",
+        key: "id",
+        width: 18,
+        formatter: (_val, item) => (prefixesByCarrier[item.id] || []).length,
+      },
+    ],
+    [prefixesByCarrier]
+  );
+
+  // Excel Import Handler
+  const handleImportCarriers = async (rows: any[]) => {
+    if (!rows || rows.length === 0) return;
+    setLoading(true);
+    let successCount = 0;
+    let failCount = 0;
+    let prefixCount = 0;
+
+    for (const r of rows) {
+      const carrierName = String(r["Tên nhà mạng"] || r.carrierName || "").trim();
+      const carrierCode = String(r["Mã viết tắt"] || r.carrierCode || "").trim().toUpperCase();
+      const logoImg = String(r["Đường dẫn Logo"] || r.logoImg || "").trim();
+      const prefixesStr = String(r["Dải đầu số liên kết"] || r.prefixes || r.prefixValue || "").trim();
+
+      if (!carrierName || !carrierCode) {
+        failCount++;
+        continue;
+      }
+
+      try {
+        const existing = carriers.find(
+          (c) =>
+            c.carrierCode.toLowerCase() === carrierCode.toLowerCase() ||
+            c.carrierName.toLowerCase() === carrierName.toLowerCase()
+        );
+
+        let carrierId = existing?.id;
+        if (!existing) {
+          const created = await createCarrier({ carrierName, carrierCode, logoImg });
+          carrierId = created.id;
+          successCount++;
+        }
+
+        if (carrierId && prefixesStr) {
+          const prefixList = prefixesStr
+            .split(/[,;\s]+/)
+            .map((p) => p.trim())
+            .filter(Boolean);
+
+          const existingPrefixes = (prefixesByCarrier[carrierId] || []).map((p) => p.prefixValue);
+
+          for (const pref of prefixList) {
+            if (!existingPrefixes.includes(pref)) {
+              try {
+                await createPrefix({ simCarrierId: carrierId, prefixValue: pref });
+                prefixCount++;
+              } catch (err) {
+                console.warn(`Lỗi nhập đầu số ${pref}:`, err);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Lỗi khi nhập nhà mạng:", err);
+        failCount++;
+      }
+    }
+
+    await load();
+    showToast(
+      `Đã nhập thành công ${successCount} nhà mạng và ${prefixCount} đầu số!${failCount > 0 ? ` (${failCount} dòng lỗi hoặc bỏ qua)` : ""
+      }`
+    );
   };
 
   const filtered = carriers.filter((c) => {
@@ -556,13 +810,22 @@ export function AdminCarriersTab() {
             Danh mục nhà mạng viễn thông tại Việt Nam, quản lý dải đầu số (098, 090, 088...) đồng bộ cơ sở dữ liệu.
           </p>
         </div>
-        <button
-          onClick={openCreate}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors shadow-xs shrink-0"
-        >
-          <Plus size={15} strokeWidth={1.75} />
-          <span>Thêm nhà mạng</span>
-        </button>
+        <div className="flex items-center gap-3 shrink-0">
+          <ImportExportBar
+            data={carriers}
+            columns={carrierExportColumns}
+            filename={`TrustSim_NhaMang_${new Date().toISOString().slice(0, 10)}`}
+            entityName="nhà mạng"
+            onImport={handleImportCarriers}
+          />
+          <button
+            onClick={openCreate}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors shadow-xs shrink-0"
+          >
+            <Plus size={15} strokeWidth={1.75} />
+            <span>Thêm nhà mạng</span>
+          </button>
+        </div>
       </div>
 
       {/* ── 2. Filter Toolbar Card ── */}
@@ -614,7 +877,7 @@ export function AdminCarriersTab() {
               <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
                 <th className="py-3 px-4">Nhà mạng</th>
                 <th className="py-3 px-4">Mã viết tắt</th>
-                <th className="py-3 px-4">Logo &amp; Thương hiệu</th>
+                <th className="py-3 px-4">Logo</th>
                 <th className="py-3 px-4">Dải đầu số liên kết ({prefixes.length})</th>
                 <th className="py-3 px-4 text-center">Trạng thái</th>
                 <th className="py-3 px-4 text-right">Thao tác</th>
@@ -682,9 +945,8 @@ export function AdminCarriersTab() {
                     <tr
                       key={carrier.id}
                       onClick={() => openEdit(carrier)}
-                      className={`transition-colors h-16 cursor-pointer ${
-                        isUpdated ? "bg-emerald-50" : "hover:bg-slate-50/80"
-                      }`}
+                      className={`transition-colors h-16 cursor-pointer ${isUpdated ? "bg-emerald-50" : "hover:bg-slate-50/80"
+                        }`}
                       style={{ transition: isUpdated ? "background-color 1500ms ease-out" : undefined }}
                     >
                       {/* Nhà mạng & Avatar */}
@@ -708,22 +970,21 @@ export function AdminCarriersTab() {
                         </span>
                       </td>
 
-                      {/* Logo / Nhận diện */}
+                      {/* Logo */}
                       <td className="py-3 px-4">
-                        {carrier.logoImg ? (
-                          <div className="flex items-center gap-2">
+                        {isValidLogoUrl(carrier.logoImg) ? (
+                          <div className="h-7 px-2.5 bg-white border border-slate-200 rounded-[5px] inline-flex items-center justify-center shadow-2xs">
                             <img
                               src={carrier.logoImg}
                               alt={carrier.carrierName}
-                              className="h-5 object-contain max-w-[70px]"
+                              className="h-4.5 max-w-[70px] object-contain"
                               onError={(e) => {
                                 (e.target as HTMLImageElement).style.display = "none";
                               }}
                             />
-                            <span className="text-[11px] text-slate-500 font-mono">Đã xác thực</span>
                           </div>
                         ) : (
-                          <span className="text-[11px] text-slate-400 italic">Huy hiệu mặc định</span>
+                          <span className="text-slate-300 font-mono text-xs">—</span>
                         )}
                       </td>
 
@@ -839,11 +1100,13 @@ export function AdminCarriersTab() {
         size="md"
       >
         <CarrierForm
+          key={editingCarrier ? editingCarrier.id : "new"}
           initial={editingCarrier}
           carrierPrefixes={editingCarrier ? prefixesByCarrier[editingCarrier.id] || [] : []}
           onSave={handleSave}
           onAddPrefix={handleAddPrefix}
           onDeletePrefix={handleDeletePrefix}
+          onToast={showToast}
           onClose={() => setDrawerOpen(false)}
         />
       </RightDrawer>
@@ -869,9 +1132,19 @@ export function AdminCarriersTab() {
 
       {/* ── 6. Toast thông báo nổi ── */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#001743] text-white px-4 py-3 rounded-[8px] shadow-lg border border-slate-700 text-xs font-semibold flex items-center gap-2 animate-fade-up">
-          <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
-          <span>{toast}</span>
+        <div
+          className={`fixed bottom-6 right-6 z-50 text-white px-4 py-3 rounded-[8px] shadow-lg border text-xs font-semibold flex items-center gap-2.5 animate-fade-up ${
+            toast.type === "error"
+              ? "bg-rose-900 border-rose-700 text-rose-50"
+              : "bg-[#001743] border-slate-700 text-white"
+          }`}
+        >
+          {toast.type === "error" ? (
+            <AlertTriangle size={16} className="text-rose-400 shrink-0" />
+          ) : (
+            <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+          )}
+          <span>{toast.message}</span>
         </div>
       )}
     </div>

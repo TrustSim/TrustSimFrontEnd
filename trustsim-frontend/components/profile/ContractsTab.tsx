@@ -24,7 +24,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
   const getEscrowBadge = (status: string) => {
     switch (status) {
       case "HELD":
-        return { text: "Đã giữ tiền Escrow", bg: "#EFF6FF", color: "#2563EB", border: "#BFDBFE" };
+        return { text: "Đã giữ tiền ký quỹ", bg: "#EFF6FF", color: "#2563EB", border: "#BFDBFE" };
       case "RELEASED_TO_SELLER":
         return { text: "Đã giải ngân cho người bán", bg: "#F0FDF4", color: "#16A34A", border: "#BBF7D0" };
       case "REFUNDED_TO_BUYER":
@@ -40,7 +40,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <h2 style={{ fontSize: 18, fontWeight: 800, color: "#001743", margin: 0 }}>
-            Hợp đồng chuyển nhượng & Ký quỹ bảo đảm (Escrow)
+            Hợp đồng chuyển nhượng & Ký quỹ bảo đảm
           </h2>
           <p style={{ fontSize: 12, color: "#6B7280", margin: 0, marginTop: 2 }}>
             Hệ thống tài khoản ký quỹ trung gian bảo đảm an toàn 100% cho cả bên mua và bên bán
@@ -130,7 +130,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
 
                   <button
                     type="button"
-                    onClick={() => addToast({ type: "info", title: "Chi tiết ký quỹ", message: `Hợp đồng #${trade.tradeTransactionCode} đang được giám sát bởi hệ thống Escrow tự động.` })}
+                    onClick={() => addToast({ type: "info", title: "Chi tiết ký quỹ", message: `Hợp đồng #${trade.tradeTransactionCode} đang được giám sát bởi hệ thống ký quỹ tự động.` })}
                     className="btn-outline"
                     style={{ padding: "6px 14px", fontSize: 12 }}
                   >

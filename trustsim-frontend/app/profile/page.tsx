@@ -12,6 +12,8 @@ import { WithdrawModal } from "@/components/wallet/WithdrawModal";
 
 import { ProfileIcons as Icons } from "@/components/profile/ProfileIcons";
 import { ProfileTab } from "@/components/profile/types";
+import { Camera, Loader2 } from "lucide-react";
+import { uploadImageToCloudinary } from "@/services/cloudinaryService";
 
 // Modular Tab Components
 import OverviewTab from "@/components/profile/OverviewTab";
@@ -28,7 +30,7 @@ const TABS: { key: ProfileTab; icon: React.ComponentType<{ size?: number }>; lab
   { key: "auctions", icon: Icons.Inbox, label: "SIM sở hữu" },
   { key: "bids", icon: Icons.Gavel, label: "Đang đấu giá" },
   { key: "transactions", icon: Icons.Wallet, label: "Giao dịch Ví" },
-  { key: "contracts", icon: Icons.FileText, label: "Hợp đồng Escrow" },
+  { key: "contracts", icon: Icons.FileText, label: "Hợp đồng" },
   { key: "settings", icon: Icons.Settings, label: "Cài đặt & Bảo mật" },
 ];
 
@@ -109,7 +111,68 @@ export default function ProfilePage() {
   const displayEmail = profile?.email || user?.email || "customer@trustsim.vn";
   const displayPhone = profile?.phoneNumber || user?.phoneNumber || "0901 234 567";
   const displayIdentity = profile?.identityNumber || "001201012345";
+  const rawAvatar = profile?.avatarImg || user?.avatarImg || "";
+  const displayAvatar = rawAvatar && !rawAvatar.includes("trustsim.vn") ? rawAvatar : "";
   const initialChar = displayName.charAt(0).toUpperCase();
+
+  // Cloudinary Avatar upload state
+  const avatarInputRef = React.useRef<HTMLInputElement>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      addToast({
+        type: "error",
+        title: "Tệp không hợp lệ",
+        message: "Vui lòng chọn tệp hình ảnh (PNG, JPG, WEBP, JPEG).",
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      addToast({
+        type: "error",
+        title: "Tệp quá lớn",
+        message: "Kích thước ảnh đại diện không được vượt quá 5MB.",
+      });
+      return;
+    }
+
+    setAvatarUploading(true);
+    try {
+      const res = await uploadImageToCloudinary(file, "avatars");
+      if (res.success && res.url) {
+        await authService.updateAvatar(res.url);
+        setProfile((prev) => (prev ? { ...prev, avatarImg: res.url } : prev));
+        setUser((prev) => (prev ? { ...prev, avatarImg: res.url } : prev));
+        addToast({
+          type: "success",
+          title: "Thành công",
+          message: "Đã cập nhật ảnh đại diện lên Cloudinary thành công!",
+        });
+      } else {
+        addToast({
+          type: "error",
+          title: "Lỗi tải ảnh",
+          message: res.error || "Không thể tải ảnh đại diện lên Cloudinary.",
+        });
+      }
+    } catch (err: any) {
+      addToast({
+        type: "error",
+        title: "Lỗi tải ảnh",
+        message: err.message || "Không thể tải ảnh đại diện lên Cloudinary.",
+      });
+    } finally {
+      setAvatarUploading(false);
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = "";
+      }
+    }
+  };
 
   const availableBalance = wallet?.availableBalance ?? profile?.wallet?.availableBalance ?? 0;
   const lockedBalance = wallet?.lockedBalance ?? profile?.wallet?.lockedBalance ?? 0;
@@ -166,7 +229,15 @@ export default function ProfilePage() {
             {/* Left Column: Avatar & Personal Credentials */}
             <div style={{ display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
               <div style={{ position: "relative" }}>
+                <input
+                  type="file"
+                  ref={avatarInputRef}
+                  onChange={handleAvatarChange}
+                  accept="image/*"
+                  style={{ display: "none" }}
+                />
                 <div
+                  onClick={() => avatarInputRef.current?.click()}
                   style={{
                     width: 80,
                     height: 80,
@@ -180,10 +251,68 @@ export default function ProfilePage() {
                     color: "#FFFFFF",
                     boxShadow: "0 8px 24px rgba(228, 1, 30, 0.35)",
                     border: "3px solid rgba(255, 255, 255, 0.2)",
+                    overflow: "hidden",
+                    cursor: "pointer",
+                    position: "relative",
                   }}
+                  title="Nhấn để đổi ảnh đại diện (Cloudinary)"
                 >
-                  {initialChar}
+                  {displayAvatar ? (
+                    <img
+                      src={displayAvatar}
+                      alt={displayName}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                  ) : (
+                    initialChar
+                  )}
+                  {avatarUploading && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        backgroundColor: "rgba(0, 0, 0, 0.6)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Loader2 size={24} className="animate-spin text-white" />
+                    </div>
+                  )}
                 </div>
+
+                {/* Cloudinary Camera Upload Button */}
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={avatarUploading}
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: -2,
+                    width: 26,
+                    height: 26,
+                    borderRadius: "50%",
+                    background: "#001743",
+                    border: "2px solid #FFFFFF",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#FFFFFF",
+                    cursor: "pointer",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+                    transition: "transform 0.15s ease",
+                  }}
+                  title="Tải ảnh đại diện lên Cloudinary"
+                >
+                  {avatarUploading ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <Camera size={12} />
+                  )}
+                </button>
+
                 <div
                   style={{
                     position: "absolute",

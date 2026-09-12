@@ -172,50 +172,30 @@ export const Navbar: React.FC<NavbarProps> = () => {
             transform: "translateX(-50%)",
             display: "flex",
             alignItems: "center",
-            gap: 0,
+            gap: 4,
           }}>
-            {/* Thị Trường */}
-            <Link
-              href="/market"
-              style={{
-                padding: "8px 16px",
-                borderRadius: 6,
-                color: pathname === "/market" ? "#E4011E" : "#4B5563",
-                background: pathname === "/market" ? "rgba(228,1,30,0.06)" : "transparent",
-                fontSize: 14,
-                fontWeight: pathname === "/market" ? 700 : 500,
-                textDecoration: "none",
-                transition: "color 0.15s",
-                whiteSpace: "nowrap",
-              }}
-              onMouseEnter={(e) => { if (pathname !== "/market") e.currentTarget.style.color = "#001743"; }}
-              onMouseLeave={(e) => { if (pathname !== "/market") e.currentTarget.style.color = "#4B5563"; }}
-            >
-              Thị Trường
-            </Link>
-
             {/* Sàn Đấu Giá */}
             <Link
               href="/auctions"
               style={{
-                padding: "8px 16px",
+                padding: "8px 18px",
                 borderRadius: 6,
                 color: pathname?.startsWith("/auctions") ? "#E4011E" : "#4B5563",
                 background: pathname?.startsWith("/auctions") ? "rgba(228,1,30,0.06)" : "transparent",
                 fontSize: 14,
-                fontWeight: 500,
+                fontWeight: pathname?.startsWith("/auctions") ? 700 : 500,
                 textDecoration: "none",
                 display: "flex",
                 alignItems: "center",
-                gap: 6,
-                transition: "color 0.15s",
+                gap: 7,
+                transition: "color 0.15s, background 0.15s",
                 whiteSpace: "nowrap",
               }}
               onMouseEnter={(e) => { e.currentTarget.style.color = "#001743"; }}
               onMouseLeave={(e) => { e.currentTarget.style.color = pathname?.startsWith("/auctions") ? "#E4011E" : "#4B5563"; }}
             >
               Sàn Đấu Giá
-              {/* Solid live dot — no glow */}
+              {/* Solid live dot */}
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#E4011E", flexShrink: 0, display: "inline-block" }} />
             </Link>
 
@@ -413,13 +393,6 @@ export const Navbar: React.FC<NavbarProps> = () => {
             gap: 10,
           }}
         >
-          <Link
-            href="/market"
-            onClick={() => setMobileOpen(false)}
-            style={{ padding: "12px 16px", borderRadius: 6, color: "#001743", fontSize: 15, fontWeight: 700, textDecoration: "none", background: "#F8F9FA" }}
-          >
-            Thị Trường SIM
-          </Link>
           <Link
             href="/auctions"
             onClick={() => setMobileOpen(false)}
@@ -720,9 +693,18 @@ function UserMenuDropdown({ user, isAdmin }: { user: AuthResponseDto; isAdmin: b
               fontWeight: 800,
               color: "#FFFFFF",
               flexShrink: 0,
+              overflow: "hidden",
             }}
           >
-            {initialChar}
+            {user.avatarImg && !user.avatarImg.includes("trustsim.vn") ? (
+              <img
+                src={user.avatarImg}
+                alt={displayName}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            ) : (
+              initialChar
+            )}
           </div>
           <span style={{ maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {displayName}
