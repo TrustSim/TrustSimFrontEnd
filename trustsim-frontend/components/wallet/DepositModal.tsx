@@ -35,6 +35,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   const [customInput, setCustomInput] = useState<string>(initialAmount.toLocaleString("vi-VN"));
   const [loading, setLoading] = useState<boolean>(false);
   const [depositData, setDepositData] = useState<DepositResponseDto | null>(null);
+  const [isCompleted, setIsCompleted] = useState<boolean>(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [error, setError] = useState<string>("");
   const [timeLeft, setTimeLeft] = useState<number>(1800); // 30 phút đếm ngược
@@ -44,19 +45,39 @@ export const DepositModal: React.FC<DepositModalProps> = ({
       setAmount(initialAmount);
       setCustomInput(initialAmount.toLocaleString("vi-VN"));
       setDepositData(null);
+      setIsCompleted(false);
       setError("");
       setTimeLeft(1800);
     }
   }, [isOpen, initialAmount]);
 
+  // Tự động kiểm tra trạng thái giao dịch nạp tiền mỗi 3 giây (Auto-polling)
+  useEffect(() => {
+    if (!depositData || isCompleted || !isOpen) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const tx = await walletService.getTransactionById(depositData.transactionId);
+        if (tx && tx.transactionStatus === "COMPLETED") {
+          setIsCompleted(true);
+          if (onSuccess) onSuccess();
+        }
+      } catch {
+        // Bỏ qua lỗi mạng nền
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [depositData, isCompleted, isOpen, onSuccess]);
+
   // Bộ đếm thời gian hiệu lực 30 phút
   useEffect(() => {
-    if (!depositData || timeLeft <= 0) return;
+    if (!depositData || timeLeft <= 0 || isCompleted) return;
     const timer = setInterval(() => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
-  }, [depositData, timeLeft]);
+  }, [depositData, timeLeft, isCompleted]);
 
   if (!isOpen) return null;
 
@@ -208,7 +229,84 @@ export const DepositModal: React.FC<DepositModalProps> = ({
 
         {/* Content Body */}
         <div style={{ padding: "22px 24px", overflowY: "auto", flex: 1 }}>
-          {!depositData ? (
+          {isCompleted && depositData ? (
+            /* Bước 3: Nạp tiền thành công tức thì */
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "16px 0" }}>
+              <div
+                style={{
+                  width: "60px",
+                  height: "60px",
+                  borderRadius: "50%",
+                  background: "#F0FDF4",
+                  border: "2px solid #BBF7D0",
+                  color: "#16A34A",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "16px",
+                }}
+              >
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+
+              <h3 style={{ fontSize: "19px", fontWeight: 900, color: "#001743", margin: "0 0 6px" }}>
+                Nạp tiền thành công!
+              </h3>
+              <p style={{ fontSize: "14px", color: "#16A34A", fontWeight: 800, margin: "0 0 16px" }}>
+                +{depositData.amount.toLocaleString("vi-VN")} ₫ đã được cộng vào ví của bạn
+              </p>
+
+              <div
+                style={{
+                  width: "100%",
+                  background: "#F8FAFC",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: "8px",
+                  padding: "14px 16px",
+                  marginBottom: "20px",
+                  fontSize: "12.5px",
+                  color: "#475569",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                  textAlign: "left",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Mã giao dịch:</span>
+                  <strong style={{ color: "#001743", fontFamily: "monospace" }}>{depositData.transactionCode}</strong>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Cổng thanh toán:</span>
+                  <strong style={{ color: "#001743" }}>VietQR SePay (Tự động)</strong>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Trạng thái:</span>
+                  <strong style={{ color: "#16A34A" }}>Hoàn tất</strong>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleComplete}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  background: "#001743",
+                  color: "#FFFFFF",
+                  fontSize: "14px",
+                  fontWeight: 800,
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                Hoàn tất
+              </button>
+            </div>
+          ) : !depositData ? (
             /* Bước 1: Chọn số tiền */
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
               <div>

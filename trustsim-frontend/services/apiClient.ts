@@ -144,23 +144,19 @@ export async function apiFetch<T = any>(
       let errorMessage = "Đã có lỗi xảy ra. Vui lòng thử lại.";
       let errors: string[] | undefined = undefined;
 
-      if (data?.message) {
-        errorMessage = data.message;
-      } else if (data?.title) {
-        errorMessage = data.title;
-      }
-
-      if (Array.isArray(data?.errors)) {
-        errors = data.errors;
-        if (!data?.message && errors && errors.length > 0) {
-          errorMessage = errors.join(", ");
-        }
+      if (Array.isArray(data?.errors) && data.errors.length > 0) {
+        errors = data.errors as string[];
+        errorMessage = (data.errors as string[]).join(". ");
       } else if (typeof data?.errors === "object" && data?.errors !== null) {
         const fieldErrors = Object.values(data.errors).flat() as string[];
         errors = fieldErrors;
         if (fieldErrors.length > 0) {
-          errorMessage = fieldErrors[0];
+          errorMessage = fieldErrors.join(". ");
         }
+      } else if (data?.message) {
+        errorMessage = data.message;
+      } else if (data?.title) {
+        errorMessage = data.title;
       }
 
       throw new ApiError(errorMessage, res.status, errors);

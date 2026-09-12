@@ -6,6 +6,11 @@ import { AdminCarriersTab } from "@/components/admin/AdminCarriersTab";
 import { AdminAuctionsTab } from "@/components/admin/AdminAuctionsTab";
 import { AdminCustomersTab } from "@/components/admin/AdminCustomersTab";
 import { AdminStaffTab } from "@/components/admin/AdminStaffTab";
+import AdminEscrowTab from "@/components/admin/AdminEscrowTab";
+import AdminDisputesTab from "@/components/admin/AdminDisputesTab";
+import AdminSettingsTab from "@/components/admin/AdminSettingsTab";
+import ImportExportBar from "@/components/admin/ImportExportBar";
+import { ExcelColumnDef } from "@/services/excelService";
 import {
   Smartphone,
   Gavel,
@@ -123,6 +128,19 @@ interface SimItem {
   created: string;
   patternDesc: string;
 }
+
+const SIM_EXPORT_COLUMNS: ExcelColumnDef<SimItem>[] = [
+  { header: "Mã SIM", key: "id", width: 14 },
+  { header: "Số điện thoại", key: "phone", width: 16, formatter: (v) => formatPhone(String(v)) },
+  { header: "Nhà mạng", key: "carrier", width: 14 },
+  { header: "Phân loại", key: "category", width: 18 },
+  { header: "Giá bán (VNĐ)", key: "price", width: 18, formatter: (v) => formatVND(Number(v)) },
+  { header: "AI Định giá (VNĐ)", key: "aiValuation", width: 18, formatter: (v) => formatVND(Number(v)) },
+  { header: "Hệ số AI", key: "aiMultiplier", width: 12 },
+  { header: "Trạng thái", key: "status", width: 14 },
+  { header: "Loại thuê bao", key: "type", width: 14 },
+  { header: "Mô tả thế số", key: "patternDesc", width: 30 },
+];
 
 interface AuctionItem {
   id: string;
@@ -1026,13 +1044,43 @@ export default function AdminControlCenter() {
             Cơ sở dữ liệu toàn bộ SIM số đẹp, phân tích quy luật phong thủy và đối soát giá thị trường với AI Engine.
           </p>
         </div>
-        <button
-          onClick={() => openSimDrawer(null, "info")}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors shadow-xs"
-        >
-          <Plus size={15} strokeWidth={1.75} />
-          <span>Thêm SIM vào kho</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <ImportExportBar
+            data={sims}
+            columns={SIM_EXPORT_COLUMNS}
+            filename={`TrustSim_KhoSIM_${new Date().toISOString().slice(0, 10)}`}
+            entityName="SIM"
+            onImport={(rows) => {
+              const newSims: SimItem[] = rows
+                .map((r, i) => ({
+                  id: `SIM-IMP-${Date.now()}-${i + 1}`,
+                  phone: String(r["Số điện thoại"] || r.phone || "").replace(/\D/g, ""),
+                  carrier: String(r["Nhà mạng"] || r.carrier || "Viettel"),
+                  category: String(r["Phân loại"] || r.category || "Số đẹp"),
+                  price: Number(r["Giá bán (VNĐ)"] || r.price || 5000000),
+                  aiValuation: Number(r["AI Định giá (VNĐ)"] || r.aiValuation || 5000000),
+                  aiMultiplier: Number(r["Hệ số AI"] || r.aiMultiplier || 1.0),
+                  status: "Available" as const,
+                  type: String(r["Loại thuê bao"] || r.type || "Trả trước"),
+                  created: new Date().toLocaleDateString("vi-VN"),
+                  patternDesc: String(r["Mô tả thế số"] || r.patternDesc || "Đã nhập từ file Excel"),
+                }))
+                .filter((s) => s.phone.length >= 9);
+
+              if (newSims.length > 0) {
+                setSims((prev) => [...newSims, ...prev]);
+                showToast(`Đã nhập thành công ${newSims.length} SIM vào kho.`);
+              }
+            }}
+          />
+          <button
+            onClick={() => openSimDrawer(null, "info")}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors shadow-xs"
+          >
+            <Plus size={15} strokeWidth={1.75} />
+            <span>Thêm SIM vào kho</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter Toolbar */}
@@ -1660,12 +1708,14 @@ export default function AdminControlCenter() {
       {currentTab === "sims" && renderSims()}
       {currentTab === "auctions" && <AdminAuctionsTab />}
       {currentTab === "ekyc" && renderEkycWorkspace()}
-      {currentTab === "transactions" && renderTransactions()}
+      {currentTab === "transactions" && <AdminEscrowTab />}
       {currentTab === "categories" && <AdminCategoriesTab />}
       {currentTab === "carriers" && <AdminCarriersTab />}
       {currentTab === "customers" && <AdminCustomersTab />}
       {currentTab === "staff" && <AdminStaffTab />}
       {currentTab === "users" && <AdminCustomersTab />}
+      {currentTab === "disputes" && <AdminDisputesTab />}
+      {currentTab === "settings" && <AdminSettingsTab />}
 
       {/* =========================================================================
           RIGHT DRAWER: THÊM / CHỈNH SỬA / CHI TIẾT SIM (CRUD WORKSPACE PATTERN)

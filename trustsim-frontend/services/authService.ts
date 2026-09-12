@@ -305,11 +305,12 @@ export const authService = {
    */
   async sendPhoneOtp(
     phoneNumber: string,
-    purpose: number = 2
+    purpose: number | string = "Registration"
   ): Promise<SendOtpResponseDto> {
+    const purposeStr = typeof purpose === "number" ? (purpose === 2 ? "Registration" : "PhoneVerification") : purpose;
     const res = await apiFetch<SendOtpResponseDto>("/Otp/send-phone-otp", {
       method: "POST",
-      body: JSON.stringify({ phoneNumber, purpose }),
+      body: JSON.stringify({ phoneNumber, purpose: purposeStr }),
     });
     if (res.data) return res.data;
     throw new Error(res.message || "Không thể gửi mã OTP qua SMS");
@@ -319,16 +320,17 @@ export const authService = {
    * Xác thực mã OTP 6 chữ số gửi qua số điện thoại (SpeedSMS)
    * @param phoneNumber Số điện thoại đã nhận mã
    * @param otpCode Mã OTP 6 chữ số
-   * @param purpose Mục đích xác thực (mặc định 2 = Registration)
+   * @param purpose Mục đích xác thực (mặc định "Registration")
    */
   async verifyPhoneOtp(
     phoneNumber: string,
     otpCode: string,
-    purpose: number = 2
+    purpose: number | string = "Registration"
   ): Promise<VerifyOtpResponseDto> {
+    const purposeStr = typeof purpose === "number" ? (purpose === 2 ? "Registration" : "PhoneVerification") : purpose;
     const res = await apiFetch<VerifyOtpResponseDto>("/Otp/verify-phone-otp", {
       method: "POST",
-      body: JSON.stringify({ phoneNumber, otpCode, purpose }),
+      body: JSON.stringify({ phoneNumber, otpCode, purpose: purposeStr }),
     });
     if (res.data) return res.data;
     throw new Error(res.message || "Xác thực mã OTP thất bại");
