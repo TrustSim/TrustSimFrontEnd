@@ -32,10 +32,47 @@ import {
   BtnPrimary,
 } from "@/components/ui/RightDrawer";
 import { Pagination } from "@/components/ui/Pagination";
+import ImportExportBar from "@/components/admin/ImportExportBar";
+import { ExcelColumnDef } from "@/services/excelService";
 
 // Format currency
 const formatVND = (value: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(value);
+
+const CUSTOMER_EXPORT_COLUMNS: ExcelColumnDef<AdminUserDetailDto>[] = [
+  { header: "Mã khách hàng", key: "id", width: 15 },
+  { header: "Họ và tên", key: "fullName", width: 22 },
+  { header: "Tên đăng nhập", key: "userName", width: 18 },
+  { header: "Email", key: "email", width: 25 },
+  { header: "Số điện thoại", key: "phoneNumber", width: 16 },
+  { header: "Số CCCD/CMND", key: "identityNumber", width: 18 },
+  { header: "Địa chỉ", key: "address", width: 30 },
+  {
+    header: "Số dư khả dụng (VNĐ)",
+    key: "availableBalance",
+    width: 20,
+    formatter: (v) => formatVND(Number(v) || 0),
+  },
+  {
+    header: "Số dư tạm khóa (VNĐ)",
+    key: "lockedBalance",
+    width: 20,
+    formatter: (v) => formatVND(Number(v) || 0),
+  },
+  {
+    header: "Trạng thái eKYC",
+    key: "verificationStatus",
+    width: 18,
+    formatter: (v) => getKycBadge(v).label,
+  },
+  {
+    header: "Trạng thái hoạt động",
+    key: "isActive",
+    width: 18,
+    formatter: (v) => (v ? "Hoạt động" : "Đã khóa"),
+  },
+  { header: "Ngày tham gia", key: "createdDate", width: 18 },
+];
 
 function getKycBadge(status: number | VerificationStatusEnum | string) {
   if (status === VerificationStatusEnum.VERIFIED || status === "VERIFIED" || status === 2) {
@@ -214,8 +251,39 @@ export function AdminCustomersTab() {
           </p>
         </div>
 
-        {/* Quick stats badges */}
+        {/* Quick stats badges & Export/Import Bar */}
         <div className="flex items-center gap-3">
+          <ImportExportBar
+            data={customers}
+            columns={CUSTOMER_EXPORT_COLUMNS}
+            filename={`TrustSim_KhachHang_${new Date().toISOString().slice(0, 10)}`}
+            entityName="khách hàng"
+            onImport={(rows) => {
+              const newCustomers: AdminUserDetailDto[] = rows
+                .map((r, idx) => ({
+                  id: `CUST-IMP-${Date.now()}-${idx + 1}`,
+                  userName: String(r["Tên đăng nhập"] || r.userName || `user_${Date.now()}_${idx}`),
+                  email: String(r["Email"] || r.email || `user${idx}@trustsim.vn`),
+                  role: UserRoleEnum.USER,
+                  isActive: true,
+                  fullName: String(r["Họ và tên"] || r.fullName || "Khách hàng mới"),
+                  phoneNumber: String(r["Số điện thoại"] || r.phoneNumber || "").replace(/\D/g, ""),
+                  address: String(r["Địa chỉ"] || r.address || ""),
+                  identityNumber: String(r["Số CCCD/CMND"] || r.identityNumber || ""),
+                  verificationStatus: VerificationStatusEnum.UNVERIFIED,
+                  availableBalance: Number(r["Số dư khả dụng (VNĐ)"] || r.availableBalance || 0),
+                  lockedBalance: Number(r["Số dư tạm khóa (VNĐ)"] || r.lockedBalance || 0),
+                  hasPkiKeys: false,
+                  createdDate: new Date().toLocaleDateString("vi-VN"),
+                }))
+                .filter((c) => c.fullName);
+
+              if (newCustomers.length > 0) {
+                setCustomers((prev) => [...newCustomers, ...prev]);
+                showToast(`Đã nhập thành công ${newCustomers.length} khách hàng từ file Excel.`);
+              }
+            }}
+          />
           <div className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-right">
             <span className="text-[10px] block text-slate-400 font-mono uppercase">Tổng số dư trang này</span>
             <span className="text-xs font-bold text-[#001743] font-mono tabular-nums">{formatVND(totalBalance)}</span>

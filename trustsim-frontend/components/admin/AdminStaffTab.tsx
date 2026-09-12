@@ -24,6 +24,7 @@ import {
   AdminCreateUserPayload,
   AdminUpdateUserPayload,
   UserRoleEnum,
+  VerificationStatusEnum,
 } from "@/services/userService";
 import {
   RightDrawer,
@@ -35,6 +36,30 @@ import {
   BtnSecondary,
 } from "@/components/ui/RightDrawer";
 import { Pagination } from "@/components/ui/Pagination";
+import ImportExportBar from "@/components/admin/ImportExportBar";
+import { ExcelColumnDef } from "@/services/excelService";
+
+const STAFF_EXPORT_COLUMNS: ExcelColumnDef<AdminUserDetailDto>[] = [
+  { header: "Mã nhân sự", key: "id", width: 15 },
+  { header: "Họ và tên", key: "fullName", width: 22 },
+  { header: "Tên đăng nhập", key: "userName", width: 18 },
+  { header: "Email", key: "email", width: 25 },
+  { header: "Số điện thoại", key: "phoneNumber", width: 16 },
+  {
+    header: "Vai trò",
+    key: "role",
+    width: 18,
+    formatter: (v) =>
+      v === UserRoleEnum.ADMIN || v === 1 || v === "ADMIN" ? "Quản trị viên" : "Tư vấn viên",
+  },
+  {
+    header: "Trạng thái",
+    key: "isActive",
+    width: 16,
+    formatter: (v) => (v ? "Đang hoạt động" : "Đã khóa"),
+  },
+  { header: "Ngày tạo", key: "createdDate", width: 18 },
+];
 
 // Flat Minimalist Staff Avatar (Line/Clean styled)
 function StaffAvatar({ name, avatar }: { name: string; avatar?: string }) {
@@ -179,14 +204,50 @@ export function AdminStaffTab() {
           </p>
         </div>
 
-        {/* CTA Button */}
-        <button
-          onClick={openCreate}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors shadow-xs shrink-0"
-        >
-          <Plus size={15} strokeWidth={1.5} />
-          <span>{activeSegment === "admins" ? "Thêm Quản trị viên" : "Thêm Tư vấn viên"}</span>
-        </button>
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          <ImportExportBar
+            data={staffList}
+            columns={STAFF_EXPORT_COLUMNS}
+            filename={`TrustSim_NhanSu_${new Date().toISOString().slice(0, 10)}`}
+            entityName="nhân sự"
+            onImport={(rows) => {
+              const newStaff: AdminUserDetailDto[] = rows
+                .map((r, idx) => ({
+                  id: `STAFF-IMP-${Date.now()}-${idx + 1}`,
+                  userName: String(r["Tên đăng nhập"] || r.userName || `staff_${Date.now()}_${idx}`),
+                  email: String(r["Email"] || r.email || `staff${idx}@trustsim.vn`),
+                  role:
+                    String(r["Vai trò"] || r.role).toLowerCase().includes("admin")
+                      ? UserRoleEnum.ADMIN
+                      : UserRoleEnum.CONSULTANT,
+                  isActive: true,
+                  fullName: String(r["Họ và tên"] || r.fullName || "Nhân sự mới"),
+                  phoneNumber: String(r["Số điện thoại"] || r.phoneNumber || "").replace(/\D/g, ""),
+                  address: String(r["Địa chỉ"] || r.address || "Trụ sở TrustSim"),
+                  identityNumber: String(r["Số CCCD/CMND"] || r.identityNumber || ""),
+                  verificationStatus: VerificationStatusEnum.VERIFIED,
+                  availableBalance: 0,
+                  lockedBalance: 0,
+                  hasPkiKeys: true,
+                  createdDate: new Date().toLocaleDateString("vi-VN"),
+                }))
+                .filter((s) => s.fullName);
+
+              if (newStaff.length > 0) {
+                setStaffList((prev) => [...newStaff, ...prev]);
+                showToast(`Đã nhập thành công ${newStaff.length} nhân sự từ file Excel.`);
+              }
+            }}
+          />
+          <button
+            onClick={openCreate}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors shadow-xs shrink-0"
+          >
+            <Plus size={15} strokeWidth={1.5} />
+            <span>{activeSegment === "admins" ? "Thêm Quản trị viên" : "Thêm Tư vấn viên"}</span>
+          </button>
+        </div>
       </div>
 
       {/* ── 2. Segmented Tabs Switcher ── */}
