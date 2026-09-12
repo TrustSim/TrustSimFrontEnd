@@ -23,6 +23,46 @@ export enum AuctionStatusEnum {
   CANCELLED = 4,
 }
 
+export interface AuctionDto {
+  id: string;
+  auctionCode: string;
+  auctionType: "ENGLISH" | "DUTCH" | string;
+  auctionStatus: "DRAFT" | "SCHEDULE" | "ACTIVE" | "END" | "CANCELLED" | string;
+  startingPrice: number;
+  currentPrice: number;
+  reservePrice: number;
+  startAt: string;
+  endAt: string;
+  registrationStartAt: string;
+  registrationEndAt: string;
+  authorId: string;
+  authorName: string;
+  simNumberId: string;
+  simPhoneNumber: string;
+  carrierName: string;
+  totalParticipants: number;
+  totalBids: number;
+  minBidStep: number;
+  depositAmount: number;
+  extensionDurationSeconds: number;
+  dutchDecreaseAmount?: number;
+  dutchDecreaseIntervalSeconds?: number;
+  formatRhythmName?: string;
+  categories?: string[];
+  isUserRegistered?: boolean;
+}
+
+export interface BidDto {
+  id: string;
+  auctionId: string;
+  participantId: string;
+  userAccountId: string;
+  userNameMasked: string;
+  bidAmount: number;
+  placedAt: string;
+  status: "WINNING" | "ACCEPTED" | "OUTBIB" | "REJECTED" | string;
+}
+
 export interface AuctionListItemDto {
   auctionId: string;
   auctionCode: string;
@@ -73,6 +113,15 @@ export interface GetAdminAuctionsParams {
   startTo?: string;
 }
 
+export interface GetAuctionsParams {
+  keyword?: string;
+  status?: string | number;
+  type?: string | number;
+  authorId?: string;
+  pageIndex?: number;
+  pageSize?: number;
+}
+
 export interface CreateAuctionPayload {
   simNumberId: string;
   auctionType: number;
@@ -91,6 +140,41 @@ export interface CreateAuctionPayload {
 }
 
 export const auctionService = {
+  /**
+   * Lấy danh sách các phiên đấu giá công khai từ Backend (hỗ trợ search mã phiên, số sim, lọc trạng thái, loại hình)
+   */
+  async getAuctions(params: GetAuctionsParams = {}): Promise<PagedResult<AuctionDto>> {
+    const query = new URLSearchParams();
+    if (params.keyword) query.append("keyword", params.keyword.trim());
+    if (params.status !== undefined && params.status !== null && params.status !== "") {
+      query.append("status", params.status.toString());
+    }
+    if (params.type !== undefined && params.type !== null && params.type !== "") {
+      query.append("type", params.type.toString());
+    }
+    if (params.authorId) query.append("authorId", params.authorId);
+    if (params.pageIndex) query.append("pageIndex", params.pageIndex.toString());
+    if (params.pageSize) query.append("pageSize", params.pageSize.toString());
+
+    const queryString = query.toString();
+    const endpoint = `/Auctions${queryString ? `?${queryString}` : ""}`;
+    const res = await apiFetch<PagedResult<AuctionDto>>(endpoint);
+
+    if (res.data) {
+      return res.data;
+    }
+
+    return {
+      items: [],
+      pageIndex: params.pageIndex || 1,
+      pageSize: params.pageSize || 20,
+      totalCount: 0,
+      totalPages: 0,
+      hasPreviousPage: false,
+      hasNextPage: false,
+    };
+  },
+
   /**
    * [ADMIN] Lấy danh sách phiên đấu giá có phân trang và bộ lọc từ Backend
    */
@@ -168,5 +252,44 @@ export const auctionService = {
     });
     if (!res.data) throw new Error(res.message || "Tạo phiên đấu giá không thành công.");
     return res.data;
+  },
+
+  /**
+   * Lấy chi tiết phiên đấu giá từ Backend (Public API)
+   */
+  async getAuctionById(id: string): Promise<AuctionDto> {
+    const res = await apiFetch<AuctionDto>(`/Auctions/${id}`);
+    if (!res.data) throw new Error(res.message || "Không thể tải thông tin phiên đấu giá.");
+    return res.data;
+  },
+
+  /**
+   * Lấy lịch sử trả giá (Bids) của phiên đấu giá từ Backend (Public API)
+   */
+  async getAuctionBids(id: string, top: number = 50): Promise<BidDto[]> {
+    const res = await apiFetch<BidDto[]>(`/Auctions/${id}/bids?top=${top}`);
+    return res.data || [];
+  },
+
+  /**
+   * Trả giá (Đặt Bid) trong phiên đấu giá
+   */
+  async placeBid(id: string, amount: number): Promise<BidDto> {
+    const res = await apiFetch<BidDto>(`/Auctions/${id}/bids`, {
+      method: "POST",
+      body: JSON.stringify({ bidAmount: amount }),
+    });
+    if (!res.data) throw new Error(res.message || "Đặt giá không thành công.");
+    return res.data;
+  },
+
+  /**
+   * Đăng ký tham gia phiên đấu giá
+   */
+  async registerParticipant(id: string): Promise<boolean> {
+    const res = await apiFetch<boolean>(`/Auctions/${id}/register`, {
+      method: "POST",
+    });
+    return res.success;
   },
 };

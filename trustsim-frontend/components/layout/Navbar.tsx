@@ -5,7 +5,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { authService } from "@/services/authService";
+import { walletService } from "@/services/walletService";
 import { AuthResponseDto } from "@/types/auth";
+import { DepositModal } from "@/components/wallet/DepositModal";
+import type { WalletDto } from "@/types/wallet";
 
 /* ─── 100% Crisp Line SVG Icons ──────────────────────────── */
 const Icons = {
@@ -638,9 +641,24 @@ function NotificationDropdown() {
 ═══════════════════════════════════════════════════════════════ */
 function UserMenuDropdown({ user, isAdmin }: { user: AuthResponseDto; isAdmin: boolean }) {
   const [open, setOpen] = useState(false);
+  const [wallet, setWallet] = useState<WalletDto | null>(null);
+  const [depositModalOpen, setDepositModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const displayName = user.fullName || user.userName || "User";
   const initialChar = displayName.charAt(0).toUpperCase();
+
+  const fetchWallet = () => {
+    walletService
+      .getMyWallet()
+      .then((data) => setWallet(data))
+      .catch(() => {
+        // Fallback gracefully
+      });
+  };
+
+  useEffect(() => {
+    fetchWallet();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -657,107 +675,121 @@ function UserMenuDropdown({ user, isAdmin }: { user: AuthResponseDto; isAdmin: b
     window.location.href = "/login";
   };
 
+  const availableBalance = wallet?.availableBalance ?? 0;
+
   return (
-    <div ref={dropdownRef} style={{ position: "relative" }}>
-      <button
-        onClick={() => setOpen(!open)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 7,
-          padding: "3px 8px 3px 3px",
-          background: "transparent",
-          border: "none",
-          borderRadius: 99,
-          cursor: "pointer",
-          color: "#001743",
-          fontSize: 13,
-          fontWeight: 500,
-          transition: "background 0.15s",
+    <>
+      <DepositModal
+        isOpen={depositModalOpen}
+        onClose={() => setDepositModalOpen(false)}
+        onSuccess={() => {
+          fetchWallet();
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.background = "#F3F4F6"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-      >
-        {/* Circle avatar */}
-        <div
+      />
+      <div ref={dropdownRef} style={{ position: "relative" }}>
+        <button
+          onClick={() => setOpen(!open)}
           style={{
-            width: 30,
-            height: 30,
-            borderRadius: "50%",
-            background: isAdmin ? "#001743" : "#E4011E",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
-            fontSize: 12,
-            fontWeight: 800,
-            color: "#FFFFFF",
-            flexShrink: 0,
+            gap: 7,
+            padding: "3px 8px 3px 3px",
+            background: "transparent",
+            border: "none",
+            borderRadius: 99,
+            cursor: "pointer",
+            color: "#001743",
+            fontSize: 13,
+            fontWeight: 500,
+            transition: "background 0.15s",
           }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "#F3F4F6"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
         >
-          {initialChar}
-        </div>
-        <span style={{ maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {displayName}
-        </span>
-        <span style={{ transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s", display: "flex", color: "#6B7280" }}>
-          <Icons.ChevronDown />
-        </span>
-      </button>
-
-      {open && (
-        <div
-          style={{
-            position: "absolute",
-            top: "calc(100% + 8px)",
-            right: 0,
-            width: 240,
-            background: "#FFFFFF",
-            border: "1px solid #E5E7EB",
-            borderRadius: 8,
-            padding: "6px 0",
-            boxShadow: "0 10px 30px rgba(0, 23, 67, 0.12)",
-            zIndex: 1002,
-          }}
-        >
-          {/* Header Info */}
-          <div style={{ padding: "10px 16px", borderBottom: "1px solid #F3F4F6" }}>
-            <div style={{ fontSize: 13.5, fontWeight: 800, color: "#001743" }}>{displayName}</div>
-            <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{user.email}</div>
-            {isAdmin ? (
-              <span style={{ fontSize: 9.5, background: "#001743", color: "#FFFFFF", padding: "1px 6px", borderRadius: 4, fontWeight: 800, marginTop: 4, display: "inline-block" }}>
-                ADMINISTRATOR
-              </span>
-            ) : (
-              <span style={{ fontSize: 9.5, background: "#EFF6FF", color: "#2563EB", padding: "1px 6px", borderRadius: 4, fontWeight: 700, marginTop: 4, display: "inline-block" }}>
-                THÀNH VIÊN ĐỊNH DANH
-              </span>
-            )}
+          {/* Circle avatar */}
+          <div
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: "50%",
+              background: isAdmin ? "#001743" : "#E4011E",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 12,
+              fontWeight: 800,
+              color: "#FFFFFF",
+              flexShrink: 0,
+            }}
+          >
+            {initialChar}
           </div>
+          <span style={{ maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {displayName}
+          </span>
+          <span style={{ transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s", display: "flex", color: "#6B7280" }}>
+            <Icons.ChevronDown />
+          </span>
+        </button>
 
-          {/* Quick Wallet Summary Card inside Dropdown */}
-          <div style={{ padding: "10px 14px", margin: "6px 8px", background: "#F8F9FA", borderRadius: 6, border: "1px solid #F3F4F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <div style={{ fontSize: 10, color: "#6B7280", fontWeight: 700, textTransform: "uppercase" }}>Số dư ví</div>
-              <div style={{ fontSize: 14, fontWeight: 900, color: "#E4011E", fontVariantNumeric: "tabular-nums" }}>
-                25.000.000 ₫
-              </div>
+        {open && (
+          <div
+            style={{
+              position: "absolute",
+              top: "calc(100% + 8px)",
+              right: 0,
+              width: 240,
+              background: "#FFFFFF",
+              border: "1px solid #E5E7EB",
+              borderRadius: 8,
+              padding: "6px 0",
+              boxShadow: "0 10px 30px rgba(0, 23, 67, 0.12)",
+              zIndex: 1002,
+            }}
+          >
+            {/* Header Info */}
+            <div style={{ padding: "10px 16px", borderBottom: "1px solid #F3F4F6" }}>
+              <div style={{ fontSize: 13.5, fontWeight: 800, color: "#001743" }}>{displayName}</div>
+              <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{user.email}</div>
+              {isAdmin ? (
+                <span style={{ fontSize: 9.5, background: "#001743", color: "#FFFFFF", padding: "1px 6px", borderRadius: 4, fontWeight: 800, marginTop: 4, display: "inline-block" }}>
+                  ADMINISTRATOR
+                </span>
+              ) : (
+                <span style={{ fontSize: 9.5, background: "#EFF6FF", color: "#2563EB", padding: "1px 6px", borderRadius: 4, fontWeight: 700, marginTop: 4, display: "inline-block" }}>
+                  THÀNH VIÊN ĐỊNH DANH
+                </span>
+              )}
             </div>
-            <Link
-              href="/profile?tab=transactions"
-              onClick={() => setOpen(false)}
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: "#FFFFFF",
-                background: "#001743",
-                padding: "3px 8px",
-                borderRadius: 4,
-                textDecoration: "none",
-              }}
-            >
-              + Nạp
-            </Link>
-          </div>
+
+            {/* Quick Wallet Summary Card inside Dropdown */}
+            <div style={{ padding: "10px 14px", margin: "6px 8px", background: "#F8F9FA", borderRadius: 6, border: "1px solid #F3F4F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ fontSize: 10, color: "#6B7280", fontWeight: 700, textTransform: "uppercase" }}>Số dư ví</div>
+                <div style={{ fontSize: 14, fontWeight: 900, color: "#E4011E", fontVariantNumeric: "tabular-nums" }}>
+                  {availableBalance.toLocaleString("vi-VN")} ₫
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  setDepositModalOpen(true);
+                }}
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "#FFFFFF",
+                  background: "#001743",
+                  padding: "4px 9px",
+                  borderRadius: 4,
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                + Nạp
+              </button>
+            </div>
 
           {/* Links List */}
           <div style={{ padding: "4px 8px" }}>
@@ -837,6 +869,7 @@ function UserMenuDropdown({ user, isAdmin }: { user: AuthResponseDto; isAdmin: b
         </div>
       )}
     </div>
+  </>
   );
 }
 

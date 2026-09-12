@@ -181,7 +181,7 @@ export const authService = {
   },
 
   /**
-   * Giải mã JWT payload an toàn
+   * Giải mã JWT payload an toàn (hỗ trợ đầy đủ Unicode UTF-8)
    */
   parseJwt(token?: string): any {
     const rawToken = token || this.getToken();
@@ -191,12 +191,12 @@ export const authService = {
       if (parts.length < 2) return null;
       const base64Url = parts[1];
       const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split("")
-          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-          .join("")
-      );
+      const binaryStr = atob(base64);
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i);
+      }
+      const jsonPayload = new TextDecoder().decode(bytes);
       return JSON.parse(jsonPayload);
     } catch {
       return null;
@@ -209,8 +209,8 @@ export const authService = {
   isTokenExpired(token?: string): boolean {
     const payload = this.parseJwt(token);
     if (!payload || !payload.exp) {
-      // Nếu không có token hoặc không đọc được exp, xem như hết hạn nếu người dùng đang lưu session
-      return !this.getToken();
+      const user = this.getUser();
+      return !user;
     }
     // exp tính bằng giây, so sánh với thời gian thực (trừ hao 5 giây để tránh lệch đồng hồ)
     return Date.now() >= (payload.exp - 5) * 1000;
@@ -238,7 +238,7 @@ export const authService = {
     // Không có user đăng nhập
     if (!token && !user) return false;
 
-    // Token đã hết hạn
+    // Token đã hết hạn và không có user hợp lệ
     if (this.isTokenExpired(token || undefined)) {
       this.clearSession();
 
@@ -264,12 +264,14 @@ export const authService = {
   },
 
   /**
-   * Kiểm tra xem người dùng đã đăng nhập và token còn hiệu lực không
+   * Kiểm tra xem người dùng đã đăng nhập không
+   * Nếu có thông tin user trong LocalStorage, client coi là đã đăng nhập.
+   * (apiClient sẽ tự động refresh token trong nền qua HttpOnly cookie nếu cần)
    */
   isAuthenticated(): boolean {
+    if (typeof window === "undefined") return false;
     const user = this.getUser();
-    if (!user) return false;
-    return !this.isTokenExpired();
+    return Boolean(user && user.userId);
   },
 
   /**
@@ -277,7 +279,7 @@ export const authService = {
    */
   isAdmin(): boolean {
     const user = this.getUser();
-    if (!user || this.isTokenExpired()) return false;
+    if (!user) return false;
     return user?.role?.toUpperCase() === "ADMIN";
   },
 

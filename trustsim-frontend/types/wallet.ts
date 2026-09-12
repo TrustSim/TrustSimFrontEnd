@@ -11,14 +11,7 @@ export interface WalletDto {
   updatedAt: string;
 }
 
-export type WalletTransactionType =
-  | "DEPOSIT"
-  | "WITHDRAWAL"
-  | "AUCTION_LOCK"
-  | "AUCTION_UNLOCK"
-  | "AUCTION_PAYMENT"
-  | "AUCTION_REFUND"
-  | "ADJUSTMENT";
+export type WalletTransactionType = "TOP_UP" | "WITHDRAW" | string;
 
 export type TransactionStatus =
   | "PENDING"
@@ -29,37 +22,43 @@ export type TransactionStatus =
 export interface WalletTransactionDto {
   id: string;
   walletId: string;
-  type: WalletTransactionType;
-  status: TransactionStatus;
+  transactionCode: string;
   amount: number;
   balanceBefore: number;
   balanceAfter: number;
-  note: string;
-  referenceId?: string;
+  description?: string;
+  qrCodeUrl?: string;
+  destinationBankCode?: string;
+  destinationBankName?: string;
+  destinationAccountNumberMasked?: string;
+  destinationAccountHolderName?: string;
+  transactionStatus: TransactionStatus;
+  walletTransactionType: WalletTransactionType;
   createdAt: string;
   completedAt?: string;
+  expiredAt?: string;
 }
 
 export interface DepositResponseDto {
   transactionId: string;
+  transactionCode: string;
   amount: number;
-  transferContent: string;   // Nội dung chuyển khoản SePay
-  bankAccountNumber: string;
-  bankName: string;
-  accountHolderName: string;
-  qrCodeUrl: string;         // URL QR VietQR
+  transferContent: string;
+  qrCodeUrl: string;
   expiredAt: string;
 }
 
 export interface CreateDepositRequest {
   amount: number;
+  note?: string;
 }
 
 export interface CreateWithdrawRequest {
   amount: number;
-  bankAccountNumber: string;
-  bankName: string;
-  accountHolderName: string;
+  destinationBankCode: string;
+  destinationBankName: string;
+  destinationAccountNumber: string;
+  destinationAccountHolderName: string;
   note?: string;
 }
 
