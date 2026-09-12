@@ -293,3 +293,37 @@ Một UI thường bị nhìn như AI khi: card nào cũng giống nhau; quá nh
 - [ ] Nếu bỏ hết icon, nội dung có còn dễ hiểu không?
 
 > **Nguyên tắc tổng quát:** Giao diện đẹp không đến từ việc thêm màu, card hoặc animation; nó đến từ việc biết phần nào cần nổi bật, phần nào cần lùi xuống và chừa đủ khoảng trống để dữ liệu được "thở".
+
+---
+
+## 9. Quy Chuẩn Bản Địa Hóa & Thân Thiện Với Người Dùng Cuối (Localization & Anti-Jargon Rules)
+
+Người dùng cuối (End-users) bao gồm cả người mua, người bán SIM và đối tác không có chuyên môn về công nghệ hay lập trình. Giao diện người dùng tuyệt đối **không được để lộ các thuật ngữ kỹ thuật, tên dịch vụ cloud, mã enum hoặc tên trường database/DTO**.
+
+### 9.1 Cấm hiển thị tên dịch vụ đám mây / Hạ tầng / Thư viện kỹ thuật
+- ❌ **Tuyệt đối cấm:** `AWS Rekognition`, `Amazon Web Services`, `Cloudinary`, `SignalR Hub`, `PostgreSQL`, `Entity Framework`, `Redis Cache`...
+- ✅ **Chuyển đổi thành từ ngữ thân thiện:**
+  - `AWS Rekognition` ➔ `Công nghệ xác thực khuôn mặt & CCCD tự động bằng AI` hoặc `Đối soát sinh trắc học`
+  - `Cloudinary` ➔ `Bộ nhớ lưu trữ hình ảnh hệ thống`
+  - `SignalR / WebSocket` ➔ `Cập nhật trực tiếp thời gian thực`
+
+### 9.2 Chuyển đổi toàn bộ mã Enum / Hằng số Backend sang Tiếng Việt
+- ❌ **Tuyệt đối cấm để nguyên mã Enum backend:**
+  - `AUTOMATED_AWS_REKOGNITION` ➔ `Xác thực khuôn mặt & CCCD tự động bằng AI`
+  - `MANUAL_ADMIN_REVIEW` ➔ `Chuyên viên thẩm định trực tiếp`
+  - `PENDING_VERIFICATION` ➔ `Đang chờ đối soát`
+  - `VERIFIED` ➔ `Đã xác thực chính chủ`
+  - `REJECTED` ➔ `Bị từ chối hồ sơ`
+  - `USER_ROLE_ADMIN` / `USER_ROLE_CONSULTANT` ➔ `Quản trị viên` / `Tư vấn viên`
+
+### 9.3 Không chèn tên trường DTO / Biến Code / Tiếng Anh trong ngoặc đơn
+- ❌ **Tránh:** `Đầu số mạng (Phone Prefixes)`, `Mã nhà mạng (Carrier Code)`, `Tên tài khoản (username)`, `Chữ ký PKI (PKI Keypair)`, `Mã (ID)`.
+- ✅ **Chuẩn hóa:** `Dải đầu số trực thuộc`, `Mã định danh nhà mạng`, `Tên đăng nhập`, `Chữ ký số điện tử`, `Mã số`.
+
+### 9.4 Thông báo lỗi thân thiện với con người (User-Friendly Error Messages)
+- ❌ **Không quăng lỗi console / mã code:** `"Unknown API key"`, `"ERR_NAME_NOT_RESOLVED"`, `"401 Unauthorized"`, `"NullReferenceException"`.
+- ✅ **Thông báo rõ ràng hành động:**
+  - `"Tải ảnh lên không thành công. Vui lòng thử lại với định dạng JPG, PNG dưới 10MB."`
+  - `"Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục."`
+  - `"Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại đường truyền mạng."`
+

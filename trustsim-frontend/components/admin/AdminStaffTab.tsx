@@ -109,7 +109,7 @@ export function AdminStaffTab() {
   const [updatedStaffId, setUpdatedStaffId] = useState<string | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<AdminUserDetailDto | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerMode, setDrawerMode] = useState<"create" | "edit">("create");
+  const [drawerMode, setDrawerMode] = useState<"create" | "edit" | "view">("create");
 
   // Lock / Unlock Confirmation
   const [statusConfirm, setStatusConfirm] = useState<{ user: AdminUserDetailDto; targetStatus: boolean } | null>(null);
@@ -161,10 +161,28 @@ export function AdminStaffTab() {
     setDrawerOpen(true);
   };
 
-  const openEdit = (s: AdminUserDetailDto) => {
+  const openView = async (s: AdminUserDetailDto) => {
+    setSelectedStaff(s);
+    setDrawerMode("view");
+    setDrawerOpen(true);
+    try {
+      const full = await userService.getAdminUserById(s.id);
+      if (full) setSelectedStaff(full);
+    } catch {
+      // Giữ nguyên dữ liệu có sẵn từ bảng nếu fetch chi tiết lỗi
+    }
+  };
+
+  const openEdit = async (s: AdminUserDetailDto) => {
     setSelectedStaff(s);
     setDrawerMode("edit");
     setDrawerOpen(true);
+    try {
+      const full = await userService.getAdminUserById(s.id);
+      if (full) setSelectedStaff(full);
+    } catch {
+      // Giữ nguyên dữ liệu có sẵn từ bảng nếu fetch chi tiết lỗi
+    }
   };
 
   const handleToggleStatusConfirm = async () => {
@@ -194,7 +212,7 @@ export function AdminStaffTab() {
       <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-base font-bold text-[#001743]">Quản Lý Nhân Sự &amp; Nội Bộ (Staff &amp; Admins)</h1>
+            <h1 className="text-base font-bold text-[#001743]">Quản Lý Nhân Sự &amp; Nội Bộ</h1>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 font-mono">
               {totalCount} nhân sự
             </span>
@@ -265,7 +283,7 @@ export function AdminStaffTab() {
           }`}
         >
           <ShieldCheck size={16} strokeWidth={1.5} />
-          <span>Quản trị viên (Admins)</span>
+          <span>Quản trị viên</span>
         </button>
 
         <button
@@ -281,7 +299,7 @@ export function AdminStaffTab() {
           }`}
         >
           <Headphones size={16} strokeWidth={1.5} />
-          <span>Tư vấn viên (Consultants)</span>
+          <span>Tư vấn viên</span>
         </button>
       </div>
 
@@ -294,7 +312,7 @@ export function AdminStaffTab() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={`Tìm theo họ tên, username, email...`}
+              placeholder="Tìm theo họ tên, tên đăng nhập, email..."
               className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
             />
             {search && (
@@ -402,7 +420,7 @@ export function AdminStaffTab() {
                   return (
                     <tr
                       key={member.id}
-                      onClick={() => openEdit(member)}
+                      onClick={() => openView(member)}
                       className={`transition-colors h-16 cursor-pointer ${
                         isUpdated ? "bg-emerald-50" : "hover:bg-slate-50/80"
                       }`}
@@ -523,7 +541,7 @@ export function AdminStaffTab() {
         )}
       </div>
 
-      {/* ── 5. RightDrawer: Thêm mới / Chỉnh sửa Nhân sự ── */}
+      {/* ── 5. RightDrawer: Chi tiết / Chỉnh sửa / Thêm mới Nhân sự ── */}
       <RightDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
@@ -532,31 +550,188 @@ export function AdminStaffTab() {
             ? activeSegment === "admins"
               ? "Thêm Quản trị viên mới"
               : "Thêm Tư vấn viên mới"
+            : drawerMode === "view"
+            ? "Chi tiết tài khoản nhân sự"
             : "Chỉnh sửa tài khoản nhân sự"
         }
-        badge={activeSegment === "admins" ? "ADMIN" : "CONSULTANT"}
-        badgeCls={activeSegment === "admins" ? "bg-purple-50 text-purple-700 font-bold font-mono" : "bg-blue-50 text-blue-700 font-bold font-mono"}
+        badge={
+          drawerMode === "create"
+            ? activeSegment === "admins"
+              ? "Quản trị viên"
+              : "Tư vấn viên"
+            : selectedStaff?.fullName || selectedStaff?.userName || "Nhân sự"
+        }
+        badgeCls={
+          drawerMode === "create"
+            ? activeSegment === "admins"
+              ? "bg-purple-50 text-purple-700 font-bold"
+              : "bg-blue-50 text-blue-700 font-bold"
+            : "bg-slate-100 text-[#001743] font-bold"
+        }
         size="md"
       >
-        <StaffForm
-          mode={drawerMode}
-          defaultRole={activeSegment === "admins" ? UserRoleEnum.ADMIN : UserRoleEnum.CONSULTANT}
-          initial={selectedStaff}
-          onSuccess={(savedStaff) => {
-            if (drawerMode === "create") {
-              setStaffList((prev) => [savedStaff, ...prev]);
-              setTotalCount((c) => c + 1);
-              showToast(`Đã thêm mới tài khoản nội bộ "${savedStaff.fullName || savedStaff.userName}" thành công.`);
-            } else {
-              setStaffList((prev) => prev.map((s) => (s.id === savedStaff.id ? savedStaff : s)));
-              showToast(`Đã cập nhật thông tin tài khoản thành công.`);
-            }
-            setUpdatedStaffId(savedStaff.id);
-            setTimeout(() => setUpdatedStaffId(null), 1600);
-            setDrawerOpen(false);
-          }}
-          onCancel={() => setDrawerOpen(false)}
-        />
+        {drawerMode === "view" && selectedStaff && (
+          <div className="flex flex-col flex-1 min-h-0">
+            <DrawerBody>
+              {/* Header profile card */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <StaffAvatar name={selectedStaff.fullName || selectedStaff.userName} avatar={selectedStaff.avatarImg} />
+                  <div>
+                    <div className="font-bold text-sm text-[#001743]">
+                      {selectedStaff.fullName || selectedStaff.userName}
+                    </div>
+                    <div className="text-xs text-slate-500 font-mono">@{selectedStaff.userName}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      selectedStaff.role === UserRoleEnum.ADMIN ||
+                      selectedStaff.role === 1 ||
+                      selectedStaff.role === "ADMIN"
+                        ? "bg-purple-50 text-purple-700 border border-purple-200"
+                        : "bg-blue-50 text-blue-700 border border-blue-200"
+                    }`}
+                  >
+                    {selectedStaff.role === UserRoleEnum.ADMIN ||
+                    selectedStaff.role === 1 ||
+                    selectedStaff.role === "ADMIN"
+                      ? "Quản trị viên"
+                      : "Tư vấn viên"}
+                  </span>
+                  {selectedStaff.isActive ? (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      Hoạt động
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                      Đã khóa
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Section 1: Thông tin tài khoản & quyền hạn */}
+              <DrawerSection title="Tài khoản & Thẩm quyền" subtitle="Thông tin định danh và quyền truy cập quản trị">
+                <div className="space-y-2.5 text-xs">
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500">Tên đăng nhập:</span>
+                    <span className="font-mono font-bold text-[#001743]">@{selectedStaff.userName}</span>
+                  </div>
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500">Email nội bộ:</span>
+                    <span className="font-medium text-[#001743]">{selectedStaff.email}</span>
+                  </div>
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500">Quyền hạn hệ thống:</span>
+                    <span className="font-bold text-[#001743]">
+                      {selectedStaff.role === UserRoleEnum.ADMIN ||
+                      selectedStaff.role === 1 ||
+                      selectedStaff.role === "ADMIN"
+                        ? "Toàn quyền quản trị hệ thống"
+                        : "Tư vấn VIP & Quản lý đấu giá"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500">Ngày cấp quyền:</span>
+                    <span className="font-mono text-slate-700">
+                      {selectedStaff.createdDate
+                        ? new Date(selectedStaff.createdDate).toLocaleDateString("vi-VN")
+                        : "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1.5">
+                    <span className="text-slate-500">Trạng thái tài khoản:</span>
+                    <span className={`font-bold ${selectedStaff.isActive ? "text-emerald-600" : "text-rose-600"}`}>
+                      {selectedStaff.isActive ? "Đang hoạt động bình thường" : "Đang bị khóa quyền truy cập"}
+                    </span>
+                  </div>
+                </div>
+              </DrawerSection>
+
+              {/* Section 2: Hồ sơ nhân sự & liên hệ */}
+              <DrawerSection title="Hồ sơ nhân sự" subtitle="Thông tin liên hệ công vụ và thông tin cá nhân">
+                <div className="space-y-2.5 text-xs">
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500">Họ và tên:</span>
+                    <span className="font-bold text-[#001743]">{selectedStaff.fullName || "Chưa cập nhật"}</span>
+                  </div>
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500">Số điện thoại công vụ:</span>
+                    <span className="font-mono font-bold text-[#001743]">{selectedStaff.phoneNumber || "Chưa cập nhật"}</span>
+                  </div>
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500">Số CCCD / Định danh:</span>
+                    <span className="font-mono font-bold text-[#001743]">{selectedStaff.identityNumber || "Chưa cập nhật"}</span>
+                  </div>
+                  <div className="flex justify-between py-1.5">
+                    <span className="text-slate-500">Địa chỉ công tác:</span>
+                    <span className="font-medium text-slate-800 text-right max-w-[60%]">{selectedStaff.address || "Chưa cập nhật"}</span>
+                  </div>
+                </div>
+              </DrawerSection>
+            </DrawerBody>
+
+            <DrawerFooter>
+              <div className="flex items-center justify-between w-full">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatusConfirm({
+                      user: selectedStaff,
+                      targetStatus: !selectedStaff.isActive,
+                    });
+                  }}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-[6px] border transition-colors ${
+                    selectedStaff.isActive
+                      ? "border-rose-200 text-rose-600 hover:bg-rose-50"
+                      : "border-emerald-200 text-emerald-600 hover:bg-emerald-50"
+                  }`}
+                >
+                  {selectedStaff.isActive ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                </button>
+                <div className="flex items-center gap-2">
+                  <BtnSecondary onClick={() => setDrawerOpen(false)}>Đóng</BtnSecondary>
+                  <BtnPrimary onClick={() => setDrawerMode("edit")}>
+                    <Edit3 size={13} strokeWidth={1.5} />
+                    <span>Chỉnh sửa</span>
+                  </BtnPrimary>
+                </div>
+              </div>
+            </DrawerFooter>
+          </div>
+        )}
+
+        {(drawerMode === "create" || drawerMode === "edit") && (
+          <StaffForm
+            key={selectedStaff ? `staff-${selectedStaff.id}-${drawerMode}` : `create-${activeSegment}`}
+            mode={drawerMode}
+            defaultRole={activeSegment === "admins" ? UserRoleEnum.ADMIN : UserRoleEnum.CONSULTANT}
+            initial={selectedStaff}
+            onSuccess={(savedStaff) => {
+              if (drawerMode === "create") {
+                setStaffList((prev) => [savedStaff, ...prev]);
+                setTotalCount((c) => c + 1);
+                showToast(`Đã thêm mới tài khoản nội bộ "${savedStaff.fullName || savedStaff.userName}" thành công.`);
+              } else {
+                setStaffList((prev) => prev.map((s) => (s.id === savedStaff.id ? savedStaff : s)));
+                setSelectedStaff(savedStaff);
+                showToast(`Đã cập nhật thông tin tài khoản thành công.`);
+              }
+              setUpdatedStaffId(savedStaff.id);
+              setTimeout(() => setUpdatedStaffId(null), 1600);
+              setDrawerOpen(false);
+            }}
+            onCancel={() => {
+              if (drawerMode === "edit" && selectedStaff) {
+                setDrawerMode("view");
+              } else {
+                setDrawerOpen(false);
+              }
+            }}
+          />
+        )}
       </RightDrawer>
 
       {/* ── 6. Modal xác nhận khóa / mở khóa ── */}
@@ -582,7 +757,7 @@ export function AdminStaffTab() {
                   <strong className="text-slate-800">
                     "{statusConfirm.user.fullName || statusConfirm.user.userName}"
                   </strong>
-                  ? Khi bị khóa, tài khoản này sẽ lập tức mất quyền truy cập portal quản trị.
+                  ? Khi bị khóa, tài khoản này sẽ lập tức mất quyền truy cập trang quản trị.
                 </p>
               </div>
             </div>
@@ -599,10 +774,8 @@ export function AdminStaffTab() {
                 type="button"
                 onClick={handleToggleStatusConfirm}
                 disabled={statusLoading}
-                className={`flex items-center gap-1.5 px-4 py-1.5 text-white text-xs font-bold rounded-[6px] transition-colors disabled:opacity-50 ${
-                  statusConfirm.targetStatus
-                    ? "bg-emerald-600 hover:bg-emerald-700"
-                    : "bg-rose-600 hover:bg-rose-700"
+                className={`px-3.5 py-1.5 text-xs font-semibold text-white rounded-[6px] flex items-center gap-1.5 transition-colors ${
+                  statusConfirm.targetStatus ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"
                 }`}
               >
                 {statusLoading ? (
@@ -646,21 +819,49 @@ function StaffForm({
 }) {
   const isCreate = mode === "create";
 
+  const getInitialRole = (item?: AdminUserDetailDto | null): number => {
+    if (!item) return defaultRole;
+    if (typeof item.role === "number") return item.role;
+    if (item.role === "ADMIN") return UserRoleEnum.ADMIN;
+    if (item.role === "CONSULTANT") return UserRoleEnum.CONSULTANT;
+    if (item.role === "USER") return UserRoleEnum.USER;
+    return defaultRole;
+  };
+
   const [userName, setUserName] = useState(initial?.userName || "");
   const [email, setEmail] = useState(initial?.email || "");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState(initial?.fullName || "");
   const [phoneNumber, setPhoneNumber] = useState(initial?.phoneNumber || "");
-  const [role, setRole] = useState<number>(
-    typeof initial?.role === "number"
-      ? initial.role
-      : initial?.role === "ADMIN"
-      ? UserRoleEnum.ADMIN
-      : defaultRole
-  );
+  const [identityNumber, setIdentityNumber] = useState(initial?.identityNumber || "");
+  const [address, setAddress] = useState(initial?.address || "");
+  const [role, setRole] = useState<number>(getInitialRole(initial));
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+
+  // Đồng bộ lại state khi initial hoặc defaultRole thay đổi
+  useEffect(() => {
+    if (initial) {
+      setUserName(initial.userName || "");
+      setEmail(initial.email || "");
+      setFullName(initial.fullName || "");
+      setPhoneNumber(initial.phoneNumber || "");
+      setIdentityNumber(initial.identityNumber || "");
+      setAddress(initial.address || "");
+      setRole(getInitialRole(initial));
+      setPassword("");
+    } else {
+      setUserName("");
+      setEmail("");
+      setFullName("");
+      setPhoneNumber("");
+      setIdentityNumber("");
+      setAddress("");
+      setRole(defaultRole);
+      setPassword("");
+    }
+  }, [initial, defaultRole]);
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -691,6 +892,8 @@ function StaffForm({
           password,
           fullName: fullName.trim(),
           phoneNumber: phoneNumber.trim(),
+          identityNumber: identityNumber.trim() || undefined,
+          address: address.trim() || undefined,
           role,
         };
         const created = await userService.createAdminUser(payload);
@@ -700,6 +903,8 @@ function StaffForm({
           email: email.trim(),
           fullName: fullName.trim(),
           phoneNumber: phoneNumber.trim(),
+          identityNumber: identityNumber.trim() || undefined,
+          address: address.trim() || undefined,
           role,
         };
         const updated = await userService.updateAdminUser(initial.id, payload);
@@ -722,8 +927,40 @@ function StaffForm({
           </div>
         )}
 
-        <DrawerSection title="Thông tin tài khoản đăng nhập" subtitle="Tài khoản truy cập portal dành cho nhân sự">
-          {isCreate && (
+        {!isCreate && initial && (
+          <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <StaffAvatar name={initial.fullName || initial.userName} avatar={initial.avatarImg} />
+              <div>
+                <div className="font-bold text-xs text-[#001743]">{initial.fullName || initial.userName}</div>
+                <div className="text-[11px] text-slate-500 font-mono">@{initial.userName}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                  role === UserRoleEnum.ADMIN
+                    ? "bg-purple-50 text-purple-700 border border-purple-200"
+                    : "bg-blue-50 text-blue-700 border border-blue-200"
+                }`}
+              >
+                {role === UserRoleEnum.ADMIN ? "Quản trị viên" : "Tư vấn viên"}
+              </span>
+              {initial.isActive ? (
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  Hoạt động
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                  Đã khóa
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        <DrawerSection title="Thông tin tài khoản đăng nhập" subtitle="Tài khoản truy cập hệ thống dành cho nhân sự">
+          {isCreate ? (
             <div className="grid grid-cols-2 gap-3">
               <FormField label="Tên đăng nhập" required error={errors.userName}>
                 <input
@@ -745,6 +982,15 @@ function StaffForm({
                 />
               </FormField>
             </div>
+          ) : (
+            <FormField label="Tên đăng nhập hệ thống" hint="Cố định theo tài khoản nội bộ">
+              <input
+                type="text"
+                value={`@${userName}`}
+                disabled
+                className="w-full text-xs p-2.5 border border-[#E2E8F0] bg-slate-100 text-slate-500 rounded-[6px] font-mono font-semibold cursor-not-allowed"
+              />
+            </FormField>
           )}
 
           <div className="grid grid-cols-2 gap-3">
@@ -764,14 +1010,14 @@ function StaffForm({
                 onChange={(e) => setRole(Number(e.target.value))}
                 className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-semibold text-[#001743]"
               >
-                <option value={UserRoleEnum.ADMIN}>Quản trị viên (Admin)</option>
-                <option value={UserRoleEnum.CONSULTANT}>Tư vấn viên (Consultant)</option>
+                <option value={UserRoleEnum.ADMIN}>Quản trị viên</option>
+                <option value={UserRoleEnum.CONSULTANT}>Tư vấn viên</option>
               </select>
             </FormField>
           </div>
         </DrawerSection>
 
-        <DrawerSection title="Hồ sơ nhân viên" subtitle="Họ tên và phương thức liên lạc công vụ">
+        <DrawerSection title="Hồ sơ nhân sự" subtitle="Họ tên và phương thức liên lạc công vụ">
           <div className="grid grid-cols-2 gap-3">
             <FormField label="Họ và tên" required error={errors.fullName}>
               <input
@@ -790,6 +1036,28 @@ function StaffForm({
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 placeholder="VD: 0900000002"
                 className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-mono"
+              />
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Số CCCD / Định danh (Tùy chọn)">
+              <input
+                type="text"
+                value={identityNumber}
+                onChange={(e) => setIdentityNumber(e.target.value)}
+                placeholder="VD: 001201012345"
+                className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-mono"
+              />
+            </FormField>
+
+            <FormField label="Địa chỉ công tác (Tùy chọn)">
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="VD: Trụ sở chính Hà Nội"
+                className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
               />
             </FormField>
           </div>

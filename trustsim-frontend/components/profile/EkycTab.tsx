@@ -12,6 +12,18 @@ interface EkycTabProps {
   addToast: (t: Omit<ToastMessage, "id">) => void;
 }
 
+function formatVerificationMethod(method?: string | null): string {
+  if (!method) return "Xác thực khuôn mặt & CCCD tự động bằng AI";
+  const upper = method.toUpperCase();
+  if (upper.includes("AWS") || upper.includes("REKOGNITION") || upper.includes("AUTOMATED")) {
+    return "Xác thực khuôn mặt & CCCD tự động bằng AI";
+  }
+  if (upper.includes("MANUAL") || upper.includes("ADMIN") || upper.includes("REVIEW")) {
+    return "Chuyên viên thẩm định hồ sơ trực tiếp";
+  }
+  return method;
+}
+
 export default function EkycTab({
   kycStatus,
   kycHistory,
@@ -36,7 +48,7 @@ export default function EkycTab({
             Định danh điện tử CCCD (eKYC)
           </h2>
           <p style={{ fontSize: 13, color: "#6B7280", margin: "4px 0 0" }}>
-            Xác thực danh tính theo tiêu chuẩn an toàn bảo mật TrustSim với công nghệ AI AWS Rekognition.
+            Xác thực danh tính theo tiêu chuẩn an toàn bảo mật TrustSim.
           </p>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -139,7 +151,7 @@ export default function EkycTab({
             <div>
               <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 600 }}>Phương thức xác thực:</div>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#16A34A" }}>
-                {kycStatus?.verificationMethod || "AI AWS Rekognition (99.2%)"}
+                {formatVerificationMethod(kycStatus?.verificationMethod)}
               </div>
             </div>
             <div>
@@ -183,7 +195,7 @@ export default function EkycTab({
               Hồ sơ eKYC của bạn đang trong tiến trình đối soát tự động
             </h3>
             <p style={{ fontSize: 13, color: "#B45309", margin: "4px 0 0", lineHeight: 1.5 }}>
-              Hệ thống AI đang kiểm tra tính nguyên vẹn của ảnh CCCD và đối chiếu khuôn mặt. Quá trình này thường diễn ra trong vòng 5 - 15 phút.
+              Hệ thống đang tự động kiểm tra tính nguyên vẹn của ảnh CCCD và đối chiếu khuôn mặt. Quá trình này thường diễn ra trong vòng 5 - 15 phút.
             </p>
             {kycStatus?.submittedAt && (
               <div style={{ fontSize: 12, color: "#78350F", marginTop: 6, fontWeight: 600 }}>
@@ -342,7 +354,7 @@ export default function EkycTab({
               <tr style={{ background: "#F9FAFB", borderBottom: "1px solid #E5E7EB", color: "#4B5563", fontWeight: 700 }}>
                 <th style={{ padding: "12px 16px" }}>Mã hồ sơ</th>
                 <th style={{ padding: "12px 16px" }}>Thời gian gửi</th>
-                <th style={{ padding: "12px 16px" }}>Độ khớp AI</th>
+                <th style={{ padding: "12px 16px" }}>Độ khớp khuôn mặt</th>
                 <th style={{ padding: "12px 16px" }}>Trạng thái</th>
                 <th style={{ padding: "12px 16px" }}>Ghi chú thẩm định</th>
               </tr>
@@ -378,7 +390,7 @@ export default function EkycTab({
                       )}
                     </td>
                     <td style={{ padding: "12px 16px", color: "#6B7280", fontSize: 12 }}>
-                      {item.rejectionReason || "Đối soát thành công qua AWS Rekognition"}
+                      {item.rejectionReason || (isItemVerified ? "Đối soát sinh trắc học thành công" : isItemPending ? "Đang tiến hành đối soát" : "Chưa đạt yêu cầu thẩm định")}
                     </td>
                   </tr>
                 );
@@ -502,7 +514,7 @@ function EkycUploadModal({
       addToast({
         type: "success",
         title: "Nộp hồ sơ eKYC thành công",
-        message: result.message || "Hệ thống AI đang tiến hành đối soát hồ sơ của bạn.",
+        message: result.message || "Hệ thống đang tiến hành đối soát và xác thực hồ sơ của bạn.",
       });
 
       onSuccess();

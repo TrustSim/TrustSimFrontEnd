@@ -84,7 +84,7 @@ function getKycBadge(status: number | VerificationStatusEnum | string) {
   if (status === VerificationStatusEnum.REJECTED || status === "REJECTED" || status === 3) {
     return { label: "Bị từ chối", cls: "bg-rose-50 text-rose-700 border-rose-200" };
   }
-  return { label: "Chưa nộp KYC", cls: "bg-slate-50 text-slate-500 border-slate-200" };
+  return { label: "Chưa xác thực", cls: "bg-slate-50 text-slate-500 border-slate-200" };
 }
 
 // Flat Minimalist Avatar (Line/Clean styled)
@@ -241,13 +241,13 @@ export function AdminCustomersTab() {
       <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-base font-bold text-[#001743]">Quản Lý Khách Hàng (Customers)</h1>
+            <h1 className="text-base font-bold text-[#001743]">Quản Lý Khách Hàng</h1>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 font-mono">
               {totalCount} khách hàng
             </span>
           </div>
           <p className="text-xs text-[#6B7280] mt-0.5">
-            Hồ sơ người dùng sàn đấu giá, theo dõi định danh eKYC, chứng thư số PKI và số dư ví ký quỹ.
+            Hồ sơ người dùng sàn đấu giá, theo dõi định danh eKYC, chữ ký số điện tử và số dư ví ký quỹ.
           </p>
         </div>
 
@@ -309,7 +309,7 @@ export function AdminCustomersTab() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm theo tên khách, username, email, SĐT..."
+              placeholder="Tìm theo tên khách, tên đăng nhập, email, số điện thoại..."
               className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
             />
             {search && (
@@ -332,9 +332,9 @@ export function AdminCustomersTab() {
             className="text-xs py-1.5 px-2.5 bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none text-[#001743]"
           >
             <option value="">Tất cả trạng thái eKYC</option>
-            <option value="2">Đã xác thực (Verified)</option>
-            <option value="1">Chờ thẩm định (Pending)</option>
-            <option value="3">Bị từ chối (Rejected)</option>
+            <option value="2">Đã xác thực</option>
+            <option value="1">Chờ thẩm định</option>
+            <option value="3">Bị từ chối</option>
             <option value="0">Chưa gửi hồ sơ</option>
           </select>
 
@@ -378,7 +378,7 @@ export function AdminCustomersTab() {
                 <th className="py-3 px-4">Khách hàng</th>
                 <th className="py-3 px-4">Số điện thoại / CCCD</th>
                 <th className="py-3 px-4">Định danh eKYC</th>
-                <th className="py-3 px-4 text-center">Chữ ký PKI</th>
+                <th className="py-3 px-4 text-center">Chữ ký số</th>
                 <th className="py-3 px-4 text-right">Ví khả dụng</th>
                 <th className="py-3 px-4 text-center">Trạng thái</th>
                 <th className="py-3 px-4 text-right">Thao tác</th>
@@ -662,7 +662,7 @@ export function AdminCustomersTab() {
               </DrawerSection>
 
               {/* Định danh pháp lý CCCD & Chữ ký số */}
-              <DrawerSection title="Định danh pháp lý & eKYC" subtitle="Căn cước công dân và chứng thư số điện tử PKI">
+              <DrawerSection title="Định danh cá nhân & eKYC" subtitle="Căn cước công dân và chữ ký số điện tử">
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between py-1.5 border-b border-slate-100">
                     <span className="text-slate-500">Số thẻ CCCD/CMND:</span>
@@ -691,7 +691,7 @@ export function AdminCustomersTab() {
                     </span>
                   </div>
                   <div className="flex justify-between py-1.5">
-                    <span className="text-slate-500">Chữ ký số điện tử PKI:</span>
+                    <span className="text-slate-500">Chữ ký số điện tử:</span>
                     <span
                       className={`font-bold ${
                         selectedCustomer.hasPkiKeys ? "text-emerald-600" : "text-slate-400"
