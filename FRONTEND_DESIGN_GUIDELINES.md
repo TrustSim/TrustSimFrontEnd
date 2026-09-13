@@ -138,3 +138,192 @@ TrustSim là **sàn giao dịch & đấu giá SIM số cao cấp kết hợp y�
 | **Tỷ lệ màu** | Trắng 80% + Xám nhạt + Điểm nhấn đỏ `#E4011E` | Nền đen toàn bộ (dark theme cũ), đa sắc màu mè |
 | **Bóng đổ** | Flat / Subtle shadow (`shadow-sm`, `shadow`) | Glow màu lớn, shadow đen dày |
 | **Chữ số SIM** | `font-mono` hoặc `tabular-nums` | Chữ số dính liền không phân cách |
+
+---
+
+## 8. Nguyên Tắc Thiết Kế Theo Ưu Tiên, Không Theo Ô
+
+### 8.1 Thiết kế theo ưu tiên nghiệp vụ
+
+Mỗi màn hình chỉ nên trả lời một câu hỏi chính:
+
+- **Dashboard:** "Hôm nay admin cần xử lý gì?"
+- **Quản lý SIM:** "SIM nào cần thao tác?"
+- **eKYC:** "Hồ sơ nào cần duyệt?"
+- **Ký quỹ:** "Tiền nào đang chờ xử lý hoặc có rủi ro?"
+- **Khiếu nại:** "Vụ nào cần ưu tiên?"
+
+**Card chỉ dùng cho:** KPI quan trọng, khối cần tách biệt rõ, form/preview/panel chi tiết. Các phần còn lại phân tách bằng khoảng trắng, heading và divider mảnh.
+
+### 8.2 Quy tắc phân cấp thị giác 60–30–10
+
+Trong một viewport:
+- **60%:** Nội dung chính (bảng, danh sách, timeline, biểu đồ).
+- **30%:** Thông tin hỗ trợ (filter, KPI, trạng thái).
+- **10%:** CTA, cảnh báo nghiêm trọng, điểm nhấn.
+
+> Khi cái gì cũng nổi bật thì thực tế không có gì nổi bật.
+
+### 8.3 Dùng khoảng trắng thay cho đường viền
+
+| Vị trí | Khoảng cách |
+|---|---|
+| Giữa các section lớn | 24–32px |
+| Giữa các thành phần trong card | 16–20px |
+| Giữa icon và text | 8–10px |
+| Giữa label và giá trị | 4–6px |
+
+Border chỉ dùng để xác định vùng thao tác (input, bảng, card, modal). Ưu tiên border xám xanh nhạt, độ tương phản thấp.
+
+### 8.4 Hệ thống màu có vai trò cố định
+
+Không dùng màu chỉ để "làm đẹp". Mỗi màu phải mang ý nghĩa:
+
+| Màu | Vai trò |
+|---|---|
+| **Navy `#001743`** | Thương hiệu, cấu trúc, CTA chính, số liệu chính |
+| **Đỏ `#E4011E`** | Nguy hiểm, rủi ro cao, thao tác không thể đảo ngược |
+| **Cam `#F59E0B`** | Cần theo dõi, gần hết hạn, chờ xử lý |
+| **Xanh lá `#16A34A`** | An toàn, thành công, đã xác minh |
+| **Xanh dương nhạt** | Thông tin, trạng thái đang xử lý |
+| **Xám xanh** | Text phụ, metadata, divider, nền phụ |
+
+**Nguyên tắc màu:** Trong một khối chỉ có một màu nhấn chính. Không dùng đỏ làm màu button mặc định cho mọi thao tác. Nền màu chỉ nên thật nhạt; màu đậm dành cho text, icon, badge, button. Một màn hình chỉ nên có tối đa một cảnh báo đỏ thật nổi bật.
+
+### 8.5 Typography: dùng độ đậm để dẫn mắt
+
+Tránh toàn chữ in hoa và toàn chữ đậm. Phân cấp:
+
+```
+Tiêu đề trang:     24–28px, đậm
+Tiêu đề section:   16–18px, đậm vừa
+Nhãn bảng/filter:  12–13px, medium, màu xám xanh
+Nội dung chính:    14–15px, regular
+Metadata:          12–13px, màu dịu
+Số tiền/KPI:       24–32px, đậm
+```
+
+**Quy tắc:** Viết hoa toàn bộ chỉ cho label ngắn: `LIVE`, `MỚI`, `KHẨN CẤP`. Một card chỉ có một dòng thật đậm. Không dùng quá ba mức `font-weight` trong cùng màn hình.
+
+### 8.6 Hệ thống shape nhất quán
+
+| Thành phần | Shape đề xuất |
+|---|---|
+| Card | Bo góc 8–12px, nền trắng, border nhẹ |
+| Button | Bo góc 6–8px |
+| Input/Select | Bo góc 6–8px |
+| Badge trạng thái | Pill, padding nhỏ |
+| Avatar | Tròn |
+| Icon button | Không khung; chỉ hiện nền khi hover |
+
+**Không bọc mọi icon trong ô vuông.** Icon chỉ có nền khi là tín hiệu trạng thái.
+
+### 8.7 Card phải có mục đích rõ ràng
+
+Mỗi card chứa: một tiêu đề ngắn + một thông tin chính + một hành động hoặc metadata.
+
+**Không nên:** Card chứa card; card có quá nhiều divider; card chứa 5–6 chỉ số ngang hàng; card nào cũng có icon, border, background và button.
+
+### 8.8 Bảng dữ liệu phải dễ "quét"
+
+- Cột đầu tiên: định danh quan trọng (SIM, mã GD, người dùng).
+- Số tiền: căn phải. Thời gian: căn giữa/phải. Status: căn giữa. Action: cột cuối.
+- Chỉ giữ 5–7 cột quan trọng; chi tiết ít dùng đưa vào drawer.
+- Dùng divider ngang nhẹ, không lưới dọc dày. Hover hàng nhẹ.
+- Hàng có rủi ro có thể có thanh màu mảnh ở cạnh trái.
+
+### 8.9 Action hierarchy: một hành động chính, còn lại lùi xuống
+
+- **CTA chính:** filled navy.
+- **CTA phụ:** outline hoặc nền nhạt.
+- **Hành động ít dùng:** text button hoặc menu `⋯`.
+- **Hành động nguy hiểm:** đỏ, luôn có confirm.
+
+### 8.10 Status phải nhất quán toàn hệ thống
+
+| Trạng thái | Hiển thị |
+|---|---|
+| Đang hoạt động | Chấm xanh lá + "Đang hoạt động" |
+| Chờ duyệt | Badge vàng/cam |
+| Đang xử lý | Xanh dương |
+| Cần theo dõi | Cam |
+| Rủi ro cao | Đỏ |
+| Thành công | Xanh lá |
+| Hủy/Hết hạn | Xám |
+| Live | Chấm đỏ/xanh lá + nhãn `LIVE` |
+
+Không chỉ dựa vào màu; luôn có text mô tả trạng thái.
+
+### 8.11 Làm UI sinh động bằng dữ liệu, không bằng trang trí
+
+**Nên dùng:** Countdown cho phiên sắp kết thúc; sparkline cho dòng tiền; progress mảnh cho tiến độ ký quỹ; timeline cho giao dịch; chấm trạng thái live; highlight nhẹ khi giá đấu thay đổi; empty state với CTA cụ thể.
+
+**Tránh:** Gradient mạnh; nền quá nhiều màu; animation lặp liên tục; icon trang trí không truyền thông tin; biểu đồ chỉ để lấp khoảng trống.
+
+### 8.12 Tránh cảm giác "AI-generated"
+
+Một UI thường bị nhìn như AI khi: card nào cũng giống nhau; quá nhiều badge màu; icon ở mọi tiêu đề; quá nhiều gradient/shadow/border; text dài và chung chung; số liệu không liên quan đến hành động; nhiều button cùng nổi bật.
+
+**Để tránh điều này:**
+- Chỉ dùng icon khi icon giúp quét nhanh hơn text.
+- Viết microcopy cụ thể theo nghiệp vụ: _"3 hồ sơ cần duyệt trước 17:00"_, không viết _"Có hồ sơ chờ xử lý"_.
+- Thiết kế cho tình huống thật: không có dữ liệu, lỗi xác minh, quá hạn thanh toán, bị khóa phiên.
+- Cho phép các module có layout khác nhau theo bản chất dữ liệu: bảng cho SIM, timeline cho chuyển nhượng, workspace hai cột cho eKYC.
+
+### 8.13 Quy tắc responsive và accessibility
+
+- Desktop: sidebar cố định; tablet: sidebar thu gọn; mobile: bảng chuyển thành card-list.
+- Vùng bấm tối thiểu 40–44px trên thiết bị cảm ứng.
+- Text phụ không nhỏ hơn 12px.
+- Tương phản chữ/nền đủ cao (đặc biệt badge vàng, đỏ, xanh).
+- Không đặt chức năng chỉ xuất hiện khi hover.
+- Toast chỉ dùng để xác nhận thao tác ngắn; lỗi tài chính/nguy hiểm hiển thị rõ và có hướng xử lý.
+
+### 8.14 Checklist trước khi hoàn thiện một màn hình
+
+- [ ] Màn hình có một mục tiêu chính rõ ràng?
+- [ ] Có tối đa một CTA chính trong vùng đầu màn hình?
+- [ ] Có phần nào dùng border nhưng có thể thay bằng khoảng trắng?
+- [ ] Có quá nhiều chữ in hoa hoặc chữ đậm?
+- [ ] Màu đỏ có thực sự biểu thị nguy hiểm?
+- [ ] Những thông tin quan trọng nhất có nhìn thấy trong 3 giây đầu?
+- [ ] Bảng có thể giảm bớt cột không?
+- [ ] Action nguy hiểm có confirmation và lý do không?
+- [ ] Trạng thái có thống nhất tên, màu và icon với các tab khác không?
+- [ ] Nếu bỏ hết icon, nội dung có còn dễ hiểu không?
+
+> **Nguyên tắc tổng quát:** Giao diện đẹp không đến từ việc thêm màu, card hoặc animation; nó đến từ việc biết phần nào cần nổi bật, phần nào cần lùi xuống và chừa đủ khoảng trống để dữ liệu được "thở".
+
+---
+
+## 9. Quy Chuẩn Bản Địa Hóa & Thân Thiện Với Người Dùng Cuối (Localization & Anti-Jargon Rules)
+
+Người dùng cuối (End-users) bao gồm cả người mua, người bán SIM và đối tác không có chuyên môn về công nghệ hay lập trình. Giao diện người dùng tuyệt đối **không được để lộ các thuật ngữ kỹ thuật, tên dịch vụ cloud, mã enum hoặc tên trường database/DTO**.
+
+### 9.1 Cấm hiển thị tên dịch vụ đám mây / Hạ tầng / Thư viện kỹ thuật
+- ❌ **Tuyệt đối cấm:** `AWS Rekognition`, `Amazon Web Services`, `Cloudinary`, `SignalR Hub`, `PostgreSQL`, `Entity Framework`, `Redis Cache`...
+- ✅ **Chuyển đổi thành từ ngữ thân thiện:**
+  - `AWS Rekognition` ➔ `Công nghệ xác thực khuôn mặt & CCCD tự động bằng AI` hoặc `Đối soát sinh trắc học`
+  - `Cloudinary` ➔ `Bộ nhớ lưu trữ hình ảnh hệ thống`
+  - `SignalR / WebSocket` ➔ `Cập nhật trực tiếp thời gian thực`
+
+### 9.2 Chuyển đổi toàn bộ mã Enum / Hằng số Backend sang Tiếng Việt
+- ❌ **Tuyệt đối cấm để nguyên mã Enum backend:**
+  - `AUTOMATED_AWS_REKOGNITION` ➔ `Xác thực khuôn mặt & CCCD tự động bằng AI`
+  - `MANUAL_ADMIN_REVIEW` ➔ `Chuyên viên thẩm định trực tiếp`
+  - `PENDING_VERIFICATION` ➔ `Đang chờ đối soát`
+  - `VERIFIED` ➔ `Đã xác thực chính chủ`
+  - `REJECTED` ➔ `Bị từ chối hồ sơ`
+  - `USER_ROLE_ADMIN` / `USER_ROLE_CONSULTANT` ➔ `Quản trị viên` / `Tư vấn viên`
+
+### 9.3 Không chèn tên trường DTO / Biến Code / Tiếng Anh trong ngoặc đơn
+- ❌ **Tránh:** `Đầu số mạng (Phone Prefixes)`, `Mã nhà mạng (Carrier Code)`, `Tên tài khoản (username)`, `Chữ ký PKI (PKI Keypair)`, `Mã (ID)`.
+- ✅ **Chuẩn hóa:** `Dải đầu số trực thuộc`, `Mã định danh nhà mạng`, `Tên đăng nhập`, `Chữ ký số điện tử`, `Mã số`.
+
+### 9.4 Thông báo lỗi thân thiện với con người (User-Friendly Error Messages)
+- ❌ **Không quăng lỗi console / mã code:** `"Unknown API key"`, `"ERR_NAME_NOT_RESOLVED"`, `"401 Unauthorized"`, `"NullReferenceException"`.
+- ✅ **Thông báo rõ ràng hành động:**
+  - `"Tải ảnh lên không thành công. Vui lòng thử lại với định dạng JPG, PNG dưới 10MB."`
+  - `"Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục."`
+  - `"Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại đường truyền mạng."`
+

@@ -29,6 +29,7 @@ export interface AuthResponseDto {
   fullName: string;
   phoneNumber: string;
   role: "ADMIN" | "STAFF" | "USER" | string;
+  avatarImg?: string;
   token: string;
   expiresAt: string;
 }

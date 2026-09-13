@@ -1,182 +1,98 @@
 "use client";
-import React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import React, { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Bell } from "lucide-react";
+import AdminSidebar from "@/components/admin/AdminSidebar";
+import { AuthSessionGuard } from "@/components/auth/AuthSessionGuard";
 
-const NAV_ITEMS = [
-  { icon: "📊", label: "Dashboard", href: "/admin" },
-  { icon: "👥", label: "Người dùng", href: "/admin/users" },
-  { icon: "🔨", label: "Phiên đấu giá", href: "/admin/auctions" },
-  { icon: "📱", label: "SIM số", href: "/admin/sims" },
-  { icon: "💰", label: "Giao dịch", href: "/admin/transactions" },
-  { icon: "📄", label: "Hợp đồng", href: "/admin/contracts" },
-  { icon: "🚨", label: "Khiếu nại", href: "/admin/disputes" },
-  { icon: "🤖", label: "AI Phát hiện", href: "/admin/anomalies" },
-  { icon: "⚙️", label: "Cài đặt hệ thống", href: "/admin/settings" },
-];
+const TAB_LABELS: Record<string, string> = {
+  dashboard: "Tổng quan hệ thống",
+  sims: "Quản lý kho SIM",
+  auctions: "Quản lý phiên đấu giá",
+  categories: "Danh mục & Định giá SIM",
+  carriers: "Nhà mạng & Dải đầu số",
+  transactions: "Giao dịch ký quỹ",
+  customers: "Quản lý Khách hàng & Tài chính Ví",
+  staff: "Quản lý Nhân sự & Quản trị viên",
+  users: "Quản lý Khách hàng",
+  ekyc: "Phê duyệt hồ sơ eKYC",
+  disputes: "Giải quyết khiếu nại & Trọng tài",
+  anomalies: "AI Giám sát bất thường & Gian lận",
+  settings: "Cài đặt & Cấu hình sàn",
+};
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const [collapsed, setCollapsed] = React.useState(false);
+function AdminLayoutInner({ children }: { children: React.ReactNode }) {
+  const searchParams = useSearchParams();
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Active tab determination
+  const currentTab = searchParams?.get("tab") || "dashboard";
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", background: "var(--bg-base)" }}>
-      {/* Sidebar */}
-      <aside style={{
-        width: collapsed ? 64 : 240,
-        flexShrink: 0,
-        background: "var(--bg-surface)",
-        borderRight: "1px solid var(--border-subtle)",
-        display: "flex",
-        flexDirection: "column",
-        transition: "width 0.3s ease",
-        overflow: "hidden",
-        position: "fixed",
-        top: 0,
-        bottom: 0,
-        left: 0,
-        zIndex: 100,
-      }}>
-        {/* Logo */}
-        <div style={{
-          padding: "20px 16px",
-          borderBottom: "1px solid var(--border-subtle)",
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          whiteSpace: "nowrap",
-        }}>
-          <div style={{
-            width: 36,
-            height: 36,
-            borderRadius: 10,
-            background: "linear-gradient(135deg, #312E81, #4F46E5, #06B6D4)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontWeight: 900,
-            color: "#fff",
-            fontSize: 14,
-            flexShrink: 0,
-          }}>TS</div>
-          {!collapsed && (
-            <div>
-              <div style={{ fontWeight: 800, fontSize: 15, color: "var(--text-primary)" }}>TrustSim</div>
-              <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>Admin Panel</div>
+    <div className="min-h-screen flex bg-[#F8F9FA] text-[#001743] font-sans antialiased">
+      {/* Modular Admin Sidebar */}
+      <AdminSidebar
+        collapsed={collapsed}
+        onToggleCollapse={() => setCollapsed(!collapsed)}
+        currentTab={currentTab}
+      />
+
+      {/* Main Container */}
+      <div
+        className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out ${
+          collapsed ? "ml-[68px]" : "ml-[250px]"
+        }`}
+      >
+        {/* Top Header */}
+        <header className="sticky top-0 z-30 h-14 bg-white border-b border-slate-200 shadow-[0_1px_4px_0_rgba(0,23,67,0.06)] px-6 flex items-center justify-between">
+          {/* Breadcrumb / Title */}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-slate-400 font-normal">Quản trị</span>
+            <span className="text-slate-300">/</span>
+            <span className="font-semibold text-[#001743] text-xs tracking-tight">
+              {TAB_LABELS[currentTab] || "Quản trị"}
+            </span>
+          </div>
+
+          {/* Header Utilities */}
+          <div className="flex items-center gap-3.5">
+            {/* System Health Pulse */}
+            <div className="hidden sm:flex items-center gap-2 px-2.5 py-0.5 bg-emerald-50/80 text-emerald-700 border border-emerald-200/60 rounded-full text-xs font-medium">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>Hệ thống trực tuyến</span>
             </div>
-          )}
-        </div>
 
-        {/* Nav */}
-        <nav style={{ flex: 1, padding: "12px 8px", overflowY: "auto" }}>
-          {NAV_ITEMS.map((item) => {
-            const active = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "10px 12px",
-                  borderRadius: 10,
-                  marginBottom: 2,
-                  textDecoration: "none",
-                  background: active ? "rgba(79,70,229,0.2)" : "transparent",
-                  color: active ? "var(--text-primary)" : "var(--text-muted)",
-                  fontSize: 13,
-                  fontWeight: active ? 600 : 400,
-                  transition: "all 0.2s",
-                  whiteSpace: "nowrap",
-                  borderLeft: `2px solid ${active ? "var(--indigo-mid)" : "transparent"}`,
-                }}
-                onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
-                onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+            {/* Notification Bell */}
+            <div className="relative">
+              <button
+                type="button"
+                className="p-1.5 rounded-lg text-slate-500 hover:text-[#001743] hover:bg-slate-100 transition-colors relative"
+                aria-label="Thông báo"
               >
-                <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
-                {!collapsed && item.label}
-              </Link>
-            );
-          })}
-        </nav>
+                <Bell size={17} strokeWidth={1.5} />
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#E4011E] ring-2 ring-white"></span>
+              </button>
+            </div>
 
-        {/* Bottom */}
-        <div style={{ padding: "12px 8px", borderTop: "1px solid var(--border-subtle)" }}>
-          {!collapsed && (
-            <div style={{ padding: "10px 12px", marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 30, height: 30, borderRadius: "50%", background: "linear-gradient(135deg,#4F46E5,#06B6D4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>A</div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)" }}>Admin</div>
-                <div style={{ fontSize: 10, color: "var(--text-muted)" }}>Superadmin</div>
+            {/* Admin Avatar + Info */}
+            <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200/60">
+              {/* Initials Avatar */}
+              <div className="w-8 h-8 rounded-full bg-[#001743] flex items-center justify-center shrink-0 shadow-sm">
+                <span className="text-white text-[11px] font-bold tracking-wide select-none">AD</span>
+              </div>
+              <div className="hidden md:block text-left leading-none">
+                <div className="text-xs font-semibold text-[#001743]">Administrator</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">admin@trustsim.vn</div>
               </div>
             </div>
-          )}
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            style={{
-              width: "100%",
-              padding: "8px 12px",
-              borderRadius: 10,
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid var(--border-subtle)",
-              color: "var(--text-muted)",
-              fontSize: 12,
-              cursor: "pointer",
-              fontFamily: "Inter, sans-serif",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: collapsed ? "center" : "flex-start",
-              gap: 6,
-            }}
-          >
-            {collapsed ? "→" : "← Thu gọn"}
-          </button>
-          <Link
-            href="/"
-            style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", marginTop: 4, borderRadius: 10, color: "var(--text-muted)", fontSize: 12, textDecoration: "none" }}
-          >
-            <span>🏠</span>{!collapsed && "Về trang chủ"}
-          </Link>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <div style={{ flex: 1, marginLeft: collapsed ? 64 : 240, transition: "margin-left 0.3s ease", display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-        {/* Top header */}
-        <header style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-          height: 56,
-          background: "rgba(10,11,26,0.9)",
-          backdropFilter: "blur(16px)",
-          borderBottom: "1px solid var(--border-subtle)",
-          display: "flex",
-          alignItems: "center",
-          padding: "0 24px",
-          gap: 12,
-          justifyContent: "space-between",
-        }}>
-          <Breadcrumb pathname={pathname} />
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{
-              width: 8,
-              height: 8,
-              borderRadius: "50%",
-              background: "#22c55e",
-              boxShadow: "0 0 8px rgba(34,197,94,0.6)",
-            }} />
-            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Hệ thống bình thường</span>
-            <button style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: 6, color: "var(--text-secondary)" }}>
-              🔔
-              <span style={{ position: "absolute", top: 2, right: 2, width: 8, height: 8, borderRadius: "50%", background: "#ef4444", border: "2px solid var(--bg-base)" }} />
-            </button>
           </div>
         </header>
 
-        {/* Content */}
-        <main style={{ flex: 1, padding: 24 }}>
+        {/* Content View */}
+        <main className="flex-1 p-6 max-w-[1600px] w-full mx-auto">
           {children}
         </main>
       </div>
@@ -184,30 +100,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   );
 }
 
-function Breadcrumb({ pathname }: { pathname: string }) {
-  const parts = pathname.split("/").filter(Boolean);
-  const LABELS: Record<string, string> = {
-    admin: "Dashboard",
-    users: "Người dùng",
-    auctions: "Phiên đấu giá",
-    sims: "SIM số",
-    transactions: "Giao dịch",
-    contracts: "Hợp đồng",
-    disputes: "Khiếu nại",
-    anomalies: "AI Phát hiện",
-    settings: "Cài đặt",
-  };
-
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-      {parts.map((part, i) => (
-        <React.Fragment key={part}>
-          {i > 0 && <span style={{ color: "var(--text-muted)" }}>/</span>}
-          <span style={{ color: i === parts.length - 1 ? "var(--text-primary)" : "var(--text-muted)", fontWeight: i === parts.length - 1 ? 600 : 400 }}>
-            {LABELS[part] ?? part}
-          </span>
-        </React.Fragment>
-      ))}
-    </div>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center text-xs text-[#6B7280]">
+          Đang tải giao diện quản trị...
+        </div>
+      }
+    >
+      <AuthSessionGuard>
+        <AdminLayoutInner>{children}</AdminLayoutInner>
+      </AuthSessionGuard>
+    </Suspense>
   );
 }
