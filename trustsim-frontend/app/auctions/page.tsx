@@ -849,7 +849,7 @@ export default function AuctionsPage() {
         >
           <div ref={filterToolbarRef} className="container" style={{ maxWidth: 1200, margin: "0 auto", padding: "12px 20px" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              
+
               {/* Row 1: Search Input & Custom Filter Dropdowns */}
               <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                 {/* Search Input Box */}
@@ -1354,7 +1354,7 @@ export default function AuctionsPage() {
 
               {/* Row 2: Status Tabs & Mechanism Sub-Filters */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, borderTop: "1px solid #F3F4F6", paddingTop: 8 }}>
-                
+
                 {/* Status Tabs */}
                 <div style={{ display: "flex", gap: 4, overflowX: "auto" }}>
                   {[
@@ -1653,8 +1653,6 @@ export default function AuctionsPage() {
         </main>
       </div>
 
-      {/* ─── Global Footer ────────────────────────────────────────── */}
-      <Footer />
 
       <style>{`
         @keyframes pulse-hero {

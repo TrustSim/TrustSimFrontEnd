@@ -1,8 +1,9 @@
 "use client";
 import React, { useState, useMemo, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { AdminCategoriesTab } from "@/components/admin/AdminCategoriesTab";
 import { AdminCarriersTab } from "@/components/admin/AdminCarriersTab";
+import { AdminSimsTab } from "@/components/admin/AdminSimsTab";
 import { AdminAuctionsTab } from "@/components/admin/AdminAuctionsTab";
 import { AdminCustomersTab } from "@/components/admin/AdminCustomersTab";
 import { AdminStaffTab } from "@/components/admin/AdminStaffTab";
@@ -324,6 +325,7 @@ const INITIAL_ANOMALIES = [
 ];
 
 export default function AdminControlCenter() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const currentTab = searchParams?.get("tab") || "dashboard";
 
@@ -355,52 +357,15 @@ export default function AdminControlCenter() {
   };
 
   // Modals & Panels
-  const [simDrawerOpen, setSimDrawerOpen] = useState(false);
-  const [simDrawerTab, setSimDrawerTab] = useState<"info" | "auctionHistory">("info");
-  const [editingSim, setEditingSim] = useState<SimItem | null>(null);
-  const [updatedSimId, setUpdatedSimId] = useState<string | null>(null);
-  const [simMenuOpenId, setSimMenuOpenId] = useState<string | null>(null);
-
-  const openSimDrawer = (sim: SimItem | null, tab: "info" | "auctionHistory" = "info") => {
-    setEditingSim(sim);
-    setSimDrawerTab(tab);
-    setSimDrawerOpen(true);
-  };
-
-  useEffect(() => {
-    const handleCloseMenu = () => setSimMenuOpenId(null);
-    document.addEventListener("click", handleCloseMenu);
-    return () => document.removeEventListener("click", handleCloseMenu);
-  }, []);
-
   const [auctionModalOpen, setAuctionModalOpen] = useState(false);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [carrierModalOpen, setCarrierModalOpen] = useState(false);
-
-  // eKYC Review Workspace active record
-  const [activeEkycId, setActiveEkycId] = useState<string>(INITIAL_EKYC_QUEUE[0]?.id || "");
-  const activeEkycRecord = useMemo(() => {
-    return ekycQueue.find((item) => item.id === activeEkycId) || ekycQueue[0] || null;
-  }, [ekycQueue, activeEkycId]);
-
-  const [rejectReasonModal, setRejectReasonModal] = useState<{ open: boolean; kycId: string; userName: string }>({
-    open: false,
-    kycId: "",
-    userName: "",
-  });
 
   // Escrow Pipeline Detail Modal
   const [selectedTxForPipeline, setSelectedTxForPipeline] = useState<any>(null);
 
   // Delete Safeguard
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: string; id: string; name: string } | null>(null);
-
-  // Search & Filter
-  const [searchSim, setSearchSim] = useState("");
-  const [carrierFilter, setCarrierFilter] = useState("all");
-  const [simStatusFilter, setSimStatusFilter] = useState("all");
-  const [simPageIndex, setSimPageIndex] = useState(1);
-  const [simPageSize, setSimPageSize] = useState(10);
 
   const [searchAuction, setSearchAuction] = useState("");
   const [auctionTypeFilter, setAuctionTypeFilter] = useState("all");
@@ -421,7 +386,6 @@ export default function AdminControlCenter() {
   // =========================================================================
   const renderDashboard = () => {
     const liveCount = auctions.filter((a) => a.status === "live").length;
-    const pendingKycCount = ekycQueue.filter((k) => k.status === "pending").length;
     const highRiskAlerts = anomalies.filter((a) => a.status === "open" && a.level === "high").length;
     const totalHeldEscrow = transactions
       .filter((t) => t.status === "Held" || t.status === "Disputed")
@@ -449,7 +413,7 @@ export default function AdminControlCenter() {
               {" · "}
               <span>{liveCount} phiên đang diễn ra</span>
               {" · "}
-              <span>{pendingKycCount} hồ sơ eKYC chờ duyệt</span>
+              <span className="text-emerald-700 font-medium">Định danh eKYC tự động AI</span>
               {highRiskAlerts > 0 && (
                 <>
                   {" · "}
@@ -461,13 +425,13 @@ export default function AdminControlCenter() {
 
           {/* Action Hierarchy: 1 Primary CTA (Navy), 1 Secondary Subtle (Outline) */}
           <div className="flex items-center gap-2.5">
-            <button
-              onClick={() => openSimDrawer(null, "info")}
+            <a
+              href="/admin?tab=sims"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-medium rounded-lg transition-colors shadow-2xs"
             >
               <Plus size={14} strokeWidth={1.75} />
-              <span>Thêm SIM mới</span>
-            </button>
+              <span>Quản lý SIM</span>
+            </a>
             <button
               onClick={() => setAuctionModalOpen(true)}
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-semibold rounded-lg transition-all shadow-xs"
@@ -546,19 +510,19 @@ export default function AdminControlCenter() {
             {/* Subtle Divider */}
             <div className="hidden lg:block lg:col-span-1 h-14 w-px bg-slate-100 mx-auto" />
 
-            {/* Metric 3 (Thứ cấp): eKYC chờ duyệt */}
+            {/* Metric 3 (Thứ cấp): eKYC tự động AI */}
             <div className="lg:col-span-2 flex flex-col justify-between">
-              <div className="text-xs font-medium text-slate-500">eKYC chờ duyệt</div>
+              <div className="text-xs font-medium text-slate-500">eKYC Tự động (AI)</div>
               <div className="mt-2">
                 <div className="text-xl font-bold text-slate-900 tabular-nums tracking-tight flex items-baseline gap-1.5">
-                  <AnimatedNumber value={pendingKycCount} />
-                  <span className="text-xs font-normal text-slate-500">hồ sơ</span>
+                  <span className="text-emerald-600 font-bold">100%</span>
+                  <span className="text-xs font-normal text-slate-500">tự động hóa</span>
                 </div>
                 <div className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-slate-500 space-y-0.5">
-                  <div>Thời gian chờ: <span className="font-medium text-slate-700">~2.5 giờ</span></div>
+                  <div>Tốc độ xác thực: <span className="font-medium text-slate-700">&lt; 3 giây</span></div>
                   <div className="text-emerald-700 font-medium flex items-center gap-1">
                     <CheckCircle2 size={11} />
-                    <span>3 đã duyệt hôm nay</span>
+                    <span>Hệ thống AI xử lý 24/7</span>
                   </div>
                 </div>
               </div>
@@ -998,9 +962,7 @@ export default function AdminControlCenter() {
                               </button>
                             )}
                             <button
-                              onClick={() => {
-                                openSimDrawer(sims.find((s) => s.phone === a.sim) || null, "auctionHistory");
-                              }}
+                              onClick={() => router.push("/admin?tab=auctions")}
                               className="p-1.5 text-slate-400 hover:text-[#001743] hover:bg-slate-100 rounded-md transition-colors"
                               title="Xem chi tiết phiên đấu giá"
                             >
@@ -1019,482 +981,7 @@ export default function AdminControlCenter() {
     );
   };
 
-  // =========================================================================
-  // VIEW: 2. QUẢN LÝ SIM & AI VALUATION (WITH SLIDE-IN DETAIL DRAWER)
-  // =========================================================================
-  const filteredSims = useMemo(() => {
-    return sims.filter((s) => {
-      const matchSearch =
-        s.phone.includes(searchSim.replace(/\s/g, "")) ||
-        s.id.toLowerCase().includes(searchSim.toLowerCase()) ||
-        s.category.toLowerCase().includes(searchSim.toLowerCase());
-      const matchCarrier = carrierFilter === "all" || s.carrier.toLowerCase() === carrierFilter.toLowerCase();
-      const matchStatus = simStatusFilter === "all" || s.status === simStatusFilter;
-      return matchSearch && matchCarrier && matchStatus;
-    });
-  }, [sims, searchSim, carrierFilter, simStatusFilter]);
-
-  const renderSims = () => (
-    <div className="space-y-4">
-      {/* Header & Controls */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-base font-bold text-[#001743]">Kho SIM &amp; Mô Hình Định Giá AI</h1>
-          <p className="text-xs text-[#6B7280] mt-0.5">
-            Cơ sở dữ liệu toàn bộ SIM số đẹp, phân tích quy luật phong thủy và đối soát giá thị trường với AI Engine.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <ImportExportBar
-            data={sims}
-            columns={SIM_EXPORT_COLUMNS}
-            filename={`TrustSim_KhoSIM_${new Date().toISOString().slice(0, 10)}`}
-            entityName="SIM"
-            onImport={(rows) => {
-              const newSims: SimItem[] = rows
-                .map((r, i) => ({
-                  id: `SIM-IMP-${Date.now()}-${i + 1}`,
-                  phone: String(r["Số điện thoại"] || r.phone || "").replace(/\D/g, ""),
-                  carrier: String(r["Nhà mạng"] || r.carrier || "Viettel"),
-                  category: String(r["Phân loại"] || r.category || "Số đẹp"),
-                  price: Number(r["Giá bán (VNĐ)"] || r.price || 5000000),
-                  aiValuation: Number(r["AI Định giá (VNĐ)"] || r.aiValuation || 5000000),
-                  aiMultiplier: Number(r["Hệ số AI"] || r.aiMultiplier || 1.0),
-                  status: "Available" as const,
-                  type: String(r["Loại thuê bao"] || r.type || "Trả trước"),
-                  created: new Date().toLocaleDateString("vi-VN"),
-                  patternDesc: String(r["Mô tả thế số"] || r.patternDesc || "Đã nhập từ file Excel"),
-                }))
-                .filter((s) => s.phone.length >= 9);
-
-              if (newSims.length > 0) {
-                setSims((prev) => [...newSims, ...prev]);
-                showToast(`Đã nhập thành công ${newSims.length} SIM vào kho.`);
-              }
-            }}
-          />
-          <button
-            onClick={() => openSimDrawer(null, "info")}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors shadow-xs"
-          >
-            <Plus size={15} strokeWidth={1.75} />
-            <span>Thêm SIM vào kho</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Filter Toolbar */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3 flex flex-wrap items-center justify-between gap-3 shadow-xs">
-        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
-          <div className="relative w-72">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Tìm theo số SIM, mã định danh, thế số..."
-              value={searchSim}
-              onChange={(e) => {
-                setSearchSim(e.target.value);
-                setSimPageIndex(1);
-              }}
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
-            />
-          </div>
-
-          <select
-            value={carrierFilter}
-            onChange={(e) => {
-              setCarrierFilter(e.target.value);
-              setSimPageIndex(1);
-            }}
-            className="text-xs py-1.5 px-3 bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
-          >
-            <option value="all">Tất cả nhà mạng</option>
-            <option value="Viettel">Viettel</option>
-            <option value="Vinaphone">Vinaphone</option>
-            <option value="Mobifone">Mobifone</option>
-            <option value="Vietnamobile">Vietnamobile</option>
-          </select>
-
-          <select
-            value={simStatusFilter}
-            onChange={(e) => {
-              setSimStatusFilter(e.target.value);
-              setSimPageIndex(1);
-            }}
-            className="text-xs py-1.5 px-3 bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
-          >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="Available">Sẵn sàng bán (Available)</option>
-            <option value="InAuction">Đang đấu giá (InAuction)</option>
-            <option value="Sold">Đã bán (Sold)</option>
-            <option value="Locked">Đang khóa (Locked)</option>
-          </select>
-        </div>
-
-        <div className="text-xs text-[#6B7280]">
-          Hiển thị <strong className="text-[#001743]">{filteredSims.length}</strong> SIM trong danh mục
-        </div>
-      </div>
-
-      {/* Main SIM Table */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
-                <th className="py-3 px-4">Số SIM / Mã kho</th>
-                <th className="py-3 px-4">Nhà mạng</th>
-                <th className="py-3 px-4">Thế số (Pattern)</th>
-                <th className="py-3 px-4 text-right">Định giá AI</th>
-                <th className="py-3 px-4 text-right">Giá niêm yết</th>
-                <th className="py-3 px-4 text-center">Trạng thái</th>
-                <th className="py-3 px-4">Ngày nhập</th>
-                <th className="py-3 px-4 text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#E5E7EB]">
-              {(() => {
-                const pagedSims = filteredSims.slice(
-                  (simPageIndex - 1) * simPageSize,
-                  simPageIndex * simPageSize
-                );
-                return pagedSims.map((s) => {
-                  const canDelete = s.status === "Available";
-                  const isUpdated = updatedSimId === s.id;
-                  return (
-                    <tr
-                      key={s.id}
-                      onClick={() => openSimDrawer(s, "info")}
-                      className={`transition-colors h-16 cursor-pointer ${
-                        isUpdated ? "bg-emerald-50" : "hover:bg-slate-50/80"
-                      }`}
-                      style={{ transition: isUpdated ? "background-color 1500ms ease-out" : undefined }}
-                    >
-                    <td className="py-3 px-4">
-                      <div className="font-extrabold text-sm text-[#001743] tabular-nums font-mono tracking-wider">
-                        {formatPhone(s.phone)}
-                      </div>
-                      <div className="text-[10px] text-[#9CA3AF]">{s.id} · {s.type}</div>
-                    </td>
-                    <td className="py-3 px-4 font-semibold text-[#001743]">{s.carrier}</td>
-                    <td className="py-3 px-4">
-                      <span
-                        title={s.patternDesc}
-                        className="px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-slate-100 text-[#001743] border border-slate-200 inline-flex items-center gap-1"
-                      >
-                        <span>{s.category}</span>
-                        <HelpCircle size={11} className="text-[#9CA3AF]" />
-                      </span>
-                    </td>
-                    {/* Cột Định giá AI độc quyền */}
-                    <td className="py-3 px-4 text-right">
-                      <div className="font-black text-[#001743] tabular-nums">
-                        {formatVND(s.aiValuation)}
-                      </div>
-                      <span className="text-[10px] text-indigo-700 font-extrabold bg-indigo-50 px-1.5 py-0.2 rounded">
-                        x{s.aiMultiplier} AI Score
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right font-bold text-[#001743] tabular-nums">
-                      {formatVND(s.price)}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-[4px] text-[10px] font-bold ${
-                          s.status === "Available"
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            : s.status === "InAuction"
-                            ? "bg-[#001743] text-white"
-                            : s.status === "Sold"
-                            ? "bg-gray-100 text-gray-600 border border-gray-200"
-                            : "bg-rose-50 text-rose-700 border border-rose-200"
-                        }`}
-                      >
-                        {s.status === "Available"
-                          ? "Sẵn sàng"
-                          : s.status === "InAuction"
-                          ? "Đang live"
-                          : s.status === "Sold"
-                          ? "Đã bán"
-                          : "Đang khóa"}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-[#9CA3AF] text-[11px]">{s.created}</td>
-                    <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openSimDrawer(s, "info");
-                          }}
-                          className="p-1.5 text-[#4B5563] hover:text-[#001743] hover:bg-gray-100 rounded-[6px] transition-colors"
-                          title="Chỉnh sửa thông tin SIM"
-                        >
-                          <Edit3 size={15} strokeWidth={1.5} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openSimDrawer(s, "auctionHistory");
-                          }}
-                          className="p-1.5 text-[#4B5563] hover:text-blue-600 hover:bg-blue-50 rounded-[6px] transition-colors"
-                          title="Lịch sử đấu giá SIM"
-                        >
-                          <Gavel size={15} strokeWidth={1.5} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const newStatus = s.status === "Locked" ? "Available" : "Locked";
-                            setSims(sims.map((item) => (item.id === s.id ? { ...item, status: newStatus } : item)));
-                            showToast(`Đã ${newStatus === "Locked" ? "khóa" : "mở khóa"} SIM ${s.phone}.`);
-                          }}
-                          className="p-1.5 text-[#4B5563] hover:text-amber-600 hover:bg-amber-50 rounded-[6px] transition-colors"
-                          title={s.status === "Locked" ? "Mở khóa SIM" : "Tạm khóa SIM"}
-                        >
-                          {s.status === "Locked" ? <Unlock size={15} /> : <Lock size={15} />}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!canDelete}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (canDelete) {
-                              setDeleteConfirm({ type: "sim", id: s.id, name: s.phone });
-                            }
-                          }}
-                          className={`p-1.5 rounded-[6px] transition-colors ${
-                            canDelete
-                              ? "text-[#4B5563] hover:text-rose-600 hover:bg-rose-50"
-                              : "text-gray-300 cursor-not-allowed"
-                          }`}
-                          title={canDelete ? "Xóa SIM khỏi kho" : "Không thể xóa SIM đang trong phiên hoặc đã bán"}
-                        >
-                          <Trash2 size={15} strokeWidth={1.5} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              });
-            })()}
-            </tbody>
-          </table>
-        </div>
-
-        {/* ── Standard Pagination Bar ── */}
-        <Pagination
-          pageIndex={simPageIndex}
-          pageSize={simPageSize}
-          totalCount={filteredSims.length}
-          onPageChange={(page) => setSimPageIndex(page)}
-          onPageSizeChange={(size) => {
-            setSimPageSize(size);
-            setSimPageIndex(1);
-          }}
-        />
-      </div>
-    </div>
-  );
-
-  // =========================================================================
-  // VIEW: 3. PHÊ DUYỆT eKYC (PROFESSIONAL 3-COLUMN REVIEW WORKSPACE)
-  // =========================================================================
-  const renderEkycWorkspace = () => (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-base font-bold text-[#001743]">Không Gian Thẩm Định Hồ Sơ eKYC (Review Workspace)</h1>
-          <p className="text-xs text-[#6B7280] mt-0.5">
-            Quy trình đối chiếu 3 lớp: Bóc tách OCR thẻ căn cước gắn chip, phát hiện gian lận giả mạo (Anti-spoofing) và đối soát sinh trắc học khuôn mặt.
-          </p>
-        </div>
-        <div className="px-3 py-1.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-[6px] text-xs font-bold">
-          {ekycQueue.length} hồ sơ đang chờ quyết định
-        </div>
-      </div>
-
-      {/* 3-Column Review Workspace */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-        {/* CỘT 1: Danh sách hồ sơ chờ duyệt (3 / 12) */}
-        <div className="lg:col-span-3 bg-white border border-[#E2E8F0] rounded-[8px] p-3 shadow-xs space-y-2">
-          <div className="text-xs font-bold text-[#001743] uppercase tracking-wider mb-2">
-            Hàng đợi kiểm tra ({ekycQueue.length})
-          </div>
-          <div className="space-y-2">
-            {ekycQueue.map((item) => {
-              const isActive = item.id === activeEkycRecord?.id;
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => setActiveEkycId(item.id)}
-                  className={`p-2.5 rounded-[6px] border transition-all cursor-pointer ${
-                    isActive
-                      ? "bg-slate-100 border-[#001743] shadow-xs"
-                      : "bg-[#F8F9FA] border-[#E2E8F0] hover:border-gray-300"
-                  }`}
-                >
-                  <div className="flex justify-between items-start mb-1">
-                    <span className="font-bold text-xs text-[#001743]">{item.userName}</span>
-                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-[3px] bg-amber-100 text-amber-800">
-                      Chờ duyệt
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-[#6B7280] font-mono">CCCD: {item.idCardNumber}</div>
-                  <div className="flex justify-between items-center mt-2 text-[10px]">
-                    <span className="text-emerald-700 font-bold">Match: {item.faceMatchScore}%</span>
-                    <span className="text-[#9CA3AF]">{item.submittedAt.split("(")[0]}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* CỘT 2: Khu vực ảnh CCCD & Selfie đối soát (5 / 12) */}
-        <div className="lg:col-span-5 bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs space-y-4">
-          <div className="text-xs font-bold text-[#001743] uppercase tracking-wider">
-            Tài liệu ảnh gốc chụp từ thiết bị công dân
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            {/* Front Card */}
-            <div className="border border-[#E2E8F0] rounded-[6px] p-2.5 bg-[#F8F9FA] text-center">
-              <span className="text-[11px] font-bold text-[#001743] block mb-1.5">1. Mặt trước CCCD</span>
-              <div className="h-32 bg-slate-200 rounded-[4px] flex flex-col items-center justify-center text-[#6B7280] text-[11px] border border-dashed border-slate-300 relative group">
-                <FileText size={24} className="text-slate-400 mb-1" />
-                <span>Ảnh mặt trước</span>
-                <span className="text-[10px] text-emerald-700 font-bold mt-1">✓ Bóc tách OCR đạt</span>
-              </div>
-            </div>
-
-            {/* Back Card */}
-            <div className="border border-[#E2E8F0] rounded-[6px] p-2.5 bg-[#F8F9FA] text-center">
-              <span className="text-[11px] font-bold text-[#001743] block mb-1.5">2. Mặt sau CCCD</span>
-              <div className="h-32 bg-slate-200 rounded-[4px] flex flex-col items-center justify-center text-[#6B7280] text-[11px] border border-dashed border-slate-300">
-                <FileText size={24} className="text-slate-400 mb-1" />
-                <span>Ảnh mặt sau</span>
-                <span className="text-[10px] text-emerald-700 font-bold mt-1">✓ Chip NFC hợp lệ</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Selfie Portrait Card */}
-          <div className="border border-[#E2E8F0] rounded-[6px] p-3 bg-[#F8F9FA]">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-[11px] font-bold text-[#001743]">3. Video chân dung động (Liveness Check)</span>
-              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-[4px]">
-                Live Video Verified
-              </span>
-            </div>
-            <div className="h-36 bg-slate-200 rounded-[4px] flex flex-col items-center justify-center text-[#6B7280] text-xs border border-dashed border-slate-300">
-              <UserCheck size={28} className="text-slate-400 mb-1" />
-              <span>Chân dung sinh trắc học trực diện</span>
-              <span className="text-[10px] text-emerald-700 font-extrabold mt-1">
-                AI Face Match: {activeEkycRecord?.faceMatchScore}%
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* CỘT 3: Dữ liệu bóc tách & Phân tích rủi ro AI (4 / 12) */}
-        <div className="lg:col-span-4 bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col justify-between h-full space-y-4">
-          <div>
-            <div className="text-xs font-bold text-[#001743] uppercase tracking-wider mb-3">
-              Kết quả so khớp tự động
-            </div>
-
-            {activeEkycRecord ? (
-              <div className="space-y-3 text-xs">
-                <div className="bg-[#F8F9FA] p-3 rounded-[6px] border border-[#E2E8F0] space-y-2">
-                  <div>
-                    <span className="text-[10px] text-[#6B7280] uppercase">Họ và tên theo CCCD</span>
-                    <div className="font-extrabold text-sm text-[#001743]">{activeEkycRecord.userName}</div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <span className="text-[10px] text-[#6B7280] uppercase">Số CCCD</span>
-                      <div className="font-mono font-bold text-[#001743]">{activeEkycRecord.idCardNumber}</div>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-[#6B7280] uppercase">Ngày sinh</span>
-                      <div className="font-bold text-[#001743]">{activeEkycRecord.dob}</div>
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-[#6B7280] uppercase">Địa chỉ thường trú</span>
-                    <div className="text-[#001743] leading-snug">{activeEkycRecord.address}</div>
-                  </div>
-                </div>
-
-                {/* AI Risk Checks */}
-                <div className="border border-indigo-100 bg-indigo-50/40 p-3 rounded-[8px] space-y-1.5">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[#6B7280]">Độ khớp khuôn mặt:</span>
-                    <strong className="text-emerald-700 font-extrabold">{activeEkycRecord.faceMatchScore}% (Đạt)</strong>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[#6B7280]">Chống giả mạo (Anti-spoofing):</span>
-                    <strong className="text-emerald-700 font-bold">{activeEkycRecord.antiSpoofing}</strong>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[#6B7280]">Danh sách đen viễn thông:</span>
-                    <strong className="text-emerald-700 font-bold">{activeEkycRecord.blacklistCheck}</strong>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-12 text-[#9CA3AF]">Không có hồ sơ nào được chọn</div>
-            )}
-          </div>
-
-          {/* Bottom Decision Bar */}
-          {activeEkycRecord && (
-            <div className="pt-3 border-t border-[#E5E7EB] space-y-2">
-              <button
-                onClick={() => {
-                  setEkycQueue(ekycQueue.filter((x) => x.id !== activeEkycRecord.id));
-                  showToast(`Đã phê duyệt thành công hồ sơ eKYC của ${activeEkycRecord.userName}.`);
-                }}
-                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-[8px] transition-colors flex items-center justify-center gap-2 shadow-sm"
-              >
-                <Check size={16} />
-                <span>Phê duyệt hồ sơ chính thức</span>
-              </button>
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => {
-                    setRejectReasonModal({
-                      open: true,
-                      kycId: activeEkycRecord.id,
-                      userName: activeEkycRecord.userName,
-                    });
-                  }}
-                  className="py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-[8px] transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <X size={15} />
-                  <span>Từ chối</span>
-                </button>
-                <button
-                  onClick={() => {
-                    showToast(`Đã gửi yêu cầu bổ sung ảnh chụp rõ nét tới ${activeEkycRecord.userName}.`);
-                  }}
-                  className="py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold rounded-[8px] transition-colors"
-                >
-                  Yêu cầu bổ sung
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+  // (Tab Quản lý SIM đã chuyển sang AdminSimsTab; Tab eKYC đã gỡ bỏ do tự động hóa bằng AI)
 
   // =========================================================================
   // VIEW: 4. GIAO DỊCH KÝ QUỸ (5-STEP ESCROW TIMELINE & FINANCIAL CONTROL)
@@ -1705,9 +1192,8 @@ export default function AdminControlCenter() {
 
       {/* Tab Router */}
       {currentTab === "dashboard" && renderDashboard()}
-      {currentTab === "sims" && renderSims()}
+      {currentTab === "sims" && <AdminSimsTab />}
       {currentTab === "auctions" && <AdminAuctionsTab />}
-      {currentTab === "ekyc" && renderEkycWorkspace()}
       {currentTab === "transactions" && <AdminEscrowTab />}
       {currentTab === "categories" && <AdminCategoriesTab />}
       {currentTab === "carriers" && <AdminCarriersTab />}
@@ -1717,410 +1203,7 @@ export default function AdminControlCenter() {
       {currentTab === "disputes" && <AdminDisputesTab />}
       {currentTab === "settings" && <AdminSettingsTab />}
 
-      {/* =========================================================================
-          RIGHT DRAWER: THÊM / CHỈNH SỬA / CHI TIẾT SIM (CRUD WORKSPACE PATTERN)
-      ========================================================================= */}
-      <RightDrawer
-        open={simDrawerOpen}
-        onClose={() => setSimDrawerOpen(false)}
-        title={editingSim ? "Hồ sơ & Chỉnh sửa SIM" : "Thêm SIM mới vào kho"}
-        badge={editingSim ? editingSim.id : "MỚI"}
-        badgeCls={
-          editingSim?.status === "Available"
-            ? "bg-emerald-50 text-emerald-700"
-            : editingSim?.status === "InAuction"
-            ? "bg-[#001743] text-white"
-            : editingSim?.status === "Sold"
-            ? "bg-gray-100 text-gray-600"
-            : "bg-slate-100 text-slate-700"
-        }
-        size="lg"
-      >
-        {/* Drawer Tabs (chỉ hiện khi đang xem/sửa SIM đã có) */}
-        {editingSim && (
-          <div className="flex border-b border-slate-200 px-6 bg-slate-50/50 shrink-0">
-            <button
-              type="button"
-              onClick={() => setSimDrawerTab("info")}
-              className={`py-3 px-4 text-xs font-semibold border-b-2 transition-colors ${
-                simDrawerTab === "info"
-                  ? "border-[#001743] text-[#001743]"
-                  : "border-transparent text-slate-500 hover:text-slate-800"
-              }`}
-            >
-              Thông tin &amp; Định giá AI
-            </button>
-            <button
-              type="button"
-              onClick={() => setSimDrawerTab("auctionHistory")}
-              className={`py-3 px-4 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${
-                simDrawerTab === "auctionHistory"
-                  ? "border-[#001743] text-[#001743]"
-                  : "border-transparent text-slate-500 hover:text-slate-800"
-              }`}
-            >
-              <span>Lịch sử đấu giá</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-700 font-mono">
-                {auctions.filter((a) => a.sim === editingSim.phone).length}
-              </span>
-            </button>
-          </div>
-        )}
 
-        <DrawerBody>
-          {simDrawerTab === "info" ? (
-            <form
-              id="sim-drawer-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.currentTarget);
-                const phone = formData.get("phone") as string;
-                const carrier = formData.get("carrier") as string;
-                const category = formData.get("category") as string;
-                const price = Number(formData.get("price"));
-                const type = formData.get("type") as string;
-                const status = formData.get("status") as any;
-
-                if (editingSim) {
-                  setSims(
-                    sims.map((item) =>
-                      item.id === editingSim.id ? { ...item, phone, carrier, category, price, type, status } : item
-                    )
-                  );
-                  showToast(`Đã cập nhật SIM ${phone} thành công!`);
-                  setUpdatedSimId(editingSim.id);
-                  setTimeout(() => setUpdatedSimId(null), 1600);
-                } else {
-                  const newSim: SimItem = {
-                    id: `SIM-${String(sims.length + 1).padStart(2, "0")}`,
-                    phone,
-                    carrier,
-                    category,
-                    price,
-                    aiValuation: Math.round(price * 1.05),
-                    aiMultiplier: 2.0,
-                    status,
-                    type,
-                    created: new Date().toLocaleDateString("vi-VN"),
-                    patternDesc: `Dòng SIM số đẹp dạng ${category}`,
-                  };
-                  setSims([newSim, ...sims]);
-                  showToast(`Đã thêm mới SIM ${phone} vào kho thành công!`);
-                  setUpdatedSimId(newSim.id);
-                  setTimeout(() => setUpdatedSimId(null), 1600);
-                }
-                setSimDrawerOpen(false);
-              }}
-              className="space-y-5"
-            >
-              {/* Physical SIM Hero Card Preview nếu đang xem/sửa */}
-              {editingSim && (
-                <PhysicalSimCard
-                  phoneNumber={editingSim.phone}
-                  carrierName={editingSim.carrier}
-                  categoryName={editingSim.category}
-                  patternDesc={editingSim.patternDesc}
-                  price={editingSim.price}
-                  badgeText={editingSim.type}
-                />
-              )}
-
-              {/* Form Section: Nhận diện SIM */}
-              <DrawerSection title="Thông tin nhận diện SIM" subtitle="Số điện thoại, nhà mạng và phân loại thế số">
-                <FormField label="Số điện thoại" required hint="Định dạng chuẩn 10 chữ số">
-                  <input
-                    required
-                    type="text"
-                    name="phone"
-                    defaultValue={editingSim?.phone || ""}
-                    placeholder="Ví dụ: 0988888888"
-                    className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:border-[#001743] focus:outline-none font-mono font-bold"
-                  />
-                </FormField>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <FormField label="Nhà mạng">
-                    <select
-                      name="carrier"
-                      defaultValue={editingSim?.carrier || "Viettel"}
-                      className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:border-[#001743] focus:outline-none"
-                    >
-                      <option value="Viettel">Viettel</option>
-                      <option value="Vinaphone">Vinaphone</option>
-                      <option value="Mobifone">Mobifone</option>
-                      <option value="Vietnamobile">Vietnamobile</option>
-                      <option value="Wintel">Wintel</option>
-                    </select>
-                  </FormField>
-
-                  <FormField label="Thế số (Danh mục)">
-                    <select
-                      name="category"
-                      defaultValue={editingSim?.category || "Bát quý"}
-                      className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:border-[#001743] focus:outline-none"
-                    >
-                      {categories.map((c) => (
-                        <option key={c.id} value={c.name.split(" ")[0]}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </FormField>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <FormField label="Giá niêm yết (VNĐ)" required>
-                    <input
-                      required
-                      type="number"
-                      name="price"
-                      defaultValue={editingSim?.price || 15000000}
-                      className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:border-[#001743] focus:outline-none tabular-nums font-semibold"
-                    />
-                  </FormField>
-
-                  <FormField label="Gói cước">
-                    <select
-                      name="type"
-                      defaultValue={editingSim?.type || "Trả trước"}
-                      className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:border-[#001743] focus:outline-none"
-                    >
-                      <option value="Trả trước">Trả trước</option>
-                      <option value="Trả sau">Trả sau</option>
-                    </select>
-                  </FormField>
-                </div>
-
-                <FormField label="Trạng thái kho">
-                  <select
-                    name="status"
-                    defaultValue={editingSim?.status || "Available"}
-                    className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:border-[#001743] focus:outline-none"
-                  >
-                    <option value="Available">Sẵn sàng bán (Available)</option>
-                    <option value="InAuction">Đang đấu giá (InAuction)</option>
-                    <option value="Sold">Đã bán (Sold)</option>
-                    <option value="Locked">Đang khóa (Locked)</option>
-                  </select>
-                </FormField>
-              </DrawerSection>
-
-              {/* AI Valuation Engine & Pháp lý nếu là editing */}
-              {editingSim && (
-                <DrawerSection
-                  title="Mô hình định giá AI & Pháp lý"
-                  subtitle="Phân tích phong thủy và tình trạng sang tên"
-                >
-                  <div className="border border-indigo-100 bg-indigo-50/50 p-4 rounded-lg space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#001743]">
-                        <Bot size={15} className="text-indigo-600" />
-                        <span>TrustSim AI Valuation</span>
-                      </div>
-                      <span className="text-xs font-black text-indigo-700 tabular-nums">
-                        {formatVND(editingSim.aiValuation)}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      {editingSim.patternDesc}
-                    </p>
-                    <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
-                      <div className="bg-white p-2.5 rounded border border-indigo-100">
-                        <span className="text-slate-400 block text-[10px]">Hệ số độ hiếm</span>
-                        <strong className="text-[#001743] font-bold">{editingSim.aiMultiplier}x Base Price</strong>
-                      </div>
-                      <div className="bg-white p-2.5 rounded border border-indigo-100">
-                        <span className="text-slate-400 block text-[10px]">Dự báo thanh khoản</span>
-                        <strong className="text-emerald-700 font-bold">Rất cao (A+)</strong>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border border-slate-200 p-3.5 rounded-lg space-y-2 text-xs">
-                    <div className="flex justify-between items-center py-1 border-b border-slate-100">
-                      <span className="text-slate-500">Chủ thể đăng ký:</span>
-                      <span className="font-semibold text-[#001743]">Chính chủ đã xác thực eKYC</span>
-                    </div>
-                    <div className="flex justify-between items-center py-1 border-b border-slate-100">
-                      <span className="text-slate-500">Cam kết chuyển nhượng:</span>
-                      <span className="font-semibold text-emerald-700">Hợp đồng điện tử ký số</span>
-                    </div>
-                    <div className="flex justify-between items-center py-1">
-                      <span className="text-slate-500">Ngày nhập kho:</span>
-                      <span className="font-mono text-slate-700">{editingSim.created}</span>
-                    </div>
-                  </div>
-                </DrawerSection>
-              )}
-            </form>
-          ) : (
-            /* Tab Lịch sử đấu giá */
-            <div className="space-y-4">
-              {editingSim &&
-                (() => {
-                  const matchAuctions = auctions.filter((a) => a.sim === editingSim.phone);
-                  if (matchAuctions.length === 0) {
-                    return (
-                      <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-                        <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
-                          <Gavel size={22} strokeWidth={1.5} />
-                        </div>
-                        <h4 className="text-sm font-bold text-slate-800">Chưa có phiên đấu giá nào</h4>
-                        <p className="text-xs text-slate-500 mt-1 max-w-xs">
-                          SIM này chưa từng được đưa lên sàn đấu giá TrustSim.
-                        </p>
-                        {editingSim.status === "Available" && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSimDrawerOpen(false);
-                              setAuctionModalOpen(true);
-                            }}
-                            className="mt-4 px-4 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-lg transition-colors"
-                          >
-                            Tạo phiên đấu giá ngay
-                          </button>
-                        )}
-                      </div>
-                    );
-                  }
-                  return (
-                    <div className="space-y-3">
-                      {matchAuctions.map((auc) => (
-                        <div key={auc.id} className="p-4 border border-slate-200 rounded-xl bg-white shadow-xs space-y-3">
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono font-bold text-xs text-[#001743]">{auc.id}</span>
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-700">
-                                {auc.type === "english" ? "Đấu giá Anh" : auc.type === "dutch" ? "Đấu giá Hà Lan" : "Đấu giá kín"}
-                              </span>
-                            </div>
-                            <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                auc.status === "live"
-                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                  : auc.status === "upcoming"
-                                  ? "bg-amber-50 text-amber-800 border border-amber-200"
-                                  : "bg-slate-100 text-slate-600"
-                              }`}
-                            >
-                              {auc.status === "live" ? "Đang live" : auc.status === "upcoming" ? "Sắp diễn ra" : "Đã kết thúc"}
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-                            <div>
-                              <span className="text-[10px] text-slate-400 block">Giá khởi điểm</span>
-                              <span className="font-semibold text-slate-700">{formatVND(auc.startPrice)}</span>
-                            </div>
-                            <div>
-                              <span className="text-[10px] text-slate-400 block">Giá hiện tại</span>
-                              <span className="font-bold text-[#001743] text-sm tabular-nums">{formatVND(auc.currentPrice)}</span>
-                            </div>
-                            <div>
-                              <span className="text-[10px] text-slate-400 block">Lượt trả giá</span>
-                              <span className="font-semibold text-slate-700">{auc.bids} lượt</span>
-                            </div>
-                            <div>
-                              <span className="text-[10px] text-slate-400 block">Dẫn đầu hiện tại</span>
-                              <span className="font-semibold text-emerald-700 truncate block">{auc.leader}</span>
-                            </div>
-                          </div>
-
-                          <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-[11px] text-slate-500">
-                            <span>Thời gian: <strong className="text-slate-700">{auc.timeLeft}</strong></span>
-                            <span>Người bán: <strong className="text-slate-700">{auc.seller}</strong></span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-            </div>
-          )}
-        </DrawerBody>
-
-        <DrawerFooter>
-          <div className="flex items-center justify-between w-full">
-            <div>
-              {editingSim && editingSim.status === "Available" && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSimDrawerOpen(false);
-                    setAuctionModalOpen(true);
-                  }}
-                  className="px-3.5 py-2 text-xs font-semibold text-[#001743] hover:bg-slate-100 border border-[#001743]/20 rounded-lg transition-colors"
-                >
-                  Mở phiên đấu giá
-                </button>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <BtnSecondary onClick={() => setSimDrawerOpen(false)}>
-                Hủy bỏ
-              </BtnSecondary>
-              {simDrawerTab === "info" && (
-                <BtnPrimary type="submit" form="sim-drawer-form">
-                  {editingSim ? "Lưu thay đổi" : "Thêm vào kho"}
-                </BtnPrimary>
-              )}
-            </div>
-          </div>
-        </DrawerFooter>
-      </RightDrawer>
-
-      {/* =========================================================================
-          MODAL: TỪ CHỐI eKYC VỚI LÝ DO BẮT BUỘC
-      ========================================================================= */}
-      {rejectReasonModal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white border border-[#E2E8F0] rounded-[8px] w-full max-w-md shadow-xl p-5 animate-fade-up">
-            <h3 className="text-sm font-bold text-[#001743] mb-1">Từ chối hồ sơ eKYC: {rejectReasonModal.userName}</h3>
-            <p className="text-xs text-[#6B7280] mb-3">
-              Vui lòng nhập lý do cụ thể để gửi thông báo hướng dẫn công dân nộp lại tài liệu hợp lệ.
-            </p>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.currentTarget);
-                const reason = formData.get("reason") as string;
-                if (reason) {
-                  setEkycQueue(ekycQueue.filter((x) => x.id !== rejectReasonModal.kycId));
-                  showToast(`Đã từ chối hồ sơ ${rejectReasonModal.userName}. Lý do: ${reason}`);
-                  setRejectReasonModal({ open: false, kycId: "", userName: "" });
-                }
-              }}
-              className="space-y-3"
-            >
-              <textarea
-                required
-                name="reason"
-                rows={3}
-                placeholder="Ví dụ: Ảnh mặt sau CCCD bị lóa chip NFC, hoặc ảnh selfie không trùng khớp góc mặt..."
-                className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-rose-500 focus:outline-none"
-              ></textarea>
-
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setRejectReasonModal({ open: false, kycId: "", userName: "" })}
-                  className="px-3 py-1.5 border border-[#D1D5DB] text-xs font-semibold text-[#4B5563] rounded-[6px]"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="submit"
-                  className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-[6px] transition-colors"
-                >
-                  Xác nhận từ chối
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* =========================================================================
           MODAL: TẠO PHIÊN ĐẤU GIÁ

@@ -91,6 +91,14 @@ export default function ProfilePage() {
     const currentUser = authService.getUser();
     setUser(currentUser);
 
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab") as ProfileTab;
+      if (tabParam && ["overview", "ekyc", "auctions", "bids", "transactions", "contracts", "settings"].includes(tabParam)) {
+        setActiveTab(tabParam);
+      }
+    }
+
     if (authService.isAuthenticated()) {
       Promise.all([
         authService.getProfile().then((data) => setProfile(data)).catch(() => { }),

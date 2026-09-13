@@ -56,7 +56,6 @@ export const ADMIN_NAV_SECTIONS: NavSection[] = [
       { id: "transactions", label: "Giao dịch Ký quỹ", tab: "transactions", icon: CreditCard },
       { id: "customers", label: "Khách hàng", tab: "customers", icon: Users },
       { id: "staff", label: "Nhân sự & Nội bộ", tab: "staff", icon: UserCheck },
-      { id: "ekyc", label: "Phê duyệt eKYC", tab: "ekyc", icon: ShieldCheck, badge: 3, badgeType: "warning" },
     ],
   },
   {

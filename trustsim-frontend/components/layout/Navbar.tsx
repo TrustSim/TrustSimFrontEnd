@@ -9,6 +9,12 @@ import { walletService } from "@/services/walletService";
 import { AuthResponseDto } from "@/types/auth";
 import { DepositModal } from "@/components/wallet/DepositModal";
 import type { WalletDto } from "@/types/wallet";
+import {
+  getMyNotifications,
+  markNotificationAsRead,
+  type NotificationItemDto,
+} from "@/services/notificationService";
+import { notificationHubService } from "@/services/notificationHubService";
 
 /* ─── 100% Crisp Line SVG Icons ──────────────────────────── */
 const Icons = {
@@ -108,7 +114,26 @@ export const Navbar: React.FC<NavbarProps> = () => {
     window.addEventListener("scroll", onScroll);
 
     // Đồng bộ trạng thái user khi component mount
-    setUser(authService.getUser());
+    const initialUser = authService.getUser();
+    setUser(initialUser);
+
+    // Đồng bộ thông tin avatar mới nhất từ Profile nếu đã đăng nhập
+    if (authService.isAuthenticated()) {
+      authService.getProfile().then((prof) => {
+        if (prof) {
+          const cur = authService.getUser();
+          if (cur && (cur.avatarImg !== prof.avatarImg || cur.fullName !== prof.fullName)) {
+            const updated = {
+              ...cur,
+              avatarImg: prof.avatarImg || cur.avatarImg,
+              fullName: prof.fullName || cur.fullName,
+            };
+            authService.saveSession(updated);
+            setUser(updated);
+          }
+        }
+      }).catch(() => {});
+    }
 
     // Lắng nghe sự kiện đăng nhập / đăng xuất tức thì
     const syncUser = () => setUser(authService.getUser());
@@ -491,10 +516,72 @@ export const Navbar: React.FC<NavbarProps> = () => {
 /* ═══════════════════════════════════════════════════════════════
    SUBCOMPONENT: Notification Dropdown (Chuông thông báo Realtime)
 ═══════════════════════════════════════════════════════════════ */
+function formatRelativeTime(dateStr?: string) {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMin = Math.floor(diffMs / (60 * 1000));
+    if (diffMin < 1) return "Vừa xong";
+    if (diffMin < 60) return `${diffMin} phút trước`;
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+    return d.toLocaleDateString("vi-VN");
+  } catch {
+    return dateStr;
+  }
+}
+
 function NotificationDropdown() {
   const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationItemDto[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Load real notifications from backend DB
+  const loadNotifications = async () => {
+    if (!authService.isAuthenticated()) return;
+    try {
+      setLoading(true);
+      const res = await getMyNotifications({ pageIndex: 1, pageSize: 20 });
+      setNotifications(res.items);
+      const unread = res.items.filter((n) => !n.isRead).length;
+      setUnreadCount(unread);
+    } catch (err) {
+      console.error("[NotificationDropdown] Lỗi tải thông báo:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadNotifications();
+  }, []);
+
+  // Listen for realtime push notifications via SignalR
+  useEffect(() => {
+    if (!authService.isAuthenticated()) return;
+
+    const unsubNotif = notificationHubService.subscribeNotification((newNotif) => {
+      setNotifications((prev) => [newNotif, ...prev]);
+      setUnreadCount((prev) => prev + 1);
+    });
+
+    const unsubCount = notificationHubService.subscribeUnreadCount((count) => {
+      setUnreadCount(count);
+    });
+
+    return () => {
+      unsubNotif();
+      unsubCount();
+    };
+  }, []);
+
+  // Close dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -504,6 +591,29 @@ function NotificationDropdown() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Mark all unread notifications as read
+  const handleMarkAllAsRead = async () => {
+    const unreadList = notifications.filter((n) => !n.isRead);
+    if (unreadList.length === 0) return;
+
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    setUnreadCount(0);
+
+    await Promise.allSettled(unreadList.map((n) => markNotificationAsRead(n.id)));
+  };
+
+  // Click individual notification
+  const handleItemClick = async (n: NotificationItemDto) => {
+    if (!n.isRead) {
+      setNotifications((prev) =>
+        prev.map((item) => (item.id === n.id ? { ...item, isRead: true } : item))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+      markNotificationAsRead(n.id).catch(() => {});
+    }
+    setOpen(false);
+  };
 
   return (
     <div ref={dropdownRef} style={{ position: "relative" }}>
@@ -528,19 +638,32 @@ function NotificationDropdown() {
         onMouseLeave={(e) => { if (!open) e.currentTarget.style.background = "transparent"; }}
       >
         <Icons.Bell />
-        {/* Solid red notification dot — no glow */}
-        <span
-          style={{
-            position: "absolute",
-            top: 6,
-            right: 6,
-            width: 7,
-            height: 7,
-            borderRadius: "50%",
-            background: "#E4011E",
-            border: "1.5px solid #FFFFFF",
-          }}
-        />
+        {/* Realtime Unread Badge */}
+        {unreadCount > 0 && (
+          <span
+            style={{
+              position: "absolute",
+              top: 2,
+              right: 2,
+              minWidth: 16,
+              height: 16,
+              padding: "0 4px",
+              borderRadius: "10px",
+              background: "#E4011E",
+              border: "1.5px solid #FFFFFF",
+              color: "#FFFFFF",
+              fontSize: 9,
+              fontWeight: 800,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              lineHeight: 1,
+              fontFamily: "monospace",
+            }}
+          >
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
       </button>
 
       {open && (
@@ -549,41 +672,136 @@ function NotificationDropdown() {
             position: "absolute",
             top: "calc(100% + 8px)",
             right: 0,
-            width: 300,
+            width: 320,
             background: "#FFFFFF",
             border: "1px solid #E5E7EB",
             borderRadius: 8,
-            boxShadow: "0 10px 30px rgba(0, 23, 67, 0.1)",
+            boxShadow: "0 10px 30px rgba(0, 23, 67, 0.12)",
             zIndex: 1002,
             overflow: "hidden",
           }}
         >
-          <div style={{ padding: "12px 16px", borderBottom: "1px solid #F3F4F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: "#001743" }}>Thông báo</span>
-            <span style={{ fontSize: 11, color: "#E4011E", fontWeight: 600, cursor: "pointer" }}>Đánh dấu đã đọc</span>
-          </div>
-
-          <div style={{ maxHeight: 280, overflowY: "auto" }}>
-            {[
-              { title: "Đặt giá thành công 14.500.000 ₫", time: "15 phút trước", unread: true },
-              { title: "Phiên đấu giá #1 sắp kết thúc trong 30p", time: "1 giờ trước", unread: true },
-              { title: "Nạp tiền ví thành công +5.000.000 ₫", time: "Hôm qua", unread: false },
-            ].map((n, i) => (
-              <div
-                key={i}
+          <div
+            style={{
+              padding: "12px 16px",
+              borderBottom: "1px solid #F3F4F6",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 13, fontWeight: 800, color: "#001743" }}>Thông báo</span>
+              {unreadCount > 0 && (
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    padding: "1px 6px",
+                    borderRadius: 10,
+                    background: "rgba(228, 1, 30, 0.1)",
+                    color: "#E4011E",
+                  }}
+                >
+                  {unreadCount} mới
+                </span>
+              )}
+            </div>
+            {unreadCount > 0 && (
+              <button
+                type="button"
+                onClick={handleMarkAllAsRead}
                 style={{
-                  padding: "10px 14px",
-                  borderBottom: "1px solid #F9FAFB",
-                  background: n.unread ? "rgba(228, 1, 30, 0.03)" : "transparent",
+                  background: "none",
+                  border: "none",
+                  fontSize: 11,
+                  color: "#E4011E",
+                  fontWeight: 600,
                   cursor: "pointer",
+                  padding: 0,
                 }}
               >
-                <div style={{ fontSize: 12.5, fontWeight: n.unread ? 700 : 500, color: "#001743", lineHeight: 1.35 }}>
-                  {n.title}
-                </div>
-                <div style={{ fontSize: 10.5, color: "#9CA3AF", marginTop: 2 }}>{n.time}</div>
+                Đánh dấu đã đọc
+              </button>
+            )}
+          </div>
+
+          <div style={{ maxHeight: 320, overflowY: "auto" }}>
+            {loading ? (
+              <div style={{ padding: "24px 16px", textAlign: "center", color: "#9CA3AF", fontSize: 12 }}>
+                Đang tải thông báo...
               </div>
-            ))}
+            ) : notifications.length === 0 ? (
+              <div style={{ padding: "32px 16px", textAlign: "center", color: "#9CA3AF" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#6B7280" }}>Không có thông báo mới</div>
+                <div style={{ fontSize: 11, marginTop: 4 }}>Các cập nhật đấu giá và ví sẽ xuất hiện ở đây.</div>
+              </div>
+            ) : (
+              notifications.map((n) => {
+                const content = (
+                  <div
+                    key={n.id}
+                    onClick={() => handleItemClick(n)}
+                    style={{
+                      padding: "10px 14px",
+                      borderBottom: "1px solid #F9FAFB",
+                      background: !n.isRead ? "rgba(228, 1, 30, 0.03)" : "transparent",
+                      cursor: "pointer",
+                      transition: "background 0.15s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = !n.isRead ? "rgba(228, 1, 30, 0.06)" : "#F9FAFB";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = !n.isRead ? "rgba(228, 1, 30, 0.03)" : "transparent";
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                      {!n.isRead && (
+                        <span
+                          style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: "50%",
+                            background: "#E4011E",
+                            marginTop: 5,
+                            flexShrink: 0,
+                          }}
+                        />
+                      )}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 12.5, fontWeight: !n.isRead ? 700 : 500, color: "#001743", lineHeight: 1.35 }}>
+                          {n.title}
+                        </div>
+                        {n.content && (
+                          <div style={{ fontSize: 11.5, color: "#4B5563", marginTop: 2, lineHeight: 1.3 }}>
+                            {n.content}
+                          </div>
+                        )}
+                        <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 4 }}>
+                          {formatRelativeTime(n.createdDate)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+
+                if (n.actionUrl) {
+                  return (
+                    <Link
+                      key={n.id}
+                      href={n.actionUrl}
+                      onClick={() => handleItemClick(n)}
+                      style={{ textDecoration: "none", color: "inherit", display: "block" }}
+                    >
+                      {content}
+                    </Link>
+                  );
+                }
+
+                return content;
+              })
+            )}
           </div>
 
           <Link
@@ -591,7 +809,7 @@ function NotificationDropdown() {
             onClick={() => setOpen(false)}
             style={{
               display: "block",
-              padding: "9px",
+              padding: "10px",
               textAlign: "center",
               fontSize: 12,
               fontWeight: 700,
@@ -601,7 +819,7 @@ function NotificationDropdown() {
               borderTop: "1px solid #E5E7EB",
             }}
           >
-            Xem tất cả thông báo →
+            Quản lý tài khoản &amp; Hoạt động →
           </Link>
         </div>
       )}
@@ -729,19 +947,52 @@ function UserMenuDropdown({ user, isAdmin }: { user: AuthResponseDto; isAdmin: b
               zIndex: 1002,
             }}
           >
-            {/* Header Info */}
-            <div style={{ padding: "10px 16px", borderBottom: "1px solid #F3F4F6" }}>
-              <div style={{ fontSize: 13.5, fontWeight: 800, color: "#001743" }}>{displayName}</div>
-              <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{user.email}</div>
-              {isAdmin ? (
-                <span style={{ fontSize: 9.5, background: "#001743", color: "#FFFFFF", padding: "1px 6px", borderRadius: 4, fontWeight: 800, marginTop: 4, display: "inline-block" }}>
-                  ADMINISTRATOR
-                </span>
-              ) : (
-                <span style={{ fontSize: 9.5, background: "#EFF6FF", color: "#2563EB", padding: "1px 6px", borderRadius: 4, fontWeight: 700, marginTop: 4, display: "inline-block" }}>
-                  THÀNH VIÊN ĐỊNH DANH
-                </span>
-              )}
+            {/* Header Info with Avatar */}
+            <div style={{ padding: "12px 16px", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center", gap: 10 }}>
+              <div
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: "50%",
+                  background: isAdmin ? "#001743" : "#E4011E",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 14,
+                  fontWeight: 800,
+                  color: "#FFFFFF",
+                  flexShrink: 0,
+                  overflow: "hidden",
+                  border: "1.5px solid #E5E7EB",
+                }}
+              >
+                {user.avatarImg && !user.avatarImg.includes("trustsim.vn") ? (
+                  <img
+                    src={user.avatarImg}
+                    alt={displayName}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                ) : (
+                  initialChar
+                )}
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "#001743", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {displayName}
+                </div>
+                <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {user.email}
+                </div>
+                {isAdmin ? (
+                  <span style={{ fontSize: 9, background: "#001743", color: "#FFFFFF", padding: "1px 5px", borderRadius: 3, fontWeight: 800, marginTop: 3, display: "inline-block" }}>
+                    ADMINISTRATOR
+                  </span>
+                ) : (
+                  <span style={{ fontSize: 9, background: "#EFF6FF", color: "#2563EB", padding: "1px 5px", borderRadius: 3, fontWeight: 700, marginTop: 3, display: "inline-block" }}>
+                    THÀNH VIÊN ĐỊNH DANH
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Quick Wallet Summary Card inside Dropdown */}

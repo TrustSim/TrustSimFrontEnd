@@ -410,7 +410,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 <div style={{ fontWeight: 700, color: "#001743", marginBottom: 2 }}>
                   ⚡ Tự động hóa qua Cổng SePay VietQR
                 </div>
-                Quý khách quét mã VietQR ngân hàng bất kỳ hoặc chuyển đúng nội dung. Hệ thống nhận webhook và cộng số dư khả dụng tức thì.
+                Quý khách quét mã VietQR ngân hàng bất kỳ hoặc chuyển đúng nội dung. Hệ thống nhận và cộng số dư khả dụng tức thì.
               </div>
 
               <button
