@@ -1,4 +1,4 @@
-﻿import { apiFetch } from "./apiClient";
+import { apiFetch } from "./apiClient";
 
 // --- DTOs (mirror backend) ---
 export interface SimCategoryDto {
@@ -22,12 +22,12 @@ export interface UpdateCategoryPayload extends CreateCategoryPayload {
 
 // --- API calls ---
 export async function getCategories(): Promise<SimCategoryDto[]> {
-  const res = await apiFetch<SimCategoryDto[]>("/SimCategories");
+  const res = await apiFetch<SimCategoryDto[]>("/Categories");
   return res.data ?? [];
 }
 
 export async function createCategory(payload: CreateCategoryPayload): Promise<SimCategoryDto> {
-  const res = await apiFetch<SimCategoryDto>("/SimCategories", {
+  const res = await apiFetch<SimCategoryDto>("/Categories", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -39,7 +39,7 @@ export async function updateCategory(
   id: string,
   payload: CreateCategoryPayload
 ): Promise<SimCategoryDto> {
-  const res = await apiFetch<SimCategoryDto>(`/SimCategories/${id}`, {
+  const res = await apiFetch<SimCategoryDto>(`/Categories/${id}`, {
     method: "PUT",
     body: JSON.stringify({ ...payload, id }),
   });
@@ -48,5 +48,5 @@ export async function updateCategory(
 }
 
 export async function deleteCategory(id: string): Promise<void> {
-  await apiFetch<boolean>(`/SimCategories/${id}`, { method: "DELETE" });
+  await apiFetch<boolean>(`/Categories/${id}`, { method: "DELETE" });
 }

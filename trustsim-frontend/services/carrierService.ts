@@ -34,12 +34,12 @@ export interface UpdatePrefixPayload {
 
 // --- Carrier API calls ---
 export async function getCarriers(): Promise<SimCarrierDto[]> {
-  const res = await apiFetch<SimCarrierDto[]>("/SimCarriers");
+  const res = await apiFetch<SimCarrierDto[]>("/Carriers");
   return res.data ?? [];
 }
 
 export async function createCarrier(payload: CreateCarrierPayload): Promise<SimCarrierDto> {
-  const res = await apiFetch<SimCarrierDto>("/SimCarriers", {
+  const res = await apiFetch<SimCarrierDto>("/Carriers", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -51,7 +51,7 @@ export async function updateCarrier(
   id: string,
   payload: CreateCarrierPayload
 ): Promise<SimCarrierDto> {
-  const res = await apiFetch<SimCarrierDto>(`/SimCarriers/${id}`, {
+  const res = await apiFetch<SimCarrierDto>(`/Carriers/${id}`, {
     method: "PUT",
     body: JSON.stringify({ ...payload, id }),
   });
@@ -60,7 +60,7 @@ export async function updateCarrier(
 }
 
 export async function deleteCarrier(id: string): Promise<void> {
-  await apiFetch<boolean>(`/SimCarriers/${id}`, { method: "DELETE" });
+  await apiFetch<boolean>(`/Carriers/${id}`, { method: "DELETE" });
 }
 
 // --- Phone Prefix API calls ---

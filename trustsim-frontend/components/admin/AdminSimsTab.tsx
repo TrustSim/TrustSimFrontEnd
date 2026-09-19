@@ -330,31 +330,22 @@ export function AdminSimsTab() {
         </div>
       )}
 
-      {/* 1. Breadcrumb & Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
+      {/* ── 1. Header Card (Matching Carriers & Categories) ── */}
+      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs text-slate-400 font-medium mb-1">
-            <span>Quản trị hệ thống</span>
-            <span>/</span>
-            <span className="text-[#001743] font-semibold">Kho số SIM</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl lg:text-2xl font-bold text-[#001743] tracking-tight flex items-center gap-2.5">
-              <Smartphone className="text-[#001743]" size={24} />
-              <span>Kho Số SIM Hệ Thống</span>
-            </h1>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-[#001743] text-xs font-semibold border border-blue-200/60">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#001743]"></span>
-              <span>Dữ liệu thực tế</span>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-base font-bold text-[#001743]">Quản Lý Kho SIM Số Đẹp</h1>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 font-mono">
+              {totalCount} số SIM
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-1 font-normal">
-            Quản lý tập trung toàn bộ SIM số đẹp, thông tin nhà mạng, đầu số và trạng thái đấu giá.
+          <p className="text-xs text-[#6B7280] mt-0.5">
+            Quản lý tập trung toàn bộ SIM số đẹp, thông tin nhà mạng, đầu số, phân loại và trạng thái giao dịch.
           </p>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-3 shrink-0 flex-wrap">
           <ImportExportBar
             data={sims}
             columns={SIM_EXPORT_COLUMNS}
@@ -372,15 +363,15 @@ export function AdminSimsTab() {
             }}
             disabled={refreshing || loading}
             title="Làm mới dữ liệu"
-            className="p-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 rounded-lg transition-colors shadow-2xs"
+            className="p-1.5 text-[#4B5563] hover:text-[#001743] hover:bg-slate-100 border border-[#D1D5DB] rounded-[6px] transition-colors bg-white disabled:opacity-50"
           >
-            <RefreshCw size={15} className={refreshing ? "animate-spin" : ""} />
+            <RefreshCw size={15} className={refreshing ? "animate-spin text-[#001743]" : ""} />
           </button>
           <button
             onClick={handleOpenCreateModal}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-semibold rounded-lg transition-all shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors shadow-xs shrink-0"
           >
-            <Plus size={15} strokeWidth={2} />
+            <Plus size={15} strokeWidth={1.75} />
             <span>Thêm SIM mới</span>
           </button>
         </div>

@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Home,
+  FileText,
 } from "lucide-react";
 
 export interface NavItem {
@@ -61,6 +62,7 @@ export const ADMIN_NAV_SECTIONS: NavSection[] = [
   {
     title: "Vận hành & An toàn",
     items: [
+      { id: "documents", label: "Tài liệu & Chính sách", tab: "documents", icon: FileText },
       { id: "disputes", label: "Khiếu nại", tab: "disputes", icon: AlertOctagon, badge: 2, badgeType: "danger" },
       { id: "anomalies", label: "Giám sát AI Fraud", tab: "anomalies", icon: Bot, badge: 2, badgeType: "danger" },
       { id: "settings", label: "Cấu hình hệ thống", tab: "settings", icon: Settings },

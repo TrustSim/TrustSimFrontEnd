@@ -263,7 +263,7 @@ export async function getAdminSims(
   if (params.search) query.set("search", params.search);
 
   const res = await apiFetch<PagedResult<AdminSimItemDto>>(
-    `/admin/sims?${query.toString()}`
+    `/sims/admin?${query.toString()}`
   );
   if (!res.data) {
     return {
@@ -285,7 +285,7 @@ export async function getAdminSims(
 export async function createAdminSim(
   payload: CreateAdminSimPayload
 ): Promise<SimNumberDto> {
-  const res = await apiFetch<SimNumberDto>("/admin/sims", {
+  const res = await apiFetch<SimNumberDto>("/sims", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -302,7 +302,7 @@ export async function updateAdminSim(
   id: string,
   payload: UpdateAdminSimPayload
 ): Promise<SimNumberDto> {
-  const res = await apiFetch<SimNumberDto>(`/admin/sims/${id}`, {
+  const res = await apiFetch<SimNumberDto>(`/sims/${id}`, {
     method: "PUT",
     body: JSON.stringify(payload),
   });
@@ -316,7 +316,7 @@ export async function updateAdminSim(
  * Xóa SIM khỏi hệ thống
  */
 export async function deleteAdminSim(id: string): Promise<boolean> {
-  const res = await apiFetch<boolean>(`/admin/sims/${id}`, {
+  const res = await apiFetch<boolean>(`/sims/${id}`, {
     method: "DELETE",
   });
   return res.data ?? res.success ?? false;
@@ -333,10 +333,11 @@ export async function importAdminSims(
   formData.append("file", file);
   formData.append("autoVerify", String(autoVerify));
 
-  const res = await apiFetch<any>("/admin/sims/import", {
+  const res = await apiFetch<any>("/sims/import", {
     method: "POST",
     body: formData,
   });
   return res.data;
 }
+
 
