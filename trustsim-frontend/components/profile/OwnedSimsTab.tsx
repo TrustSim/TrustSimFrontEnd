@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { ToastMessage } from "@/components/ui/Toast";
 import { OwnedSim } from "./types";
+import CreateAuctionWizardModal from "./CreateAuctionWizardModal";
 import {
   getMySims,
   registerSim,
@@ -491,13 +492,6 @@ export default function OwnedSimsTab({
 
   // Modal: Tạo phiên đấu giá
   const [selectedSimForAuction, setSelectedSimForAuction] = useState<OwnedSim | null>(null);
-  const [auctionStartPriceRaw, setAuctionStartPriceRaw] = useState<number>(8_000_000);
-  const [auctionStartPriceFormatted, setAuctionStartPriceFormatted] = useState<string>("8.000.000");
-  const [auctionStepPriceRaw, setAuctionStepPriceRaw] = useState<number>(500_000);
-  const [auctionStepPriceFormatted, setAuctionStepPriceFormatted] = useState<string>("500.000");
-  const [auctionBuyNowPriceRaw, setAuctionBuyNowPriceRaw] = useState<number>(0);
-  const [auctionBuyNowPriceFormatted, setAuctionBuyNowPriceFormatted] = useState<string>("");
-  const [auctionDuration, setAuctionDuration] = useState("24");
 
   // ─── 1. Load MasterData & Owned SIMs from Database ───────────────────────
   const fetchSimsFromDb = useCallback(async () => {
@@ -700,34 +694,6 @@ export default function OwnedSimsTab({
       return;
     }
     setSelectedSimForAuction(sim);
-    const startPrice = Math.round((sim.estimatedValue || 10_000_000) * 0.8);
-    setAuctionStartPriceRaw(startPrice);
-    setAuctionStartPriceFormatted(startPrice.toLocaleString("vi-VN"));
-    setAuctionStepPriceRaw(500_000);
-    setAuctionStepPriceFormatted("500.000");
-    setAuctionBuyNowPriceRaw(0);
-    setAuctionBuyNowPriceFormatted("");
-  };
-
-  const handleConfirmCreateAuction = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedSimForAuction) return;
-
-    setOwnedSims((prev) =>
-      prev.map((s) =>
-        s.id === selectedSimForAuction.id
-          ? { ...s, hasActiveAuction: true, activeAuctionId: "1" }
-          : s
-      )
-    );
-
-    addToast({
-      type: "success",
-      title: "Khởi tạo phiên đấu giá thành công",
-      message: `Phiên đấu giá cho SIM ${selectedSimForAuction.simNumber} đã được khởi tạo với giá khởi điểm ${auctionStartPriceRaw.toLocaleString("vi-VN")} ₫.`,
-    });
-
-    setSelectedSimForAuction(null);
   };
 
   return (
@@ -1078,152 +1044,19 @@ export default function OwnedSimsTab({
         </div>
       )}
 
-      {/* ── 4. Modal: Tạo phiên đấu giá (Number Masking) ── */}
+      {/* ── 4. Modal: Tạo phiên đấu giá (Wizard Modal 4 bước) ── */}
       {selectedSimForAuction && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white rounded-[12px] w-full max-w-[500px] p-6 shadow-2xl border border-slate-200 animate-fade-up">
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
-              <div>
-                <h3 className="text-base font-extrabold text-[#001743] flex items-center gap-2 m-0">
-                  <Gavel size={18} className="text-[#E4011E]" />
-                  <span>Mở phiên đấu giá SIM chính chủ</span>
-                </h3>
-                <div className="text-xs text-emerald-600 font-bold mt-0.5">
-                  ✓ Đã kiểm tra quyền sở hữu chính chủ hợp lệ
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedSimForAuction(null)}
-                className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Target SIM summary */}
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-[8px] flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2.5">
-                <CarrierSquareLogo name={selectedSimForAuction.carrier} logo={selectedSimForAuction.carrierLogo} size={28} />
-                <div>
-                  <div className="font-mono font-black text-sm text-[#001743]">{selectedSimForAuction.simNumber}</div>
-                  <div className="text-[11px] text-slate-500">{selectedSimForAuction.carrier} • {selectedSimForAuction.simType}</div>
-                </div>
-              </div>
-              <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
-                {selectedSimForAuction.estimatedValue.toLocaleString("vi-VN")} ₫
-              </span>
-            </div>
-
-            <form onSubmit={handleConfirmCreateAuction} className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 gap-3">
-                {/* Giá khởi điểm */}
-                <div>
-                  <label className="block text-xs font-bold text-[#001743] mb-1">
-                    Giá khởi điểm <span className="text-red-600">*</span>
-                  </label>
-                  <div className="relative flex items-center">
-                    <input
-                      type="text"
-                      value={auctionStartPriceFormatted}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/\D/g, "");
-                        const num = raw ? parseInt(raw, 10) : 0;
-                        setAuctionStartPriceRaw(num);
-                        setAuctionStartPriceFormatted(num ? num.toLocaleString("vi-VN") : "");
-                      }}
-                      className="w-full text-xs p-2.5 pr-8 border border-slate-300 rounded-[6px] font-mono font-bold text-[#001743] focus:border-[#001743] focus:outline-none"
-                      required
-                    />
-                    <span className="absolute right-3 text-xs font-bold text-slate-400 pointer-events-none">₫</span>
-                  </div>
-                </div>
-
-                {/* Bước giá tối thiểu */}
-                <div>
-                  <label className="block text-xs font-bold text-[#001743] mb-1">
-                    Bước giá tối thiểu <span className="text-red-600">*</span>
-                  </label>
-                  <div className="relative flex items-center">
-                    <input
-                      type="text"
-                      value={auctionStepPriceFormatted}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/\D/g, "");
-                        const num = raw ? parseInt(raw, 10) : 0;
-                        setAuctionStepPriceRaw(num);
-                        setAuctionStepPriceFormatted(num ? num.toLocaleString("vi-VN") : "");
-                      }}
-                      className="w-full text-xs p-2.5 pr-8 border border-slate-300 rounded-[6px] font-mono font-bold text-[#001743] focus:border-[#001743] focus:outline-none"
-                      required
-                    />
-                    <span className="absolute right-3 text-xs font-bold text-slate-400 pointer-events-none">₫</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                {/* Giá mua ngay */}
-                <div>
-                  <label className="block text-xs font-bold text-[#001743] mb-1">
-                    Giá mua ngay (Tùy chọn)
-                  </label>
-                  <div className="relative flex items-center">
-                    <input
-                      type="text"
-                      placeholder="Không áp dụng"
-                      value={auctionBuyNowPriceFormatted}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/\D/g, "");
-                        const num = raw ? parseInt(raw, 10) : 0;
-                        setAuctionBuyNowPriceRaw(num);
-                        setAuctionBuyNowPriceFormatted(num ? num.toLocaleString("vi-VN") : "");
-                      }}
-                      className="w-full text-xs p-2.5 pr-8 border border-slate-300 rounded-[6px] font-mono font-semibold text-[#001743] focus:border-[#001743] focus:outline-none"
-                    />
-                    <span className="absolute right-3 text-xs font-bold text-slate-400 pointer-events-none">₫</span>
-                  </div>
-                </div>
-
-                {/* Thời gian đấu giá */}
-                <div>
-                  <label className="block text-xs font-bold text-[#001743] mb-1">
-                    Thời lượng phiên
-                  </label>
-                  <select
-                    value={auctionDuration}
-                    onChange={(e) => setAuctionDuration(e.target.value)}
-                    className="w-full text-xs p-2.5 border border-slate-300 rounded-[6px] bg-white font-semibold text-[#001743] focus:border-[#001743] focus:outline-none"
-                  >
-                    <option value="24">24 giờ (1 ngày)</option>
-                    <option value="48">48 giờ (2 ngày)</option>
-                    <option value="72">72 giờ (3 ngày)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-[6px] text-xs text-emerald-800 leading-relaxed">
-                <strong>Cơ chế ký quỹ bảo đảm:</strong> Trong suốt thời gian diễn ra phiên đấu giá, SIM sẽ được khóa chuyển nhượng để bảo vệ quyền lợi hợp lệ cho người thắng cuộc.
-              </div>
-
-              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setSelectedSimForAuction(null)}
-                  className="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-[6px] text-xs font-semibold transition-colors"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="btn-red px-5 py-2 rounded-[6px] text-xs font-bold shadow-xs cursor-pointer"
-                >
-                  Xác nhận mở phiên đấu giá
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CreateAuctionWizardModal
+          sim={selectedSimForAuction}
+          isEkycVerified={isEkycVerified}
+          onClose={() => setSelectedSimForAuction(null)}
+          onSuccess={() => {
+            setSelectedSimForAuction(null);
+            fetchSimsFromDb();
+          }}
+          onNavigateToEkyc={onNavigateToEkyc}
+          addToast={addToast}
+        />
       )}
     </div>
   );

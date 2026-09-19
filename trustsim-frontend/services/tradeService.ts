@@ -37,4 +37,18 @@ export const tradeService = {
     if (res.data) return res.data;
     throw new Error(res.message || "Không thể khởi tạo giao dịch");
   },
+
+  /** [Admin] Lấy danh sách tất cả giao dịch chuyển nhượng trên toàn sàn */
+  async adminGetAllTrades(filter: TradeFilter = {}): Promise<PagedResult<TradeTransactionDto>> {
+    const params = new URLSearchParams();
+    if (filter.status) params.set("status", filter.status);
+    if (filter.pageIndex) params.set("pageIndex", String(filter.pageIndex));
+    if (filter.pageSize) params.set("pageSize", String(filter.pageSize));
+
+    const res = await apiFetch<PagedResult<TradeTransactionDto>>(
+      `/TradeTransactions/admin?${params.toString()}`
+    );
+    if (res.data) return res.data;
+    throw new Error(res.message || "Không thể tải danh sách giao dịch toàn sàn");
+  },
 };
