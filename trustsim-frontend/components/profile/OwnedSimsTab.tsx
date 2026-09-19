@@ -23,6 +23,7 @@ import {
 import { ToastMessage } from "@/components/ui/Toast";
 import { OwnedSim } from "./types";
 import CreateAuctionWizardModal from "./CreateAuctionWizardModal";
+import { aiValuationService } from "@/services/aiValuationService";
 import {
   getMySims,
   registerSim,
@@ -594,6 +595,42 @@ export default function OwnedSimsTab({
     setNewEstimatedValueFormatted(nextVal.toLocaleString("vi-VN"));
   };
 
+  const [loadingAiValuation, setLoadingAiValuation] = useState(false);
+
+  const handleAiEstimateForNewSim = async () => {
+    const cleanNumber = newSimNumber.replace(/\D/g, "");
+    if (cleanNumber.length < 9) {
+      addToast({
+        type: "warning",
+        title: "Chưa đủ số điện thoại",
+        message: "Vui lòng nhập số điện thoại trước khi nhờ AI thẩm định giá.",
+      });
+      return;
+    }
+    setLoadingAiValuation(true);
+    try {
+      const res = await aiValuationService.estimatePrice({ phoneNumber: cleanNumber });
+      if (res.suggestedPrice && res.suggestedPrice > 0) {
+        const price = Math.round(res.suggestedPrice);
+        setNewEstimatedValueRaw(price);
+        setNewEstimatedValueFormatted(price.toLocaleString("vi-VN"));
+        addToast({
+          type: "success",
+          title: "AI đã định giá thành công",
+          message: `Mức giá gợi ý: ${price.toLocaleString("vi-VN")} ₫ (${res.detectedRhythmName || "SIM số đẹp"}).`,
+        });
+      }
+    } catch (err: any) {
+      addToast({
+        type: "error",
+        title: "Không thể định giá bằng AI",
+        message: err.message || "Vui lòng thử lại sau.",
+      });
+    } finally {
+      setLoadingAiValuation(false);
+    }
+  };
+
   // ─── 4. Handle Add Personal SIM ──────────────────────────────────────────
   const handleAddPersonalSim = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -902,19 +939,22 @@ export default function OwnedSimsTab({
         </div>
       )}
 
-      {/* ── 3. Modal: Thêm SIM cá nhân (Tinh chỉnh chuẩn Fintech & Number Masking) ── */}
+      {/* ── 3. Modal: Thêm SIM cá nhân (Soft UI, Logo chữ S, AI Valuation, Pills) ── */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white rounded-[12px] w-full max-w-[480px] p-6 shadow-2xl border border-slate-200 animate-fade-up">
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
-              <h3 className="text-base font-extrabold text-[#001743] flex items-center gap-2 m-0">
-                <Smartphone size={18} className="text-[#001743]" />
-                <span>Thêm SIM cá nhân vào kho</span>
-              </h3>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/45 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-[20px] w-full max-w-[500px] p-6 shadow-2xl border border-slate-100 animate-fade-up">
+            {/* Header Modal */}
+            <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <img src="/logo/S-Logo.png" alt="TrustSIM" className="w-7 h-7 object-contain shrink-0" />
+                <h3 className="text-base font-black text-[#001743] tracking-tight m-0">
+                  Thêm SIM cá nhân vào kho
+                </h3>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsAddModalOpen(false)}
-                className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
                 aria-label="Đóng"
               >
                 <X size={18} />
@@ -932,7 +972,7 @@ export default function OwnedSimsTab({
                   placeholder="Ví dụ: 0912 345 678"
                   value={newSimNumber}
                   onChange={(e) => handleSimNumberInput(e.target.value)}
-                  className="w-full text-xs p-2.5 border border-slate-300 rounded-[6px] font-mono font-bold text-[#001743] focus:border-[#001743] focus:outline-none transition-colors"
+                  className="w-full text-xs p-3 border border-slate-200 rounded-[12px] font-mono font-bold text-[#001743] focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 focus:outline-none transition-all"
                   required
                 />
                 <p className="text-[11px] text-slate-400 mt-1">
@@ -960,7 +1000,7 @@ export default function OwnedSimsTab({
                   <select
                     value={newSimType}
                     onChange={(e) => setNewSimType(e.target.value as any)}
-                    className="w-full text-xs p-2.5 border border-slate-300 rounded-[6px] bg-white font-semibold text-[#001743] focus:border-[#001743] focus:outline-none transition-colors"
+                    className="w-full text-xs p-3 border border-slate-200 rounded-[12px] bg-white font-semibold text-[#001743] focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 focus:outline-none transition-all"
                   >
                     <option value="Trả trước">Trả trước</option>
                     <option value="Trả sau">Trả sau</option>
@@ -968,13 +1008,30 @@ export default function OwnedSimsTab({
                 </div>
               </div>
 
-              {/* Field 4: Định giá ước tính * (Có Number Masking phân cách hàng nghìn) */}
+              {/* Field 4: Định giá ước tính * (Có AI Valuation & Quick Add Pills) */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-bold text-[#001743]">
                     Định giá ước tính <span className="text-red-600">*</span>
                   </label>
-                  <span className="text-[10px] text-slate-400 font-mono">Tự động thêm dấu phân cách</span>
+                  <button
+                    type="button"
+                    onClick={handleAiEstimateForNewSim}
+                    disabled={loadingAiValuation}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50/80 hover:bg-blue-100 text-[#001743] rounded-full text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer shadow-2xs"
+                  >
+                    {loadingAiValuation ? (
+                      <>
+                        <RefreshCw size={11} className="animate-spin text-[#E4011E]" />
+                        <span>Đang phân tích...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={12} className="text-[#E4011E]" />
+                        <span>Nhờ AI định giá</span>
+                      </>
+                    )}
+                  </button>
                 </div>
 
                 <div className="relative flex items-center">
@@ -983,17 +1040,17 @@ export default function OwnedSimsTab({
                     value={newEstimatedValueFormatted}
                     onChange={handleEstimatedValueMasking}
                     placeholder="10.000.000"
-                    className="w-full text-xs p-2.5 pr-8 border border-slate-300 rounded-[6px] font-mono font-bold text-[#001743] focus:border-[#001743] focus:outline-none transition-colors"
+                    className="w-full text-xs p-3 pr-8 border border-slate-200 rounded-[12px] font-mono font-bold text-[#001743] focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 focus:outline-none transition-all"
                     required
                   />
-                  <span className="absolute right-3 text-xs font-bold text-slate-400 pointer-events-none">
+                  <span className="absolute right-3.5 text-xs font-bold text-slate-400 pointer-events-none">
                     ₫
                   </span>
                 </div>
 
-                {/* Quick Add Price Chips */}
+                {/* Quick Add Price Pills */}
                 <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                  <span className="text-[10px] text-slate-400 font-medium mr-1">Cộng nhanh:</span>
+                  <span className="text-[11px] text-slate-400 font-medium mr-1">Cộng nhanh:</span>
                   {[
                     { label: "+1 triệu", val: 1_000_000 },
                     { label: "+5 triệu", val: 5_000_000 },
@@ -1004,7 +1061,7 @@ export default function OwnedSimsTab({
                       key={chip.label}
                       type="button"
                       onClick={() => handleQuickAddPrice(chip.val)}
-                      className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded text-[10.5px] font-semibold transition-colors"
+                      className="px-3 py-1 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-full text-[11px] font-semibold transition-all cursor-pointer"
                     >
                       {chip.label}
                     </button>
@@ -1012,28 +1069,25 @@ export default function OwnedSimsTab({
                 </div>
               </div>
 
-              {/* Notice Box */}
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-[6px] flex items-start gap-2 text-amber-800 text-xs">
-                <AlertCircle size={15} className="shrink-0 mt-0.5 text-amber-600" />
-                <div className="leading-relaxed">
-                  SIM mới thêm cần được <strong>xác thực chính chủ (eKYC)</strong> trước khi có thể mở phiên đấu giá trên sàn.
-                </div>
+              {/* Soft UI Notice Box (Không viền cứng, pastel nhẹ) */}
+              <div className="p-4 bg-amber-50/60 rounded-[14px] text-xs text-amber-900 leading-relaxed">
+                SIM mới thêm cần được <strong>xác thực chính chủ (eKYC)</strong> trước khi có thể mở phiên đấu giá trên sàn.
               </div>
 
-              {/* Form Buttons */}
+              {/* Form Buttons (Pills bo tròn) */}
               <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
                   disabled={submittingSim}
-                  className="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-[6px] text-xs font-semibold transition-colors"
+                  className="px-5 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-full text-xs font-semibold transition-colors"
                 >
                   Hủy bỏ
                 </button>
                 <button
                   type="submit"
                   disabled={submittingSim}
-                  className="px-5 py-2 bg-[#001743] hover:bg-[#002266] text-white rounded-[6px] text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
+                  className="px-6 py-2.5 bg-[#001743] hover:bg-[#00266B] text-white rounded-full text-xs font-bold shadow-sm cursor-pointer flex items-center gap-1.5 transition-all"
                 >
                   {submittingSim && <RefreshCw size={13} className="animate-spin" />}
                   <span>{submittingSim ? "Đang lưu..." : "Lưu vào kho SIM"}</span>

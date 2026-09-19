@@ -1,26 +1,17 @@
 "use client";
 import React, { useState } from "react";
 import {
-  Gavel,
   X,
-  TrendingUp,
-  TrendingDown,
-  Clock,
-  ShieldCheck,
-  AlertCircle,
-  HelpCircle,
-  Sliders,
-  Calendar,
-  CheckCircle2,
-  Lock,
   ArrowRight,
   ArrowLeft,
-  DollarSign,
-  Info,
+  Sparkles,
+  Check,
+  ShieldCheck,
   Loader2,
 } from "lucide-react";
 import { OwnedSim } from "./types";
 import { auctionService, CreateAuctionPayload, AuctionTypeEnum } from "@/services/auctionService";
+import { aiValuationService, SimValuationDto } from "@/services/aiValuationService";
 
 interface CreateAuctionWizardModalProps {
   sim: OwnedSim;
@@ -42,7 +33,11 @@ export default function CreateAuctionWizardModal({
   const [step, setStep] = useState<number>(1);
   const [submitting, setSubmitting] = useState(false);
 
-  // Form State
+  // AI Valuation State
+  const [loadingAi, setLoadingAi] = useState(false);
+  const [aiValuation, setAiValuation] = useState<SimValuationDto | null>(null);
+
+  // Form State - Auction Type
   const [auctionType, setAuctionType] = useState<AuctionTypeEnum>(AuctionTypeEnum.ENGLISH);
 
   // Financials
@@ -55,14 +50,14 @@ export default function CreateAuctionWizardModal({
   );
   const [depositAmount, setDepositAmount] = useState<number>(500_000);
 
-  // English Auction Rules
+  // English Auction Rules (Tăng giá công khai)
   const [minimumBidIncrement, setMinimumBidIncrement] = useState<number>(500_000);
-  const [enableAntiSniping, setEnableAntiSniping] = useState<boolean>(true);
+  // Anti-sniping: Mặc định luôn bật bắt buộc
   const [extensionThresholdSeconds, setExtensionThresholdSeconds] = useState<number>(180); // 3 phút cuối
   const [extensionDurationSeconds, setExtensionDurationSeconds] = useState<number>(300); // gia hạn thêm 5 phút
   const [maximumExtensionCount, setMaximumExtensionCount] = useState<number>(5);
 
-  // Dutch Auction Rules
+  // Dutch Auction Rules (Hạ giá tự động)
   const [dutchDecreaseAmount, setDutchDecreaseAmount] = useState<number>(200_000);
   const [dutchDecreaseIntervalSeconds, setDutchDecreaseIntervalSeconds] = useState<number>(300); // 5 phút giảm 1 lần
 
@@ -70,31 +65,84 @@ export default function CreateAuctionWizardModal({
   const [startDelayMinutes, setStartDelayMinutes] = useState<number>(15); // Bắt đầu sau 15p
   const [durationHours, setDurationHours] = useState<number>(24); // Kéo dài 24h
 
-  // Formatted Helper
+  // Formatted Currency Helper
   const formatVND = (val: number) =>
     new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(val);
 
-  // ── Guard check: eKYC & SIM Verification ──
+  // Quick Add Helpers for Starting Price
+  const handleQuickAdd = (amount: number) => {
+    setStartingPrice((prev) => prev + amount);
+  };
+
+  // AI Valuation Handler
+  const handleRequestAiValuation = async () => {
+    setLoadingAi(true);
+    try {
+      const cleanPhone = sim.simNumber.replace(/\D/g, "");
+      const isGuid = Boolean(sim.id && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(sim.id));
+      const res = await aiValuationService.estimatePrice({
+        simNumberId: isGuid ? sim.id : undefined,
+        phoneNumber: cleanPhone,
+      });
+      setAiValuation(res);
+      if (res.suggestedPrice && res.suggestedPrice > 0) {
+        addToast({
+          type: "info",
+          title: "AI đã hoàn tất định giá",
+          message: `Mức giá khuyến nghị: ${formatVND(res.suggestedPrice)} (${res.detectedRhythmName || "SIM số đẹp"}).`,
+        });
+      }
+    } catch (err: any) {
+      addToast({
+        type: "error",
+        title: "Chưa thể định giá bằng AI",
+        message: err.message || "Vui lòng thử lại sau.",
+      });
+    } finally {
+      setLoadingAi(false);
+    }
+  };
+
+  // Apply AI Price
+  const handleApplyAiPrice = () => {
+    if (!aiValuation?.suggestedPrice) return;
+    const base = Math.round(aiValuation.suggestedPrice);
+    setStartingPrice(base);
+    if (auctionType === AuctionTypeEnum.DUTCH) {
+      setReservePrice(Math.round(base * 0.6));
+    } else {
+      setReservePrice(Math.round(base * 1.1));
+    }
+    addToast({
+      type: "success",
+      title: "Đã áp dụng mức giá từ AI",
+      message: `Giá khởi điểm được cập nhật thành ${formatVND(base)}.`,
+    });
+  };
+
+  // ── Guard check: eKYC Requirement ──
   if (!isEkycVerified) {
     return (
-      <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-        <div className="bg-white rounded-[12px] w-full max-w-[460px] p-6 shadow-2xl border border-rose-200 animate-fade-up">
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
+        <div className="bg-white rounded-[20px] w-full max-w-[460px] p-6 shadow-2xl border border-slate-100 animate-fade-up">
           <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
-            <div className="flex items-center gap-2 text-rose-700 font-bold text-base">
-              <AlertCircle size={20} />
-              <span>Yêu cầu xác thực eKYC</span>
+            <div className="flex items-center gap-2.5">
+              <img src="/logo/S-Logo.png" alt="TrustSIM" className="w-6 h-6 object-contain" />
+              <h3 className="text-base font-extrabold text-[#001743] m-0">Yêu cầu xác minh tài khoản</h3>
             </div>
-            <button onClick={onClose} className="p-1 rounded-md text-slate-400 hover:text-slate-700">
+            <button onClick={onClose} className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
               <X size={18} />
             </button>
           </div>
-          <p className="text-xs text-slate-600 leading-relaxed mb-4">
-            Theo quy định sàn TrustSIM, tài khoản cần hoàn tất xác thực danh tính căn cước công dân (eKYC) trước khi có thể mở phiên đấu giá SIM trên hệ thống.
-          </p>
+
+          <div className="p-4 bg-amber-50/60 rounded-[14px] text-xs text-amber-900 leading-relaxed mb-5">
+            Theo quy định đảm bảo an toàn giao dịch, tài khoản của bạn cần hoàn tất bước <strong>xác thực danh tính (eKYC)</strong> trước khi tạo phiên đấu giá trên sàn.
+          </div>
+
           <div className="flex justify-end gap-2.5">
             <button
               onClick={onClose}
-              className="px-4 py-2 border border-slate-300 text-slate-700 rounded-[6px] text-xs font-semibold hover:bg-slate-50"
+              className="px-4 py-2 border border-slate-200 text-slate-600 rounded-full text-xs font-semibold hover:bg-slate-50 transition-colors"
             >
               Để sau
             </button>
@@ -103,9 +151,9 @@ export default function CreateAuctionWizardModal({
                 onClose();
                 if (onNavigateToEkyc) onNavigateToEkyc();
               }}
-              className="px-4 py-2 bg-[#001743] hover:bg-[#00266B] text-white rounded-[6px] text-xs font-bold transition-colors"
+              className="px-5 py-2 bg-[#001743] hover:bg-[#00266B] text-white rounded-full text-xs font-bold transition-all shadow-sm"
             >
-              Đến trang xác thực eKYC
+              Xác thực danh tính ngay
             </button>
           </div>
         </div>
@@ -113,6 +161,7 @@ export default function CreateAuctionWizardModal({
     );
   }
 
+  // Next Step Validation
   const handleNext = () => {
     if (step === 2) {
       if (startingPrice <= 0) {
@@ -125,11 +174,11 @@ export default function CreateAuctionWizardModal({
       }
       if (auctionType === AuctionTypeEnum.DUTCH) {
         if (dutchDecreaseAmount <= 0) {
-          addToast({ type: "error", title: "Bước giảm giá không hợp lệ", message: "Mức giảm mỗi chu kỳ phải lớn hơn 0 ₫." });
+          addToast({ type: "error", title: "Mức giảm giá không hợp lệ", message: "Mức giảm giá mỗi chu kỳ phải lớn hơn 0 ₫." });
           return;
         }
         if (reservePrice >= startingPrice) {
-          addToast({ type: "error", title: "Giá sàn không hợp lệ", message: "Trong đấu giá Hà Lan, giá sàn (Reserve Price) phải nhỏ hơn giá khởi điểm." });
+          addToast({ type: "error", title: "Giá sàn không hợp lệ", message: "Trong đấu giá giảm giá, giá sàn phải thấp hơn giá khởi điểm." });
           return;
         }
       }
@@ -141,6 +190,7 @@ export default function CreateAuctionWizardModal({
     setStep((prev) => Math.max(prev - 1, 1));
   };
 
+  // Submit Auction
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
@@ -159,9 +209,9 @@ export default function CreateAuctionWizardModal({
         registrationEndAt: startAtDate.toISOString(),
         // English Rules
         minimumBidIncrement: auctionType === AuctionTypeEnum.ENGLISH ? Number(minimumBidIncrement) : undefined,
-        extensionThresholdSeconds: enableAntiSniping && auctionType === AuctionTypeEnum.ENGLISH ? Number(extensionThresholdSeconds) : 0,
-        extensionDurationSeconds: enableAntiSniping && auctionType === AuctionTypeEnum.ENGLISH ? Number(extensionDurationSeconds) : 0,
-        maximumExtensionCount: enableAntiSniping && auctionType === AuctionTypeEnum.ENGLISH ? Number(maximumExtensionCount) : 0,
+        extensionThresholdSeconds: auctionType === AuctionTypeEnum.ENGLISH ? Number(extensionThresholdSeconds) : 0,
+        extensionDurationSeconds: auctionType === AuctionTypeEnum.ENGLISH ? Number(extensionDurationSeconds) : 0,
+        maximumExtensionCount: auctionType === AuctionTypeEnum.ENGLISH ? Number(maximumExtensionCount) : 0,
         // Dutch Rules
         dutchDecreaseAmount: auctionType === AuctionTypeEnum.DUTCH ? Number(dutchDecreaseAmount) : undefined,
         dutchDecreaseIntervalSeconds: auctionType === AuctionTypeEnum.DUTCH ? Number(dutchDecreaseIntervalSeconds) : undefined,
@@ -187,276 +237,465 @@ export default function CreateAuctionWizardModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/55 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="bg-white rounded-[14px] w-full max-w-[620px] shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] animate-fade-up">
-        {/* ── Modal Header ── */}
-        <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#E4011E]/20 text-[#E4011E] flex items-center justify-center font-bold">
-              <Gavel size={18} />
-            </div>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/45 backdrop-blur-sm p-4 animate-fade-in">
+      <div className="bg-white rounded-[20px] w-full max-w-[650px] shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh] animate-fade-up">
+        {/* ── 1. Modal Header (Đồng nhất nền trắng, Logo chữ S, Đường phân cách mỏng) ── */}
+        <div className="px-6 py-4.5 bg-white border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src="/logo/S-Logo.png" alt="TrustSIM" className="w-8 h-8 object-contain shrink-0" />
             <div>
-              <h3 className="text-sm font-extrabold text-white m-0">Thiết Lập Phiên Đấu Giá SIM</h3>
-              <p className="text-[11px] text-slate-300 m-0">SIM: {sim.simNumber} • {sim.carrier}</p>
+              <h3 className="text-base sm:text-lg font-black text-[#001743] tracking-tight m-0">
+                Thiết Lập Phiên Đấu Giá SIM
+              </h3>
+              <p className="text-xs text-slate-500 font-medium m-0 mt-0.5">
+                Số SIM: <strong className="font-mono text-[#001743]">{sim.simNumber}</strong> • {sim.carrier}
+              </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* ── Stepper Navigation ── */}
-        <div className="px-6 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs">
-          {[
-            { num: 1, label: "Loại hình" },
-            { num: 2, label: "Quy tắc & Giá" },
-            { num: 3, label: "Lịch trình" },
-            { num: 4, label: "Xác nhận" },
-          ].map((s, idx) => (
-            <React.Fragment key={s.num}>
-              <div className="flex items-center gap-2">
-                <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${
-                    step === s.num
-                      ? "bg-[#001743] text-white"
-                      : step > s.num
-                      ? "bg-emerald-600 text-white"
-                      : "bg-slate-200 text-slate-600"
-                  }`}
-                >
-                  {step > s.num ? "✓" : s.num}
-                </div>
-                <span className={`font-semibold ${step === s.num ? "text-[#001743]" : "text-slate-500"}`}>
-                  {s.label}
-                </span>
-              </div>
-              {idx < 3 && <div className="h-0.5 flex-1 bg-slate-200 mx-2" />}
-            </React.Fragment>
-          ))}
+        {/* ── 2. Stepper Liền Mạch (Progress Bar Track + Node tròn đè lên) ── */}
+        <div className="px-8 pt-4 pb-2 bg-white">
+          <div className="relative">
+            {/* Thanh Progress Bar nền */}
+            <div className="absolute top-4 left-4 right-4 h-1 bg-slate-100 rounded-full" />
+            {/* Dải màu Primary chạy theo bước */}
+            <div
+              className="absolute top-4 left-4 h-1 bg-[#001743] rounded-full transition-all duration-300 ease-out"
+              style={{
+                width:
+                  step === 1
+                    ? "0%"
+                    : step === 2
+                    ? "33.3%"
+                    : step === 3
+                    ? "66.6%"
+                    : "calc(100% - 32px)",
+              }}
+            />
+
+            {/* 4 Node số đè lên thanh */}
+            <div className="relative flex justify-between">
+              {[
+                { num: 1, label: "Hình thức" },
+                { num: 2, label: "Giá & Quy tắc" },
+                { num: 3, label: "Lịch mở phiên" },
+                { num: 4, label: "Xác nhận" },
+              ].map((s) => {
+                const isActive = step === s.num;
+                const isCompleted = step > s.num;
+                return (
+                  <div key={s.num} className="flex flex-col items-center">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 z-10 ${
+                        isActive
+                          ? "bg-[#001743] text-white ring-4 ring-[#001743]/10 shadow-sm"
+                          : isCompleted
+                          ? "bg-emerald-600 text-white"
+                          : "bg-white border-2 border-slate-200 text-slate-400"
+                      }`}
+                    >
+                      {isCompleted ? <Check size={14} strokeWidth={2.5} /> : s.num}
+                    </div>
+                    <span
+                      className={`text-[11px] mt-1.5 transition-colors ${
+                        isActive
+                          ? "font-bold text-[#001743]"
+                          : isCompleted
+                          ? "font-semibold text-emerald-700"
+                          : "font-medium text-slate-400"
+                      }`}
+                    >
+                      {s.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
-        {/* ── Step Body ── */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-4 text-xs">
-          {/* STEP 1: CHỌN HÌNH THỨC */}
+        {/* ── 3. Nội dung các bước ── */}
+        <div className="p-6 overflow-y-auto flex-1 space-y-5 text-xs">
+          {/* =========================================================================
+              BƯỚC 1: CHỌN LOẠI HÌNH ĐẤU GIÁ (Visual Charts độc bản, thẻ nổi bật)
+          ========================================================================= */}
           {step === 1 && (
             <div className="space-y-4">
               <div>
-                <h4 className="text-sm font-bold text-[#001743] mb-1">Chọn loại hình đấu giá</h4>
+                <h4 className="text-sm font-bold text-[#001743] mb-0.5">Chọn hình thức đấu giá</h4>
                 <p className="text-slate-500 text-xs">
-                  Mỗi loại hình có quy chế khớp lệnh và xác định người thắng cuộc khác nhau.
+                  Chọn quy cách trả giá phù hợp với nhu cầu bán SIM của bạn.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {/* English Auction Card */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                {/* THẺ 1: ĐẤU GIÁ TĂNG GIÁ CÔNG KHAI */}
                 <div
                   onClick={() => {
                     setAuctionType(AuctionTypeEnum.ENGLISH);
                     setReservePrice(Math.round(startingPrice * 1.2));
                   }}
-                  className={`p-4 rounded-[10px] border-2 cursor-pointer transition-all ${
+                  className={`relative p-5 rounded-[16px] border-2 cursor-pointer transition-all duration-200 overflow-hidden flex flex-col justify-between ${
                     auctionType === AuctionTypeEnum.ENGLISH
-                      ? "border-[#001743] bg-blue-50/40 shadow-xs"
-                      : "border-slate-200 hover:border-slate-300"
+                      ? "border-[#001743] bg-gradient-to-b from-blue-50/30 to-white shadow-md -translate-y-1"
+                      : "border-slate-200 hover:border-slate-300 hover:-translate-y-0.5 hover:shadow-sm bg-white"
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="w-7 h-7 rounded-md bg-blue-100 text-[#001743] flex items-center justify-center">
-                      <TrendingUp size={16} />
+                  <div>
+                    {/* Header Thẻ */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[11px] font-bold text-[#001743] bg-blue-100/70 px-2.5 py-1 rounded-full">
+                        Tăng giá công khai
+                      </span>
+                      <div
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          auctionType === AuctionTypeEnum.ENGLISH
+                            ? "border-[#001743] bg-[#001743]"
+                            : "border-slate-300"
+                        }`}
+                      >
+                        {auctionType === AuctionTypeEnum.ENGLISH && (
+                          <div className="w-2 h-2 rounded-full bg-white" />
+                        )}
+                      </div>
                     </div>
-                    {auctionType === AuctionTypeEnum.ENGLISH && (
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#001743]" />
-                    )}
+
+                    <h5 className="text-sm font-extrabold text-[#001743] mb-1.5">
+                      Đấu giá tăng giá công khai
+                    </h5>
+
+                    <p className="text-slate-600 text-xs leading-relaxed mb-3">
+                      Người tham gia trả giá tăng dần. Khi hết giờ, người trả mức giá hợp lệ cao nhất sẽ thắng phiên.
+                    </p>
                   </div>
-                  <div className="font-bold text-sm text-[#001743] mb-1">Đấu giá kiểu Anh (English)</div>
-                  <p className="text-slate-600 text-[11px] leading-relaxed mb-2">
-                    Giá tăng dần công khai. Người trả giá hợp lệ cao nhất khi hết giờ sẽ trúng đấu giá.
-                  </p>
-                  <div className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded">
-                    ✓ Hỗ trợ Anti-Sniping gia hạn phút cuối
+
+                  {/* Minh họa trực quan: Biểu đồ đường cong giá tăng dần */}
+                  <div className="pt-2">
+                    <div className="h-16 w-full rounded-[10px] bg-slate-50/80 p-2 flex flex-col justify-between border border-slate-100/80">
+                      <div className="flex justify-between text-[10px] text-slate-400 font-mono">
+                        <span>Bắt đầu</span>
+                        <span className="text-[#001743] font-bold">Cao nhất thắng ↗</span>
+                      </div>
+                      {/* SVG Line Chart minh họa giá tăng */}
+                      <svg viewBox="0 0 200 40" className="w-full h-8 overflow-visible">
+                        <defs>
+                          <linearGradient id="gradEnglish" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#93C5FD" />
+                            <stop offset="100%" stopColor="#001743" />
+                          </linearGradient>
+                        </defs>
+                        <path
+                          d="M 5 35 Q 60 32, 100 20 T 195 5"
+                          fill="none"
+                          stroke="url(#gradEnglish)"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                        />
+                        <circle cx="195" cy="5" r="4" fill="#001743" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 text-[11px] text-blue-900 font-medium bg-blue-50/60 p-2 rounded-[10px]">
+                    ✓ Mặc định tự động gia hạn khi có người trả giá sát phút chót.
                   </div>
                 </div>
 
-                {/* Dutch Auction Card */}
+                {/* THẺ 2: ĐẤU GIÁ GIẢM GIÁ TỰ ĐỘNG */}
                 <div
                   onClick={() => {
                     setAuctionType(AuctionTypeEnum.DUTCH);
                     setReservePrice(Math.round(startingPrice * 0.5));
                   }}
-                  className={`p-4 rounded-[10px] border-2 cursor-pointer transition-all ${
+                  className={`relative p-5 rounded-[16px] border-2 cursor-pointer transition-all duration-200 overflow-hidden flex flex-col justify-between ${
                     auctionType === AuctionTypeEnum.DUTCH
-                      ? "border-[#001743] bg-amber-50/40 shadow-xs"
-                      : "border-slate-200 hover:border-slate-300"
+                      ? "border-[#001743] bg-gradient-to-b from-amber-50/30 to-white shadow-md -translate-y-1"
+                      : "border-slate-200 hover:border-slate-300 hover:-translate-y-0.5 hover:shadow-sm bg-white"
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="w-7 h-7 rounded-md bg-amber-100 text-amber-800 flex items-center justify-center">
-                      <TrendingDown size={16} />
+                  <div>
+                    {/* Header Thẻ */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[11px] font-bold text-amber-900 bg-amber-100/70 px-2.5 py-1 rounded-full">
+                        Hạ giá tự động
+                      </span>
+                      <div
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          auctionType === AuctionTypeEnum.DUTCH
+                            ? "border-[#001743] bg-[#001743]"
+                            : "border-slate-300"
+                        }`}
+                      >
+                        {auctionType === AuctionTypeEnum.DUTCH && (
+                          <div className="w-2 h-2 rounded-full bg-white" />
+                        )}
+                      </div>
                     </div>
-                    {auctionType === AuctionTypeEnum.DUTCH && (
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#001743]" />
-                    )}
+
+                    <h5 className="text-sm font-extrabold text-[#001743] mb-1.5">
+                      Đấu giá giảm giá tự động
+                    </h5>
+
+                    <p className="text-slate-600 text-xs leading-relaxed mb-3">
+                      Hệ thống tự động hạ giá dần theo thời gian. Người đầu tiên chấp nhận mức giá hiện tại sẽ thắng ngay.
+                    </p>
                   </div>
-                  <div className="font-bold text-sm text-[#001743] mb-1">Đấu giá kiểu Hà Lan (Dutch)</div>
-                  <p className="text-slate-600 text-[11px] leading-relaxed mb-2">
-                    Hệ thống tự động hạ giá dần theo thời gian. Người đầu tiên chấp nhận mức giá hiện tại sẽ thắng ngay.
-                  </p>
-                  <div className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100/70 px-2 py-0.5 rounded">
-                    ⚡ Khớp lệnh tức thì (First-Bid-Wins)
+
+                  {/* Minh họa trực quan: Biểu đồ đường dốc hạ giá theo thời gian */}
+                  <div className="pt-2">
+                    <div className="h-16 w-full rounded-[10px] bg-slate-50/80 p-2 flex flex-col justify-between border border-slate-100/80">
+                      <div className="flex justify-between text-[10px] text-slate-400 font-mono">
+                        <span>Giá khởi điểm</span>
+                        <span className="text-amber-800 font-bold">Chốt giá thắng ngay ⚡</span>
+                      </div>
+                      {/* SVG Line Chart minh họa giá giảm theo chu kỳ */}
+                      <svg viewBox="0 0 200 40" className="w-full h-8 overflow-visible">
+                        <defs>
+                          <linearGradient id="gradDutch" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#F59E0B" />
+                            <stop offset="100%" stopColor="#B45309" />
+                          </linearGradient>
+                        </defs>
+                        <path
+                          d="M 5 5 L 45 5 L 45 15 L 90 15 L 90 25 L 140 25 L 140 35 L 195 35"
+                          fill="none"
+                          stroke="url(#gradDutch)"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                        />
+                        <circle cx="140" cy="25" r="4" fill="#B45309" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 text-[11px] text-amber-900 font-medium bg-amber-50/60 p-2 rounded-[10px]">
+                    ⚡ Khớp lệnh tức thì, thanh khoản nhanh chóng khi gặp người mua ưng ý.
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* STEP 2: CẤU HÌNH TÀI CHÍNH & QUY TẮC */}
+          {/* =========================================================================
+              BƯỚC 2: THIẾT LẬP GIÁ & QUY TẮC
+          ========================================================================= */}
           {step === 2 && (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {/* Giá khởi điểm */}
+              {/* Nút Nhờ AI Định Giá SIM */}
+              <div className="p-3.5 bg-gradient-to-r from-slate-50 to-blue-50/40 rounded-[14px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-white shadow-xs flex items-center justify-center text-[#E4011E] shrink-0">
+                    <Sparkles size={16} />
+                  </div>
+                  <div>
+                    <div className="font-bold text-xs text-[#001743]">Bạn chưa rõ nên đặt giá bao nhiêu?</div>
+                    <div className="text-[11px] text-slate-500">Nhờ trợ lý AI phân tích số đẹp và đề xuất mức giá thị trường phù hợp.</div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleRequestAiValuation}
+                  disabled={loadingAi}
+                  className="px-3.5 py-1.5 bg-white border border-slate-200 hover:border-[#001743] text-[#001743] rounded-full text-xs font-bold transition-all shadow-2xs hover:shadow-xs flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
+                >
+                  {loadingAi ? (
+                    <>
+                      <Loader2 size={13} className="animate-spin" />
+                      <span>Đang thẩm định...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={13} className="text-[#E4011E]" />
+                      <span>Nhờ AI định giá SIM</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Hộp kết quả gợi ý từ AI nếu có */}
+              {aiValuation && (
+                <div className="p-3 bg-blue-50/50 rounded-[14px] flex items-center justify-between gap-3 text-xs">
+                  <div>
+                    <span className="text-slate-600">AI đề xuất: </span>
+                    <strong className="text-[#001743] font-mono text-sm">{formatVND(aiValuation.suggestedPrice)}</strong>
+                    <span className="text-[11px] text-slate-500 ml-1.5">({aiValuation.detectedRhythmName || "SIM VIP"})</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleApplyAiPrice}
+                    className="px-3 py-1 bg-[#001743] text-white rounded-full text-[11px] font-bold hover:bg-[#00266B] transition-colors"
+                  >
+                    Áp dụng mức giá này
+                  </button>
+                </div>
+              )}
+
+              {/* Form nhập giá */}
+              <div className="space-y-3">
                 <div>
-                  <label className="block font-bold text-[#001743] mb-1">
-                    Giá khởi điểm (VNĐ) <span className="text-rose-600">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-bold text-[#001743] text-xs">
+                      Giá khởi điểm (VNĐ) <span className="text-rose-600">*</span>
+                    </label>
+                    <span className="text-slate-400 text-[11px]">Định dạng: {formatVND(startingPrice)}</span>
+                  </div>
                   <input
                     type="number"
                     min={100_000}
                     step={100_000}
                     value={startingPrice}
                     onChange={(e) => setStartingPrice(Number(e.target.value))}
-                    className="w-full text-xs p-2.5 border border-slate-300 rounded-[6px] font-mono font-bold text-[#001743] focus:border-[#001743] focus:outline-none"
+                    className="w-full text-xs p-3 border border-slate-200 rounded-[12px] font-mono font-bold text-[#001743] focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 focus:outline-none transition-all"
                   />
-                  <span className="text-[10px] text-slate-500 mt-0.5 block">{formatVND(startingPrice)}</span>
+
+                  {/* Nút cộng nhanh dạng Pill mềm mại */}
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <span className="text-[11px] text-slate-400">Cộng nhanh:</span>
+                    {[
+                      { label: "+1 triệu", val: 1_000_000 },
+                      { label: "+5 triệu", val: 5_000_000 },
+                      { label: "+10 triệu", val: 10_000_000 },
+                      { label: "+50 triệu", val: 50_000_000 },
+                    ].map((pill) => (
+                      <button
+                        key={pill.val}
+                        type="button"
+                        onClick={() => handleQuickAdd(pill.val)}
+                        className="px-3 py-1 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-full text-[11px] font-semibold transition-all cursor-pointer"
+                      >
+                        {pill.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                {/* Tiền cọc tham gia */}
-                <div>
-                  <label className="block font-bold text-[#001743] mb-1">
-                    Tiền cọc đăng ký tham gia (VNĐ)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    step={100_000}
-                    value={depositAmount}
-                    onChange={(e) => setDepositAmount(Number(e.target.value))}
-                    className="w-full text-xs p-2.5 border border-slate-300 rounded-[6px] font-mono font-semibold text-[#001743] focus:border-[#001743] focus:outline-none"
-                  />
-                  <span className="text-[10px] text-slate-500 mt-0.5 block">{formatVND(depositAmount)}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                  <div>
+                    <label className="block font-bold text-[#001743] mb-1 text-xs">
+                      Tiền cọc tham gia (VNĐ)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      step={100_000}
+                      value={depositAmount}
+                      onChange={(e) => setDepositAmount(Number(e.target.value))}
+                      className="w-full text-xs p-2.5 border border-slate-200 rounded-[12px] font-mono font-semibold text-[#001743] focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 focus:outline-none transition-all"
+                    />
+                    <span className="text-[10px] text-slate-400 mt-0.5 block">{formatVND(depositAmount)}</span>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-[#001743] mb-1 text-xs">
+                      {auctionType === AuctionTypeEnum.ENGLISH ? "Giá sàn bảo lưu (Tùy chọn)" : "Giá sàn dừng giảm *"}
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      step={500_000}
+                      value={reservePrice}
+                      onChange={(e) => setReservePrice(Number(e.target.value))}
+                      className="w-full text-xs p-2.5 border border-slate-200 rounded-[12px] font-mono font-semibold text-[#001743] focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 focus:outline-none transition-all"
+                    />
+                    <span className="text-[10px] text-slate-400 mt-0.5 block">{formatVND(reservePrice)}</span>
+                  </div>
                 </div>
               </div>
 
-              {/* RULES DÀNH RIÊNG CHO ENGLISH AUCTION */}
+              {/* QUY TẮC ĐẤU GIÁ TĂNG GIÁ (ENGLISH) */}
               {auctionType === AuctionTypeEnum.ENGLISH && (
-                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-[8px] space-y-3">
-                  <div className="font-bold text-[#001743] flex items-center gap-1.5">
-                    <Sliders size={14} />
-                    <span>Quy tắc Đấu giá kiểu Anh</span>
+                <div className="p-4 bg-slate-50/70 rounded-[16px] space-y-3">
+                  <div className="font-bold text-[#001743] text-xs">
+                    Quy định bước giá & Chống nhảy giá phút chót
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        Bước giá tối thiểu (VNĐ) <span className="text-rose-600">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        min={50_000}
-                        step={50_000}
-                        value={minimumBidIncrement}
-                        onChange={(e) => setMinimumBidIncrement(Number(e.target.value))}
-                        className="w-full text-xs p-2 border border-slate-300 rounded-[6px] font-mono font-bold"
-                      />
-                      <span className="text-[10px] text-slate-500">{formatVND(minimumBidIncrement)}</span>
-                    </div>
-
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        Giá bảo lưu tối thiểu (Tùy chọn)
-                      </label>
-                      <input
-                        type="number"
-                        min={0}
-                        step={500_000}
-                        value={reservePrice}
-                        onChange={(e) => setReservePrice(Number(e.target.value))}
-                        className="w-full text-xs p-2 border border-slate-300 rounded-[6px] font-mono"
-                      />
-                      <span className="text-[10px] text-slate-500">{formatVND(reservePrice)}</span>
-                    </div>
-                  </div>
-
-                  {/* Anti-Sniping Toggle */}
-                  <div className="pt-2 border-t border-slate-200">
-                    <label className="flex items-center gap-2 cursor-pointer mb-2">
-                      <input
-                        type="checkbox"
-                        checked={enableAntiSniping}
-                        onChange={(e) => setEnableAntiSniping(e.target.checked)}
-                        className="rounded text-[#001743] focus:ring-0"
-                      />
-                      <span className="font-bold text-slate-800">Kích hoạt cơ chế chống giật giờ chót (Anti-Sniping)</span>
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1 text-xs">
+                      Bước giá tối thiểu (VNĐ) <span className="text-rose-600">*</span>
                     </label>
+                    <input
+                      type="number"
+                      min={50_000}
+                      step={50_000}
+                      value={minimumBidIncrement}
+                      onChange={(e) => setMinimumBidIncrement(Number(e.target.value))}
+                      className="w-full text-xs p-2.5 border border-slate-200 rounded-[12px] font-mono font-bold focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 focus:outline-none transition-all"
+                    />
+                    <span className="text-[10px] text-slate-400 mt-0.5 block">{formatVND(minimumBidIncrement)}</span>
+                  </div>
 
-                    {enableAntiSniping && (
-                      <div className="grid grid-cols-3 gap-2 text-[11px] text-slate-600 bg-white p-2.5 rounded border border-slate-200">
-                        <div>
-                          <span>Ngưỡng kích hoạt:</span>
-                          <select
-                            value={extensionThresholdSeconds}
-                            onChange={(e) => setExtensionThresholdSeconds(Number(e.target.value))}
-                            className="w-full mt-1 p-1 border border-slate-200 rounded text-xs font-semibold"
-                          >
-                            <option value="120">2 phút cuối</option>
-                            <option value="180">3 phút cuối</option>
-                            <option value="300">5 phút cuối</option>
-                          </select>
-                        </div>
-                        <div>
-                          <span>Thời gian gia hạn:</span>
-                          <select
-                            value={extensionDurationSeconds}
-                            onChange={(e) => setExtensionDurationSeconds(Number(e.target.value))}
-                            className="w-full mt-1 p-1 border border-slate-200 rounded text-xs font-semibold"
-                          >
-                            <option value="180">+3 phút</option>
-                            <option value="300">+5 phút</option>
-                            <option value="600">+10 phút</option>
-                          </select>
-                        </div>
-                        <div>
-                          <span>Gia hạn tối đa:</span>
-                          <select
-                            value={maximumExtensionCount}
-                            onChange={(e) => setMaximumExtensionCount(Number(e.target.value))}
-                            className="w-full mt-1 p-1 border border-slate-200 rounded text-xs font-semibold"
-                          >
-                            <option value="3">3 lần</option>
-                            <option value="5">5 lần</option>
-                            <option value="10">10 lần</option>
-                          </select>
-                        </div>
+                  {/* Anti-Sniping Parameters - MẶC ĐỊNH LUÔN BẬT */}
+                  <div className="pt-2 border-t border-slate-200/60">
+                    <div className="font-bold text-slate-800 text-xs mb-1">
+                      Cơ chế tự động gia hạn khi có trả giá phút chót (Mặc định)
+                    </div>
+                    <p className="text-slate-500 text-[11px] leading-relaxed mb-2.5">
+                      Nhằm đảm bảo tính công bằng và minh bạch, hệ thống sẽ tự động kéo dài thêm thời gian nếu có người trả giá mới sát thời điểm kết thúc.
+                    </p>
+
+                    <div className="grid grid-cols-3 gap-2.5 text-[11px] text-slate-700">
+                      <div>
+                        <span className="text-slate-500">Kích hoạt khi còn:</span>
+                        <select
+                          value={extensionThresholdSeconds}
+                          onChange={(e) => setExtensionThresholdSeconds(Number(e.target.value))}
+                          className="w-full mt-1 p-2 border border-slate-200 rounded-[10px] bg-white text-xs font-semibold focus:border-[#001743] focus:outline-none"
+                        >
+                          <option value="120">2 phút cuối</option>
+                          <option value="180">3 phút cuối</option>
+                          <option value="300">5 phút cuối</option>
+                        </select>
                       </div>
-                    )}
+
+                      <div>
+                        <span className="text-slate-500">Gia hạn thêm:</span>
+                        <select
+                          value={extensionDurationSeconds}
+                          onChange={(e) => setExtensionDurationSeconds(Number(e.target.value))}
+                          className="w-full mt-1 p-2 border border-slate-200 rounded-[10px] bg-white text-xs font-semibold focus:border-[#001743] focus:outline-none"
+                        >
+                          <option value="180">+3 phút</option>
+                          <option value="300">+5 phút</option>
+                          <option value="600">+10 phút</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <span className="text-slate-500">Tối đa:</span>
+                        <select
+                          value={maximumExtensionCount}
+                          onChange={(e) => setMaximumExtensionCount(Number(e.target.value))}
+                          className="w-full mt-1 p-2 border border-slate-200 rounded-[10px] bg-white text-xs font-semibold focus:border-[#001743] focus:outline-none"
+                        >
+                          <option value="3">3 lần</option>
+                          <option value="5">5 lần</option>
+                          <option value="10">10 lần</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* RULES DÀNH RIÊNG CHO DUTCH AUCTION */}
+              {/* QUY TẮC ĐẤU GIÁ GIẢM GIÁ (DUTCH) */}
               {auctionType === AuctionTypeEnum.DUTCH && (
-                <div className="p-3.5 bg-amber-50/50 border border-amber-200 rounded-[8px] space-y-3">
-                  <div className="font-bold text-amber-900 flex items-center gap-1.5">
-                    <TrendingDown size={14} />
-                    <span>Quy tắc Đấu giá kiểu Hà Lan (Hạ giá theo thời gian)</span>
+                <div className="p-4 bg-amber-50/40 rounded-[16px] space-y-3">
+                  <div className="font-bold text-amber-900 text-xs">
+                    Quy định chu kỳ hạ giá tự động
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        Mức giảm mỗi chu kỳ <span className="text-rose-600">*</span>
+                      <label className="block font-semibold text-slate-700 mb-1 text-xs">
+                        Mức giảm mỗi chu kỳ (VNĐ) <span className="text-rose-600">*</span>
                       </label>
                       <input
                         type="number"
@@ -464,19 +703,19 @@ export default function CreateAuctionWizardModal({
                         step={50_000}
                         value={dutchDecreaseAmount}
                         onChange={(e) => setDutchDecreaseAmount(Number(e.target.value))}
-                        className="w-full text-xs p-2 border border-slate-300 rounded-[6px] font-mono font-bold"
+                        className="w-full text-xs p-2.5 border border-slate-200 rounded-[12px] font-mono font-bold focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 focus:outline-none transition-all"
                       />
-                      <span className="text-[10px] text-slate-500">{formatVND(dutchDecreaseAmount)}</span>
+                      <span className="text-[10px] text-slate-400 mt-0.5 block">{formatVND(dutchDecreaseAmount)}</span>
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
+                      <label className="block font-semibold text-slate-700 mb-1 text-xs">
                         Chu kỳ giảm giá
                       </label>
                       <select
                         value={dutchDecreaseIntervalSeconds}
                         onChange={(e) => setDutchDecreaseIntervalSeconds(Number(e.target.value))}
-                        className="w-full text-xs p-2 border border-slate-300 rounded-[6px] bg-white font-semibold"
+                        className="w-full text-xs p-2.5 border border-slate-200 rounded-[12px] bg-white font-semibold focus:border-[#001743] focus:outline-none"
                       >
                         <option value="60">Mỗi 1 phút</option>
                         <option value="300">Mỗi 5 phút</option>
@@ -485,63 +724,54 @@ export default function CreateAuctionWizardModal({
                         <option value="3600">Mỗi 1 giờ</option>
                       </select>
                     </div>
+                  </div>
 
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        Giá sàn (Reserve Price) <span className="text-rose-600">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        min={100_000}
-                        step={100_000}
-                        value={reservePrice}
-                        onChange={(e) => setReservePrice(Number(e.target.value))}
-                        className="w-full text-xs p-2 border border-slate-300 rounded-[6px] font-mono font-bold"
-                      />
-                      <span className="text-[10px] text-slate-500">{formatVND(reservePrice)}</span>
-                    </div>
+                  <div className="p-2.5 bg-white/70 rounded-[10px] text-[11px] text-amber-900">
+                    💡 Khi giá giảm chạm mức sàn ({formatVND(reservePrice)}) mà không có ai chốt, phiên sẽ tự động kết thúc để bảo vệ giá trị SIM.
                   </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* STEP 3: LÊN LỊCH THỜI GIAN */}
+          {/* =========================================================================
+              BƯỚC 3: THỜI GIAN DIỄN RA
+          ========================================================================= */}
           {step === 3 && (
             <div className="space-y-4">
               <div>
-                <h4 className="text-sm font-bold text-[#001743] mb-1">Thiết lập thời gian diễn ra</h4>
+                <h4 className="text-sm font-bold text-[#001743] mb-0.5">Thiết lập thời gian mở phiên</h4>
                 <p className="text-slate-500 text-xs">
-                  Xác định thời điểm mở phiên và thời lượng tiếp nhận trả giá.
+                  Chọn thời điểm bắt đầu và thời lượng tiếp nhận trả giá.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold text-[#001743] mb-1">
+                  <label className="block font-bold text-[#001743] mb-1.5 text-xs">
                     Thời điểm bắt đầu phiên
                   </label>
                   <select
                     value={startDelayMinutes}
                     onChange={(e) => setStartDelayMinutes(Number(e.target.value))}
-                    className="w-full text-xs p-2.5 border border-slate-300 rounded-[6px] bg-white font-semibold text-[#001743] focus:border-[#001743]"
+                    className="w-full text-xs p-3 border border-slate-200 rounded-[12px] bg-white font-semibold text-[#001743] focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 focus:outline-none"
                   >
-                    <option value="0">Bắt đầu ngay sau khi tạo</option>
+                    <option value="0">Mở ngay sau khi tạo</option>
                     <option value="15">Sau 15 phút</option>
                     <option value="60">Sau 1 giờ</option>
                     <option value="180">Sau 3 giờ</option>
-                    <option value="1440">Sau 24 giờ (1 ngày tới)</option>
+                    <option value="1440">Sau 24 giờ (Ngày mai)</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block font-bold text-[#001743] mb-1">
+                  <label className="block font-bold text-[#001743] mb-1.5 text-xs">
                     Thời lượng diễn ra phiên
                   </label>
                   <select
                     value={durationHours}
                     onChange={(e) => setDurationHours(Number(e.target.value))}
-                    className="w-full text-xs p-2.5 border border-slate-300 rounded-[6px] bg-white font-semibold text-[#001743] focus:border-[#001743]"
+                    className="w-full text-xs p-3 border border-slate-200 rounded-[12px] bg-white font-semibold text-[#001743] focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 focus:outline-none"
                   >
                     <option value="6">6 giờ</option>
                     <option value="12">12 giờ</option>
@@ -552,43 +782,43 @@ export default function CreateAuctionWizardModal({
                 </div>
               </div>
 
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-[8px] flex items-start gap-2 text-blue-900 text-xs">
-                <Info size={16} className="text-blue-700 shrink-0 mt-0.5" />
-                <div className="leading-relaxed">
-                  Hệ thống Background Worker sẽ tự động kích hoạt phiên khi đến thời gian bắt đầu và tự động chốt kết quả người thắng khi phiên hết thời gian hoặc khi có người chấp nhận giá Hà Lan.
-                </div>
+              {/* Thông báo Soft UI nhẹ nhàng, không viền, bo góc lớn */}
+              <div className="p-4 bg-blue-50/50 rounded-[16px] text-xs text-slate-600 leading-relaxed">
+                Hệ thống sẽ tự động mở phiên và công bố kết quả minh bạch theo đúng thời gian bạn đã thiết lập. Bạn có thể theo dõi tiến độ trả giá trực tiếp bất kỳ lúc nào.
               </div>
             </div>
           )}
 
-          {/* STEP 4: XÁC NHẬN & CAM KẾT */}
+          {/* =========================================================================
+              BƯỚC 4: XÁC NHẬN & CAM KẾT
+          ========================================================================= */}
           {step === 4 && (
             <div className="space-y-4">
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-[10px] space-y-2.5">
-                <div className="font-bold text-sm text-[#001743] pb-2 border-b border-slate-200 flex justify-between items-center">
+              <div className="p-5 bg-slate-50/70 rounded-[16px] space-y-3">
+                <div className="font-bold text-xs text-[#001743] pb-2 border-b border-slate-200/60 flex justify-between items-center">
                   <span>Tóm tắt thông số phiên đấu giá</span>
-                  <span className="text-xs px-2 py-0.5 rounded font-bold bg-[#001743] text-white">
-                    {auctionType === AuctionTypeEnum.ENGLISH ? "English Auction" : "Dutch Auction"}
+                  <span className="text-[11px] px-3 py-0.5 rounded-full font-bold bg-[#001743] text-white">
+                    {auctionType === AuctionTypeEnum.ENGLISH ? "Tăng giá công khai" : "Hạ giá tự động"}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div><span className="text-slate-500">Số SIM:</span> <strong className="text-[#001743]">{sim.simNumber}</strong></div>
+                <div className="grid grid-cols-2 gap-2.5 text-xs">
+                  <div><span className="text-slate-500">Số SIM:</span> <strong className="text-[#001743] font-mono">{sim.simNumber}</strong></div>
                   <div><span className="text-slate-500">Nhà mạng:</span> <strong className="text-[#001743]">{sim.carrier}</strong></div>
-                  <div><span className="text-slate-500">Giá khởi điểm:</span> <strong className="text-[#001743]">{formatVND(startingPrice)}</strong></div>
-                  <div><span className="text-slate-500">Tiền cọc:</span> <strong className="text-[#001743]">{formatVND(depositAmount)}</strong></div>
+                  <div><span className="text-slate-500">Giá khởi điểm:</span> <strong className="text-[#001743] font-mono">{formatVND(startingPrice)}</strong></div>
+                  <div><span className="text-slate-500">Tiền cọc:</span> <strong className="text-[#001743] font-mono">{formatVND(depositAmount)}</strong></div>
 
                   {auctionType === AuctionTypeEnum.ENGLISH && (
                     <>
-                      <div><span className="text-slate-500">Bước giá:</span> <strong className="text-[#001743]">{formatVND(minimumBidIncrement)}</strong></div>
-                      <div><span className="text-slate-500">Anti-Sniping:</span> <strong className="text-emerald-700">{enableAntiSniping ? "Bật" : "Tắt"}</strong></div>
+                      <div><span className="text-slate-500">Bước giá tối thiểu:</span> <strong className="text-[#001743] font-mono">{formatVND(minimumBidIncrement)}</strong></div>
+                      <div><span className="text-slate-500">Gia hạn phút chót:</span> <strong className="text-emerald-700">Đã bật (Tối đa {maximumExtensionCount} lần)</strong></div>
                     </>
                   )}
 
                   {auctionType === AuctionTypeEnum.DUTCH && (
                     <>
-                      <div><span className="text-slate-500">Mức giảm:</span> <strong className="text-[#001743]">{formatVND(dutchDecreaseAmount)} / chu kỳ</strong></div>
-                      <div><span className="text-slate-500">Giá sàn:</span> <strong className="text-[#001743]">{formatVND(reservePrice)}</strong></div>
+                      <div><span className="text-slate-500">Mức giảm:</span> <strong className="text-[#001743] font-mono">{formatVND(dutchDecreaseAmount)} / chu kỳ</strong></div>
+                      <div><span className="text-slate-500">Giá sàn dừng giảm:</span> <strong className="text-[#001743] font-mono">{formatVND(reservePrice)}</strong></div>
                     </>
                   )}
 
@@ -596,23 +826,24 @@ export default function CreateAuctionWizardModal({
                 </div>
               </div>
 
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-[8px] flex items-start gap-2 text-emerald-900 text-xs">
-                <ShieldCheck size={16} className="text-emerald-700 shrink-0 mt-0.5" />
-                <div className="leading-relaxed">
-                  <strong>Cam kết ký quỹ & bảo mật:</strong> Trong suốt thời gian diễn ra phiên đấu giá, SIM sẽ được khóa chuyển nhượng để đảm bảo an toàn giao dịch.
+              {/* Thông báo Bảo đảm Soft UI */}
+              <div className="p-4 bg-emerald-50/50 rounded-[16px] flex items-start gap-3 text-xs text-emerald-900 leading-relaxed">
+                <ShieldCheck size={18} className="text-emerald-700 shrink-0 mt-0.5" />
+                <div>
+                  <strong>Bảo đảm quyền sở hữu & an toàn giao dịch:</strong> Trong suốt thời gian phiên đấu giá diễn ra, SIM sẽ được giữ trạng thái bảo đảm nhằm bảo vệ quyền lợi hợp lệ của cả người bán và người mua.
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* ── Modal Footer Controls ── */}
-        <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+        {/* ── 4. Modal Footer Controls ── */}
+        <div className="px-6 py-4 bg-white border-t border-slate-100 flex items-center justify-between">
           <button
             type="button"
             onClick={step === 1 ? onClose : handlePrev}
             disabled={submitting}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-slate-300 hover:bg-white text-slate-700 rounded-[6px] text-xs font-semibold transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-full text-xs font-semibold transition-colors disabled:opacity-50"
           >
             {step === 1 ? "Hủy bỏ" : <><ArrowLeft size={14} /> Quay lại</>}
           </button>
@@ -621,7 +852,7 @@ export default function CreateAuctionWizardModal({
             <button
               type="button"
               onClick={handleNext}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#001743] hover:bg-[#00266B] text-white rounded-[6px] text-xs font-bold transition-colors shadow-xs"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#001743] hover:bg-[#00266B] text-white rounded-full text-xs font-bold transition-all shadow-sm"
             >
               <span>Tiếp tục</span>
               <ArrowRight size={14} />
@@ -631,7 +862,7 @@ export default function CreateAuctionWizardModal({
               type="button"
               onClick={handleSubmit}
               disabled={submitting}
-              className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#E4011E] hover:bg-[#C00119] text-white rounded-[6px] text-xs font-bold transition-colors shadow-xs disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#E4011E] hover:bg-[#C00119] text-white rounded-full text-xs font-bold transition-all shadow-sm disabled:opacity-50"
             >
               {submitting ? (
                 <>
@@ -640,8 +871,8 @@ export default function CreateAuctionWizardModal({
                 </>
               ) : (
                 <>
-                  <Gavel size={14} />
-                  <span>Xác nhận mở phiên</span>
+                  <img src="/logo/S-White-Logo.png" alt="S" className="w-3.5 h-3.5 object-contain" />
+                  <span>Xác nhận mở phiên đấu giá</span>
                 </>
               )}
             </button>
