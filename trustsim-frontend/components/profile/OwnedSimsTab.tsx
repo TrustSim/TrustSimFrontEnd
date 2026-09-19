@@ -42,6 +42,7 @@ import {
   FormatRhythmItemDto,
 } from "@/services/simService";
 import { getCarriers, SimCarrierDto } from "@/services/carrierService";
+import { getCategories, SimCategoryDto } from "@/services/categoryService";
 
 interface OwnedSimsTabProps {
   isEkycVerified: boolean;
@@ -397,11 +398,37 @@ function OwnedSimHeroCard({
             </span>
           </div>
 
-          <div>
+          <div className="flex items-center gap-1.5">
+            {/* Quick Action Icons: View, Edit, Delete */}
+            <button
+              type="button"
+              onClick={() => onOpenDetail(sim)}
+              className="p-1.5 rounded-[6px] bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              title="Xem chi tiết số SIM"
+            >
+              <Eye size={13} />
+            </button>
+            <button
+              type="button"
+              onClick={() => onOpenUpdate(sim)}
+              className="p-1.5 rounded-[6px] bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              title="Chỉnh sửa thông tin SIM"
+            >
+              <Pencil size={13} />
+            </button>
+            <button
+              type="button"
+              onClick={() => onOpenDelete(sim)}
+              className="p-1.5 rounded-[6px] bg-white/10 hover:bg-rose-500/25 text-slate-300 hover:text-rose-300 transition-colors cursor-pointer"
+              title="Xóa SIM khỏi kho"
+            >
+              <Trash2 size={13} />
+            </button>
+
             {sim.hasActiveAuction ? (
               <Link
                 href={`/auctions/${sim.activeAuctionId || 1}`}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-[6px] text-xs font-bold bg-white/10 hover:bg-white/15 border border-white/20 text-white transition-colors shadow-sm"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-xs font-bold bg-white/10 hover:bg-white/15 border border-white/20 text-white transition-colors shadow-sm"
               >
                 <span>Đang đấu giá</span>
                 <ArrowRight size={13} />
@@ -414,7 +441,7 @@ function OwnedSimHeroCard({
                   background: "linear-gradient(135deg, #FDE047 0%, #EAB308 50%, #CA8A04 100%)",
                   boxShadow: "0 4px 14px rgba(234, 179, 8, 0.35)",
                 }}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-[6px] text-xs font-black text-[#001743] hover:brightness-105 active:scale-95 transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-xs font-black text-[#001743] hover:brightness-105 active:scale-95 transition-all cursor-pointer"
               >
                 <Gavel size={13} className="text-[#001743]" strokeWidth={2.2} />
                 <span>Mở đấu giá</span>
@@ -422,9 +449,9 @@ function OwnedSimHeroCard({
             ) : (
               <button
                 type="button"
-                onClick={onNavigateToEkyc}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-[6px] text-xs font-bold bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 hover:border-yellow-400 transition-colors cursor-pointer"
-                title="Cần xác minh chính chủ để mở phiên đấu giá"
+                onClick={() => onOpenVerify(sim)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-xs font-bold bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 hover:border-yellow-400 transition-colors cursor-pointer"
+                title="Xác thực chính chủ với Cổng viễn thông Nhà mạng"
               >
                 <ShieldCheck size={13} />
                 <span>Xác thực ngay</span>
@@ -455,12 +482,15 @@ export default function OwnedSimsTab({
   // Master data
   const [carriersList, setCarriersList] = useState<SimCarrierDto[]>(DEFAULT_CARRIERS);
   const [formatRhythmsList, setFormatRhythmsList] = useState<FormatRhythmItemDto[]>([]);
+  const [categoriesList, setCategoriesList] = useState<SimCategoryDto[]>([]);
 
   // Modal: Thêm SIM cá nhân
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newSimNumber, setNewSimNumber] = useState("");
   const [selectedCarrier, setSelectedCarrier] = useState<SimCarrierDto | null>(null);
   const [newSimType, setNewSimType] = useState<"Trả trước" | "Trả sau">("Trả trước");
+  const [selectedFormatRhythmId, setSelectedFormatRhythmId] = useState<string>("");
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   // Number masking state for estimated value
   const [newEstimatedValueRaw, setNewEstimatedValueRaw] = useState<number>(10_000_000);
   const [newEstimatedValueFormatted, setNewEstimatedValueFormatted] = useState<string>("10.000.000");
@@ -468,6 +498,18 @@ export default function OwnedSimsTab({
 
   // Modal: Tạo phiên đấu giá
   const [selectedSimForAuction, setSelectedSimForAuction] = useState<OwnedSim | null>(null);
+
+  // Modal: Xác thực chính chủ 2 bước
+  const [selectedSimForVerify, setSelectedSimForVerify] = useState<OwnedSim | null>(null);
+
+  // Modal: Xem chi tiết SIM
+  const [selectedSimForDetail, setSelectedSimForDetail] = useState<OwnedSim | null>(null);
+
+  // Modal: Chỉnh sửa SIM
+  const [selectedSimForUpdate, setSelectedSimForUpdate] = useState<OwnedSim | null>(null);
+
+  // Modal: Xóa SIM khỏi kho
+  const [selectedSimForDelete, setSelectedSimForDelete] = useState<OwnedSim | null>(null);
 
   // ─── 1. Load MasterData & Owned SIMs from Database ───────────────────────
   const fetchSimsFromDb = useCallback(async () => {
@@ -481,7 +523,10 @@ export default function OwnedSimsTab({
           carrier: item.carrierName || "Viettel",
           carrierLogo: item.carrierLogo,
           carrierCode: item.carrierCode,
+          formatRhythmId: item.formatRhythmId,
           formatRhythmName: item.formatRhythmName,
+          phonePrefixId: (item as any).phonePrefixId,
+          categoryNames: item.categoryNames || [],
           simType: "Trả trước",
           acquiredFrom:
             (item as any).acquisitionType === "AUCTION_TRANSFER"
@@ -491,7 +536,7 @@ export default function OwnedSimsTab({
             item.verificationStatus === 2 || item.verificationStatus === "VERIFIED"
               ? "VERIFIED_OWNER"
               : "UNVERIFIED",
-          estimatedValue: 10_000_000,
+          estimatedValue: item.price !== undefined && item.price > 0 ? item.price : 0,
           createdDate: item.createdDate
             ? new Date(item.createdDate).toLocaleDateString("vi-VN")
             : "10/09/2026",
@@ -526,6 +571,13 @@ export default function OwnedSimsTab({
     getFormatRhythms()
       .then((data) => {
         if (data && data.length > 0) setFormatRhythmsList(data);
+      })
+      .catch(() => { });
+
+    // Fetch categories
+    getCategories()
+      .then((data) => {
+        if (data && data.length > 0) setCategoriesList(data);
       })
       .catch(() => { });
   }, [fetchSimsFromDb]);
@@ -618,6 +670,35 @@ export default function OwnedSimsTab({
         setNewEstimatedValueRaw(price);
         setNewEstimatedValueFormatted(price.toLocaleString("vi-VN"));
       }
+
+      // Tự động nhận diện và gán Nhịp định dạng từ AI
+      if (res.detectedRhythmName && formatRhythmsList.length > 0) {
+        const matchedRhythm = formatRhythmsList.find(
+          (r) =>
+            r.formatRhythmName.toLowerCase() === res.detectedRhythmName.toLowerCase() ||
+            res.detectedRhythmName.toLowerCase().includes(r.formatRhythmName.toLowerCase()) ||
+            r.formatRhythmName.toLowerCase().includes(res.detectedRhythmName.toLowerCase())
+        );
+        if (matchedRhythm) {
+          setSelectedFormatRhythmId(matchedRhythm.id);
+        }
+      }
+
+      // Tự động nhận diện và gán Thể loại từ AI
+      if (res.detectedCategories && res.detectedCategories.length > 0 && categoriesList.length > 0) {
+        const matchedCatIds = categoriesList
+          .filter((c) =>
+            res.detectedCategories.some(
+              (dc) =>
+                dc.toLowerCase().includes(c.categoryName.toLowerCase()) ||
+                c.categoryName.toLowerCase().includes(dc.toLowerCase())
+            )
+          )
+          .map((c) => c.id);
+        if (matchedCatIds.length > 0) {
+          setSelectedCategoryIds((prev) => Array.from(new Set([...prev, ...matchedCatIds])));
+        }
+      }
     } catch (err: any) {
       addToast({
         type: "error",
@@ -663,17 +744,44 @@ export default function OwnedSimsTab({
 
     setSubmittingSim(true);
     try {
-      // 1. Tìm FormatRhythm mặc định
-      const defaultRhythm = formatRhythmsList[0]?.id || "be433391-84db-4b7d-a540-603bda9e816a";
+      // Xác định nhịp định dạng và thể loại:
+      // - Nếu người dùng đã nhờ AI định giá: dùng kết quả do AI thẩm định và quyết định.
+      // - Nếu người dùng KHÔNG nhờ AI: tự động gán Nhịp phổ thông + SIM phổ thông.
+      const normalRhythm = formatRhythmsList.find(
+        (r) => r.formatRhythmName.toLowerCase().includes("phổ thông") || (r.value && r.value.toUpperCase() === "NORMAL")
+      ) || formatRhythmsList[0];
+
+      const normalCategory = categoriesList.find(
+        (c) => c.categoryName.toLowerCase().includes("phổ thông") || c.categoryCode === "SIM_THUONG"
+      );
+
+      const rhythmIdToUse = (aiValuationResult && selectedFormatRhythmId)
+        ? selectedFormatRhythmId
+        : normalRhythm?.id || "f1000000-0000-0000-0000-000000000011";
+
+      const categoryIdsToUse = (aiValuationResult && selectedCategoryIds.length > 0)
+        ? selectedCategoryIds
+        : normalCategory ? [normalCategory.id] : ["ca000000-0000-0000-0000-000000000010"];
+
+      const rhythmNameToUse = (aiValuationResult && selectedFormatRhythmId)
+        ? (formatRhythmsList.find((r) => r.id === selectedFormatRhythmId)?.formatRhythmName || aiValuationResult.detectedRhythmName)
+        : (normalRhythm?.formatRhythmName || "Nhịp Phổ thông");
+
+      const categoryNamesToUse = (aiValuationResult && selectedCategoryIds.length > 0)
+        ? categoriesList.filter((c) => selectedCategoryIds.includes(c.id)).map((c) => c.categoryName)
+        : [normalCategory?.categoryName || "SIM Phổ thông"];
+
       const prefix3 = cleanNumber.substring(0, 3);
       const matchedPrefix = carrierToUse.prefixes?.find((p) => p.prefixValue === prefix3);
 
-      // Thử đăng ký trực tiếp vào Database Backend
+      // Thử đăng ký trực tiếp vào Database Backend với đầy đủ giá, nhịp và danh mục
       try {
         await registerSim({
           phoneNumber: cleanNumber,
-          formatRhythmId: defaultRhythm,
+          formatRhythmId: rhythmIdToUse,
           phonePrefixId: matchedPrefix?.id,
+          categoryIds: categoryIdsToUse,
+          price: newEstimatedValueRaw,
         });
       } catch (backendErr: any) {
         console.warn("Backend register notice:", backendErr.message);
@@ -686,6 +794,10 @@ export default function OwnedSimsTab({
         carrier: carrierToUse.carrierName,
         carrierLogo: carrierToUse.logoImg,
         carrierCode: carrierToUse.carrierCode,
+        formatRhythmId: rhythmIdToUse,
+        formatRhythmName: rhythmNameToUse,
+        phonePrefixId: matchedPrefix?.id,
+        categoryNames: categoryNamesToUse,
         simType: newSimType,
         acquiredFrom: "PERSONAL_IMPORT",
         ownershipStatus: "UNVERIFIED",
@@ -699,6 +811,8 @@ export default function OwnedSimsTab({
       setShowAiAnalysisDetail(false);
       setShowAiDetailModal(false);
       setNewSimNumber("");
+      setSelectedCategoryIds([]);
+      setSelectedFormatRhythmId("");
       setNewEstimatedValueRaw(10_000_000);
       setNewEstimatedValueFormatted("10.000.000");
 
@@ -826,7 +940,10 @@ export default function OwnedSimsTab({
               key={sim.id}
               sim={sim}
               onOpenAuction={handleOpenCreateAuction}
-              onNavigateToEkyc={onNavigateToEkyc}
+              onOpenVerify={(s) => setSelectedSimForVerify(s)}
+              onOpenDetail={(s) => setSelectedSimForDetail(s)}
+              onOpenUpdate={(s) => setSelectedSimForUpdate(s)}
+              onOpenDelete={(s) => setSelectedSimForDelete(s)}
             />
           ))}
         </div>
@@ -902,34 +1019,61 @@ export default function OwnedSimsTab({
 
                       {/* Cột 6: Thao tác */}
                       <td className="py-3 px-4 text-right">
-                        {sim.hasActiveAuction ? (
-                          <Link
-                            href={`/auctions/${sim.activeAuctionId || 1}`}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[6px] text-xs font-bold border border-slate-300 text-slate-700 hover:bg-slate-100 transition-colors"
-                          >
-                            <span>Đang đấu giá</span>
-                            <ArrowRight size={12} />
-                          </Link>
-                        ) : isOwnerVerified ? (
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
-                            onClick={() => handleOpenCreateAuction(sim)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[6px] text-xs font-bold bg-[#E4011E] hover:bg-[#B80018] text-white transition-colors cursor-pointer"
+                            onClick={() => setSelectedSimForDetail(sim)}
+                            className="p-1.5 rounded-[6px] border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+                            title="Xem chi tiết SIM"
                           >
-                            <Gavel size={12} />
-                            <span>Mở đấu giá</span>
+                            <Eye size={13} />
                           </button>
-                        ) : (
                           <button
                             type="button"
-                            onClick={onNavigateToEkyc}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[6px] text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
-                            title="Xác thực chính chủ để mở quyền tạo đấu giá"
+                            onClick={() => setSelectedSimForUpdate(sim)}
+                            className="p-1.5 rounded-[6px] border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+                            title="Chỉnh sửa thông tin SIM"
                           >
-                            <ShieldCheck size={12} />
-                            <span>Xác thực ngay</span>
+                            <Pencil size={13} />
                           </button>
-                        )}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedSimForDelete(sim)}
+                            className="p-1.5 rounded-[6px] border border-rose-200 hover:bg-rose-50 text-rose-600 transition-colors cursor-pointer"
+                            title="Xóa SIM"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+
+                          {sim.hasActiveAuction ? (
+                            <Link
+                              href={`/auctions/${sim.activeAuctionId || 1}`}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[6px] text-xs font-bold border border-slate-300 text-slate-700 hover:bg-slate-100 transition-colors"
+                            >
+                              <span>Đang đấu giá</span>
+                              <ArrowRight size={12} />
+                            </Link>
+                          ) : isOwnerVerified ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenCreateAuction(sim)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[6px] text-xs font-bold bg-[#E4011E] hover:bg-[#B80018] text-white transition-colors cursor-pointer"
+                            >
+                              <Gavel size={12} />
+                              <span>Mở đấu giá</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedSimForVerify(sim)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[6px] text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
+                              title="Xác thực chính chủ với Cổng viễn thông Nhà mạng"
+                            >
+                              <ShieldCheck size={12} />
+                              <span>Xác thực ngay</span>
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -1010,6 +1154,43 @@ export default function OwnedSimsTab({
                     </select>
                   </div>
                 </div>
+
+                {/* 2 trường do AI quyết định: Chỉ hiển thị khi người dùng nhờ AI định giá */}
+                {aiValuationResult && (
+                  <div className="p-3 bg-gradient-to-br from-blue-50/70 via-purple-50/40 to-slate-50/60 rounded-[14px] border border-blue-100/70 space-y-2 animate-fadeIn">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-[#001743] flex items-center gap-1.5">
+                        <Sparkles size={12} className="text-[#E4011E]" />
+                        <span>Định dạng nhịp (AI phát hiện):</span>
+                      </span>
+                      <span className="px-2.5 py-0.5 bg-blue-100 text-blue-900 rounded-full font-bold text-[11px]">
+                        {aiValuationResult.detectedRhythmName || "Nhịp Phổ thông"}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-1 text-xs pt-1 border-t border-blue-100/50">
+                      <span className="font-bold text-[#001743] flex items-center gap-1.5">
+                        <Check size={12} className="text-emerald-600" />
+                        <span>Thể loại số SIM (AI phân loại):</span>
+                      </span>
+                      <div className="flex flex-wrap gap-1.5 mt-0.5">
+                        {aiValuationResult.detectedCategories && aiValuationResult.detectedCategories.length > 0 ? (
+                          aiValuationResult.detectedCategories.map((c, i) => (
+                            <span
+                              key={i}
+                              className="px-2.5 py-0.5 bg-white text-[#001743] border border-blue-200/80 rounded-full text-[11px] font-bold shadow-2xs"
+                            >
+                              {c}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="px-2.5 py-0.5 bg-white text-slate-600 border border-slate-200 rounded-full text-[11px] font-medium">
+                            SIM Phổ thông
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Field 4: Định giá ước tính * (Nâng cấp Shimmer + Skeleton + Pills Tactile) */}
                 <div>
@@ -1409,6 +1590,84 @@ export default function OwnedSimsTab({
             fetchSimsFromDb();
           }}
           onNavigateToEkyc={onNavigateToEkyc}
+          addToast={addToast}
+        />
+      )}
+
+      {/* ── 5. Modal: Xác thực quyền sở hữu SIM (2 bước: SMS OTP + Cổng Viễn thông) ── */}
+      {selectedSimForVerify && (
+        <VerifySimOwnershipModal
+          sim={selectedSimForVerify}
+          isEkycVerified={isEkycVerified}
+          onClose={() => setSelectedSimForVerify(null)}
+          onSuccess={() => {
+            setSelectedSimForVerify(null);
+            fetchSimsFromDb();
+          }}
+          onNavigateToEkyc={onNavigateToEkyc}
+          onOpenCreateAuction={(s: OwnedSim) => {
+            setSelectedSimForVerify(null);
+            handleOpenCreateAuction(s);
+          }}
+          addToast={addToast}
+        />
+      )}
+
+      {/* ── 6. Modal: Xem chi tiết số SIM ── */}
+      {selectedSimForDetail && (
+        <SimDetailModal
+          sim={selectedSimForDetail}
+          onClose={() => setSelectedSimForDetail(null)}
+          onOpenCreateAuction={(s: OwnedSim) => {
+            setSelectedSimForDetail(null);
+            handleOpenCreateAuction(s);
+          }}
+          onOpenVerify={(s: OwnedSim) => {
+            setSelectedSimForDetail(null);
+            setSelectedSimForVerify(s);
+          }}
+          onOpenUpdate={(s: OwnedSim) => {
+            setSelectedSimForDetail(null);
+            setSelectedSimForUpdate(s);
+          }}
+          onOpenDelete={(s: OwnedSim) => {
+            setSelectedSimForDetail(null);
+            setSelectedSimForDelete(s);
+          }}
+          onSimUpdated={(updatedSim: OwnedSim) => {
+            setOwnedSims((prev) =>
+              prev.map((item) => (item.id === updatedSim.id ? updatedSim : item))
+            );
+            setSelectedSimForDetail(updatedSim);
+          }}
+          addToast={addToast}
+        />
+      )}
+
+      {/* ── 7. Modal: Chỉnh sửa thông tin SIM ── */}
+      {selectedSimForUpdate && (
+        <UpdateOwnedSimModal
+          sim={selectedSimForUpdate}
+          formatRhythmsList={formatRhythmsList}
+          categoriesList={categoriesList}
+          onClose={() => setSelectedSimForUpdate(null)}
+          onSuccess={() => {
+            setSelectedSimForUpdate(null);
+            fetchSimsFromDb();
+          }}
+          addToast={addToast}
+        />
+      )}
+
+      {/* ── 8. Modal: Xác nhận xóa SIM ── */}
+      {selectedSimForDelete && (
+        <DeleteSimConfirmModal
+          sim={selectedSimForDelete}
+          onClose={() => setSelectedSimForDelete(null)}
+          onSuccess={() => {
+            setSelectedSimForDelete(null);
+            fetchSimsFromDb();
+          }}
           addToast={addToast}
         />
       )}

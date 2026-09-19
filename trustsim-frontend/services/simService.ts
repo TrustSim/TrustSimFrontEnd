@@ -125,10 +125,13 @@ export interface MySimItemDto {
   id: string;
   phoneNumber: string;
   simStatus: SimStatus;
+  price?: number;
   carrierName: string;
   carrierCode: string;
   carrierLogo: string;
+  phonePrefixId?: string;
   prefixValue: string;
+  formatRhythmId?: string;
   formatRhythmName: string;
   categoryNames: string[];
   ownerId?: string;
@@ -141,6 +144,7 @@ export interface RegisterSimPayload {
   formatRhythmId: string;
   phonePrefixId?: string;
   categoryIds?: string[];
+  price?: number;
 }
 
 export interface FormatRhythmItemDto {
@@ -212,10 +216,12 @@ export interface AdminSimItemDto {
   id: string;
   phoneNumber: string;
   simStatus: SimStatus;
+  price?: number;
   carrierName: string;
   carrierCode: string;
   carrierLogo: string;
   prefixValue: string;
+  formatRhythmId?: string;
   formatRhythmName: string;
   categoryNames: string[];
   ownerId?: string;
@@ -416,6 +422,7 @@ export interface UpdateSimPayload {
   phonePrefixId?: string;
   formatRhythmId?: string;
   categoryIds?: string[];
+  price?: number;
 }
 
 /**
@@ -474,7 +481,7 @@ export async function getSimDetail(id: string): Promise<SimDetailDto> {
 export async function updateSim(id: string, payload: UpdateSimPayload): Promise<SimNumberDto> {
   const res = await apiFetch<SimNumberDto>(`/Sims/${id}`, {
     method: "PUT",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ id, ...payload }),
   });
   if (!res.data) {
     throw new Error(res.message || "Không thể cập nhật số SIM.");

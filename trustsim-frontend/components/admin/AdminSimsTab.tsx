@@ -773,7 +773,7 @@ export function AdminSimsTab() {
                 carrierName={activeSim.carrierName}
                 categoryName={activeSim.categoryNames?.[0] || "Số đẹp"}
                 patternDesc={`Định dạng: ${activeSim.formatRhythmName || "Chuẩn viễn thông"}`}
-                price={0}
+                price={activeSim.price ?? 0}
                 badgeText={getSimStatusLabel(activeSim.simStatus)}
               />
 
