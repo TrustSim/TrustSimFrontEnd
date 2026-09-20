@@ -922,7 +922,7 @@ export function AdminDocumentsTab() {
                 </div>
 
                 <div className="mt-3">
-                  <FormField label="Phân loại tri thức RAG" required>
+                  <FormField label="Phân loại tri thức AI" required>
                     <select
                       value={formDocType}
                       onChange={(e) => setFormDocType(e.target.value as DocumentTypeEnum)}
@@ -948,7 +948,7 @@ export function AdminDocumentsTab() {
                 <FormField
                   label="Đường dẫn URL bài viết / tài liệu"
                   required
-                  hint="Hệ thống sẽ tự động cào văn bản, làm sạch HTML và nhúng vector vào kho RAG."
+                  hint="Hệ thống sẽ tự động đọc nội dung bài viết, trích xuất dữ liệu và nạp vào bộ nhớ AI."
                 >
                   <input
                     type="url"
@@ -973,7 +973,7 @@ export function AdminDocumentsTab() {
                 </div>
 
                 <div className="mt-3">
-                  <FormField label="Phân loại tri thức RAG" required>
+                  <FormField label="Phân loại tri thức AI" required>
                     <select
                       value={formDocType}
                       onChange={(e) => setFormDocType(e.target.value as DocumentTypeEnum)}
@@ -1056,9 +1056,9 @@ export function AdminDocumentsTab() {
                     {drawerMode === "edit"
                       ? "Lưu thay đổi"
                       : activeTab === "upload"
-                        ? "Tải lên & Xử lý RAG"
+                        ? "Tải lên & Nạp vào AI"
                         : activeTab === "ingest"
-                          ? "Nạp & Phân tích Vector"
+                          ? "Nạp dữ liệu cho AI"
                           : "Tạo tài liệu"}
                   </span>
                 )}
@@ -1068,7 +1068,7 @@ export function AdminDocumentsTab() {
         </form>
       </RightDrawer>
 
-      {/* ─── 6. Status Detail Modal (RAG Vector Chunks Diagnostics) ─── */}
+      {/* ─── 6. Status Detail Modal (Tiến độ nạp tri thức AI) ─── */}
       {statusModalDoc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-fade-in">
           <div className="bg-white border border-slate-200 rounded-xl w-full max-w-lg shadow-2xl p-5 animate-fade-up">
@@ -1079,7 +1079,7 @@ export function AdminDocumentsTab() {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-[#001743]">
-                    Trạng Thái RAG Vector Ingestion
+                    Trạng Thái Tiếp Nhận Dữ Liệu AI
                   </h3>
                   <div className="text-[10px] text-slate-400 font-mono">
                     ID: {statusModalDoc.id}
@@ -1133,25 +1133,25 @@ export function AdminDocumentsTab() {
                     {String(statusData.status) === "INDEXED" || Number(statusData.status) === 3 ? (
                       <>
                         <CheckCircle2 size={12} />
-                        <span>Đã đánh chỉ mục (INDEXED)</span>
+                        <span>Đã nạp xong (Sẵn sàng)</span>
                       </>
                     ) : String(statusData.status) === "PROCESSING" || Number(statusData.status) === 2 ? (
                       <>
                         <Loader2 size={12} className="animate-spin" />
-                        <span>Đang xử lý (PROCESSING)</span>
+                        <span>Đang xử lý dữ liệu...</span>
                       </>
                     ) : String(statusData.status) === "CRAWLING" || Number(statusData.status) === 1 ? (
                       <>
                         <Loader2 size={12} className="animate-spin" />
-                        <span>Đang cào dữ liệu (CRAWLING)</span>
+                        <span>Đang tải nội dung từ liên kết...</span>
                       </>
                     ) : String(statusData.status) === "FAILED" || Number(statusData.status) === 4 ? (
                       <>
                         <AlertCircle size={12} />
-                        <span>Thất bại (FAILED)</span>
+                        <span>Chưa nạp được (Có lỗi)</span>
                       </>
                     ) : (
-                      <span>Chờ xử lý (PENDING)</span>
+                      <span>Đang chờ xử lý</span>
                     )}
                   </span>
                 </div>
@@ -1159,13 +1159,13 @@ export function AdminDocumentsTab() {
                 {/* Metrics Grid */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <div className="text-[11px] text-slate-500 font-medium">Số đoạn trích (Chunks):</div>
+                    <div className="text-[11px] text-slate-500 font-medium">Số đoạn nội dung trích xuất:</div>
                     <div className="text-lg font-bold text-[#001743] font-mono mt-0.5">
                       {statusData.totalChunks?.toLocaleString("vi-VN") || 0}
                     </div>
                   </div>
                   <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <div className="text-[11px] text-slate-500 font-medium">Tổng số Tokens:</div>
+                    <div className="text-[11px] text-slate-500 font-medium">Dung lượng từ vựng AI:</div>
                     <div className="text-lg font-bold text-[#001743] font-mono mt-0.5">
                       {statusData.totalTokens?.toLocaleString("vi-VN") || 0}
                     </div>
@@ -1203,7 +1203,7 @@ export function AdminDocumentsTab() {
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
                     >
                       <RotateCw size={13} className={reingesting ? "animate-spin" : ""} />
-                      <span>{reingesting ? "Đang nạp lại..." : "Thử nạp lại (Re-ingest)"}</span>
+                      <span>{reingesting ? "Đang nạp lại..." : "Nạp lại dữ liệu cho AI"}</span>
                     </button>
                   )}
                   <button

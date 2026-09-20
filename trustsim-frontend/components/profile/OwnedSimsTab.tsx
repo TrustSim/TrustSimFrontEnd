@@ -701,10 +701,10 @@ export default function OwnedSimsTab({
         }
       }
 
-      // Tự động cuộn mượt xuống thẻ kết quả định giá AI để không bị che khuất
+      // Tự động cuộn mượt đưa thẻ kết quả định giá AI vào trung tâm màn hình
       setTimeout(() => {
-        aiValuationCardRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }, 150);
+        aiValuationCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 100);
     } catch (err: any) {
       addToast({
         type: "error",
@@ -1110,9 +1110,9 @@ export default function OwnedSimsTab({
               </button>
             </div>
 
-            <form onSubmit={handleAddPersonalSim} className="flex flex-col flex-1 min-h-0">
+            <form onSubmit={handleAddPersonalSim} className="flex flex-col flex-1 min-h-0 overflow-hidden">
               {/* Vùng nội dung cuộn (Scrollable Form Body) */}
-              <div className="p-5 pb-10 overflow-y-auto flex-1 flex flex-col gap-4 scroll-smooth">
+              <div className="p-5 pb-16 overflow-y-auto flex-1 flex flex-col gap-4 scroll-smooth">
                 {/* Field 1: Số điện thoại SIM * */}
                 <div>
                   <label className="block text-xs font-bold text-[#001743] mb-1.5">
@@ -1159,20 +1159,104 @@ export default function OwnedSimsTab({
                   </div>
                 </div>
 
-                {/* 2 trường do AI quyết định: Chỉ hiển thị khi người dùng nhờ AI định giá */}
-                {aiValuationResult && (
-                  <div className="p-3 bg-gradient-to-br from-blue-50/70 via-purple-50/40 to-slate-50/60 rounded-[14px] border border-blue-100/70 space-y-2 animate-fadeIn">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-[#001743] flex items-center gap-1.5">
-                        <Sparkles size={12} className="text-[#E4011E]" />
-                        <span>Định dạng nhịp (AI phát hiện):</span>
-                      </span>
-                      <span className="px-2.5 py-0.5 bg-blue-100 text-blue-900 rounded-full font-bold text-[11px]">
-                        {aiValuationResult.detectedRhythmName || "Nhịp Phổ thông"}
+                {/* Trạng thái AI Thinking / Skeleton Loading */}
+                {loadingAiValuation && (
+                  <div className="p-3.5 bg-gradient-to-r from-blue-50/70 via-purple-50/40 to-slate-50/70 rounded-[14px] border border-purple-100/60 animate-pulse transition-all">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles size={13} className="text-[#E4011E] animate-spin" />
+                      <span className="text-xs font-bold text-[#001743]">
+                        AI đang phân tích thế số, phong thủy và định giá thị trường...
                       </span>
                     </div>
-                    <div className="flex flex-col gap-1 text-xs pt-1 border-t border-blue-100/50">
-                      <span className="font-bold text-[#001743] flex items-center gap-1.5">
+                    <div className="space-y-2">
+                      <div className="h-3 bg-slate-200/80 rounded-full w-3/4" />
+                      <div className="h-2.5 bg-slate-200/60 rounded-full w-1/2" />
+                    </div>
+                  </div>
+                )}
+
+                {/* THẺ KẾT QUẢ AI ĐỊNH GIÁ HỢP NHẤT: Đặt ngay trên trường Định giá ước tính, hiển thị đầy đủ, không bị che khuất */}
+                {aiValuationResult && !loadingAiValuation && (
+                  <div
+                    ref={aiValuationCardRef}
+                    className="p-4 bg-gradient-to-br from-blue-50/90 via-indigo-50/40 to-slate-50/80 rounded-[16px] border border-blue-200/80 shadow-xs relative overflow-hidden transition-all animate-fadeIn space-y-3"
+                  >
+                    {/* Header card: S-Logo + Nhịp phát hiện + Nút Xem chi tiết phân tích + Nút Đóng */}
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <img
+                          src="/logo/S-Logo.png"
+                          alt="TrustSim AI"
+                          className="w-4 h-4 object-contain shrink-0"
+                        />
+                        <span className="text-xs font-bold text-[#001743] shrink-0">
+                          Kết quả AI định giá
+                        </span>
+                        {aiValuationResult.detectedRhythmName && (
+                          <span className="px-2.5 py-0.5 bg-blue-100 text-blue-900 rounded-full text-[10.5px] font-bold truncate">
+                            {aiValuationResult.detectedRhythmName}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setShowAiDetailModal(true)}
+                          className="inline-flex items-center gap-1 px-3 py-1 bg-white hover:bg-red-50 text-[#001743] hover:text-[#E4011E] border border-blue-200/90 rounded-full text-[11px] font-extrabold transition-all shadow-2xs cursor-pointer active:scale-95"
+                          title="Mở xem báo cáo phân tích định giá chi tiết"
+                        >
+                          <Sparkles size={12} className="text-[#E4011E]" />
+                          <span>Chi tiết phân tích</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAiValuationResult(null)}
+                          className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-200/60 transition-colors cursor-pointer"
+                          title="Đóng kết quả định giá"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Mức giá AI đề xuất & Khoảng giá thị trường */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-white/95 p-3 rounded-[12px] border border-blue-100 shadow-2xs">
+                      <div>
+                        <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Mức giá AI đề xuất:</div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-base font-black text-[#E4011E] font-mono">
+                            {aiValuationResult.suggestedPrice?.toLocaleString("vi-VN")} ₫
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (aiValuationResult.suggestedPrice) {
+                                const price = Math.round(aiValuationResult.suggestedPrice);
+                                setNewEstimatedValueRaw(price);
+                                setNewEstimatedValueFormatted(price.toLocaleString("vi-VN"));
+                              }
+                            }}
+                            title="Áp dụng mức giá này vào ô nhập"
+                            className="px-2.5 py-0.5 bg-[#001743] hover:bg-[#00266B] text-white rounded-full text-[10px] font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1 active:scale-95 shrink-0"
+                          >
+                            <Check size={10} strokeWidth={2.5} />
+                            <span>Áp dụng</span>
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Khoảng giá thị trường:</div>
+                        <div className="text-xs font-bold text-slate-700 font-mono mt-1">
+                          {aiValuationResult.minPrice ? aiValuationResult.minPrice.toLocaleString("vi-VN") : "---"} ₫
+                          {" – "}
+                          {aiValuationResult.maxPrice ? aiValuationResult.maxPrice.toLocaleString("vi-VN") : "---"} ₫
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Thể loại số SIM do AI phân loại */}
+                    <div className="flex flex-col gap-1 text-xs pt-2 border-t border-blue-100/60">
+                      <span className="font-bold text-[#001743] flex items-center gap-1.5 text-[11px]">
                         <Check size={12} className="text-emerald-600" />
                         <span>Thể loại số SIM (AI phân loại):</span>
                       </span>
@@ -1193,6 +1277,43 @@ export default function OwnedSimsTab({
                         )}
                       </div>
                     </div>
+
+                    {/* Dòng trạng thái đã điền & Accordion nhận định */}
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-blue-100/60 text-[11px]">
+                      <span className="text-emerald-700 font-bold flex items-center gap-1">
+                        <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
+                        <span>Đã tự động điền vào ô định giá bên dưới</span>
+                      </span>
+
+                      {aiValuationResult.valuationReasoning && (
+                        <button
+                          type="button"
+                          onClick={() => setShowAiAnalysisDetail(!showAiAnalysisDetail)}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 hover:text-blue-900 cursor-pointer transition-colors"
+                        >
+                          <span>{showAiAnalysisDetail ? "Thu gọn nhận định" : "Xem nhận định"}</span>
+                          {showAiAnalysisDetail ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Accordion Content: Nhận định thẩm định */}
+                    {showAiAnalysisDetail && aiValuationResult.valuationReasoning && (
+                      <div className="mt-2 p-2.5 bg-white/90 rounded-[10px] border border-blue-100/70 animate-fadeIn">
+                        <div className="text-[10px] font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                          <Sparkles size={11} className="text-[#E4011E]" />
+                          <span>Chi tiết nhận định thẩm định:</span>
+                        </div>
+                        <ul className="space-y-1.5 text-[11px] text-slate-600">
+                          {getReasoningBullets(aiValuationResult.valuationReasoning).map((bullet, idx) => (
+                            <li key={idx} className="flex items-start gap-1.5 leading-relaxed">
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0 mt-1.5" />
+                              <span>{bullet}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1211,7 +1332,7 @@ export default function OwnedSimsTab({
                           title="Mở xem chi tiết phân tích định giá"
                         >
                           <Sparkles size={11} className="text-[#E4011E]" />
-                          <span>Chi tiết định giá</span>
+                          <span>Chi tiết phân tích</span>
                         </button>
                       )}
                       {/* Nút Nhờ AI định giá: Gradient viền nhẹ + Shimmer effect */}
@@ -1232,7 +1353,7 @@ export default function OwnedSimsTab({
                           <>
                             <Sparkles size={12} className="text-[#E4011E]" />
                             <span className="bg-gradient-to-r from-[#E4011E] to-[#7C3AED] bg-clip-text text-transparent">
-                              Nhờ AI định giá
+                              {aiValuationResult ? "Định giá lại" : "Nhờ AI định giá"}
                             </span>
                           </>
                         )}
@@ -1274,139 +1395,6 @@ export default function OwnedSimsTab({
                     ))}
                   </div>
                 </div>
-
-                {/* Trạng thái AI Thinking / Skeleton Loading */}
-                {loadingAiValuation && (
-                  <div className="p-3.5 bg-gradient-to-r from-blue-50/70 via-purple-50/40 to-slate-50/70 rounded-[14px] border border-purple-100/60 animate-pulse transition-all">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Sparkles size={13} className="text-[#E4011E] animate-spin" />
-                      <span className="text-xs font-bold text-[#001743]">
-                        AI đang phân tích thế số, phong thủy và định giá thị trường...
-                      </span>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="h-3 bg-slate-200/80 rounded-full w-3/4" />
-                      <div className="h-2.5 bg-slate-200/60 rounded-full w-1/2" />
-                    </div>
-                  </div>
-                )}
-
-                {/* Thẻ hiển thị kết quả định giá AI bền vững (Gọn gàng, không bị vỡ layout, có Accordion) */}
-                {aiValuationResult && !loadingAiValuation && (
-                  <div
-                    ref={aiValuationCardRef}
-                    className="p-3.5 bg-gradient-to-br from-blue-50/90 via-indigo-50/40 to-slate-50/80 rounded-[16px] border border-blue-100/70 shadow-xs relative overflow-hidden transition-all animate-fadeIn"
-                  >
-                    {/* Header card with S-Logo & Rhythm Badge & Action Buttons */}
-                    <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <img
-                          src="/logo/S-Logo.png"
-                          alt="TrustSim AI"
-                          className="w-4 h-4 object-contain shrink-0"
-                        />
-                        <span className="text-xs font-bold text-[#001743] shrink-0">
-                          Kết quả AI định giá
-                        </span>
-                        {aiValuationResult.detectedRhythmName && (
-                          <span className="px-2 py-0.5 bg-blue-100/80 text-blue-800 rounded-full text-[10px] font-semibold truncate">
-                            {aiValuationResult.detectedRhythmName}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => setShowAiDetailModal(true)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-blue-50 text-[#001743] hover:text-[#E4011E] border border-blue-200/80 rounded-full text-[10px] font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
-                          title="Mở xem chi tiết phân tích định giá"
-                        >
-                          <Sparkles size={11} className="text-[#E4011E]" />
-                          <span>Chi tiết phân tích</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setAiValuationResult(null)}
-                          className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-200/50 transition-colors cursor-pointer"
-                          title="Đóng kết quả định giá"
-                        >
-                          <X size={13} />
-                        </button>
-                    </div>
-
-                    {/* Giá đề xuất & khoảng giá thị trường (Gọn gàng 2 cột, kèm nút áp dụng inline) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-white/90 p-2.5 rounded-[12px] border border-blue-50/80">
-                      <div>
-                        <div className="text-[10px] text-slate-500 font-medium">Mức giá AI đề xuất:</div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-sm font-extrabold text-[#E4011E] font-mono">
-                            {aiValuationResult.suggestedPrice?.toLocaleString("vi-VN")} ₫
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (aiValuationResult.suggestedPrice) {
-                                const price = Math.round(aiValuationResult.suggestedPrice);
-                                setNewEstimatedValueRaw(price);
-                                setNewEstimatedValueFormatted(price.toLocaleString("vi-VN"));
-                              }
-                            }}
-                            title="Áp dụng lại mức giá này vào ô nhập"
-                            className="px-2 py-0.5 bg-[#001743] hover:bg-[#00266B] text-white rounded-full text-[10px] font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1 active:scale-95 shrink-0"
-                          >
-                            <Check size={10} />
-                            <span>Áp dụng</span>
-                          </button>
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] text-slate-500 font-medium">Khoảng giá thị trường:</div>
-                        <div className="text-xs font-bold text-slate-700 font-mono mt-1">
-                          {aiValuationResult.minPrice ? aiValuationResult.minPrice.toLocaleString("vi-VN") : "---"} ₫
-                          {" – "}
-                          {aiValuationResult.maxPrice ? aiValuationResult.maxPrice.toLocaleString("vi-VN") : "---"} ₫
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Trạng thái đã tự động điền & Nút Accordion */}
-                    <div className="flex items-center justify-between gap-2 mt-2 pt-1.5 border-t border-blue-100/50 text-[10px]">
-                      <span className="text-emerald-700 font-medium flex items-center gap-1">
-                        <CheckCircle2 size={12} className="text-emerald-600 shrink-0" />
-                        <span>Đã tự động điền vào ô định giá</span>
-                      </span>
-
-                      {aiValuationResult.valuationReasoning && (
-                        <button
-                          type="button"
-                          onClick={() => setShowAiAnalysisDetail(!showAiAnalysisDetail)}
-                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 hover:text-blue-900 cursor-pointer transition-colors"
-                        >
-                          <span>{showAiAnalysisDetail ? "Thu gọn phân tích" : "Xem chi tiết phân tích"}</span>
-                          {showAiAnalysisDetail ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Accordion Content: Ép khuôn các gạch đầu dòng ngắn gọn (Không còn Wall of Text) */}
-                    {showAiAnalysisDetail && aiValuationResult.valuationReasoning && (
-                      <div className="mt-2 p-2.5 bg-white/80 rounded-[10px] border border-blue-100/60 animate-fadeIn">
-                        <div className="text-[10px] font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
-                          <Sparkles size={11} className="text-[#E4011E]" />
-                          <span>Chi tiết nhận định thẩm định:</span>
-                        </div>
-                        <ul className="space-y-1.5 text-[11px] text-slate-600">
-                          {getReasoningBullets(aiValuationResult.valuationReasoning).map((bullet, idx) => (
-                            <li key={idx} className="flex items-start gap-1.5 leading-relaxed">
-                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0 mt-1.5" />
-                              <span>{bullet}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                )}
 
 
               </div>
