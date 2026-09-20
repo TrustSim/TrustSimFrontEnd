@@ -4,6 +4,7 @@ import React from "react";
 import { usePathname } from "next/navigation";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import { AiConsultantChatWidget } from "@/components/ai/AiConsultantChatWidget";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -28,6 +29,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       <Navbar />
       <main style={{ flex: 1 }}>{children}</main>
       <Footer />
+      <AiConsultantChatWidget />
     </div>
   );
 };

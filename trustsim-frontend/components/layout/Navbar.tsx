@@ -259,6 +259,59 @@ export const Navbar: React.FC<NavbarProps> = () => {
               }}>MỚI</span>
             </Link>
 
+            {/* Trợ Lý AI Chatbot */}
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("open_ai_chat"));
+                }
+              }}
+              style={{
+                padding: "8px 16px",
+                borderRadius: 6,
+                color: "#001743",
+                background: "transparent",
+                fontSize: 14,
+                fontWeight: 600,
+                border: "none",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+                transition: "color 0.15s, background 0.15s",
+                whiteSpace: "nowrap",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "#E4011E";
+                e.currentTarget.style.background = "rgba(228,1,30,0.05)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "#001743";
+                e.currentTarget.style.background = "transparent";
+              }}
+            >
+              <span style={{ color: "#E4011E", display: "flex" }}>
+                <Icons.Sparkles />
+              </span>
+              <span>Trợ Lý AI</span>
+              <span
+                style={{
+                  fontSize: 9,
+                  fontWeight: 800,
+                  color: "#E4011E",
+                  background: "#FEE2E2",
+                  padding: "1px 5px",
+                  borderRadius: 99,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.02em",
+                  lineHeight: 1.4,
+                }}
+              >
+                CHAT
+              </span>
+            </button>
+
             {/* Hỗ Trợ dropdown */}
             <div ref={supportRef} style={{ position: "relative" }}>
               <button
@@ -432,6 +485,32 @@ export const Navbar: React.FC<NavbarProps> = () => {
           >
             Định Giá SIM bằng AI
           </Link>
+          <button
+            type="button"
+            onClick={() => {
+              setMobileOpen(false);
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("open_ai_chat"));
+              }
+            }}
+            style={{
+              padding: "12px 16px",
+              borderRadius: 6,
+              color: "#E4011E",
+              fontSize: 15,
+              fontWeight: 700,
+              textAlign: "left",
+              background: "#FEF2F2",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <span>Trợ Lý AI (Tư Vấn SIM & Phong Thủy)</span>
+            <span style={{ fontSize: 10, padding: "2px 6px", background: "#FEE2E2", borderRadius: 99, color: "#E4011E", fontWeight: 800 }}>CHAT</span>
+          </button>
           <Link
             href="/#how-it-works"
             onClick={() => setMobileOpen(false)}
