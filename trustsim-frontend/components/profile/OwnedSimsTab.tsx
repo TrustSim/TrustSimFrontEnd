@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
   Table as TableIcon,
@@ -628,6 +628,7 @@ export default function OwnedSimsTab({
   const [aiValuationResult, setAiValuationResult] = useState<SimValuationDto | null>(null);
   const [showAiAnalysisDetail, setShowAiAnalysisDetail] = useState(false);
   const [showAiDetailModal, setShowAiDetailModal] = useState(false);
+  const aiValuationCardRef = useRef<HTMLDivElement | null>(null);
 
   const handleOpenAddModal = () => {
     setIsAddModalOpen(true);
@@ -699,6 +700,11 @@ export default function OwnedSimsTab({
           setSelectedCategoryIds((prev) => Array.from(new Set([...prev, ...matchedCatIds])));
         }
       }
+
+      // Tự động cuộn mượt xuống thẻ kết quả định giá AI để không bị che khuất
+      setTimeout(() => {
+        aiValuationCardRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 150);
     } catch (err: any) {
       addToast({
         type: "error",
@@ -867,11 +873,10 @@ export default function OwnedSimsTab({
             <button
               type="button"
               onClick={() => setViewMode("table")}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                viewMode === "table"
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${viewMode === "table"
                   ? "bg-white text-[#001743] shadow-xs"
                   : "text-slate-500 hover:text-slate-800"
-              }`}
+                }`}
               title="Chuyển sang chế độ xem bảng chi tiết"
             >
               <TableIcon size={14} strokeWidth={1.75} />
@@ -880,11 +885,10 @@ export default function OwnedSimsTab({
             <button
               type="button"
               onClick={() => setViewMode("grid")}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                viewMode === "grid"
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${viewMode === "grid"
                   ? "bg-[#001743] text-white shadow-xs"
                   : "text-slate-500 hover:text-slate-800"
-              }`}
+                }`}
               title="Chuyển sang chế độ xem thẻ SIM Luxury độc đáo"
             >
               <LayoutGrid size={14} strokeWidth={1.75} />
@@ -1108,7 +1112,7 @@ export default function OwnedSimsTab({
 
             <form onSubmit={handleAddPersonalSim} className="flex flex-col flex-1 min-h-0">
               {/* Vùng nội dung cuộn (Scrollable Form Body) */}
-              <div className="p-5 overflow-y-auto flex-1 flex flex-col gap-4">
+              <div className="p-5 pb-10 overflow-y-auto flex-1 flex flex-col gap-4 scroll-smooth">
                 {/* Field 1: Số điện thoại SIM * */}
                 <div>
                   <label className="block text-xs font-bold text-[#001743] mb-1.5">
@@ -1194,33 +1198,46 @@ export default function OwnedSimsTab({
 
                 {/* Field 4: Định giá ước tính * (Nâng cấp Shimmer + Skeleton + Pills Tactile) */}
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1.5">
                     <label className="block text-xs font-bold text-[#001743]">
                       Định giá ước tính <span className="text-red-600">*</span>
                     </label>
-                    {/* Nút Nhờ AI định giá: Gradient viền nhẹ + Shimmer effect */}
-                    <button
-                      type="button"
-                      onClick={handleAiEstimateForNewSim}
-                      disabled={loadingAiValuation}
-                      className="relative overflow-hidden group inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-red-50 via-purple-50 to-blue-50 hover:from-red-100 hover:to-purple-100 border border-red-200/80 text-[#001743] rounded-full text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer shadow-2xs active:scale-95"
-                    >
-                      {/* Hiệu ứng tia sáng lướt qua (Shimmer effect) */}
-                      <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/70 to-transparent pointer-events-none" />
-                      {loadingAiValuation ? (
-                        <>
-                          <RefreshCw size={11} className="animate-spin text-[#E4011E]" />
-                          <span>Đang phân tích...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles size={12} className="text-[#E4011E]" />
-                          <span className="bg-gradient-to-r from-[#E4011E] to-[#7C3AED] bg-clip-text text-transparent">
-                            Nhờ AI định giá
-                          </span>
-                        </>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {aiValuationResult && (
+                        <button
+                          type="button"
+                          onClick={() => setShowAiDetailModal(true)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-blue-50 text-[#001743] hover:text-[#E4011E] border border-blue-200/80 rounded-full text-[10px] font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
+                          title="Mở xem chi tiết phân tích định giá"
+                        >
+                          <Sparkles size={11} className="text-[#E4011E]" />
+                          <span>Chi tiết định giá</span>
+                        </button>
                       )}
-                    </button>
+                      {/* Nút Nhờ AI định giá: Gradient viền nhẹ + Shimmer effect */}
+                      <button
+                        type="button"
+                        onClick={handleAiEstimateForNewSim}
+                        disabled={loadingAiValuation}
+                        className="relative overflow-hidden group inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-red-50 via-purple-50 to-blue-50 hover:from-red-100 hover:to-purple-100 border border-red-200/80 text-[#001743] rounded-full text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer shadow-2xs active:scale-95"
+                      >
+                        {/* Hiệu ứng tia sáng lướt qua (Shimmer effect) */}
+                        <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/70 to-transparent pointer-events-none" />
+                        {loadingAiValuation ? (
+                          <>
+                            <RefreshCw size={11} className="animate-spin text-[#E4011E]" />
+                            <span>Đang phân tích...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles size={12} className="text-[#E4011E]" />
+                            <span className="bg-gradient-to-r from-[#E4011E] to-[#7C3AED] bg-clip-text text-transparent">
+                              Nhờ AI định giá
+                            </span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="relative flex items-center">
@@ -1276,9 +1293,12 @@ export default function OwnedSimsTab({
 
                 {/* Thẻ hiển thị kết quả định giá AI bền vững (Gọn gàng, không bị vỡ layout, có Accordion) */}
                 {aiValuationResult && !loadingAiValuation && (
-                  <div className="p-3.5 bg-gradient-to-br from-blue-50/90 via-indigo-50/40 to-slate-50/80 rounded-[16px] border border-blue-100/70 shadow-xs relative overflow-hidden transition-all animate-fadeIn">
+                  <div
+                    ref={aiValuationCardRef}
+                    className="p-3.5 bg-gradient-to-br from-blue-50/90 via-indigo-50/40 to-slate-50/80 rounded-[16px] border border-blue-100/70 shadow-xs relative overflow-hidden transition-all animate-fadeIn"
+                  >
                     {/* Header card with S-Logo & Rhythm Badge & Action Buttons */}
-                    <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
                       <div className="flex items-center gap-2 min-w-0">
                         <img
                           src="/logo/S-Logo.png"
@@ -1312,7 +1332,6 @@ export default function OwnedSimsTab({
                         >
                           <X size={13} />
                         </button>
-                      </div>
                     </div>
 
                     {/* Giá đề xuất & khoảng giá thị trường (Gọn gàng 2 cột, kèm nút áp dụng inline) */}
@@ -1389,13 +1408,7 @@ export default function OwnedSimsTab({
                   </div>
                 )}
 
-                {/* Thông báo eKYC: Mỏng lại, pastel trong suốt, đặt sát trên thanh Sticky Footer */}
-                <div className="p-2.5 px-3 bg-amber-50/50 rounded-[12px] text-[11px] text-amber-900 leading-relaxed flex items-center gap-2 mt-1">
-                  <AlertCircle size={14} className="text-amber-600 shrink-0" />
-                  <span>
-                    SIM mới thêm cần được <strong>xác thực chính chủ (eKYC)</strong> trước khi có thể mở phiên đấu giá trên sàn.
-                  </span>
-                </div>
+
               </div>
 
               {/* Sticky Footer: Cố định ở đáy, không bị che khuất hay cuộn mất */}
