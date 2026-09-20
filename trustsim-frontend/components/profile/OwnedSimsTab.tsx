@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
   Table as TableIcon,
@@ -12,6 +12,7 @@ import {
   Lock,
   X,
   ChevronDown,
+  ChevronUp,
   ShieldCheck,
   Gavel,
   ArrowRight,
@@ -19,9 +20,19 @@ import {
   Smartphone,
   AlertCircle,
   HelpCircle,
+  CheckCircle2,
+  Eye,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { ToastMessage } from "@/components/ui/Toast";
 import { OwnedSim } from "./types";
+import CreateAuctionWizardModal from "./CreateAuctionWizardModal";
+import VerifySimOwnershipModal from "./VerifySimOwnershipModal";
+import SimDetailModal from "./SimDetailModal";
+import UpdateOwnedSimModal from "./UpdateOwnedSimModal";
+import DeleteSimConfirmModal from "./DeleteSimConfirmModal";
+import { aiValuationService, SimValuationDto } from "@/services/aiValuationService";
 import {
   getMySims,
   registerSim,
@@ -31,6 +42,7 @@ import {
   FormatRhythmItemDto,
 } from "@/services/simService";
 import { getCarriers, SimCarrierDto } from "@/services/carrierService";
+import { getCategories, SimCategoryDto } from "@/services/categoryService";
 
 interface OwnedSimsTabProps {
   isEkycVerified: boolean;
@@ -46,46 +58,6 @@ const DEFAULT_CARRIERS: SimCarrierDto[] = [
   { id: "c4", carrierName: "Vietnamobile", carrierCode: "VNM", logoImg: "" },
   { id: "c5", carrierName: "Wintel", carrierCode: "WTL", logoImg: "" },
   { id: "c6", carrierName: "Itelecom", carrierCode: "ITL", logoImg: "" },
-];
-
-// Initial seed sims when DB is empty for demo experience
-const INITIAL_DEMO_SIMS: OwnedSim[] = [
-  {
-    id: "sim-demo-1",
-    simNumber: "0352 468 024",
-    carrier: "Viettel",
-    carrierCode: "VTT",
-    simType: "Trả trước",
-    acquiredFrom: "PLATFORM_AUCTION",
-    ownershipStatus: "VERIFIED_OWNER",
-    estimatedValue: 8_500_000,
-    createdDate: "05/09/2026",
-    formatRhythmName: "Số tiến đều",
-  },
-  {
-    id: "sim-demo-2",
-    simNumber: "0901 888 999",
-    carrier: "MobiFone",
-    carrierCode: "MBF",
-    simType: "Trả sau",
-    acquiredFrom: "PERSONAL_IMPORT",
-    ownershipStatus: "UNVERIFIED",
-    estimatedValue: 35_000_000,
-    createdDate: "09/09/2026",
-    formatRhythmName: "Tam hoa kép",
-  },
-  {
-    id: "sim-demo-3",
-    simNumber: "0888 555 666",
-    carrier: "VinaPhone",
-    carrierCode: "VNP",
-    simType: "Trả trước",
-    acquiredFrom: "PERSONAL_IMPORT",
-    ownershipStatus: "VERIFIED_OWNER",
-    estimatedValue: 18_000_000,
-    createdDate: "08/09/2026",
-    formatRhythmName: "Tam hoa liên hoàn",
-  },
 ];
 
 /* ─── Gold SIM Microchip (Realistic Vector Asset) ────────────────────────── */
@@ -271,11 +243,17 @@ function CarrierDropdownSelect({
 function OwnedSimHeroCard({
   sim,
   onOpenAuction,
-  onNavigateToEkyc,
+  onOpenVerify,
+  onOpenDetail,
+  onOpenUpdate,
+  onOpenDelete,
 }: {
   sim: OwnedSim;
   onOpenAuction: (s: OwnedSim) => void;
-  onNavigateToEkyc: () => void;
+  onOpenVerify: (s: OwnedSim) => void;
+  onOpenDetail: (s: OwnedSim) => void;
+  onOpenUpdate: (s: OwnedSim) => void;
+  onOpenDelete: (s: OwnedSim) => void;
 }) {
   const isOwnerVerified = sim.ownershipStatus === "VERIFIED_OWNER";
   const rawCarrier = (sim.carrier || "").toUpperCase();
@@ -420,11 +398,37 @@ function OwnedSimHeroCard({
             </span>
           </div>
 
-          <div>
+          <div className="flex items-center gap-1.5">
+            {/* Quick Action Icons: View, Edit, Delete */}
+            <button
+              type="button"
+              onClick={() => onOpenDetail(sim)}
+              className="p-1.5 rounded-[6px] bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              title="Xem chi tiết số SIM"
+            >
+              <Eye size={13} />
+            </button>
+            <button
+              type="button"
+              onClick={() => onOpenUpdate(sim)}
+              className="p-1.5 rounded-[6px] bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              title="Chỉnh sửa thông tin SIM"
+            >
+              <Pencil size={13} />
+            </button>
+            <button
+              type="button"
+              onClick={() => onOpenDelete(sim)}
+              className="p-1.5 rounded-[6px] bg-white/10 hover:bg-rose-500/25 text-slate-300 hover:text-rose-300 transition-colors cursor-pointer"
+              title="Xóa SIM khỏi kho"
+            >
+              <Trash2 size={13} />
+            </button>
+
             {sim.hasActiveAuction ? (
               <Link
                 href={`/auctions/${sim.activeAuctionId || 1}`}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-[6px] text-xs font-bold bg-white/10 hover:bg-white/15 border border-white/20 text-white transition-colors shadow-sm"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-xs font-bold bg-white/10 hover:bg-white/15 border border-white/20 text-white transition-colors shadow-sm"
               >
                 <span>Đang đấu giá</span>
                 <ArrowRight size={13} />
@@ -437,7 +441,7 @@ function OwnedSimHeroCard({
                   background: "linear-gradient(135deg, #FDE047 0%, #EAB308 50%, #CA8A04 100%)",
                   boxShadow: "0 4px 14px rgba(234, 179, 8, 0.35)",
                 }}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-[6px] text-xs font-black text-[#001743] hover:brightness-105 active:scale-95 transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-xs font-black text-[#001743] hover:brightness-105 active:scale-95 transition-all cursor-pointer"
               >
                 <Gavel size={13} className="text-[#001743]" strokeWidth={2.2} />
                 <span>Mở đấu giá</span>
@@ -445,9 +449,9 @@ function OwnedSimHeroCard({
             ) : (
               <button
                 type="button"
-                onClick={onNavigateToEkyc}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-[6px] text-xs font-bold bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 hover:border-yellow-400 transition-colors cursor-pointer"
-                title="Cần xác minh chính chủ để mở phiên đấu giá"
+                onClick={() => onOpenVerify(sim)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-xs font-bold bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 hover:border-yellow-400 transition-colors cursor-pointer"
+                title="Xác thực chính chủ với Cổng viễn thông Nhà mạng"
               >
                 <ShieldCheck size={13} />
                 <span>Xác thực ngay</span>
@@ -468,9 +472,9 @@ export default function OwnedSimsTab({
   addToast,
   onNavigateToEkyc,
 }: OwnedSimsTabProps) {
-  // SIM list state
-  const [ownedSims, setOwnedSims] = useState<OwnedSim[]>(INITIAL_DEMO_SIMS);
-  const [loading, setLoading] = useState(false);
+  // SIM list state (luôn lấy dữ liệu thật từ Database)
+  const [ownedSims, setOwnedSims] = useState<OwnedSim[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // View mode toggle: 'table' vs 'grid' (Hero Cards)
   const [viewMode, setViewMode] = useState<"table" | "grid">("grid");
@@ -478,12 +482,15 @@ export default function OwnedSimsTab({
   // Master data
   const [carriersList, setCarriersList] = useState<SimCarrierDto[]>(DEFAULT_CARRIERS);
   const [formatRhythmsList, setFormatRhythmsList] = useState<FormatRhythmItemDto[]>([]);
+  const [categoriesList, setCategoriesList] = useState<SimCategoryDto[]>([]);
 
   // Modal: Thêm SIM cá nhân
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newSimNumber, setNewSimNumber] = useState("");
   const [selectedCarrier, setSelectedCarrier] = useState<SimCarrierDto | null>(null);
   const [newSimType, setNewSimType] = useState<"Trả trước" | "Trả sau">("Trả trước");
+  const [selectedFormatRhythmId, setSelectedFormatRhythmId] = useState<string>("");
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   // Number masking state for estimated value
   const [newEstimatedValueRaw, setNewEstimatedValueRaw] = useState<number>(10_000_000);
   const [newEstimatedValueFormatted, setNewEstimatedValueFormatted] = useState<string>("10.000.000");
@@ -491,13 +498,18 @@ export default function OwnedSimsTab({
 
   // Modal: Tạo phiên đấu giá
   const [selectedSimForAuction, setSelectedSimForAuction] = useState<OwnedSim | null>(null);
-  const [auctionStartPriceRaw, setAuctionStartPriceRaw] = useState<number>(8_000_000);
-  const [auctionStartPriceFormatted, setAuctionStartPriceFormatted] = useState<string>("8.000.000");
-  const [auctionStepPriceRaw, setAuctionStepPriceRaw] = useState<number>(500_000);
-  const [auctionStepPriceFormatted, setAuctionStepPriceFormatted] = useState<string>("500.000");
-  const [auctionBuyNowPriceRaw, setAuctionBuyNowPriceRaw] = useState<number>(0);
-  const [auctionBuyNowPriceFormatted, setAuctionBuyNowPriceFormatted] = useState<string>("");
-  const [auctionDuration, setAuctionDuration] = useState("24");
+
+  // Modal: Xác thực chính chủ 2 bước
+  const [selectedSimForVerify, setSelectedSimForVerify] = useState<OwnedSim | null>(null);
+
+  // Modal: Xem chi tiết SIM
+  const [selectedSimForDetail, setSelectedSimForDetail] = useState<OwnedSim | null>(null);
+
+  // Modal: Chỉnh sửa SIM
+  const [selectedSimForUpdate, setSelectedSimForUpdate] = useState<OwnedSim | null>(null);
+
+  // Modal: Xóa SIM khỏi kho
+  const [selectedSimForDelete, setSelectedSimForDelete] = useState<OwnedSim | null>(null);
 
   // ─── 1. Load MasterData & Owned SIMs from Database ───────────────────────
   const fetchSimsFromDb = useCallback(async () => {
@@ -511,7 +523,10 @@ export default function OwnedSimsTab({
           carrier: item.carrierName || "Viettel",
           carrierLogo: item.carrierLogo,
           carrierCode: item.carrierCode,
+          formatRhythmId: item.formatRhythmId,
           formatRhythmName: item.formatRhythmName,
+          phonePrefixId: (item as any).phonePrefixId,
+          categoryNames: item.categoryNames || [],
           simType: "Trả trước",
           acquiredFrom:
             (item as any).acquisitionType === "AUCTION_TRANSFER"
@@ -521,17 +536,19 @@ export default function OwnedSimsTab({
             item.verificationStatus === 2 || item.verificationStatus === "VERIFIED"
               ? "VERIFIED_OWNER"
               : "UNVERIFIED",
-          estimatedValue: 10_000_000,
+          estimatedValue: item.price !== undefined && item.price > 0 ? item.price : 0,
           createdDate: item.createdDate
             ? new Date(item.createdDate).toLocaleDateString("vi-VN")
             : "10/09/2026",
           hasActiveAuction: item.simStatus === "IN_AUCTION",
         }));
         setOwnedSims(mapped);
+      } else {
+        setOwnedSims([]);
       }
     } catch (err) {
-      console.warn("Chưa có phiên đăng nhập hoặc kho SIM rỗng:", err);
-      // Giữ nguyên demo sims ban đầu để người dùng vẫn tương tác mượt mà
+      console.warn("Lỗi lấy dữ liệu kho SIM hoặc chưa đăng nhập:", err);
+      setOwnedSims([]);
     } finally {
       setLoading(false);
     }
@@ -554,6 +571,13 @@ export default function OwnedSimsTab({
     getFormatRhythms()
       .then((data) => {
         if (data && data.length > 0) setFormatRhythmsList(data);
+      })
+      .catch(() => { });
+
+    // Fetch categories
+    getCategories()
+      .then((data) => {
+        if (data && data.length > 0) setCategoriesList(data);
       })
       .catch(() => { });
   }, [fetchSimsFromDb]);
@@ -600,6 +624,98 @@ export default function OwnedSimsTab({
     setNewEstimatedValueFormatted(nextVal.toLocaleString("vi-VN"));
   };
 
+  const [loadingAiValuation, setLoadingAiValuation] = useState(false);
+  const [aiValuationResult, setAiValuationResult] = useState<SimValuationDto | null>(null);
+  const [showAiAnalysisDetail, setShowAiAnalysisDetail] = useState(false);
+  const [showAiDetailModal, setShowAiDetailModal] = useState(false);
+  const aiValuationCardRef = useRef<HTMLDivElement | null>(null);
+
+  const handleOpenAddModal = () => {
+    setIsAddModalOpen(true);
+    setAiValuationResult(null);
+    setShowAiAnalysisDetail(false);
+    setShowAiDetailModal(false);
+  };
+
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false);
+    setAiValuationResult(null);
+    setShowAiAnalysisDetail(false);
+    setShowAiDetailModal(false);
+  };
+
+  const getReasoningBullets = (text?: string): string[] => {
+    if (!text) return [];
+    return text
+      .split(/(?<=[.?!;])\s+|\n+/)
+      .map((s) => s.trim().replace(/^[-*•]\s*/, ""))
+      .filter((s) => s.length > 5);
+  };
+
+  const handleAiEstimateForNewSim = async () => {
+    const cleanNumber = newSimNumber.replace(/\D/g, "");
+    if (cleanNumber.length < 9) {
+      addToast({
+        type: "warning",
+        title: "Chưa đủ số điện thoại",
+        message: "Vui lòng nhập số điện thoại trước khi nhờ AI thẩm định giá.",
+      });
+      return;
+    }
+    setLoadingAiValuation(true);
+    try {
+      const res = await aiValuationService.estimatePrice({ phoneNumber: cleanNumber });
+      setAiValuationResult(res);
+      if (res.suggestedPrice && res.suggestedPrice > 0) {
+        const price = Math.round(res.suggestedPrice);
+        setNewEstimatedValueRaw(price);
+        setNewEstimatedValueFormatted(price.toLocaleString("vi-VN"));
+      }
+
+      // Tự động nhận diện và gán Nhịp định dạng từ AI
+      if (res.detectedRhythmName && formatRhythmsList.length > 0) {
+        const matchedRhythm = formatRhythmsList.find(
+          (r) =>
+            r.formatRhythmName.toLowerCase() === res.detectedRhythmName.toLowerCase() ||
+            res.detectedRhythmName.toLowerCase().includes(r.formatRhythmName.toLowerCase()) ||
+            r.formatRhythmName.toLowerCase().includes(res.detectedRhythmName.toLowerCase())
+        );
+        if (matchedRhythm) {
+          setSelectedFormatRhythmId(matchedRhythm.id);
+        }
+      }
+
+      // Tự động nhận diện và gán Thể loại từ AI
+      if (res.detectedCategories && res.detectedCategories.length > 0 && categoriesList.length > 0) {
+        const matchedCatIds = categoriesList
+          .filter((c) =>
+            res.detectedCategories.some(
+              (dc) =>
+                dc.toLowerCase().includes(c.categoryName.toLowerCase()) ||
+                c.categoryName.toLowerCase().includes(dc.toLowerCase())
+            )
+          )
+          .map((c) => c.id);
+        if (matchedCatIds.length > 0) {
+          setSelectedCategoryIds((prev) => Array.from(new Set([...prev, ...matchedCatIds])));
+        }
+      }
+
+      // Tự động cuộn mượt đưa thẻ kết quả định giá AI vào trung tâm màn hình
+      setTimeout(() => {
+        aiValuationCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 100);
+    } catch (err: any) {
+      addToast({
+        type: "error",
+        title: "Không thể định giá bằng AI",
+        message: err.message || "Vui lòng thử lại sau.",
+      });
+    } finally {
+      setLoadingAiValuation(false);
+    }
+  };
+
   // ─── 4. Handle Add Personal SIM ──────────────────────────────────────────
   const handleAddPersonalSim = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -634,17 +750,44 @@ export default function OwnedSimsTab({
 
     setSubmittingSim(true);
     try {
-      // 1. Tìm FormatRhythm mặc định
-      const defaultRhythm = formatRhythmsList[0]?.id || "be433391-84db-4b7d-a540-603bda9e816a";
+      // Xác định nhịp định dạng và thể loại:
+      // - Nếu người dùng đã nhờ AI định giá: dùng kết quả do AI thẩm định và quyết định.
+      // - Nếu người dùng KHÔNG nhờ AI: tự động gán Nhịp phổ thông + SIM phổ thông.
+      const normalRhythm = formatRhythmsList.find(
+        (r) => r.formatRhythmName.toLowerCase().includes("phổ thông") || (r.value && r.value.toUpperCase() === "NORMAL")
+      ) || formatRhythmsList[0];
+
+      const normalCategory = categoriesList.find(
+        (c) => c.categoryName.toLowerCase().includes("phổ thông") || c.categoryCode === "SIM_THUONG"
+      );
+
+      const rhythmIdToUse = (aiValuationResult && selectedFormatRhythmId)
+        ? selectedFormatRhythmId
+        : normalRhythm?.id || "f1000000-0000-0000-0000-000000000011";
+
+      const categoryIdsToUse = (aiValuationResult && selectedCategoryIds.length > 0)
+        ? selectedCategoryIds
+        : normalCategory ? [normalCategory.id] : ["ca000000-0000-0000-0000-000000000010"];
+
+      const rhythmNameToUse = (aiValuationResult && selectedFormatRhythmId)
+        ? (formatRhythmsList.find((r) => r.id === selectedFormatRhythmId)?.formatRhythmName || aiValuationResult.detectedRhythmName)
+        : (normalRhythm?.formatRhythmName || "Nhịp Phổ thông");
+
+      const categoryNamesToUse = (aiValuationResult && selectedCategoryIds.length > 0)
+        ? categoriesList.filter((c) => selectedCategoryIds.includes(c.id)).map((c) => c.categoryName)
+        : [normalCategory?.categoryName || "SIM Phổ thông"];
+
       const prefix3 = cleanNumber.substring(0, 3);
       const matchedPrefix = carrierToUse.prefixes?.find((p) => p.prefixValue === prefix3);
 
-      // Thử đăng ký trực tiếp vào Database Backend
+      // Thử đăng ký trực tiếp vào Database Backend với đầy đủ giá, nhịp và danh mục
       try {
         await registerSim({
           phoneNumber: cleanNumber,
-          formatRhythmId: defaultRhythm,
+          formatRhythmId: rhythmIdToUse,
           phonePrefixId: matchedPrefix?.id,
+          categoryIds: categoryIdsToUse,
+          price: newEstimatedValueRaw,
         });
       } catch (backendErr: any) {
         console.warn("Backend register notice:", backendErr.message);
@@ -657,6 +800,10 @@ export default function OwnedSimsTab({
         carrier: carrierToUse.carrierName,
         carrierLogo: carrierToUse.logoImg,
         carrierCode: carrierToUse.carrierCode,
+        formatRhythmId: rhythmIdToUse,
+        formatRhythmName: rhythmNameToUse,
+        phonePrefixId: matchedPrefix?.id,
+        categoryNames: categoryNamesToUse,
         simType: newSimType,
         acquiredFrom: "PERSONAL_IMPORT",
         ownershipStatus: "UNVERIFIED",
@@ -666,7 +813,12 @@ export default function OwnedSimsTab({
 
       setOwnedSims((prev) => [newSimItem, ...prev.filter((s) => s.simNumber.replace(/\D/g, "") !== cleanNumber)]);
       setIsAddModalOpen(false);
+      setAiValuationResult(null);
+      setShowAiAnalysisDetail(false);
+      setShowAiDetailModal(false);
       setNewSimNumber("");
+      setSelectedCategoryIds([]);
+      setSelectedFormatRhythmId("");
       setNewEstimatedValueRaw(10_000_000);
       setNewEstimatedValueFormatted("10.000.000");
 
@@ -700,34 +852,6 @@ export default function OwnedSimsTab({
       return;
     }
     setSelectedSimForAuction(sim);
-    const startPrice = Math.round((sim.estimatedValue || 10_000_000) * 0.8);
-    setAuctionStartPriceRaw(startPrice);
-    setAuctionStartPriceFormatted(startPrice.toLocaleString("vi-VN"));
-    setAuctionStepPriceRaw(500_000);
-    setAuctionStepPriceFormatted("500.000");
-    setAuctionBuyNowPriceRaw(0);
-    setAuctionBuyNowPriceFormatted("");
-  };
-
-  const handleConfirmCreateAuction = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedSimForAuction) return;
-
-    setOwnedSims((prev) =>
-      prev.map((s) =>
-        s.id === selectedSimForAuction.id
-          ? { ...s, hasActiveAuction: true, activeAuctionId: "1" }
-          : s
-      )
-    );
-
-    addToast({
-      type: "success",
-      title: "Khởi tạo phiên đấu giá thành công",
-      message: `Phiên đấu giá cho SIM ${selectedSimForAuction.simNumber} đã được khởi tạo với giá khởi điểm ${auctionStartPriceRaw.toLocaleString("vi-VN")} ₫.`,
-    });
-
-    setSelectedSimForAuction(null);
   };
 
   return (
@@ -749,11 +873,10 @@ export default function OwnedSimsTab({
             <button
               type="button"
               onClick={() => setViewMode("table")}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                viewMode === "table"
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${viewMode === "table"
                   ? "bg-white text-[#001743] shadow-xs"
                   : "text-slate-500 hover:text-slate-800"
-              }`}
+                }`}
               title="Chuyển sang chế độ xem bảng chi tiết"
             >
               <TableIcon size={14} strokeWidth={1.75} />
@@ -762,11 +885,10 @@ export default function OwnedSimsTab({
             <button
               type="button"
               onClick={() => setViewMode("grid")}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                viewMode === "grid"
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${viewMode === "grid"
                   ? "bg-[#001743] text-white shadow-xs"
                   : "text-slate-500 hover:text-slate-800"
-              }`}
+                }`}
               title="Chuyển sang chế độ xem thẻ SIM Luxury độc đáo"
             >
               <LayoutGrid size={14} strokeWidth={1.75} />
@@ -787,7 +909,7 @@ export default function OwnedSimsTab({
 
           <button
             type="button"
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={handleOpenAddModal}
             className="flex items-center gap-1.5 px-4 py-2 bg-[#001743] hover:bg-[#002266] text-white rounded-[6px] text-xs font-bold shadow-xs transition-all cursor-pointer hover:shadow active:scale-98"
           >
             <Plus size={15} strokeWidth={2} />
@@ -808,7 +930,7 @@ export default function OwnedSimsTab({
           </p>
           <button
             type="button"
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={handleOpenAddModal}
             className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-[#001743] hover:bg-[#002266] text-white text-xs font-bold rounded-[6px] transition-colors"
           >
             <Plus size={14} /> Thêm SIM mới ngay
@@ -822,7 +944,10 @@ export default function OwnedSimsTab({
               key={sim.id}
               sim={sim}
               onOpenAuction={handleOpenCreateAuction}
-              onNavigateToEkyc={onNavigateToEkyc}
+              onOpenVerify={(s) => setSelectedSimForVerify(s)}
+              onOpenDetail={(s) => setSelectedSimForDetail(s)}
+              onOpenUpdate={(s) => setSelectedSimForUpdate(s)}
+              onOpenDelete={(s) => setSelectedSimForDelete(s)}
             />
           ))}
         </div>
@@ -898,34 +1023,61 @@ export default function OwnedSimsTab({
 
                       {/* Cột 6: Thao tác */}
                       <td className="py-3 px-4 text-right">
-                        {sim.hasActiveAuction ? (
-                          <Link
-                            href={`/auctions/${sim.activeAuctionId || 1}`}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[6px] text-xs font-bold border border-slate-300 text-slate-700 hover:bg-slate-100 transition-colors"
-                          >
-                            <span>Đang đấu giá</span>
-                            <ArrowRight size={12} />
-                          </Link>
-                        ) : isOwnerVerified ? (
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
-                            onClick={() => handleOpenCreateAuction(sim)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[6px] text-xs font-bold bg-[#E4011E] hover:bg-[#B80018] text-white transition-colors cursor-pointer"
+                            onClick={() => setSelectedSimForDetail(sim)}
+                            className="p-1.5 rounded-[6px] border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+                            title="Xem chi tiết SIM"
                           >
-                            <Gavel size={12} />
-                            <span>Mở đấu giá</span>
+                            <Eye size={13} />
                           </button>
-                        ) : (
                           <button
                             type="button"
-                            onClick={onNavigateToEkyc}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[6px] text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
-                            title="Xác thực chính chủ để mở quyền tạo đấu giá"
+                            onClick={() => setSelectedSimForUpdate(sim)}
+                            className="p-1.5 rounded-[6px] border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+                            title="Chỉnh sửa thông tin SIM"
                           >
-                            <ShieldCheck size={12} />
-                            <span>Xác thực ngay</span>
+                            <Pencil size={13} />
                           </button>
-                        )}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedSimForDelete(sim)}
+                            className="p-1.5 rounded-[6px] border border-rose-200 hover:bg-rose-50 text-rose-600 transition-colors cursor-pointer"
+                            title="Xóa SIM"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+
+                          {sim.hasActiveAuction ? (
+                            <Link
+                              href={`/auctions/${sim.activeAuctionId || 1}`}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[6px] text-xs font-bold border border-slate-300 text-slate-700 hover:bg-slate-100 transition-colors"
+                            >
+                              <span>Đang đấu giá</span>
+                              <ArrowRight size={12} />
+                            </Link>
+                          ) : isOwnerVerified ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenCreateAuction(sim)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[6px] text-xs font-bold bg-[#E4011E] hover:bg-[#B80018] text-white transition-colors cursor-pointer"
+                            >
+                              <Gavel size={12} />
+                              <span>Mở đấu giá</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedSimForVerify(sim)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[6px] text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
+                              title="Xác thực chính chủ với Cổng viễn thông Nhà mạng"
+                            >
+                              <ShieldCheck size={12} />
+                              <span>Xác thực ngay</span>
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -936,138 +1088,331 @@ export default function OwnedSimsTab({
         </div>
       )}
 
-      {/* ── 3. Modal: Thêm SIM cá nhân (Tinh chỉnh chuẩn Fintech & Number Masking) ── */}
+      {/* ── 3. Modal: Thêm SIM cá nhân (Soft UI, Logo chữ S, AI Valuation, Sticky Footer) ── */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white rounded-[12px] w-full max-w-[480px] p-6 shadow-2xl border border-slate-200 animate-fade-up">
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
-              <h3 className="text-base font-extrabold text-[#001743] flex items-center gap-2 m-0">
-                <Smartphone size={18} className="text-[#001743]" />
-                <span>Thêm SIM cá nhân vào kho</span>
-              </h3>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/45 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-[20px] w-full max-w-[500px] shadow-2xl border border-slate-100 animate-fade-up flex flex-col max-h-[90vh] overflow-hidden">
+            {/* Header Modal - Cố định ở đỉnh */}
+            <div className="flex items-center justify-between p-5 pb-3.5 border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <img src="/logo/S-Logo.png" alt="TrustSIM" className="w-7 h-7 object-contain shrink-0" />
+                <h3 className="text-base font-black text-[#001743] tracking-tight m-0">
+                  Thêm SIM cá nhân vào kho
+                </h3>
+              </div>
               <button
                 type="button"
-                onClick={() => setIsAddModalOpen(false)}
-                className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                onClick={handleCloseAddModal}
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                 aria-label="Đóng"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleAddPersonalSim} className="flex flex-col gap-4">
-              {/* Field 1: Số điện thoại SIM * */}
-              <div>
-                <label className="block text-xs font-bold text-[#001743] mb-1.5">
-                  Số điện thoại SIM <span className="text-red-600">*</span>
-                </label>
-                <input
-                  type="tel"
-                  placeholder="Ví dụ: 0912 345 678"
-                  value={newSimNumber}
-                  onChange={(e) => handleSimNumberInput(e.target.value)}
-                  className="w-full text-xs p-2.5 border border-slate-300 rounded-[6px] font-mono font-bold text-[#001743] focus:border-[#001743] focus:outline-none transition-colors"
-                  required
-                />
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Nhập đúng 10 chữ số bắt đầu bằng số 0. Hệ thống sẽ tự động nhận diện nhà mạng tương ứng.
-                </p>
-              </div>
-
-              {/* Field 2 & 3: Nhà mạng * & Loại thuê bao * */}
-              <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={handleAddPersonalSim} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              {/* Vùng nội dung cuộn (Scrollable Form Body) */}
+              <div className="p-5 pb-16 overflow-y-auto flex-1 flex flex-col gap-4 scroll-smooth">
+                {/* Field 1: Số điện thoại SIM * */}
                 <div>
                   <label className="block text-xs font-bold text-[#001743] mb-1.5">
-                    Nhà mạng <span className="text-red-600">*</span>
+                    Số điện thoại SIM <span className="text-red-600">*</span>
                   </label>
-                  <CarrierDropdownSelect
-                    carriers={carriersList}
-                    selectedCarrier={selectedCarrier}
-                    onSelect={(c) => setSelectedCarrier(c)}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#001743] mb-1.5">
-                    Loại thuê bao <span className="text-red-600">*</span>
-                  </label>
-                  <select
-                    value={newSimType}
-                    onChange={(e) => setNewSimType(e.target.value as any)}
-                    className="w-full text-xs p-2.5 border border-slate-300 rounded-[6px] bg-white font-semibold text-[#001743] focus:border-[#001743] focus:outline-none transition-colors"
-                  >
-                    <option value="Trả trước">Trả trước</option>
-                    <option value="Trả sau">Trả sau</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Field 4: Định giá ước tính * (Có Number Masking phân cách hàng nghìn) */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-bold text-[#001743]">
-                    Định giá ước tính <span className="text-red-600">*</span>
-                  </label>
-                  <span className="text-[10px] text-slate-400 font-mono">Tự động thêm dấu phân cách</span>
-                </div>
-
-                <div className="relative flex items-center">
                   <input
-                    type="text"
-                    value={newEstimatedValueFormatted}
-                    onChange={handleEstimatedValueMasking}
-                    placeholder="10.000.000"
-                    className="w-full text-xs p-2.5 pr-8 border border-slate-300 rounded-[6px] font-mono font-bold text-[#001743] focus:border-[#001743] focus:outline-none transition-colors"
+                    type="tel"
+                    placeholder="Ví dụ: 0912 345 678"
+                    value={newSimNumber}
+                    onChange={(e) => handleSimNumberInput(e.target.value)}
+                    className="w-full text-xs p-3 border border-slate-200 rounded-[12px] font-mono font-bold text-[#001743] focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 focus:outline-none transition-all"
                     required
                   />
-                  <span className="absolute right-3 text-xs font-bold text-slate-400 pointer-events-none">
-                    ₫
-                  </span>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Nhập đúng 10 chữ số bắt đầu bằng số 0. Hệ thống sẽ tự động nhận diện nhà mạng tương ứng.
+                  </p>
                 </div>
 
-                {/* Quick Add Price Chips */}
-                <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                  <span className="text-[10px] text-slate-400 font-medium mr-1">Cộng nhanh:</span>
-                  {[
-                    { label: "+1 triệu", val: 1_000_000 },
-                    { label: "+5 triệu", val: 5_000_000 },
-                    { label: "+10 triệu", val: 10_000_000 },
-                    { label: "+50 triệu", val: 50_000_000 },
-                  ].map((chip) => (
-                    <button
-                      key={chip.label}
-                      type="button"
-                      onClick={() => handleQuickAddPrice(chip.val)}
-                      className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded text-[10.5px] font-semibold transition-colors"
+                {/* Field 2 & 3: Nhà mạng * & Loại thuê bao * */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-[#001743] mb-1.5">
+                      Nhà mạng <span className="text-red-600">*</span>
+                    </label>
+                    <CarrierDropdownSelect
+                      carriers={carriersList}
+                      selectedCarrier={selectedCarrier}
+                      onSelect={(c) => setSelectedCarrier(c)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#001743] mb-1.5">
+                      Loại thuê bao <span className="text-red-600">*</span>
+                    </label>
+                    <select
+                      value={newSimType}
+                      onChange={(e) => setNewSimType(e.target.value as any)}
+                      className="w-full text-xs p-3 border border-slate-200 rounded-[12px] bg-white font-semibold text-[#001743] focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 focus:outline-none transition-all"
                     >
-                      {chip.label}
-                    </button>
-                  ))}
+                      <option value="Trả trước">Trả trước</option>
+                      <option value="Trả sau">Trả sau</option>
+                    </select>
+                  </div>
                 </div>
+
+                {/* Trạng thái AI Thinking / Skeleton Loading */}
+                {loadingAiValuation && (
+                  <div className="p-3.5 bg-gradient-to-r from-blue-50/70 via-purple-50/40 to-slate-50/70 rounded-[14px] border border-purple-100/60 animate-pulse transition-all">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles size={13} className="text-[#E4011E] animate-spin" />
+                      <span className="text-xs font-bold text-[#001743]">
+                        AI đang phân tích thế số, phong thủy và định giá thị trường...
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-3 bg-slate-200/80 rounded-full w-3/4" />
+                      <div className="h-2.5 bg-slate-200/60 rounded-full w-1/2" />
+                    </div>
+                  </div>
+                )}
+
+                {/* THẺ KẾT QUẢ AI ĐỊNH GIÁ HỢP NHẤT: Đặt ngay trên trường Định giá ước tính, hiển thị đầy đủ, không bị che khuất */}
+                {aiValuationResult && !loadingAiValuation && (
+                  <div
+                    ref={aiValuationCardRef}
+                    className="p-4 bg-gradient-to-br from-blue-50/90 via-indigo-50/40 to-slate-50/80 rounded-[16px] border border-blue-200/80 shadow-xs relative overflow-hidden transition-all animate-fadeIn space-y-3"
+                  >
+                    {/* Header card: S-Logo + Nhịp phát hiện + Nút Xem chi tiết phân tích + Nút Đóng */}
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <img
+                          src="/logo/S-Logo.png"
+                          alt="TrustSim AI"
+                          className="w-4 h-4 object-contain shrink-0"
+                        />
+                        <span className="text-xs font-bold text-[#001743] shrink-0">
+                          Kết quả AI định giá
+                        </span>
+                        {aiValuationResult.detectedRhythmName && (
+                          <span className="px-2.5 py-0.5 bg-blue-100 text-blue-900 rounded-full text-[10.5px] font-bold truncate">
+                            {aiValuationResult.detectedRhythmName}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setShowAiDetailModal(true)}
+                          className="inline-flex items-center gap-1 px-3 py-1 bg-white hover:bg-red-50 text-[#001743] hover:text-[#E4011E] border border-blue-200/90 rounded-full text-[11px] font-extrabold transition-all shadow-2xs cursor-pointer active:scale-95"
+                          title="Mở xem báo cáo phân tích định giá chi tiết"
+                        >
+                          <Sparkles size={12} className="text-[#E4011E]" />
+                          <span>Chi tiết phân tích</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAiValuationResult(null)}
+                          className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-200/60 transition-colors cursor-pointer"
+                          title="Đóng kết quả định giá"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Mức giá AI đề xuất & Khoảng giá thị trường */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-white/95 p-3 rounded-[12px] border border-blue-100 shadow-2xs">
+                      <div>
+                        <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Mức giá AI đề xuất:</div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-base font-black text-[#E4011E] font-mono">
+                            {aiValuationResult.suggestedPrice?.toLocaleString("vi-VN")} ₫
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (aiValuationResult.suggestedPrice) {
+                                const price = Math.round(aiValuationResult.suggestedPrice);
+                                setNewEstimatedValueRaw(price);
+                                setNewEstimatedValueFormatted(price.toLocaleString("vi-VN"));
+                              }
+                            }}
+                            title="Áp dụng mức giá này vào ô nhập"
+                            className="px-2.5 py-0.5 bg-[#001743] hover:bg-[#00266B] text-white rounded-full text-[10px] font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1 active:scale-95 shrink-0"
+                          >
+                            <Check size={10} strokeWidth={2.5} />
+                            <span>Áp dụng</span>
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Khoảng giá thị trường:</div>
+                        <div className="text-xs font-bold text-slate-700 font-mono mt-1">
+                          {aiValuationResult.minPrice ? aiValuationResult.minPrice.toLocaleString("vi-VN") : "---"} ₫
+                          {" – "}
+                          {aiValuationResult.maxPrice ? aiValuationResult.maxPrice.toLocaleString("vi-VN") : "---"} ₫
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Thể loại số SIM do AI phân loại */}
+                    <div className="flex flex-col gap-1 text-xs pt-2 border-t border-blue-100/60">
+                      <span className="font-bold text-[#001743] flex items-center gap-1.5 text-[11px]">
+                        <Check size={12} className="text-emerald-600" />
+                        <span>Thể loại số SIM (AI phân loại):</span>
+                      </span>
+                      <div className="flex flex-wrap gap-1.5 mt-0.5">
+                        {aiValuationResult.detectedCategories && aiValuationResult.detectedCategories.length > 0 ? (
+                          aiValuationResult.detectedCategories.map((c, i) => (
+                            <span
+                              key={i}
+                              className="px-2.5 py-0.5 bg-white text-[#001743] border border-blue-200/80 rounded-full text-[11px] font-bold shadow-2xs"
+                            >
+                              {c}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="px-2.5 py-0.5 bg-white text-slate-600 border border-slate-200 rounded-full text-[11px] font-medium">
+                            SIM Phổ thông
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Dòng trạng thái đã điền & Accordion nhận định */}
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-blue-100/60 text-[11px]">
+                      <span className="text-emerald-700 font-bold flex items-center gap-1">
+                        <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
+                        <span>Đã tự động điền vào ô định giá bên dưới</span>
+                      </span>
+
+                      {aiValuationResult.valuationReasoning && (
+                        <button
+                          type="button"
+                          onClick={() => setShowAiAnalysisDetail(!showAiAnalysisDetail)}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 hover:text-blue-900 cursor-pointer transition-colors"
+                        >
+                          <span>{showAiAnalysisDetail ? "Thu gọn nhận định" : "Xem nhận định"}</span>
+                          {showAiAnalysisDetail ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Accordion Content: Nhận định thẩm định */}
+                    {showAiAnalysisDetail && aiValuationResult.valuationReasoning && (
+                      <div className="mt-2 p-2.5 bg-white/90 rounded-[10px] border border-blue-100/70 animate-fadeIn">
+                        <div className="text-[10px] font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                          <Sparkles size={11} className="text-[#E4011E]" />
+                          <span>Chi tiết nhận định thẩm định:</span>
+                        </div>
+                        <ul className="space-y-1.5 text-[11px] text-slate-600">
+                          {getReasoningBullets(aiValuationResult.valuationReasoning).map((bullet, idx) => (
+                            <li key={idx} className="flex items-start gap-1.5 leading-relaxed">
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0 mt-1.5" />
+                              <span>{bullet}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Field 4: Định giá ước tính * (Nâng cấp Shimmer + Skeleton + Pills Tactile) */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1.5">
+                    <label className="block text-xs font-bold text-[#001743]">
+                      Định giá ước tính <span className="text-red-600">*</span>
+                    </label>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {aiValuationResult && (
+                        <button
+                          type="button"
+                          onClick={() => setShowAiDetailModal(true)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-blue-50 text-[#001743] hover:text-[#E4011E] border border-blue-200/80 rounded-full text-[10px] font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
+                          title="Mở xem chi tiết phân tích định giá"
+                        >
+                          <Sparkles size={11} className="text-[#E4011E]" />
+                          <span>Chi tiết phân tích</span>
+                        </button>
+                      )}
+                      {/* Nút Nhờ AI định giá: Gradient viền nhẹ + Shimmer effect */}
+                      <button
+                        type="button"
+                        onClick={handleAiEstimateForNewSim}
+                        disabled={loadingAiValuation}
+                        className="relative overflow-hidden group inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-red-50 via-purple-50 to-blue-50 hover:from-red-100 hover:to-purple-100 border border-red-200/80 text-[#001743] rounded-full text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer shadow-2xs active:scale-95"
+                      >
+                        {/* Hiệu ứng tia sáng lướt qua (Shimmer effect) */}
+                        <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/70 to-transparent pointer-events-none" />
+                        {loadingAiValuation ? (
+                          <>
+                            <RefreshCw size={11} className="animate-spin text-[#E4011E]" />
+                            <span>Đang phân tích...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles size={12} className="text-[#E4011E]" />
+                            <span className="bg-gradient-to-r from-[#E4011E] to-[#7C3AED] bg-clip-text text-transparent">
+                              {aiValuationResult ? "Định giá lại" : "Nhờ AI định giá"}
+                            </span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="relative flex items-center">
+                    <input
+                      type="text"
+                      value={newEstimatedValueFormatted}
+                      onChange={handleEstimatedValueMasking}
+                      placeholder="10.000.000"
+                      className="w-full text-xs p-3 pr-8 border border-slate-200 rounded-[12px] font-mono font-bold text-[#001743] focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 focus:outline-none transition-all"
+                      required
+                    />
+                    <span className="absolute right-3.5 text-xs font-bold text-slate-400 pointer-events-none">
+                      ₫
+                    </span>
+                  </div>
+
+                  {/* Quick Add Price Pills: Bo tròn hoàn toàn (Pills), nền #F3F4F6, hover sang Đỏ Primary chữ trắng */}
+                  <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                    <span className="text-[11px] text-slate-400 font-medium mr-1">Cộng nhanh:</span>
+                    {[
+                      { label: "+1 triệu", val: 1_000_000 },
+                      { label: "+5 triệu", val: 5_000_000 },
+                      { label: "+10 triệu", val: 10_000_000 },
+                      { label: "+50 triệu", val: 50_000_000 },
+                    ].map((chip) => (
+                      <button
+                        key={chip.label}
+                        type="button"
+                        onClick={() => handleQuickAddPrice(chip.val)}
+                        className="px-3 py-1 bg-[#F3F4F6] hover:bg-[#E4011E] hover:text-white active:scale-95 text-slate-700 rounded-full text-[11px] font-semibold transition-all cursor-pointer shadow-2xs"
+                      >
+                        {chip.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+
               </div>
 
-              {/* Notice Box */}
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-[6px] flex items-start gap-2 text-amber-800 text-xs">
-                <AlertCircle size={15} className="shrink-0 mt-0.5 text-amber-600" />
-                <div className="leading-relaxed">
-                  SIM mới thêm cần được <strong>xác thực chính chủ (eKYC)</strong> trước khi có thể mở phiên đấu giá trên sàn.
-                </div>
-              </div>
-
-              {/* Form Buttons */}
-              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+              {/* Sticky Footer: Cố định ở đáy, không bị che khuất hay cuộn mất */}
+              <div className="p-4 px-5 border-t border-slate-100 bg-white/95 backdrop-blur-xs flex items-center justify-end gap-2.5 shrink-0 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] rounded-b-[20px]">
                 <button
                   type="button"
-                  onClick={() => setIsAddModalOpen(false)}
+                  onClick={handleCloseAddModal}
                   disabled={submittingSim}
-                  className="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-[6px] text-xs font-semibold transition-colors"
+                  className="px-5 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-full text-xs font-semibold transition-colors cursor-pointer"
                 >
                   Hủy bỏ
                 </button>
                 <button
                   type="submit"
                   disabled={submittingSim}
-                  className="px-5 py-2 bg-[#001743] hover:bg-[#002266] text-white rounded-[6px] text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
+                  className="px-6 py-2.5 bg-[#001743] hover:bg-[#00266B] text-white rounded-full text-xs font-bold shadow-sm cursor-pointer flex items-center gap-1.5 transition-all active:scale-95"
                 >
                   {submittingSim && <RefreshCw size={13} className="animate-spin" />}
                   <span>{submittingSim ? "Đang lưu..." : "Lưu vào kho SIM"}</span>
@@ -1078,152 +1423,254 @@ export default function OwnedSimsTab({
         </div>
       )}
 
-      {/* ── 4. Modal: Tạo phiên đấu giá (Number Masking) ── */}
-      {selectedSimForAuction && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white rounded-[12px] w-full max-w-[500px] p-6 shadow-2xl border border-slate-200 animate-fade-up">
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
-              <div>
-                <h3 className="text-base font-extrabold text-[#001743] flex items-center gap-2 m-0">
-                  <Gavel size={18} className="text-[#E4011E]" />
-                  <span>Mở phiên đấu giá SIM chính chủ</span>
-                </h3>
-                <div className="text-xs text-emerald-600 font-bold mt-0.5">
-                  ✓ Đã kiểm tra quyền sở hữu chính chủ hợp lệ
+      {/* ── 3.1 Modal: Báo cáo chi tiết thẩm định AI ── */}
+      {showAiDetailModal && aiValuationResult && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="bg-white rounded-[20px] w-full max-w-[540px] shadow-2xl border border-slate-100 animate-fade-up flex flex-col max-h-[90vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 pb-3.5 border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <img src="/logo/S-Logo.png" alt="TrustSIM" className="w-7 h-7 object-contain shrink-0" />
+                <div>
+                  <h3 className="text-base font-black text-[#001743] tracking-tight m-0 flex items-center gap-2">
+                    <span>Báo cáo thẩm định AI chuyên sâu</span>
+                    <span className="px-2 py-0.5 bg-red-50 text-[#E4011E] rounded-full text-[10px] font-bold border border-red-100">
+                      TrustSim AI
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400 m-0">
+                    Số SIM: <span className="font-mono font-bold text-[#001743]">{formatPhoneNumber(aiValuationResult.phoneNumber || newSimNumber)}</span>
+                  </p>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => setSelectedSimForAuction(null)}
-                className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                onClick={() => setShowAiDetailModal(false)}
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                aria-label="Đóng"
               >
                 <X size={18} />
               </button>
             </div>
 
-            {/* Target SIM summary */}
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-[8px] flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2.5">
-                <CarrierSquareLogo name={selectedSimForAuction.carrier} logo={selectedSimForAuction.carrierLogo} size={28} />
+            {/* Modal Body */}
+            <div className="p-5 overflow-y-auto flex-1 flex flex-col gap-4">
+              {/* Hero Price Box */}
+              <div className="p-4 bg-gradient-to-br from-red-50/60 via-purple-50/30 to-blue-50/50 rounded-[16px] border border-red-100/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <div className="font-mono font-black text-sm text-[#001743]">{selectedSimForAuction.simNumber}</div>
-                  <div className="text-[11px] text-slate-500">{selectedSimForAuction.carrier} • {selectedSimForAuction.simType}</div>
+                  <div className="text-[11px] text-slate-500 font-medium">Mức giá AI đề xuất:</div>
+                  <div className="text-2xl font-black text-[#E4011E] font-mono">
+                    {aiValuationResult.suggestedPrice?.toLocaleString("vi-VN")} ₫
+                  </div>
+                  <div className="text-xs text-slate-600 mt-1 flex items-center gap-1.5 flex-wrap">
+                    <span>Khoảng giá:</span>
+                    <span className="font-mono font-bold text-[#001743]">
+                      {aiValuationResult.minPrice ? aiValuationResult.minPrice.toLocaleString("vi-VN") : "---"} ₫
+                      {" – "}
+                      {aiValuationResult.maxPrice ? aiValuationResult.maxPrice.toLocaleString("vi-VN") : "---"} ₫
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-start sm:items-end gap-1.5 shrink-0">
+                  {aiValuationResult.detectedRhythmName && (
+                    <span className="px-3 py-1 bg-blue-100 text-blue-900 rounded-full text-xs font-bold">
+                      {aiValuationResult.detectedRhythmName}
+                    </span>
+                  )}
+                  {aiValuationResult.confidenceScore ? (
+                    <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
+                      <CheckCircle2 size={12} className="text-emerald-600" />
+                      <span>Độ tin cậy: {Math.round(aiValuationResult.confidenceScore * 100)}%</span>
+                    </span>
+                  ) : null}
                 </div>
               </div>
-              <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
-                {selectedSimForAuction.estimatedValue.toLocaleString("vi-VN")} ₫
-              </span>
+
+              {/* 3 Price Tiers Grid (Bán lẻ / P2P / Giá thợ) */}
+              <div>
+                <div className="text-xs font-bold text-[#001743] mb-2 flex items-center gap-1.5">
+                  <ShieldCheck size={14} className="text-blue-600" />
+                  <span>Tham chiếu giá theo từng phân khúc giao dịch</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2.5">
+                  <div className="p-3 bg-slate-50 rounded-[12px] border border-slate-100 text-center">
+                    <div className="text-[10px] text-slate-400 font-medium">Giá bán lẻ (Retail)</div>
+                    <div className="text-xs font-bold text-[#001743] font-mono mt-1">
+                      {aiValuationResult.retailPrice
+                        ? aiValuationResult.retailPrice.toLocaleString("vi-VN") + " ₫"
+                        : (aiValuationResult.suggestedPrice * 1.15).toLocaleString("vi-VN") + " ₫"}
+                    </div>
+                  </div>
+                  <div className="p-3 bg-blue-50/60 rounded-[12px] border border-blue-100/60 text-center">
+                    <div className="text-[10px] text-blue-700 font-bold">Giá người dùng (P2P)</div>
+                    <div className="text-xs font-extrabold text-[#E4011E] font-mono mt-1">
+                      {aiValuationResult.p2pPrice
+                        ? aiValuationResult.p2pPrice.toLocaleString("vi-VN") + " ₫"
+                        : aiValuationResult.suggestedPrice.toLocaleString("vi-VN") + " ₫"}
+                    </div>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-[12px] border border-slate-100 text-center">
+                    <div className="text-[10px] text-slate-400 font-medium">Giá thu mua đại lý</div>
+                    <div className="text-xs font-bold text-slate-600 font-mono mt-1">
+                      {aiValuationResult.dealerPrice
+                        ? aiValuationResult.dealerPrice.toLocaleString("vi-VN") + " ₫"
+                        : (aiValuationResult.suggestedPrice * 0.75).toLocaleString("vi-VN") + " ₫"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chi tiết nhận định thẩm định (Bullet points) */}
+              {aiValuationResult.valuationReasoning && (
+                <div className="p-4 bg-slate-50/70 rounded-[14px] border border-slate-100">
+                  <div className="text-xs font-bold text-[#001743] mb-2 flex items-center gap-1.5">
+                    <Sparkles size={13} className="text-[#E4011E]" />
+                    <span>Lý giải định giá của mô hình AI</span>
+                  </div>
+                  <ul className="space-y-2 text-xs text-slate-600 leading-relaxed">
+                    {getReasoningBullets(aiValuationResult.valuationReasoning).map((bullet, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#E4011E] shrink-0 mt-1.5" />
+                        <span>{bullet}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Phân tích phong thủy nếu có */}
+              {aiValuationResult.fengShuiAnalysis && (
+                <div className="p-3.5 bg-amber-50/50 rounded-[14px] border border-amber-100/50 text-xs text-amber-950 leading-relaxed">
+                  <div className="font-bold text-amber-900 mb-1 flex items-center gap-1.5">
+                    <Sparkles size={12} className="text-amber-600" />
+                    <span>Ý nghĩa phong thủy & ngũ hành:</span>
+                  </div>
+                  <p className="m-0 text-slate-600">{aiValuationResult.fengShuiAnalysis}</p>
+                </div>
+              )}
             </div>
 
-            <form onSubmit={handleConfirmCreateAuction} className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 gap-3">
-                {/* Giá khởi điểm */}
-                <div>
-                  <label className="block text-xs font-bold text-[#001743] mb-1">
-                    Giá khởi điểm <span className="text-red-600">*</span>
-                  </label>
-                  <div className="relative flex items-center">
-                    <input
-                      type="text"
-                      value={auctionStartPriceFormatted}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/\D/g, "");
-                        const num = raw ? parseInt(raw, 10) : 0;
-                        setAuctionStartPriceRaw(num);
-                        setAuctionStartPriceFormatted(num ? num.toLocaleString("vi-VN") : "");
-                      }}
-                      className="w-full text-xs p-2.5 pr-8 border border-slate-300 rounded-[6px] font-mono font-bold text-[#001743] focus:border-[#001743] focus:outline-none"
-                      required
-                    />
-                    <span className="absolute right-3 text-xs font-bold text-slate-400 pointer-events-none">₫</span>
-                  </div>
-                </div>
-
-                {/* Bước giá tối thiểu */}
-                <div>
-                  <label className="block text-xs font-bold text-[#001743] mb-1">
-                    Bước giá tối thiểu <span className="text-red-600">*</span>
-                  </label>
-                  <div className="relative flex items-center">
-                    <input
-                      type="text"
-                      value={auctionStepPriceFormatted}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/\D/g, "");
-                        const num = raw ? parseInt(raw, 10) : 0;
-                        setAuctionStepPriceRaw(num);
-                        setAuctionStepPriceFormatted(num ? num.toLocaleString("vi-VN") : "");
-                      }}
-                      className="w-full text-xs p-2.5 pr-8 border border-slate-300 rounded-[6px] font-mono font-bold text-[#001743] focus:border-[#001743] focus:outline-none"
-                      required
-                    />
-                    <span className="absolute right-3 text-xs font-bold text-slate-400 pointer-events-none">₫</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                {/* Giá mua ngay */}
-                <div>
-                  <label className="block text-xs font-bold text-[#001743] mb-1">
-                    Giá mua ngay (Tùy chọn)
-                  </label>
-                  <div className="relative flex items-center">
-                    <input
-                      type="text"
-                      placeholder="Không áp dụng"
-                      value={auctionBuyNowPriceFormatted}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/\D/g, "");
-                        const num = raw ? parseInt(raw, 10) : 0;
-                        setAuctionBuyNowPriceRaw(num);
-                        setAuctionBuyNowPriceFormatted(num ? num.toLocaleString("vi-VN") : "");
-                      }}
-                      className="w-full text-xs p-2.5 pr-8 border border-slate-300 rounded-[6px] font-mono font-semibold text-[#001743] focus:border-[#001743] focus:outline-none"
-                    />
-                    <span className="absolute right-3 text-xs font-bold text-slate-400 pointer-events-none">₫</span>
-                  </div>
-                </div>
-
-                {/* Thời gian đấu giá */}
-                <div>
-                  <label className="block text-xs font-bold text-[#001743] mb-1">
-                    Thời lượng phiên
-                  </label>
-                  <select
-                    value={auctionDuration}
-                    onChange={(e) => setAuctionDuration(e.target.value)}
-                    className="w-full text-xs p-2.5 border border-slate-300 rounded-[6px] bg-white font-semibold text-[#001743] focus:border-[#001743] focus:outline-none"
-                  >
-                    <option value="24">24 giờ (1 ngày)</option>
-                    <option value="48">48 giờ (2 ngày)</option>
-                    <option value="72">72 giờ (3 ngày)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-[6px] text-xs text-emerald-800 leading-relaxed">
-                <strong>Cơ chế ký quỹ bảo đảm:</strong> Trong suốt thời gian diễn ra phiên đấu giá, SIM sẽ được khóa chuyển nhượng để bảo vệ quyền lợi hợp lệ cho người thắng cuộc.
-              </div>
-
-              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setSelectedSimForAuction(null)}
-                  className="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-[6px] text-xs font-semibold transition-colors"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="btn-red px-5 py-2 rounded-[6px] text-xs font-bold shadow-xs cursor-pointer"
-                >
-                  Xác nhận mở phiên đấu giá
-                </button>
-              </div>
-            </form>
+            {/* Modal Footer */}
+            <div className="p-4 px-5 border-t border-slate-100 bg-white flex items-center justify-between gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowAiDetailModal(false)}
+                className="px-5 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-full text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (aiValuationResult.suggestedPrice) {
+                    const price = Math.round(aiValuationResult.suggestedPrice);
+                    setNewEstimatedValueRaw(price);
+                    setNewEstimatedValueFormatted(price.toLocaleString("vi-VN"));
+                  }
+                  setShowAiDetailModal(false);
+                }}
+                className="px-6 py-2.5 bg-[#001743] hover:bg-[#00266B] text-white rounded-full text-xs font-bold shadow-sm cursor-pointer flex items-center gap-1.5 transition-all active:scale-95"
+              >
+                <Check size={14} />
+                <span>Áp dụng mức giá {aiValuationResult.suggestedPrice?.toLocaleString("vi-VN")} ₫</span>
+              </button>
+            </div>
           </div>
         </div>
+      )}
+
+      {/* ── 4. Modal: Tạo phiên đấu giá (Wizard Modal 4 bước) ── */}
+      {selectedSimForAuction && (
+        <CreateAuctionWizardModal
+          sim={selectedSimForAuction}
+          isEkycVerified={isEkycVerified}
+          onClose={() => setSelectedSimForAuction(null)}
+          onSuccess={() => {
+            setSelectedSimForAuction(null);
+            fetchSimsFromDb();
+          }}
+          onNavigateToEkyc={onNavigateToEkyc}
+          addToast={addToast}
+        />
+      )}
+
+      {/* ── 5. Modal: Xác thực quyền sở hữu SIM (2 bước: SMS OTP + Cổng Viễn thông) ── */}
+      {selectedSimForVerify && (
+        <VerifySimOwnershipModal
+          sim={selectedSimForVerify}
+          isEkycVerified={isEkycVerified}
+          onClose={() => setSelectedSimForVerify(null)}
+          onSuccess={() => {
+            setSelectedSimForVerify(null);
+            fetchSimsFromDb();
+          }}
+          onNavigateToEkyc={onNavigateToEkyc}
+          onOpenCreateAuction={(s: OwnedSim) => {
+            setSelectedSimForVerify(null);
+            handleOpenCreateAuction(s);
+          }}
+          addToast={addToast}
+        />
+      )}
+
+      {/* ── 6. Modal: Xem chi tiết số SIM ── */}
+      {selectedSimForDetail && (
+        <SimDetailModal
+          sim={selectedSimForDetail}
+          onClose={() => setSelectedSimForDetail(null)}
+          onOpenCreateAuction={(s: OwnedSim) => {
+            setSelectedSimForDetail(null);
+            handleOpenCreateAuction(s);
+          }}
+          onOpenVerify={(s: OwnedSim) => {
+            setSelectedSimForDetail(null);
+            setSelectedSimForVerify(s);
+          }}
+          onOpenUpdate={(s: OwnedSim) => {
+            setSelectedSimForDetail(null);
+            setSelectedSimForUpdate(s);
+          }}
+          onOpenDelete={(s: OwnedSim) => {
+            setSelectedSimForDetail(null);
+            setSelectedSimForDelete(s);
+          }}
+          onSimUpdated={(updatedSim: OwnedSim) => {
+            setOwnedSims((prev) =>
+              prev.map((item) => (item.id === updatedSim.id ? updatedSim : item))
+            );
+            setSelectedSimForDetail(updatedSim);
+          }}
+          addToast={addToast}
+        />
+      )}
+
+      {/* ── 7. Modal: Chỉnh sửa thông tin SIM ── */}
+      {selectedSimForUpdate && (
+        <UpdateOwnedSimModal
+          sim={selectedSimForUpdate}
+          formatRhythmsList={formatRhythmsList}
+          categoriesList={categoriesList}
+          onClose={() => setSelectedSimForUpdate(null)}
+          onSuccess={() => {
+            setSelectedSimForUpdate(null);
+            fetchSimsFromDb();
+          }}
+          addToast={addToast}
+        />
+      )}
+
+      {/* ── 8. Modal: Xác nhận xóa SIM ── */}
+      {selectedSimForDelete && (
+        <DeleteSimConfirmModal
+          sim={selectedSimForDelete}
+          onClose={() => setSelectedSimForDelete(null)}
+          onSuccess={() => {
+            setSelectedSimForDelete(null);
+            fetchSimsFromDb();
+          }}
+          addToast={addToast}
+        />
       )}
     </div>
   );

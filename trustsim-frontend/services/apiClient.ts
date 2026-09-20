@@ -142,22 +142,33 @@ export async function apiFetch<T = any>(
 
     if (!res.ok) {
       // Bóc tách message lỗi từ ApiResponse hoặc FluentValidation
-      let errorMessage = "Đã có lỗi xảy ra. Vui lòng thử lại.";
+      let errorMessage = "";
       let errors: string[] | undefined = undefined;
 
       if (Array.isArray(data?.errors) && data.errors.length > 0) {
         errors = data.errors as string[];
         errorMessage = (data.errors as string[]).join(". ");
-      } else if (typeof data?.errors === "object" && data?.errors !== null) {
+      } else if (
+        typeof data?.errors === "object" &&
+        data?.errors !== null &&
+        !Array.isArray(data?.errors)
+      ) {
         const fieldErrors = Object.values(data.errors).flat() as string[];
-        errors = fieldErrors;
         if (fieldErrors.length > 0) {
+          errors = fieldErrors;
           errorMessage = fieldErrors.join(". ");
         }
-      } else if (data?.message) {
-        errorMessage = data.message;
-      } else if (data?.title) {
-        errorMessage = data.title;
+      }
+
+      // Nếu chưa lấy được message từ errors, đọc data.message hoặc data.title
+      if (!errorMessage) {
+        if (typeof data?.message === "string" && data.message.trim().length > 0) {
+          errorMessage = data.message.trim();
+        } else if (typeof data?.title === "string" && data.title.trim().length > 0) {
+          errorMessage = data.title.trim();
+        } else {
+          errorMessage = "Đã có lỗi xảy ra. Vui lòng thử lại.";
+        }
       }
 
       throw new ApiError(errorMessage, res.status, errors);

@@ -163,8 +163,24 @@ export default function RegisterPage() {
       addToast({ type: "error", title: "Mật khẩu không khớp", message: "Mật khẩu xác nhận không trùng khớp." });
       return;
     }
-    if (password.length < 6) {
-      addToast({ type: "error", title: "Mật khẩu quá ngắn", message: "Mật khẩu phải có ít nhất 6 ký tự." });
+    if (password.length < 8) {
+      addToast({ type: "error", title: "Mật khẩu quá ngắn", message: "Mật khẩu phải có ít nhất 8 ký tự." });
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      addToast({ type: "error", title: "Mật khẩu không đủ mạnh", message: "Mật khẩu phải chứa ít nhất 1 chữ in hoa (A-Z)." });
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      addToast({ type: "error", title: "Mật khẩu không đủ mạnh", message: "Mật khẩu phải chứa ít nhất 1 chữ thường (a-z)." });
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      addToast({ type: "error", title: "Mật khẩu không đủ mạnh", message: "Mật khẩu phải chứa ít nhất 1 chữ số (0-9)." });
+      return;
+    }
+    if (!/[!?*@#$%^&+=]/.test(password)) {
+      addToast({ type: "error", title: "Mật khẩu thiếu ký tự đặc biệt", message: "Mật khẩu phải chứa ít nhất 1 ký tự đặc biệt (!?*@#$%^&+=)." });
       return;
     }
     if (!/^[0-9]{12}$/.test(identityNumber)) {
@@ -616,34 +632,39 @@ export default function RegisterPage() {
                   </div>
 
                   {/* Row 3: Password & Confirm Password */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    <div>
-                      <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#001743", marginBottom: 3 }}>
-                        Mật khẩu <span style={{ color: "#E4011E" }}>*</span>
-                      </label>
-                      <input
-                        type="password"
-                        placeholder="Tối thiểu 6 ký tự"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        minLength={6}
-                        className="form-input"
-                      />
+                  <div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                      <div>
+                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#001743", marginBottom: 3 }}>
+                          Mật khẩu <span style={{ color: "#E4011E" }}>*</span>
+                        </label>
+                        <input
+                          type="password"
+                          placeholder="Tối thiểu 8 ký tự"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          minLength={8}
+                          className="form-input"
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#001743", marginBottom: 3 }}>
+                          Xác nhận mật khẩu <span style={{ color: "#E4011E" }}>*</span>
+                        </label>
+                        <input
+                          type="password"
+                          placeholder="Nhập lại mật khẩu"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
+                          minLength={8}
+                          className="form-input"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#001743", marginBottom: 3 }}>
-                        Xác nhận mật khẩu <span style={{ color: "#E4011E" }}>*</span>
-                      </label>
-                      <input
-                        type="password"
-                        placeholder="Nhập lại mật khẩu"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
-                        minLength={6}
-                        className="form-input"
-                      />
+                    <div style={{ fontSize: 11, color: "#6B7280", marginTop: 3 }}>
+                      Yêu cầu: Tối thiểu 8 ký tự, gồm ít nhất 1 chữ HOA, 1 chữ thường, 1 số và 1 ký tự đặc biệt (!?*@#$%^&+=).
                     </div>
                   </div>
 
@@ -888,7 +909,7 @@ export default function RegisterPage() {
                 </div>
 
                 {/* Summary Box */}
-                <div style={{ background: "#F8F9FA", padding: 10, borderRadius: 6, border: "1px solid #E5E7EB", marginBottom: 12, fontSize: 12 }}>
+                <div style={{ background: "#F8F9FA", padding: 10, borderRadius: 6, border: "1px solid #E5E7EB", marginBottom: 10, fontSize: 12 }}>
                   <div style={{ color: "#001743", fontWeight: 700, marginBottom: 2 }}>
                     Hồ sơ đăng ký: {firstName} {lastName} ({userName})
                   </div>
@@ -900,6 +921,11 @@ export default function RegisterPage() {
                       Địa chỉ: {fullAddress}
                     </div>
                   )}
+                </div>
+
+                {/* SMS OTP Notice */}
+                <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 11.5, color: "#1E40AF", lineHeight: 1.45 }}>
+                  <strong>Lưu ý:</strong> Mã OTP ở bước này được gửi qua <strong>tin nhắn SMS</strong> đến số điện thoại của bạn (khác với mã OTP Email ở bước trước). Vui lòng kiểm tra số điện thoại và bấm nút <strong>&quot;Gửi mã OTP&quot;</strong> bên dưới.
                 </div>
 
                 <form onSubmit={handleFinalRegister} style={{ display: "flex", flexDirection: "column", gap: 12 }}>

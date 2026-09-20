@@ -132,11 +132,21 @@ export interface CreateAuctionPayload {
   registrationStartAt?: string;
   registrationEndAt?: string;
   depositAmount?: number;
-  stepPrice?: number;
-  bidExtensionSeconds?: number;
+  // English Auction Rules
+  minimumBidIncrement?: number;
+  extensionThresholdSeconds?: number;
+  extensionDurationSeconds?: number;
   maximumExtensionCount?: number;
+  // Dutch Auction Rules
   dutchDecreaseAmount?: number;
   dutchDecreaseIntervalSeconds?: number;
+  // Common Rules
+  maximumBidCountPerParticipant?: number;
+  maximumBidCountPerMinute?: number;
+  minimumBidIntervalSeconds?: number;
+  // Legacy aliases (backward compat)
+  stepPrice?: number;
+  bidExtensionSeconds?: number;
 }
 
 export const auctionService = {

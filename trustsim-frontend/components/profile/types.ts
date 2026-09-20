@@ -20,5 +20,8 @@ export interface OwnedSim {
   createdDate: string;
   hasActiveAuction?: boolean;
   activeAuctionId?: string;
+  formatRhythmId?: string;
   formatRhythmName?: string;
+  phonePrefixId?: string;
+  categoryNames?: string[];
 }

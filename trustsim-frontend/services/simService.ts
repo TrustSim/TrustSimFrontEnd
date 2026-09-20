@@ -125,10 +125,13 @@ export interface MySimItemDto {
   id: string;
   phoneNumber: string;
   simStatus: SimStatus;
+  price?: number;
   carrierName: string;
   carrierCode: string;
   carrierLogo: string;
+  phonePrefixId?: string;
   prefixValue: string;
+  formatRhythmId?: string;
   formatRhythmName: string;
   categoryNames: string[];
   ownerId?: string;
@@ -141,6 +144,7 @@ export interface RegisterSimPayload {
   formatRhythmId: string;
   phonePrefixId?: string;
   categoryIds?: string[];
+  price?: number;
 }
 
 export interface FormatRhythmItemDto {
@@ -212,10 +216,12 @@ export interface AdminSimItemDto {
   id: string;
   phoneNumber: string;
   simStatus: SimStatus;
+  price?: number;
   carrierName: string;
   carrierCode: string;
   carrierLogo: string;
   prefixValue: string;
+  formatRhythmId?: string;
   formatRhythmName: string;
   categoryNames: string[];
   ownerId?: string;
@@ -263,7 +269,7 @@ export async function getAdminSims(
   if (params.search) query.set("search", params.search);
 
   const res = await apiFetch<PagedResult<AdminSimItemDto>>(
-    `/admin/sims?${query.toString()}`
+    `/sims/admin?${query.toString()}`
   );
   if (!res.data) {
     return {
@@ -285,7 +291,7 @@ export async function getAdminSims(
 export async function createAdminSim(
   payload: CreateAdminSimPayload
 ): Promise<SimNumberDto> {
-  const res = await apiFetch<SimNumberDto>("/admin/sims", {
+  const res = await apiFetch<SimNumberDto>("/sims", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -302,7 +308,7 @@ export async function updateAdminSim(
   id: string,
   payload: UpdateAdminSimPayload
 ): Promise<SimNumberDto> {
-  const res = await apiFetch<SimNumberDto>(`/admin/sims/${id}`, {
+  const res = await apiFetch<SimNumberDto>(`/sims/${id}`, {
     method: "PUT",
     body: JSON.stringify(payload),
   });
@@ -316,7 +322,7 @@ export async function updateAdminSim(
  * Xóa SIM khỏi hệ thống
  */
 export async function deleteAdminSim(id: string): Promise<boolean> {
-  const res = await apiFetch<boolean>(`/admin/sims/${id}`, {
+  const res = await apiFetch<boolean>(`/sims/${id}`, {
     method: "DELETE",
   });
   return res.data ?? res.success ?? false;
@@ -333,10 +339,164 @@ export async function importAdminSims(
   formData.append("file", file);
   formData.append("autoVerify", String(autoVerify));
 
-  const res = await apiFetch<any>("/admin/sims/import", {
+  const res = await apiFetch<any>("/sims/import", {
     method: "POST",
     body: formData,
   });
   return res.data;
 }
+
+// ─── Ownership Verification & User SIM Management ────────────────────────────
+
+export interface SendOtpResponseDto {
+  isSuccess: boolean;
+  message: string;
+  cooldownSeconds: number;
+  expiryMinutes: number;
+}
+
+export interface SimOwnershipVerificationResultDto {
+  isSuccess: boolean;
+  simNumberId: string;
+  simOwnershipId: string;
+  simVerificationId: string;
+  phoneNumber: string;
+  price: number;
+  formatRhythmId?: string;
+  carrierName: string;
+  carrierCode: string;
+  simStatus: SimStatus;
+  ownershipStatus: number | string;
+  verificationStatus: number | string;
+  verifiedAt: string;
+  message: string;
+}
+
+export interface SimOwnershipDto {
+  id: string;
+  simNumberId: string;
+  phoneNumber: string;
+  price: number;
+  formatRhythmId?: string;
+  formatRhythmName?: string;
+  simStatus: SimStatus;
+  carrierName: string;
+  carrierCode: string;
+  carrierLogo: string;
+  ownershipStatus: number | string;
+  verificationStatus: number | string;
+  verifiedAt?: string;
+  createdDate: string;
+}
+
+export interface SimDetailDto {
+  id: string;
+  phoneNumber: string;
+  simStatus: SimStatus;
+  simStatusName?: string;
+  price: number;
+  phonePrefixId?: string;
+  prefixValue?: string;
+  carrierId?: string;
+  carrierName: string;
+  carrierCode: string;
+  carrierLogo: string;
+  formatRhythmId?: string;
+  formatRhythmName?: string;
+  formatRhythmValue?: string;
+  categories?: { id: string; categoryName: string; description?: string }[];
+  ownerId?: string;
+  ownerUserName?: string;
+  ownerFullName?: string;
+  ownerEmail?: string;
+  ownerPhoneNumber?: string;
+  ownershipStatus?: number | string;
+  verificationStatus?: number | string;
+  rejectionReason?: string;
+  createdDate: string;
+  updatedDate?: string;
+}
+
+export interface UpdateSimPayload {
+  simStatus?: SimStatus;
+  phonePrefixId?: string;
+  formatRhythmId?: string;
+  categoryIds?: string[];
+  price?: number;
+}
+
+/**
+ * [API 1: Proof of Possession] Gửi mã xác thực OTP qua SMS tới số SIM người dùng muốn xác thực quyền sở hữu.
+ */
+export async function sendSimOwnershipOtp(phoneNumber: string): Promise<SendOtpResponseDto> {
+  const cleanPhone = phoneNumber.replace(/\D/g, "");
+  const res = await apiFetch<SendOtpResponseDto>("/Sims/ownership-verification/send-otp", {
+    method: "POST",
+    body: JSON.stringify({ phoneNumber: cleanPhone }),
+  });
+  if (!res.data && !res.success) {
+    throw new Error(res.message || "Không thể gửi mã xác thực OTP. Vui lòng thử lại sau.");
+  }
+  return res.data || { isSuccess: true, message: res.message || "Đã gửi mã OTP", cooldownSeconds: 60, expiryMinutes: 5 };
+}
+
+/**
+ * [API 2: Proof of Legal Ownership] Xác thực mã OTP SMS và đối soát quyền sở hữu chính chủ với Cổng viễn thông Nhà mạng.
+ */
+export async function verifySimOwnership(phoneNumber: string, otpCode: string): Promise<SimOwnershipVerificationResultDto> {
+  const cleanPhone = phoneNumber.replace(/\D/g, "");
+  const cleanOtp = otpCode.trim();
+  const res = await apiFetch<SimOwnershipVerificationResultDto>("/Sims/ownership-verification/verify", {
+    method: "POST",
+    body: JSON.stringify({ phoneNumber: cleanPhone, otpCode: cleanOtp }),
+  });
+  if (!res.data) {
+    throw new Error(res.message || "Xác thực quyền sở hữu SIM không thành công.");
+  }
+  return res.data;
+}
+
+/**
+ * Lấy danh sách các số SIM đang thuộc quyền sở hữu của người dùng hiện tại kèm trạng thái xác minh.
+ */
+export async function getMyOwnerships(): Promise<SimOwnershipDto[]> {
+  const res = await apiFetch<SimOwnershipDto[]>("/Sims/my-ownerships");
+  return res.data || [];
+}
+
+/**
+ * Xem thông tin chi tiết một số SIM theo ID
+ */
+export async function getSimDetail(id: string): Promise<SimDetailDto> {
+  const res = await apiFetch<SimDetailDto>(`/Sims/${id}`);
+  if (!res.data) {
+    throw new Error(res.message || "Không tìm thấy thông tin chi tiết số SIM.");
+  }
+  return res.data;
+}
+
+/**
+ * Cập nhật số SIM (Chủ sở hữu hoặc Admin)
+ */
+export async function updateSim(id: string, payload: UpdateSimPayload): Promise<SimNumberDto> {
+  const res = await apiFetch<SimNumberDto>(`/Sims/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ id, ...payload }),
+  });
+  if (!res.data) {
+    throw new Error(res.message || "Không thể cập nhật số SIM.");
+  }
+  return res.data;
+}
+
+/**
+ * Xóa số SIM khỏi kho của người dùng
+ */
+export async function deleteSim(id: string): Promise<boolean> {
+  const res = await apiFetch<boolean>(`/Sims/${id}`, {
+    method: "DELETE",
+  });
+  return res.data ?? res.success ?? false;
+}
+
 

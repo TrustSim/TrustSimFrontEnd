@@ -17,6 +17,7 @@ const TAB_LABELS: Record<string, string> = {
   users: "Quản lý Khách hàng",
   ekyc: "Phê duyệt hồ sơ eKYC",
   disputes: "Giải quyết khiếu nại & Trọng tài",
+  documents: "Quản lý Tài liệu & Chính sách",
   anomalies: "AI Giám sát bất thường & Gian lận",
   settings: "Cài đặt & Cấu hình sàn",
 };

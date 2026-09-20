@@ -210,11 +210,6 @@ export function AdminAuctionsTab() {
   const [cancelReason, setCancelReason] = useState("");
   const [cancelLoading, setCancelLoading] = useState(false);
 
-  // Modal Create Auction
-  const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [availableSims, setAvailableSims] = useState<SimNumberDto[]>([]);
-  const [createLoading, setCreateLoading] = useState(false);
-
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3500);
@@ -273,16 +268,6 @@ export function AdminAuctionsTab() {
   useEffect(() => {
     loadAuctions();
   }, [loadAuctions]);
-
-  // Load available SIMs for Create Auction Form
-  const loadAvailableSims = async () => {
-    try {
-      const paged = await getSims({ status: "AVAILABLE", pageSize: 50 });
-      setAvailableSims(paged.items || []);
-    } catch (e) {
-      console.error("Could not fetch available sims:", e);
-    }
-  };
 
   // --- Handlers ---
   const handleOpenDetail = async (auction: AuctionListItemDto) => {
@@ -429,14 +414,12 @@ export function AdminAuctionsTab() {
           </p>
         </div>
         <button
-          onClick={() => {
-            loadAvailableSims();
-            setCreateModalOpen(true);
-          }}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors shadow-xs shrink-0"
+          onClick={() => loadAuctions()}
+          disabled={loading}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-[#D1D5DB] hover:border-[#001743] hover:text-[#001743] text-slate-700 text-xs font-semibold rounded-[6px] transition-colors shadow-xs shrink-0 disabled:opacity-50"
         >
-          <Plus size={15} strokeWidth={1.75} />
-          <span>Tạo phiên đấu giá</span>
+          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+          <span>Làm mới</span>
         </button>
       </div>
 
@@ -956,180 +939,6 @@ export function AdminAuctionsTab() {
                   className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-[6px] transition-colors disabled:opacity-50"
                 >
                   {cancelLoading ? "Đang xử lý..." : "Xác nhận hủy phiên"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          MODAL: TẠO PHIÊN ĐẤU GIÁ MỚI
-      ========================================================================= */}
-      {createModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white border border-[#E2E8F0] rounded-[8px] w-full max-w-lg shadow-xl overflow-hidden animate-fade-up">
-            <div className="px-5 py-4 border-b border-[#E2E8F0] flex items-center justify-between">
-              <h3 className="text-sm font-bold text-[#001743]">Tạo Phiên Đấu Giá Mới</h3>
-              <button
-                onClick={() => setCreateModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 p-1"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                setCreateLoading(true);
-                const formData = new FormData(e.currentTarget);
-                const simId = formData.get("simId") as string;
-                const auctionType = Number(formData.get("auctionType"));
-                const startingPrice = Number(formData.get("startingPrice"));
-                const stepPrice = Number(formData.get("stepPrice"));
-                const reservePrice = Number(formData.get("reservePrice"));
-
-                const startAt = new Date(Date.now() + 3600000).toISOString();
-                const endAt = new Date(Date.now() + 3600000 * 25).toISOString();
-
-                try {
-                  await auctionService.createAuction({
-                    simNumberId: simId,
-                    auctionType,
-                    startingPrice,
-                    reservePrice,
-                    startAt,
-                    endAt,
-                    stepPrice,
-                  });
-                  showToast("Đã tạo phiên đấu giá mới thành công!");
-                  setCreateModalOpen(false);
-                  loadAuctions();
-                } catch (err: any) {
-                  // Fallback simulation nếu backend chưa có simId phù hợp
-                  const fakeCode = `AUC-${Date.now().toString().slice(-4)}`;
-                  const selectedSim = availableSims.find((s) => s.id === simId);
-                  const newCreated: AuctionListItemDto = {
-                    auctionId: `auc-${Date.now()}`,
-                    auctionCode: fakeCode,
-                    auctionType,
-                    auctionTypeName: auctionType === 0 ? "ENGLISH" : "DUTCH",
-                    auctionStatus: AuctionStatusEnum.SCHEDULE,
-                    auctionStatusName: "SCHEDULE",
-                    simNumberId: simId || "sim-new",
-                    phoneNumber: selectedSim?.phoneNumber || "0988888888",
-                    carrierName: selectedSim?.carrierName || "Viettel",
-                    startingPrice,
-                    currentPrice: startingPrice,
-                    reservePrice,
-                    startAt,
-                    endAt,
-                    registrationStartAt: new Date().toISOString(),
-                    registrationEndAt: startAt,
-                  };
-                  setAuctions([newCreated, ...auctions]);
-                  setTotalCount((prev) => prev + 1);
-                  showToast(`Đã tạo phiên đấu giá ${fakeCode} thành công.`);
-                  setCreateModalOpen(false);
-                } finally {
-                  setCreateLoading(false);
-                }
-              }}
-              className="p-5 space-y-4"
-            >
-              <div>
-                <label className="block text-xs font-semibold text-[#001743] mb-1">
-                  Chọn SIM khả dụng từ kho
-                </label>
-                <select
-                  required
-                  name="simId"
-                  className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-mono font-bold cursor-pointer"
-                >
-                  {availableSims.length > 0 ? (
-                    availableSims.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {formatPhone(s.phoneNumber)} ({s.carrierName} - {s.categoryNames?.join(", ") || "Số đẹp"})
-                      </option>
-                    ))
-                  ) : (
-                    <>
-                      <option value="sim-01">0988 888 888 (Viettel - Bát quý 8)</option>
-                      <option value="sim-02">0901 234 567 (Mobifone - Sảnh tiến)</option>
-                      <option value="sim-03">0777 777 777 (Mobifone - Thất quý 7)</option>
-                    </>
-                  )}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#001743] mb-1">
-                  Hình thức đấu giá
-                </label>
-                <select
-                  name="auctionType"
-                  className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none cursor-pointer"
-                >
-                  <option value="0">Đấu giá kiểu Anh</option>
-                  <option value="1">Đấu giá kiểu Hà Lan</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-[#001743] mb-1">
-                    Giá khởi điểm (VNĐ)
-                  </label>
-                  <input
-                    required
-                    type="number"
-                    name="startingPrice"
-                    defaultValue={10000000}
-                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[#001743] mb-1">
-                    Bước giá tối thiểu (VNĐ)
-                  </label>
-                  <input
-                    required
-                    type="number"
-                    name="stepPrice"
-                    defaultValue={500000}
-                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#001743] mb-1">
-                  Giá trần / Giá bảo lưu tối thiểu (VNĐ)
-                </label>
-                <input
-                  type="number"
-                  name="reservePrice"
-                  defaultValue={12000000}
-                  className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
-                />
-              </div>
-
-              <div className="pt-3 border-t border-[#E2E8F0] flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCreateModalOpen(false)}
-                  className="px-3.5 py-1.5 border border-[#D1D5DB] text-xs font-semibold text-[#4B5563] rounded-[6px]"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="submit"
-                  disabled={createLoading}
-                  className="px-4 py-1.5 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors disabled:opacity-50"
-                >
-                  {createLoading ? "Đang xử lý..." : "Bắt đầu phiên đấu giá"}
                 </button>
               </div>
             </form>

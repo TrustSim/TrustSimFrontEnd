@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { AdminCategoriesTab } from "@/components/admin/AdminCategoriesTab";
 import { AdminCarriersTab } from "@/components/admin/AdminCarriersTab";
@@ -10,8 +10,12 @@ import { AdminStaffTab } from "@/components/admin/AdminStaffTab";
 import AdminEscrowTab from "@/components/admin/AdminEscrowTab";
 import AdminDisputesTab from "@/components/admin/AdminDisputesTab";
 import AdminSettingsTab from "@/components/admin/AdminSettingsTab";
+import { AdminDocumentsTab } from "@/components/admin/AdminDocumentsTab";
 import ImportExportBar from "@/components/admin/ImportExportBar";
 import { ExcelColumnDef } from "@/services/excelService";
+import { auctionService, type AuctionDto } from "@/services/auctionService";
+import { tradeService } from "@/services/tradeService";
+import { getAdminSims, type AdminSimItemDto } from "@/services/simService";
 import {
   Smartphone,
   Gavel,
@@ -47,6 +51,8 @@ import {
   ExternalLink,
   RotateCcw,
   MoreHorizontal,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import {
   RightDrawer,
@@ -71,6 +77,18 @@ const formatPhone = (phone: string) => {
   }
   return phone;
 };
+
+function formatTimeLeft(endAtStr?: string): { timeLeft: string; isUrgent: boolean } {
+  if (!endAtStr) return { timeLeft: "Không xác định", isUrgent: false };
+  const diff = new Date(endAtStr).getTime() - Date.now();
+  if (diff <= 0) return { timeLeft: "Đã kết thúc", isUrgent: false };
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const isUrgent = diff < 5 * 60 * 1000;
+  if (hours > 0) return { timeLeft: `${hours}h ${minutes}m`, isUrgent };
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+  return { timeLeft: `${minutes}m ${seconds}s`, isUrgent };
+}
 
 // --- ANIMATED COUNTER (MICRO-INTERACTION) ---
 function AnimatedNumber({
@@ -159,186 +177,46 @@ interface AuctionItem {
   status: "live" | "upcoming" | "ended";
 }
 
-// --- INITIAL MOCK DATA ---
-const INITIAL_SIMS: SimItem[] = [
-  { id: "SIM-01", phone: "0988888888", carrier: "Viettel", category: "Bát quý", price: 1850000000, aiValuation: 1920000000, aiMultiplier: 15.0, status: "InAuction", type: "Trả trước", created: "10/09/2026", patternDesc: "Dãy 8 chữ số 8 liên hoàn đại cát, độ hiếm 0.0001%" },
-  { id: "SIM-02", phone: "0901234567", carrier: "Mobifone", category: "Sảnh tiến rồng", price: 15800000, aiValuation: 16500000, aiMultiplier: 2.5, status: "InAuction", type: "Trả trước", created: "09/09/2026", patternDesc: "Dãy số tiến từ 1 đến 7 tượng trưng cho thăng tiến liên tục" },
-  { id: "SIM-03", phone: "0777777777", carrier: "Mobifone", category: "Thất quý", price: 420000000, aiValuation: 410000000, aiMultiplier: 8.5, status: "InAuction", type: "Trả trước", created: "08/09/2026", patternDesc: "Bộ 7 chữ số 7 độc tôn, thuộc phân khúc siêu VIP" },
-  { id: "SIM-04", phone: "0888555000", carrier: "Vinaphone", category: "Tam hoa kép", price: 8500000, aiValuation: 9000000, aiMultiplier: 1.8, status: "Available", type: "Trả sau", created: "07/09/2026", patternDesc: "Cặp tam hoa 888 và 555 kết hợp đuôi tam quý" },
-  { id: "SIM-05", phone: "0909090909", carrier: "Viettel", category: "Ngũ quý kép", price: 850000000, aiValuation: 870000000, aiMultiplier: 6.0, status: "Available", type: "Trả trước", created: "06/09/2026", patternDesc: "Cặp số 09 lặp lại 5 lần liên tiếp cân bằng âm dương" },
-  { id: "SIM-06", phone: "0911119999", carrier: "Vinaphone", category: "Tứ quý kép", price: 120000000, aiValuation: 125000000, aiMultiplier: 3.2, status: "Available", type: "Trả trước", created: "05/09/2026", patternDesc: "Tứ quý 1111 đầu đuôi tứ quý 9999 đỉnh cao" },
-  { id: "SIM-07", phone: "0352468024", carrier: "Viettel", category: "Lộc phát", price: 8500000, aiValuation: 8200000, aiMultiplier: 1.5, status: "Sold", type: "Trả trước", created: "01/09/2026", patternDesc: "Dãy số chẵn tiến phong thủy lộc phát" },
-  { id: "SIM-08", phone: "0987654321", carrier: "Viettel", category: "Sảnh lùi đại gia", price: 65000000, aiValuation: 68000000, aiMultiplier: 2.2, status: "Locked", type: "Trả trước", created: "28/08/2026", patternDesc: "Sảnh lùi hoàn hảo từ 9 xuống 1" },
-];
+interface EscrowTransaction {
+  id: string;
+  orderCode: string;
+  sim: string;
+  buyer: string;
+  seller: string;
+  amount: number;
+  fee: number;
+  status: "Held" | "Released" | "Disputed" | "Refunded";
+  time: string;
+  deadline: string;
+  pipelineStep: number;
+  conditionsMet: boolean;
+  missingReason: string;
+}
 
-const INITIAL_AUCTIONS: AuctionItem[] = [
-  { id: "AUC-101", sim: "0901234567", type: "english", currentPrice: 15800000, startPrice: 10000000, step: 500000, bids: 28, seller: "TrustSim Official", leader: "Hoàng Minh Tuấn", timeLeft: "03m 45s", isUrgentCountdown: true, riskLevel: "safe", status: "live" },
-  { id: "AUC-102", sim: "0777777777", type: "sealed", currentPrice: 420000000, startPrice: 300000000, step: 10000000, bids: 8, seller: "NguyenVanA", leader: "Vũ Đình Trọng", timeLeft: "04h 00m", isUrgentCountdown: false, riskLevel: "monitor", status: "live" },
-  { id: "AUC-103", sim: "0888555000", type: "dutch", currentPrice: 8500000, startPrice: 12000000, step: 200000, bids: 0, seller: "SimSoVip_HN", leader: "Chưa có", timeLeft: "45m", isUrgentCountdown: false, riskLevel: "safe", status: "live" },
-  { id: "AUC-104", sim: "0988888888", type: "english", currentPrice: 1850000000, startPrice: 1500000000, step: 20000000, bids: 42, seller: "DaiGiaSim", leader: "Trần Bảo Long", timeLeft: "01h 30m", isUrgentCountdown: false, riskLevel: "safe", status: "live" },
-  { id: "AUC-105", sim: "0911119999", type: "sealed", currentPrice: 120000000, startPrice: 120000000, step: 2000000, bids: 0, seller: "TranQuangB", leader: "Chưa có", timeLeft: "Bắt đầu sau 18h", isUrgentCountdown: false, riskLevel: "safe", status: "upcoming" },
-  { id: "AUC-106", sim: "0352468024", type: "english", currentPrice: 8500000, startPrice: 5000000, step: 200000, bids: 19, seller: "TrungPT", leader: "Lê Văn Đức", timeLeft: "Đã kết thúc", isUrgentCountdown: false, riskLevel: "safe", status: "ended" },
-];
-
-const INITIAL_CATEGORIES = [
-  { id: "CAT-01", code: "BAT_QUY", name: "Bát quý (88888888)", multiplier: 15.0, count: 2, desc: "Chứa chuỗi 8 số giống nhau liền mạch", regex: "(\\d)\\1{7}" },
-  { id: "CAT-02", code: "THAT_QUY", name: "Thất quý (7777777)", multiplier: 8.5, count: 4, desc: "Chứa chuỗi 7 số giống nhau liền mạch", regex: "(\\d)\\1{6}" },
-  { id: "CAT-03", code: "LUC_QUY", name: "Lục quý (666666)", multiplier: 4.5, count: 12, desc: "Chứa chuỗi 6 số giống nhau liền mạch", regex: "(\\d)\\1{5}" },
-  { id: "CAT-04", code: "NGU_QUY", name: "Ngũ quý (55555)", multiplier: 2.8, count: 28, desc: "Chứa chuỗi 5 số giống nhau liền mạch", regex: "(\\d)\\1{4}" },
-  { id: "CAT-05", code: "TU_QUY", name: "Tứ quý (4444)", multiplier: 1.8, count: 145, desc: "Chứa chuỗi 4 chữ số trùng ở đuôi", regex: "(\\d)\\1{3}$" },
-  { id: "CAT-06", code: "LOC_PHAT", name: "Lộc phát (68 - 86)", multiplier: 1.5, count: 320, desc: "Đuôi chứa cặp số 68 hoặc 86 phong thủy", regex: "(68|86)$" },
-  { id: "CAT-07", code: "THAN_TAI", name: "Thần tài (39 - 79)", multiplier: 1.3, count: 210, desc: "Đuôi chứa cặp số 39 hoặc 79", regex: "(39|79)$" },
-  { id: "CAT-08", code: "SANH_TIEN", name: "Sảnh tiến liên hoàn", multiplier: 2.2, count: 65, desc: "Dãy số tăng dần đều như 4567, 6789", regex: "0123|1234|2345|3456|4567|5678|6789" },
-];
-
-const INITIAL_CARRIERS = [
-  { id: "CAR-01", name: "Viettel", code: "VTL", prefixes: ["098", "097", "096", "086", "032", "033", "034", "035", "036", "037", "038", "039"], totalSims: 4820 },
-  { id: "CAR-02", name: "Vinaphone", code: "VNP", prefixes: ["091", "094", "088", "081", "082", "083", "084", "085"], totalSims: 3150 },
-  { id: "CAR-03", name: "Mobifone", code: "MBF", prefixes: ["090", "093", "089", "070", "079", "077", "076", "078"], totalSims: 2900 },
-  { id: "CAR-04", name: "Vietnamobile", code: "VNM", prefixes: ["092", "056", "058"], totalSims: 640 },
-  { id: "CAR-05", name: "Wintel / Itelecom", code: "WNT", prefixes: ["055", "087"], totalSims: 410 },
-];
-
-const INITIAL_USERS = [
-  { id: "USR-01", name: "Trần Anh Quân", email: "tranquan@trustsim.vn", phone: "0901888999", role: "Admin", kycStatus: "verified", balance: 45000000, status: "Active", joined: "15/01/2026" },
-  { id: "USR-02", name: "Nguyễn Văn An", email: "nguyenan88@gmail.com", phone: "0982345678", role: "Consultant", kycStatus: "verified", balance: 12500000, status: "Active", joined: "20/03/2026" },
-  { id: "USR-03", name: "Lê Thị Hồng Cúc", email: "hongcuc.le@gmail.com", phone: "0918765432", role: "User", kycStatus: "pending", balance: 5000000, status: "Active", joined: "10/08/2026" },
-  { id: "USR-04", name: "Hoàng Minh Tuấn", email: "tuanminh.sim@yahoo.com", phone: "0934567890", role: "User", kycStatus: "verified", balance: 250000000, status: "Active", joined: "05/05/2026" },
-  { id: "USR-05", name: "Đỗ Gia Huy", email: "huy.dogia@outlook.com", phone: "0776543210", role: "User", kycStatus: "rejected", balance: 0, status: "Locked", joined: "22/08/2026" },
-];
-
-const INITIAL_EKYC_QUEUE = [
-  {
-    id: "KYC-301",
-    userId: "USR-03",
-    userName: "Lê Thị Hồng Cúc",
-    idCardNumber: "079198004567",
-    dob: "14/05/1998",
-    address: "128 Hai Bà Trưng, Phường Đa Kao, Quận 1, TP.HCM",
-    faceMatchScore: 96.8,
-    antiSpoofing: "Pass (99.2%)",
-    blacklistCheck: "Clean",
-    submittedAt: "Hôm nay, 14:20 (2.5h trước)",
-    status: "pending",
-  },
-  {
-    id: "KYC-302",
-    userId: "USR-06",
-    userName: "Phạm Quốc Đạt",
-    idCardNumber: "001200008899",
-    dob: "22/10/2000",
-    address: "45 Hoàng Cầu, Đống Đa, Hà Nội",
-    faceMatchScore: 92.4,
-    antiSpoofing: "Pass (98.1%)",
-    blacklistCheck: "Clean",
-    submittedAt: "Hôm nay, 11:05 (5.8h trước)",
-    status: "pending",
-  },
-  {
-    id: "KYC-303",
-    userId: "USR-07",
-    userName: "Vũ Đình Trọng",
-    idCardNumber: "036195001234",
-    dob: "08/01/1995",
-    address: "Số 12 Quang Trung, TP. Nam Định",
-    faceMatchScore: 88.1,
-    antiSpoofing: "Warning: Góc nghiêng",
-    blacklistCheck: "Clean",
-    submittedAt: "Hôm qua, 17:40",
-    status: "pending",
-  },
-];
-
-const INITIAL_TRANSACTIONS = [
-  {
-    id: "TX-901",
-    orderCode: "ORD-8821",
-    sim: "0901234567",
-    buyer: "Hoàng Minh Tuấn",
-    seller: "TrustSim Official",
-    amount: 15800000,
-    fee: 474000,
-    status: "Held",
-    time: "11/09/2026 10:30",
-    deadline: "13/09/2026 10:30 (Còn 22h)",
-    // 5-step escrow checklist: [deposit, full_escrow, e_contract, sim_transfer, payout]
-    pipelineStep: 4, // Đang ở bước 4: chờ hoàn tất chuyển nhượng viễn thông
-    conditionsMet: false,
-    missingReason: "Chờ người mua xác nhận mã OTP chuyển nhượng từ nhà mạng",
-  },
-  {
-    id: "TX-902",
-    orderCode: "ORD-8819",
-    sim: "0352468024",
-    buyer: "Trần Văn Bình",
-    seller: "TrungPT",
-    amount: 8500000,
-    fee: 255000,
-    status: "Released",
-    time: "10/09/2026 16:45",
-    deadline: "Đã hoàn tất giải ngân",
-    pipelineStep: 5,
-    conditionsMet: true,
-    missingReason: "",
-  },
-  {
-    id: "TX-903",
-    orderCode: "ORD-8815",
-    sim: "0987654321",
-    buyer: "Nguyễn Bảo Long",
-    seller: "LuckyNum",
-    amount: 35000000,
-    fee: 1050000,
-    status: "Disputed",
-    time: "09/09/2026 14:15",
-    deadline: "Đang đóng băng ký quỹ chờ trọng tài",
-    pipelineStep: 3,
-    conditionsMet: false,
-    missingReason: "Khiếu nại: Bên bán chậm bàn giao mã ủy quyền chuyển nhượng",
-  },
-  {
-    id: "TX-904",
-    orderCode: "ORD-8810",
-    sim: "0909090909",
-    buyer: "Đặng Thị Mai",
-    seller: "SimVIP",
-    amount: 850000000,
-    fee: 25500000,
-    status: "Refunded",
-    time: "08/09/2026 09:10",
-    deadline: "Đã hoàn tiền cho người mua",
-    pipelineStep: 5,
-    conditionsMet: false,
-    missingReason: "Hủy giao dịch theo thỏa thuận trọng tài",
-  },
-];
-
-const INITIAL_DISPUTES = [
-  { id: "DSP-01", orderCode: "ORD-8815", sim: "0987654321", complainant: "Nguyễn Bảo Long (Người mua)", respondent: "LuckyNum (Người bán)", reason: "Không hoàn tất sang tên chính chủ tại điểm giao dịch", amount: 35000000, status: "UnderReview", risk: "high", isFrozen: true, date: "10/09/2026" },
-  { id: "DSP-02", orderCode: "ORD-8799", sim: "0911223344", complainant: "Phan Văn Nam (Người bán)", respondent: "Lê Minh Tuấn (Người mua)", reason: "Người mua chậm xác nhận mã OTP chuyển nhượng quá hạn 48h", amount: 18000000, status: "UnderReview", risk: "medium", isFrozen: true, date: "09/09/2026" },
-];
-
-const INITIAL_ANOMALIES = [
-  { id: "AI-101", level: "high", title: "Nghi vấn Bơm giá (Shill Bidding)", desc: "Tài khoản Nguyen*** đặt giá 23 lần liên tiếp trong 5 phút ở phiên #AUC-102", sim: "0777777777", time: "10 phút trước", status: "open", actor: "NguyenVanA & Bot_098", actionNeeded: "Cần phong tỏa phiên đấu giá thẩm định" },
-  { id: "AI-102", level: "high", title: "Trùng IP & Thiết bị giữa người bán và người đặt giá", desc: "Hai tài khoản khác nhau đấu giá cùng lúc từ IP 14.161.22.84", sim: "0901234567", time: "45 phút trước", status: "open", actor: "MinhTuan99", actionNeeded: "Xác minh mối liên hệ chủ tài khoản" },
-  { id: "AI-103", level: "low", title: "Giá niêm yết lệch sâu so với AI định giá", desc: "SIM 0909090909 được tạo giá sàn thấp hơn 55% so với mô hình AI", sim: "0909090909", time: "2 giờ trước", status: "resolved", actor: "SimVIP", actionNeeded: "Đã rà soát chấp thuận" },
-];
+interface AnomalyItem {
+  id: string;
+  level: "high" | "low";
+  title: string;
+  desc: string;
+  sim: string;
+  time: string;
+  status: "open" | "resolved";
+  actor: string;
+  actionNeeded: string;
+}
 
 export default function AdminControlCenter() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentTab = searchParams?.get("tab") || "dashboard";
 
-  // Data States
-  const [sims, setSims] = useState<SimItem[]>(INITIAL_SIMS);
-  const [auctions, setAuctions] = useState<AuctionItem[]>(INITIAL_AUCTIONS);
-  const [categories, setCategories] = useState(INITIAL_CATEGORIES);
-  const [carriers, setCarriers] = useState(INITIAL_CARRIERS);
-  const [users, setUsers] = useState(INITIAL_USERS);
-  const [ekycQueue, setEkycQueue] = useState(INITIAL_EKYC_QUEUE);
-  const [transactions, setTransactions] = useState(INITIAL_TRANSACTIONS);
-  const [disputes, setDisputes] = useState(INITIAL_DISPUTES);
-  const [anomalies, setAnomalies] = useState(INITIAL_ANOMALIES);
+  // Data States (Loaded from Backend APIs; empty defaults)
+  const [sims, setSims] = useState<SimItem[]>([]);
+  const [auctions, setAuctions] = useState<AuctionItem[]>([]);
+  const [transactions, setTransactions] = useState<EscrowTransaction[]>([]);
+  const [anomalies, setAnomalies] = useState<AnomalyItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
 
   // Settings State
   const [settings, setSettings] = useState({
@@ -381,15 +259,150 @@ export default function AdminControlCenter() {
     color: string;
   } | null>(null);
 
+  // Data Fetching Hook
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      const [auctionsRes, tradesRes, simsRes] = await Promise.allSettled([
+        auctionService.getAuctions({ pageSize: 50 }),
+        tradeService.adminGetAllTrades({ pageSize: 50 }),
+        getAdminSims({ pageSize: 50 }),
+      ]);
+
+      // 1. Ánh xạ danh sách phiên đấu giá từ Backend
+      if (auctionsRes.status === "fulfilled" && auctionsRes.value?.items) {
+        const mappedAuctions: AuctionItem[] = auctionsRes.value.items.map((a: AuctionDto) => {
+          const { timeLeft, isUrgent } = formatTimeLeft(a.endAt);
+          const typeMap: Record<string, "english" | "dutch" | "sealed"> = {
+            ENGLISH: "english",
+            DUTCH: "dutch",
+          };
+          const statusMap: Record<string, "live" | "upcoming" | "ended"> = {
+            ACTIVE: "live",
+            SCHEDULE: "upcoming",
+            END: "ended",
+            CANCELLED: "ended",
+          };
+          return {
+            id: a.auctionCode || a.id,
+            sim: a.simPhoneNumber || "",
+            type: typeMap[a.auctionType] || "english",
+            currentPrice: a.currentPrice || a.startingPrice || 0,
+            startPrice: a.startingPrice || 0,
+            step: a.minBidStep || 0,
+            bids: a.totalBids || 0,
+            seller: a.authorName || "Hệ thống",
+            leader: "Chưa có",
+            timeLeft,
+            isUrgentCountdown: isUrgent,
+            riskLevel: "safe",
+            status: statusMap[a.auctionStatus] || "ended",
+          };
+        });
+        setAuctions(mappedAuctions);
+      } else {
+        setAuctions([]);
+      }
+
+      // 2. Ánh xạ danh sách giao dịch chuyển nhượng / ký quỹ từ Backend
+      if (tradesRes.status === "fulfilled" && tradesRes.value?.items) {
+        const mappedTrades: EscrowTransaction[] = tradesRes.value.items.map((t) => {
+          const statusStr = String(t.status);
+          const escrowStatusStr = String(t.escrowStatus);
+
+          let txStatus: "Held" | "Released" | "Disputed" | "Refunded" = "Held";
+          if (escrowStatusStr === "RELEASED" || statusStr === "Completed") txStatus = "Released";
+          else if (statusStr === "Disputed") txStatus = "Disputed";
+          else if (escrowStatusStr === "REFUNDED" || statusStr.includes("Cancelled")) txStatus = "Refunded";
+          else txStatus = "Held";
+
+          let step = 1;
+          if (statusStr === "PendingEscrow") step = 1;
+          else if (statusStr === "PendingSignature") step = 2;
+          else if (statusStr === "PendingTransfer") step = 4;
+          else if (statusStr === "Completed") step = 5;
+
+          return {
+            id: t.id,
+            orderCode: t.tradeTransactionCode || `ORD-${t.id.slice(0, 8)}`,
+            sim: t.simPhoneNumber || "",
+            buyer: t.buyerName || "Người mua",
+            seller: t.sellerName || "Người bán",
+            amount: Number(t.escrowAmount) || 0,
+            fee: (Number(t.escrowAmount) || 0) * 0.03,
+            status: txStatus,
+            time: t.createdDate ? new Date(t.createdDate).toLocaleDateString("vi-VN") : "—",
+            deadline: t.escrowDeadline ? new Date(t.escrowDeadline).toLocaleString("vi-VN") : "—",
+            pipelineStep: step,
+            conditionsMet: step >= 5,
+            missingReason: step < 4 ? "Chờ người mua ký hợp đồng" : step === 4 ? "Chờ xác nhận chuyển nhượng từ nhà mạng" : "",
+          };
+        });
+        setTransactions(mappedTrades);
+      } else {
+        setTransactions([]);
+      }
+
+      // 3. Ánh xạ danh sách SIM cho modal tạo phiên nhanh
+      if (simsRes.status === "fulfilled" && simsRes.value?.items) {
+        const mappedSims: SimItem[] = simsRes.value.items.map((s: AdminSimItemDto) => ({
+          id: s.id,
+          phone: s.phoneNumber,
+          carrier: s.carrierName || "Chưa rõ",
+          category: s.categoryNames?.join(", ") || "Phổ thông",
+          price: 0,
+          aiValuation: 0,
+          aiMultiplier: 1.0,
+          status:
+            s.simStatus === "AVAILABLE"
+              ? "Available"
+              : s.simStatus === "IN_AUCTION"
+              ? "InAuction"
+              : s.simStatus === "TRANFERED"
+              ? "Sold"
+              : "Locked",
+          type: "Trả trước",
+          created: s.createdDate ? new Date(s.createdDate).toLocaleDateString("vi-VN") : "—",
+          patternDesc: s.formatRhythmName || "",
+        }));
+        setSims(mappedSims);
+      } else {
+        setSims([]);
+      }
+
+      // 4. Anomalies: Backend chưa có Controller/API phát hiện bất thường -> để trống theo yêu cầu
+      setAnomalies([]);
+    } catch (err) {
+      console.error("Lỗi nạp dữ liệu Dashboard:", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
   // =========================================================================
   // VIEW: 1. DASHBOARD (OPERATIONAL SUMMARY & PRIORITY ACTIONS)
   // =========================================================================
   const renderDashboard = () => {
-    const liveCount = auctions.filter((a) => a.status === "live").length;
+    const liveAuctions = auctions.filter((a) => a.status === "live");
+    const liveCount = liveAuctions.length;
     const highRiskAlerts = anomalies.filter((a) => a.status === "open" && a.level === "high").length;
     const totalHeldEscrow = transactions
       .filter((t) => t.status === "Held" || t.status === "Disputed")
       .reduce((sum, t) => sum + t.amount, 0);
+
+    // Donut chart dynamic calculations
+    const activeBiddingCount = liveAuctions.filter((a) => a.bids > 0 && !a.isUrgentCountdown).length;
+    const urgentCount = liveAuctions.filter((a) => a.isUrgentCountdown).length;
+    const newAuctionCount = liveAuctions.filter((a) => a.bids === 0 && !a.isUrgentCountdown).length;
+    const circumference = 263.89; // 2 * PI * 42
+
+    const activeBiddingDash = liveCount > 0 ? (activeBiddingCount / liveCount) * circumference : 0;
+    const urgentDash = liveCount > 0 ? (urgentCount / liveCount) * circumference : 0;
+    const newAuctionDash = liveCount > 0 ? (newAuctionCount / liveCount) * circumference : 0;
 
     return (
       <div className="space-y-6">
@@ -425,6 +438,18 @@ export default function AdminControlCenter() {
 
           {/* Action Hierarchy: 1 Primary CTA (Navy), 1 Secondary Subtle (Outline) */}
           <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => {
+                setRefreshing(true);
+                fetchDashboardData();
+              }}
+              disabled={refreshing}
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-medium rounded-lg transition-colors shadow-2xs disabled:opacity-50"
+              title="Làm mới dữ liệu thời gian thực"
+            >
+              <RefreshCw size={13} className={refreshing ? "animate-spin text-[#001743]" : ""} />
+              <span>{refreshing ? "Đang tải..." : "Làm mới"}</span>
+            </button>
             <a
               href="/admin?tab=sims"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-medium rounded-lg transition-colors shadow-2xs"
@@ -461,7 +486,7 @@ export default function AdminControlCenter() {
                 <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between gap-3">
                   <div className="text-[11px] text-emerald-700 font-medium flex items-center gap-1 shrink-0">
                     <TrendingUp size={12} />
-                    <span>+12.4% tuần này</span>
+                    <span>Dữ liệu thực từ DB</span>
                   </div>
                   <svg className="w-24 h-5 overflow-visible" viewBox="0 0 100 22" fill="none">
                     <polyline
@@ -497,11 +522,14 @@ export default function AdminControlCenter() {
                   <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1">
                     <span className="text-amber-700 font-medium flex items-center gap-1">
                       <Clock size={11} />
-                      <span>1 sắp hết (&lt; 5p)</span>
+                      <span>{urgentCount} sắp hết (&lt; 5p)</span>
                     </span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-1 overflow-hidden">
-                    <div className="bg-amber-500 h-1 rounded-full" style={{ width: "25%" }} />
+                    <div
+                      className="bg-amber-500 h-1 rounded-full"
+                      style={{ width: liveCount > 0 ? `${Math.round((urgentCount / liveCount) * 100)}%` : "0%" }}
+                    />
                   </div>
                 </div>
               </div>
@@ -531,25 +559,41 @@ export default function AdminControlCenter() {
             {/* Subtle Divider */}
             <div className="hidden lg:block lg:col-span-1 h-14 w-px bg-slate-100 mx-auto" />
 
-            {/* Metric 4 (Thứ cấp): Cảnh báo rủi ro AI - Nền trắng tinh gọn, thanh nhấn đỏ bên trái */}
-            <div className="lg:col-span-2 flex flex-col justify-between pl-3 border-l-2 border-rose-500/80">
+            {/* Metric 4 (Thứ cấp): Cảnh báo rủi ro AI - Tự động hiển thị an toàn khi chưa có cảnh báo */}
+            <div className={`lg:col-span-2 flex flex-col justify-between pl-3 border-l-2 ${
+              highRiskAlerts > 0 ? "border-rose-500/80" : "border-emerald-500/80"
+            }`}>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-slate-700">Rủi ro AI</span>
-                <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200/60">
-                  KHẨN CẤP
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                  highRiskAlerts > 0
+                    ? "text-rose-700 bg-rose-50 border-rose-200/60"
+                    : "text-emerald-700 bg-emerald-50 border-emerald-200/60"
+                }`}>
+                  {highRiskAlerts > 0 ? "KHẨN CẤP" : "AN TOÀN"}
                 </span>
               </div>
               <div className="mt-2">
-                <div className="text-xl font-bold text-[#E4011E] tabular-nums tracking-tight flex items-baseline gap-1.5">
+                <div className={`text-xl font-bold tabular-nums tracking-tight flex items-baseline gap-1.5 ${
+                  highRiskAlerts > 0 ? "text-[#E4011E]" : "text-emerald-700"
+                }`}>
                   <AnimatedNumber value={highRiskAlerts} />
                   <span className="text-xs font-normal text-slate-500">cảnh báo</span>
                 </div>
                 <div className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-slate-500">
-                  <div className="flex items-center gap-1 text-rose-700 font-medium truncate">
-                    <span className="w-1.5 h-1.5 rounded-full bg-rose-600 shrink-0"></span>
-                    <span className="truncate">Shill Bidding / IP</span>
+                  <div className={`flex items-center gap-1 font-medium truncate ${
+                    highRiskAlerts > 0 ? "text-rose-700" : "text-emerald-700"
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      highRiskAlerts > 0 ? "bg-rose-600" : "bg-emerald-600"
+                    }`}></span>
+                    <span className="truncate">
+                      {highRiskAlerts > 0 ? "Shill Bidding / IP" : "Chưa có cảnh báo"}
+                    </span>
                   </div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">Quét 30s/lần</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">
+                    {highRiskAlerts > 0 ? "Quét 30s/lần" : "Hệ thống an toàn"}
+                  </div>
                 </div>
               </div>
             </div>
@@ -563,12 +607,16 @@ export default function AdminControlCenter() {
             <div>
               <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-2">
-                  <ShieldAlert size={16} className="text-[#E4011E]" />
+                  <ShieldAlert size={16} className={highRiskAlerts > 0 ? "text-[#E4011E]" : "text-slate-400"} />
                   <h2 className="text-sm font-semibold text-[#001743]">
                     Cảnh báo rủi ro AI &amp; Gian lận
                   </h2>
                 </div>
-                <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200/60">
+                <span className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full border ${
+                  anomalies.filter((a) => a.status === "open").length > 0
+                    ? "bg-rose-50 text-rose-700 border-rose-200/60"
+                    : "bg-slate-50 text-slate-500 border-slate-200/60"
+                }`}>
                   {anomalies.filter((a) => a.status === "open").length} cảnh báo đang mở
                 </span>
               </div>
@@ -586,58 +634,70 @@ export default function AdminControlCenter() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {anomalies
-                      .filter((a) => a.status === "open")
-                      .map((anom) => (
-                        <tr
-                          key={anom.id}
-                          className="hover:bg-slate-50/60 transition-colors duration-150 h-12"
-                        >
-                          <td className="py-2 px-4 text-xs text-slate-500 font-mono whitespace-nowrap">
-                            {anom.time}
-                          </td>
-                          <td className="py-2 px-3 whitespace-nowrap">
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                                anom.level === "high"
-                                  ? "bg-rose-50 text-rose-700 border border-rose-200/60"
-                                  : "bg-amber-50 text-amber-800 border border-amber-200/60"
-                              }`}
-                            >
-                              {anom.level === "high" ? "Khẩn cấp" : "Theo dõi"}
-                            </span>
-                          </td>
-                          <td className="py-2 px-3">
-                            <div className="font-medium text-xs text-[#001743]">{anom.title}</div>
-                            <div className="text-[11px] text-slate-400 truncate max-w-[240px]">{anom.desc}</div>
-                          </td>
-                          <td className="py-2 px-3 font-mono text-xs text-slate-600 whitespace-nowrap">
-                            {anom.actor}
-                          </td>
-                          <td className="py-2 px-3 font-mono font-bold text-xs text-[#001743] whitespace-nowrap">
-                            {formatPhone(anom.sim)}
-                          </td>
-                          <td className="py-2 px-4 text-right whitespace-nowrap">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                onClick={() => showToast(`Đã ra lệnh khóa khẩn cấp phiên đấu giá SIM ${anom.sim}.`)}
-                                className="px-2.5 py-1 text-xs font-medium text-rose-600 hover:text-white hover:bg-[#E4011E] rounded-md border border-rose-200 hover:border-[#E4011E] transition-all"
+                    {anomalies.filter((a) => a.status === "open").length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center text-slate-400">
+                          <ShieldCheck size={36} className="mx-auto text-emerald-500 mb-2" strokeWidth={1.5} />
+                          <p className="font-semibold text-xs text-[#001743]">Hệ thống vận hành an toàn</p>
+                          <p className="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto">
+                            Chưa có cảnh báo rủi ro hoặc hành vi gian lận nào được ghi nhận từ hệ thống.
+                          </p>
+                        </td>
+                      </tr>
+                    ) : (
+                      anomalies
+                        .filter((a) => a.status === "open")
+                        .map((anom) => (
+                          <tr
+                            key={anom.id}
+                            className="hover:bg-slate-50/60 transition-colors duration-150 h-12"
+                          >
+                            <td className="py-2 px-4 text-xs text-slate-500 font-mono whitespace-nowrap">
+                              {anom.time}
+                            </td>
+                            <td className="py-2 px-3 whitespace-nowrap">
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                                  anom.level === "high"
+                                    ? "bg-rose-50 text-rose-700 border border-rose-200/60"
+                                    : "bg-amber-50 text-amber-800 border border-amber-200/60"
+                                }`}
                               >
-                                Khóa phiên
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setAnomalies(anomalies.map((a) => (a.id === anom.id ? { ...a, status: "resolved" } : a)));
-                                  showToast(`Đã bỏ qua cảnh báo ${anom.id}.`);
-                                }}
-                                className="px-2 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors"
-                              >
-                                Bỏ qua
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                                {anom.level === "high" ? "Khẩn cấp" : "Theo dõi"}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3">
+                              <div className="font-medium text-xs text-[#001743]">{anom.title}</div>
+                              <div className="text-[11px] text-slate-400 truncate max-w-[240px]">{anom.desc}</div>
+                            </td>
+                            <td className="py-2 px-3 font-mono text-xs text-slate-600 whitespace-nowrap">
+                              {anom.actor}
+                            </td>
+                            <td className="py-2 px-3 font-mono font-bold text-xs text-[#001743] whitespace-nowrap">
+                              {formatPhone(anom.sim)}
+                            </td>
+                            <td className="py-2 px-4 text-right whitespace-nowrap">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => showToast(`Đã ra lệnh khóa khẩn cấp phiên đấu giá SIM ${anom.sim}.`)}
+                                  className="px-2.5 py-1 text-xs font-medium text-rose-600 hover:text-white hover:bg-[#E4011E] rounded-md border border-rose-200 hover:border-[#E4011E] transition-all"
+                                >
+                                  Khóa phiên
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setAnomalies(anomalies.map((a) => (a.id === anom.id ? { ...a, status: "resolved" } : a)));
+                                    showToast(`Đã bỏ qua cảnh báo ${anom.id}.`);
+                                  }}
+                                  className="px-2 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors"
+                                >
+                                  Bỏ qua
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -663,67 +723,78 @@ export default function AdminControlCenter() {
               <div className="flex items-center justify-center my-4 relative">
                 <svg width="125" height="125" viewBox="0 0 120 120" className="-rotate-90">
                   {/* Background track */}
-                  <circle cx="60" cy="60" r="42" fill="none" stroke="#F8FAFC" strokeWidth="13" />
-                  {/* Segment 1: Đang bid sôi nổi (2 phiên = 50%) */}
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r="42"
-                    fill="none"
-                    stroke="#001743"
-                    strokeWidth={hoveredDonutSegment?.label === "Đang bid sôi nổi" ? 16 : 13}
-                    strokeDasharray="131.9 263.9"
-                    strokeDashoffset="0"
-                    className="cursor-pointer transition-all duration-300 ease-out"
-                    onMouseEnter={() =>
-                      setHoveredDonutSegment({
-                        label: "Đang bid sôi nổi",
-                        count: "2 phiên (50%)",
-                        color: "#001743",
-                      })
-                    }
-                    onMouseLeave={() => setHoveredDonutSegment(null)}
-                  />
-                  {/* Segment 2: Sắp kết thúc (1 phiên = 25%) */}
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r="42"
-                    fill="none"
-                    stroke="#F59E0B"
-                    strokeWidth={hoveredDonutSegment?.label === "Sắp kết thúc" ? 16 : 13}
-                    strokeDasharray="65.9 263.9"
-                    strokeDashoffset="-131.9"
-                    className="cursor-pointer transition-all duration-300 ease-out"
-                    onMouseEnter={() =>
-                      setHoveredDonutSegment({
-                        label: "Sắp kết thúc",
-                        count: "1 phiên (25%)",
-                        color: "#F59E0B",
-                      })
-                    }
-                    onMouseLeave={() => setHoveredDonutSegment(null)}
-                  />
-                  {/* Segment 3: Nghi vấn rủi ro (1 phiên = 25%) */}
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r="42"
-                    fill="none"
-                    stroke="#E4011E"
-                    strokeWidth={hoveredDonutSegment?.label === "Nghi vấn rủi ro" ? 16 : 13}
-                    strokeDasharray="65.9 263.9"
-                    strokeDashoffset="-197.8"
-                    className="cursor-pointer transition-all duration-300 ease-out"
-                    onMouseEnter={() =>
-                      setHoveredDonutSegment({
-                        label: "Nghi vấn rủi ro",
-                        count: "1 phiên (25%)",
-                        color: "#E4011E",
-                      })
-                    }
-                    onMouseLeave={() => setHoveredDonutSegment(null)}
-                  />
+                  <circle cx="60" cy="60" r="42" fill="none" stroke="#F1F5F9" strokeWidth="13" />
+
+                  {liveCount > 0 && (
+                    <>
+                      {/* Segment 1: Đang bid sôi nổi */}
+                      {activeBiddingDash > 0 && (
+                        <circle
+                          cx="60"
+                          cy="60"
+                          r="42"
+                          fill="none"
+                          stroke="#001743"
+                          strokeWidth={hoveredDonutSegment?.label === "Đang bid sôi nổi" ? 16 : 13}
+                          strokeDasharray={`${activeBiddingDash} ${circumference}`}
+                          strokeDashoffset="0"
+                          className="cursor-pointer transition-all duration-300 ease-out"
+                          onMouseEnter={() =>
+                            setHoveredDonutSegment({
+                              label: "Đang bid sôi nổi",
+                              count: `${activeBiddingCount} phiên (${Math.round((activeBiddingCount / liveCount) * 100)}%)`,
+                              color: "#001743",
+                            })
+                          }
+                          onMouseLeave={() => setHoveredDonutSegment(null)}
+                        />
+                      )}
+                      {/* Segment 2: Sắp kết thúc */}
+                      {urgentDash > 0 && (
+                        <circle
+                          cx="60"
+                          cy="60"
+                          r="42"
+                          fill="none"
+                          stroke="#F59E0B"
+                          strokeWidth={hoveredDonutSegment?.label === "Sắp kết thúc" ? 16 : 13}
+                          strokeDasharray={`${urgentDash} ${circumference}`}
+                          strokeDashoffset={String(-activeBiddingDash)}
+                          className="cursor-pointer transition-all duration-300 ease-out"
+                          onMouseEnter={() =>
+                            setHoveredDonutSegment({
+                              label: "Sắp kết thúc",
+                              count: `${urgentCount} phiên (${Math.round((urgentCount / liveCount) * 100)}%)`,
+                              color: "#F59E0B",
+                            })
+                          }
+                          onMouseLeave={() => setHoveredDonutSegment(null)}
+                        />
+                      )}
+                      {/* Segment 3: Mới mở / Chưa có bid */}
+                      {newAuctionDash > 0 && (
+                        <circle
+                          cx="60"
+                          cy="60"
+                          r="42"
+                          fill="none"
+                          stroke="#3B82F6"
+                          strokeWidth={hoveredDonutSegment?.label === "Chưa có lượt bid" ? 16 : 13}
+                          strokeDasharray={`${newAuctionDash} ${circumference}`}
+                          strokeDashoffset={String(-(activeBiddingDash + urgentDash))}
+                          className="cursor-pointer transition-all duration-300 ease-out"
+                          onMouseEnter={() =>
+                            setHoveredDonutSegment({
+                              label: "Chưa có lượt bid",
+                              count: `${newAuctionCount} phiên (${Math.round((newAuctionCount / liveCount) * 100)}%)`,
+                              color: "#3B82F6",
+                            })
+                          }
+                          onMouseLeave={() => setHoveredDonutSegment(null)}
+                        />
+                      )}
+                    </>
+                  )}
                 </svg>
 
                 {/* Center Content: Chuyển đổi mượt mà giữa Tổng số và Chi tiết mảng màu khi hover */}
@@ -755,65 +826,79 @@ export default function AdminControlCenter() {
 
               {/* Status Legend Breakdown */}
               <div className="space-y-1.5 pt-1 text-xs">
-                <div
-                  className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${
-                    hoveredDonutSegment?.label === "Đang bid sôi nổi" ? "bg-slate-50" : "hover:bg-slate-50/70"
-                  }`}
-                  onMouseEnter={() =>
-                    setHoveredDonutSegment({
-                      label: "Đang bid sôi nổi",
-                      count: "2 phiên (50%)",
-                      color: "#001743",
-                    })
-                  }
-                  onMouseLeave={() => setHoveredDonutSegment(null)}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#001743]"></span>
-                    <span className="text-slate-600 font-normal">Đang bid sôi nổi</span>
+                {liveCount === 0 ? (
+                  <div className="p-3 bg-slate-50 rounded-lg text-center text-xs text-slate-400">
+                    Hiện tại chưa có phiên đấu giá trực tiếp
                   </div>
-                  <span className="font-semibold text-[#001743] tabular-nums">2 phiên (50%)</span>
-                </div>
+                ) : (
+                  <>
+                    <div
+                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${
+                        hoveredDonutSegment?.label === "Đang bid sôi nổi" ? "bg-slate-50" : "hover:bg-slate-50/70"
+                      }`}
+                      onMouseEnter={() =>
+                        setHoveredDonutSegment({
+                          label: "Đang bid sôi nổi",
+                          count: `${activeBiddingCount} phiên (${Math.round((activeBiddingCount / liveCount) * 100)}%)`,
+                          color: "#001743",
+                        })
+                      }
+                      onMouseLeave={() => setHoveredDonutSegment(null)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#001743]"></span>
+                        <span className="text-slate-600 font-normal">Đang bid sôi nổi</span>
+                      </div>
+                      <span className="font-semibold text-[#001743] tabular-nums">
+                        {activeBiddingCount} phiên ({Math.round((activeBiddingCount / liveCount) * 100)}%)
+                      </span>
+                    </div>
 
-                <div
-                  className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${
-                    hoveredDonutSegment?.label === "Sắp kết thúc" ? "bg-amber-50/60" : "hover:bg-slate-50/70"
-                  }`}
-                  onMouseEnter={() =>
-                    setHoveredDonutSegment({
-                      label: "Sắp kết thúc",
-                      count: "1 phiên (25%)",
-                      color: "#F59E0B",
-                    })
-                  }
-                  onMouseLeave={() => setHoveredDonutSegment(null)}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                    <span className="text-slate-600 font-normal">Sắp kết thúc (&lt; 5p)</span>
-                  </div>
-                  <span className="font-semibold text-amber-700 tabular-nums">1 phiên (25%)</span>
-                </div>
+                    <div
+                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${
+                        hoveredDonutSegment?.label === "Sắp kết thúc" ? "bg-amber-50/60" : "hover:bg-slate-50/70"
+                      }`}
+                      onMouseEnter={() =>
+                        setHoveredDonutSegment({
+                          label: "Sắp kết thúc",
+                          count: `${urgentCount} phiên (${Math.round((urgentCount / liveCount) * 100)}%)`,
+                          color: "#F59E0B",
+                        })
+                      }
+                      onMouseLeave={() => setHoveredDonutSegment(null)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                        <span className="text-slate-600 font-normal">Sắp kết thúc (&lt; 5p)</span>
+                      </div>
+                      <span className="font-semibold text-amber-700 tabular-nums">
+                        {urgentCount} phiên ({Math.round((urgentCount / liveCount) * 100)}%)
+                      </span>
+                    </div>
 
-                <div
-                  className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${
-                    hoveredDonutSegment?.label === "Nghi vấn rủi ro" ? "bg-rose-50/60" : "hover:bg-slate-50/70"
-                  }`}
-                  onMouseEnter={() =>
-                    setHoveredDonutSegment({
-                      label: "Nghi vấn rủi ro",
-                      count: "1 phiên (25%)",
-                      color: "#E4011E",
-                    })
-                  }
-                  onMouseLeave={() => setHoveredDonutSegment(null)}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-rose-600"></span>
-                    <span className="text-slate-600 font-normal">Nghi vấn rủi ro</span>
-                  </div>
-                  <span className="font-semibold text-rose-700 tabular-nums">1 phiên (25%)</span>
-                </div>
+                    <div
+                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${
+                        hoveredDonutSegment?.label === "Chưa có lượt bid" ? "bg-blue-50/60" : "hover:bg-slate-50/70"
+                      }`}
+                      onMouseEnter={() =>
+                        setHoveredDonutSegment({
+                          label: "Chưa có lượt bid",
+                          count: `${newAuctionCount} phiên (${Math.round((newAuctionCount / liveCount) * 100)}%)`,
+                          color: "#3B82F6",
+                        })
+                      }
+                      onMouseLeave={() => setHoveredDonutSegment(null)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                        <span className="text-slate-600 font-normal">Chưa có lượt bid</span>
+                      </div>
+                      <span className="font-semibold text-blue-700 tabular-nums">
+                        {newAuctionCount} phiên ({Math.round((newAuctionCount / liveCount) * 100)}%)
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -861,9 +946,18 @@ export default function AdminControlCenter() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {auctions
-                  .filter((a) => a.status === "live")
-                  .map((a) => {
+                {liveCount === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center text-slate-400">
+                      <Gavel size={36} className="mx-auto text-slate-300 mb-2" strokeWidth={1.5} />
+                      <p className="font-semibold text-xs text-[#001743]">Chưa có phiên đấu giá trực tiếp</p>
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        Hiện không có phiên đấu giá nào đang mở. Bấm &quot;+ Mở phiên đấu giá&quot; để tạo phiên mới.
+                      </p>
+                    </td>
+                  </tr>
+                ) : (
+                  liveAuctions.map((a) => {
                     const priceDiffPct =
                       a.startPrice > 0
                         ? Math.round(((a.currentPrice - a.startPrice) / a.startPrice) * 100)
@@ -972,7 +1066,8 @@ export default function AdminControlCenter() {
                         </td>
                       </tr>
                     );
-                  })}
+                  })
+                )}
               </tbody>
             </table>
           </div>
@@ -980,205 +1075,6 @@ export default function AdminControlCenter() {
       </div>
     );
   };
-
-  // (Tab Quản lý SIM đã chuyển sang AdminSimsTab; Tab eKYC đã gỡ bỏ do tự động hóa bằng AI)
-
-  // =========================================================================
-  // VIEW: 4. GIAO DỊCH KÝ QUỸ (5-STEP ESCROW TIMELINE & FINANCIAL CONTROL)
-  // =========================================================================
-  const renderTransactions = () => (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-base font-bold text-[#001743]">Quản Lý Giao Dịch Ký Quỹ (Financial Control)</h1>
-          <p className="text-xs text-[#6B7280] mt-0.5">
-            Sàn nắm giữ 100% dòng tiền thanh toán trong tài khoản ký quỹ trung gian. Tiền chỉ được giải ngân cho bên bán sau khi hoàn tất sang tên chính chủ viễn thông.
-          </p>
-        </div>
-      </div>
-
-      {/* Transactions Table */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
-                <th className="py-3 px-4">Mã đơn / SIM</th>
-                <th className="py-3 px-4">Người mua</th>
-                <th className="py-3 px-4">Người bán</th>
-                <th className="py-3 px-4 text-right">Giá trị ký quỹ</th>
-                <th className="py-3 px-4 text-right">Phí sàn (3%)</th>
-                <th className="py-3 px-4 text-center">Trạng thái ký quỹ</th>
-                <th className="py-3 px-4">Hạn giải quyết</th>
-                <th className="py-3 px-4 text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#E2E8F0]">
-              {transactions.map((tx) => (
-                <tr key={tx.id} className="hover:bg-slate-50/80 transition-colors h-14">
-                  <td className="py-3 px-4">
-                    <div className="font-extrabold text-sm text-[#001743] tabular-nums font-mono tracking-wider">
-                      {formatPhone(tx.sim)}
-                    </div>
-                    <div className="text-[10px] text-[#9CA3AF] font-mono">{tx.orderCode}</div>
-                  </td>
-                  <td className="py-3 px-4 font-semibold text-[#001743]">{tx.buyer}</td>
-                  <td className="py-3 px-4 font-semibold text-[#001743]">{tx.seller}</td>
-                  <td className="py-3 px-4 text-right font-black text-sm text-[#001743] tabular-nums">
-                    {formatVND(tx.amount)}
-                  </td>
-                  <td className="py-3 px-4 text-right text-emerald-700 font-bold tabular-nums">
-                    +{formatVND(tx.fee)}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <span
-                      className={`px-2 py-0.5 rounded-[4px] text-[10px] font-bold ${
-                        tx.status === "Held"
-                          ? "bg-amber-50 text-amber-800 border border-amber-200"
-                          : tx.status === "Released"
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                          : tx.status === "Disputed"
-                          ? "bg-rose-50 text-rose-700 border border-rose-200"
-                          : "bg-gray-100 text-gray-700 border border-gray-200"
-                      }`}
-                    >
-                      {tx.status === "Held"
-                        ? "Đang giữ ký quỹ"
-                        : tx.status === "Released"
-                        ? "Đã giải ngân"
-                        : tx.status === "Disputed"
-                        ? "Đang tranh chấp"
-                        : "Đã hoàn tiền"}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-[#6B7280] text-[11px]">{tx.deadline}</td>
-                  <td className="py-3 px-4 text-right">
-                    <button
-                      onClick={() => setSelectedTxForPipeline(tx)}
-                      className="px-2.5 py-1 text-xs font-bold text-[#001743] hover:text-white bg-slate-100 hover:bg-[#001743] rounded-[4px] transition-colors"
-                    >
-                      Tiến độ 5 bước
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* =========================================================================
-          MODAL: 5-STEP ESCROW PIPELINE TIMELINE
-      ========================================================================= */}
-      {selectedTxForPipeline && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white border border-[#E2E8F0] rounded-[8px] w-full max-w-2xl shadow-xl overflow-hidden animate-fade-up">
-            <div className="px-5 py-4 border-b border-[#E2E8F0] flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-[#001743]">
-                  Quy trình ký quỹ &amp; chuyển nhượng: {formatPhone(selectedTxForPipeline.sim)}
-                </h3>
-                <span className="text-xs text-[#6B7280]">Mã giao dịch: {selectedTxForPipeline.orderCode}</span>
-              </div>
-              <button
-                onClick={() => setSelectedTxForPipeline(null)}
-                className="text-gray-400 hover:text-gray-600 p-1"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-5">
-              {/* 5-Step Visual Timeline */}
-              <div className="relative">
-                <div className="absolute top-4 left-4 right-4 h-0.5 bg-gray-200 -z-0"></div>
-                <div className="grid grid-cols-5 gap-2 relative z-10 text-center">
-                  {[
-                    { step: 1, label: "Đặt cọc", done: selectedTxForPipeline.pipelineStep >= 1 },
-                    { step: 2, label: "Đủ ký quỹ", done: selectedTxForPipeline.pipelineStep >= 2 },
-                    { step: 3, label: "Ký hợp đồng", done: selectedTxForPipeline.pipelineStep >= 3 },
-                    { step: 4, label: "Sang tên SIM", done: selectedTxForPipeline.pipelineStep >= 4 },
-                    { step: 5, label: "Giải ngân", done: selectedTxForPipeline.pipelineStep >= 5 },
-                  ].map((st) => (
-                    <div key={st.step} className="flex flex-col items-center">
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mb-1 ${
-                          st.done
-                            ? "bg-emerald-600 text-white"
-                            : "bg-white border-2 border-gray-300 text-gray-400"
-                        }`}
-                      >
-                        {st.done ? <Check size={14} /> : st.step}
-                      </div>
-                      <span className={`text-[11px] font-semibold ${st.done ? "text-[#001743]" : "text-[#9CA3AF]"}`}>
-                        {st.label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Conditions Checklist Card */}
-              <div className="border border-[#E2E8F0] bg-[#F8F9FA] p-4 rounded-[6px] space-y-2 text-xs">
-                <h4 className="font-bold text-[#001743] uppercase text-[11px]">
-                  Điều kiện bắt buộc trước khi kích hoạt giải ngân
-                </h4>
-                <div className="space-y-1.5 pt-1">
-                  <div className="flex items-center gap-2 text-emerald-700">
-                    <CheckCircle2 size={15} />
-                    <span>Người mua đã nạp đủ 100% số tiền {formatVND(selectedTxForPipeline.amount)} vào ký quỹ</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-emerald-700">
-                    <CheckCircle2 size={15} />
-                    <span>Hợp đồng điện tử đã được cả hai bên ký số xác nhận</span>
-                  </div>
-                  <div
-                    className={`flex items-center gap-2 ${
-                      selectedTxForPipeline.pipelineStep >= 4 ? "text-emerald-700" : "text-amber-700 font-bold"
-                    }`}
-                  >
-                    {selectedTxForPipeline.pipelineStep >= 4 ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />}
-                    <span>
-                      {selectedTxForPipeline.missingReason || "Hoàn tất xác nhận sang tên chính chủ viễn thông"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSelectedTxForPipeline(null)}
-                  className="px-3.5 py-1.5 border border-[#D1D5DB] text-xs font-semibold text-[#4B5563] rounded-[6px]"
-                >
-                  Đóng
-                </button>
-                {selectedTxForPipeline.status === "Held" && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTransactions(
-                        transactions.map((t) =>
-                          t.id === selectedTxForPipeline.id ? { ...t, status: "Released", pipelineStep: 5 } : t
-                        )
-                      );
-                      setSelectedTxForPipeline(null);
-                      showToast(`Đã duyệt giải ngân ${formatVND(selectedTxForPipeline.amount - selectedTxForPipeline.fee)} cho người bán.`);
-                    }}
-                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-[6px] transition-colors"
-                  >
-                    Duyệt giải ngân người bán
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <div>
@@ -1201,6 +1097,7 @@ export default function AdminControlCenter() {
       {currentTab === "staff" && <AdminStaffTab />}
       {currentTab === "users" && <AdminCustomersTab />}
       {currentTab === "disputes" && <AdminDisputesTab />}
+      {currentTab === "documents" && <AdminDocumentsTab />}
       {currentTab === "settings" && <AdminSettingsTab />}
 
 
