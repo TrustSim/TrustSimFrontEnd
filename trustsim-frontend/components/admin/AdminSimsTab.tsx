@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   Smartphone,
   Search,
@@ -21,6 +21,9 @@ import {
   Check,
   X,
   Sparkles,
+  ChevronDown,
+  ArrowUpDown,
+  Filter,
 } from "lucide-react";
 import ImportExportBar from "@/components/admin/ImportExportBar";
 import { ExcelColumnDef } from "@/services/excelService";
@@ -84,8 +87,17 @@ export function AdminSimsTab() {
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
   const [selectedCarrier, setSelectedCarrier] = useState<string>("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
+
+  // Category Multi-Select Dropdown State
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const [categorySearch, setCategorySearch] = useState("");
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Sorting
+  const [sortKey, setSortKey] = useState<"phone" | "status" | "category" | "categoryCount" | "carrier" | "created">("phone");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   // UI Selection
   const [selectedSimIds, setSelectedSimIds] = useState<string[]>([]);
@@ -137,6 +149,20 @@ export function AdminSimsTab() {
     loadMasterData();
   }, []);
 
+  // Close category dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        categoryDropdownRef.current &&
+        !categoryDropdownRef.current.contains(event.target as Node)
+      ) {
+        setCategoryDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   // Fetch SIM list from database
   const fetchSims = useCallback(async () => {
     try {
@@ -146,7 +172,7 @@ export function AdminSimsTab() {
         pageSize,
         status: (selectedStatus as SimStatus) || undefined,
         carrierId: selectedCarrier || undefined,
-        categoryId: selectedCategory || undefined,
+        categoryId: selectedCategories.length === 1 ? selectedCategories[0] : undefined,
         search: search.trim() || undefined,
       });
       setSims(res.items);
@@ -158,7 +184,7 @@ export function AdminSimsTab() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [pageIndex, pageSize, selectedStatus, selectedCarrier, selectedCategory, search]);
+  }, [pageIndex, pageSize, selectedStatus, selectedCarrier, selectedCategories, search]);
 
   useEffect(() => {
     fetchSims();
@@ -173,17 +199,57 @@ export function AdminSimsTab() {
 
   // Total pages
   const totalPages = Math.ceil(totalCount / pageSize) || 1;
-  const [sortKey, setSortKey] = useState<"phone" | "status">("phone");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
-  const displaySims = [...sims].sort((a, b) => {
-    const left = sortKey === "phone" ? a.phoneNumber : a.simStatus;
-    const right = sortKey === "phone" ? b.phoneNumber : b.simStatus;
-    const result = String(left).localeCompare(String(right), "vi");
-    return sortDirection === "asc" ? result : -result;
-  });
-  const changeSort = (key: "phone" | "status") => {
+
+  // Filter SIMs locally if multi-categories selected
+  const filteredSims = useMemo(() => {
+    if (selectedCategories.length <= 1) return sims;
+
+    const selectedCatNames = categories
+      .filter((c) => selectedCategories.includes(c.id))
+      .map((c) => c.categoryName.toLowerCase());
+
+    return sims.filter((s) => {
+      if (!s.categoryNames || s.categoryNames.length === 0) return false;
+      return s.categoryNames.some((catName) =>
+        selectedCatNames.some((sn) => catName.toLowerCase().includes(sn) || sn.includes(catName.toLowerCase()))
+      );
+    });
+  }, [sims, selectedCategories, categories]);
+
+  // Sort SIMs
+  const displaySims = useMemo(() => {
+    return [...filteredSims].sort((a, b) => {
+      let result = 0;
+      if (sortKey === "phone") {
+        result = String(a.phoneNumber).localeCompare(String(b.phoneNumber), "vi");
+      } else if (sortKey === "status") {
+        result = String(a.simStatus).localeCompare(String(b.simStatus), "vi");
+      } else if (sortKey === "category") {
+        // Sort by primary category (A-Z)
+        const catA = (a.categoryNames && a.categoryNames[0]) || "";
+        const catB = (b.categoryNames && b.categoryNames[0]) || "";
+        result = catA.localeCompare(catB, "vi");
+        if (result === 0) {
+          result = (b.categoryNames?.length || 0) - (a.categoryNames?.length || 0);
+        }
+      } else if (sortKey === "categoryCount") {
+        // Sort by number of attached categories
+        result = (a.categoryNames?.length || 0) - (b.categoryNames?.length || 0);
+      } else if (sortKey === "carrier") {
+        result = String(a.carrierName).localeCompare(String(b.carrierName), "vi");
+      } else if (sortKey === "created") {
+        const timeA = new Date(a.createdDate || 0).getTime();
+        const timeB = new Date(b.createdDate || 0).getTime();
+        result = timeA - timeB;
+      }
+      return sortDirection === "asc" ? result : -result;
+    });
+  }, [filteredSims, sortKey, sortDirection]);
+
+  const changeSort = (key: "phone" | "status" | "category" | "categoryCount" | "carrier" | "created") => {
     const next = toggleSort(sortKey, sortDirection, key);
-    setSortKey(next.key); setSortDirection(next.direction);
+    setSortKey(next.key as any);
+    setSortDirection(next.direction);
   };
 
   // KPIs
@@ -472,22 +538,172 @@ export function AdminSimsTab() {
             ))}
           </select>
 
-          {/* Category Select */}
-          <select
-            value={selectedCategory}
-            onChange={(e) => {
-              setSelectedCategory(e.target.value);
-              setPageIndex(1);
-            }}
-            className="text-xs py-1.5 px-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-[#001743] focus:outline-none text-slate-700"
-          >
-            <option value="">Tất cả thể loại</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.categoryName}
-              </option>
-            ))}
-          </select>
+          {/* Category Multi-Select Dropdown with Search & Quick Sorting */}
+          <div className="relative" ref={categoryDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
+              className={`text-xs py-1.5 px-3 bg-slate-50 border rounded-lg hover:bg-white focus:outline-none transition-all flex items-center gap-2 ${
+                selectedCategories.length > 0
+                  ? "border-[#001743] bg-blue-50/50 text-[#001743] font-semibold ring-1 ring-[#001743]/10"
+                  : "border-slate-200 text-slate-700"
+              }`}
+            >
+              <Tag size={13} className={selectedCategories.length > 0 ? "text-[#001743]" : "text-slate-400"} />
+              <span className="max-w-[150px] truncate">
+                {selectedCategories.length === 0
+                  ? "Tất cả thể loại"
+                  : selectedCategories.length === 1
+                  ? categories.find((c) => c.id === selectedCategories[0])?.categoryName || "1 thể loại"
+                  : `${selectedCategories.length} thể loại đã chọn`}
+              </span>
+              {selectedCategories.length > 1 && (
+                <span className="w-4 h-4 rounded-full bg-[#001743] text-white text-[9px] flex items-center justify-center font-bold">
+                  {selectedCategories.length}
+                </span>
+              )}
+              <ChevronDown size={13} className={`text-slate-400 transition-transform duration-200 ${categoryDropdownOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {/* Dropdown Menu Popup */}
+            {categoryDropdownOpen && (
+              <div className="absolute top-full left-0 mt-1.5 w-72 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-2.5 animate-in fade-in zoom-in-95 duration-100">
+                {/* Search in Dropdown */}
+                <div className="relative mb-2">
+                  <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Tìm thể loại SIM..."
+                    value={categorySearch}
+                    onChange={(e) => setCategorySearch(e.target.value)}
+                    className="w-full pl-8 pr-7 py-1 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:border-[#001743] focus:outline-none"
+                    autoFocus
+                  />
+                  {categorySearch && (
+                    <button
+                      onClick={() => setCategorySearch("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Quick actions & stats */}
+                <div className="flex items-center justify-between pb-2 mb-1 border-b border-slate-100 text-[11px]">
+                  <span className="text-slate-500 font-medium">
+                    Đã chọn: <strong className="text-[#001743]">{selectedCategories.length}</strong>/{categories.length}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCategories(categories.map((c) => c.id));
+                        setPageIndex(1);
+                      }}
+                      className="text-[11px] text-[#001743] hover:underline font-semibold"
+                    >
+                      Chọn tất cả
+                    </button>
+                    <span className="text-slate-300">|</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCategories([]);
+                        setPageIndex(1);
+                      }}
+                      className="text-[11px] text-rose-600 hover:underline font-semibold"
+                    >
+                      Bỏ chọn
+                    </button>
+                  </div>
+                </div>
+
+                {/* Category List */}
+                <div className="max-h-56 overflow-y-auto space-y-0.5 custom-scrollbar pr-0.5">
+                  {categories
+                    .filter((c) =>
+                      c.categoryName.toLowerCase().includes(categorySearch.toLowerCase())
+                    )
+                    .map((cat) => {
+                      const isChecked = selectedCategories.includes(cat.id);
+                      return (
+                        <label
+                          key={cat.id}
+                          className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer text-xs transition-colors ${
+                            isChecked
+                              ? "bg-blue-50/70 text-[#001743] font-medium"
+                              : "hover:bg-slate-50 text-slate-700"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                setSelectedCategories((prev) =>
+                                  isChecked
+                                    ? prev.filter((id) => id !== cat.id)
+                                    : [...prev, cat.id]
+                                );
+                                setPageIndex(1);
+                              }}
+                              className="rounded border-slate-300 text-[#001743] focus:ring-0 cursor-pointer"
+                            />
+                            <span className="truncate">{cat.categoryName}</span>
+                          </div>
+                          {isChecked && <Check size={13} className="text-[#001743] shrink-0" />}
+                        </label>
+                      );
+                    })}
+                  {categories.filter((c) =>
+                    c.categoryName.toLowerCase().includes(categorySearch.toLowerCase())
+                  ).length === 0 && (
+                    <div className="py-4 text-center text-xs text-slate-400">
+                      Không tìm thấy thể loại nào
+                    </div>
+                  )}
+                </div>
+
+                {/* Sorting Quick Options */}
+                <div className="pt-2 mt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                  <span>Sắp xếp:</span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSortKey("category");
+                        setSortDirection(sortKey === "category" && sortDirection === "asc" ? "desc" : "asc");
+                      }}
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold border transition-colors ${
+                        sortKey === "category"
+                          ? "bg-[#001743] text-white border-[#001743]"
+                          : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                      }`}
+                      title="Sắp xếp theo tên thể loại (A-Z)"
+                    >
+                      A-Z {sortKey === "category" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSortKey("categoryCount");
+                        setSortDirection(sortKey === "categoryCount" && sortDirection === "desc" ? "asc" : "desc");
+                      }}
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold border transition-colors ${
+                        sortKey === "categoryCount"
+                          ? "bg-[#001743] text-white border-[#001743]"
+                          : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                      }`}
+                      title="Sắp xếp theo số lượng thể loại gán trên SIM"
+                    >
+                      Nhiều thể loại {sortKey === "categoryCount" ? (sortDirection === "desc" ? "↓" : "↑") : ""}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Status Select */}
           <select
@@ -508,12 +724,12 @@ export function AdminSimsTab() {
           </select>
 
           {/* Clear Filter Button */}
-          {(search || selectedCarrier || selectedCategory || selectedStatus) && (
+          {(search || selectedCarrier || selectedCategories.length > 0 || selectedStatus) && (
             <button
               onClick={() => {
                 setSearch("");
                 setSelectedCarrier("");
-                setSelectedCategory("");
+                setSelectedCategories([]);
                 setSelectedStatus("");
                 setPageIndex(1);
               }}
@@ -525,17 +741,17 @@ export function AdminSimsTab() {
         </div>
 
         <div className="text-xs text-slate-500">
-          Hiển thị <strong className="text-[#001743]">{sims.length}</strong> / <strong>{totalCount}</strong> số SIM
+          Hiển thị <strong className="text-[#001743]">{displaySims.length}</strong> / <strong>{totalCount}</strong> số SIM
         </div>
       </div>
 
       {/* 4. Data Table */}
       <div className="bg-white border border-slate-200/80 rounded-xl overflow-hidden shadow-2xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full min-w-[1100px] text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
-                <th className="py-3 px-4 w-10 text-center">
+                <th className="py-3 px-4 w-12 text-center shrink-0">
                   <input
                     type="checkbox"
                     checked={sims.length > 0 && selectedSimIds.length === sims.length}
@@ -543,14 +759,25 @@ export function AdminSimsTab() {
                     className="rounded border-slate-300 text-[#001743] focus:ring-0 cursor-pointer"
                   />
                 </th>
-                <th className="py-3 px-4"><AdminSortButton label="Số SIM / Đầu số" active={sortKey === "phone"} direction={sortDirection} onClick={() => changeSort("phone")} /></th>
-                <th className="py-3 px-4">Nhà mạng</th>
-                <th className="py-3 px-4">Thể loại</th>
-                <th className="py-3 px-4">Định dạng nhịp</th>
-                <th className="py-3 px-4">Chủ sở hữu hiện tại</th>
-                <th className="py-3 px-4 text-center"><AdminSortButton label="Trạng thái" align="center" active={sortKey === "status"} direction={sortDirection} onClick={() => changeSort("status")} /></th>
-                <th className="py-3 px-4">Ngày tạo</th>
-                <th className="py-3 px-4 text-right">Thao tác</th>
+                <th className="py-3 px-4 min-w-[170px] whitespace-nowrap">
+                  <AdminSortButton label="Số SIM / Đầu số" active={sortKey === "phone"} direction={sortDirection} onClick={() => changeSort("phone")} />
+                </th>
+                <th className="py-3 px-4 min-w-[130px] whitespace-nowrap">Nhà mạng</th>
+                <th className="py-3 px-4 min-w-[160px] whitespace-nowrap">
+                  <AdminSortButton
+                    label="Thể loại"
+                    active={sortKey === "category" || sortKey === "categoryCount"}
+                    direction={sortDirection}
+                    onClick={() => changeSort("category")}
+                  />
+                </th>
+                <th className="py-3 px-4 min-w-[170px] whitespace-nowrap">Định dạng nhịp</th>
+                <th className="py-3 px-4 min-w-[180px] whitespace-nowrap">Chủ sở hữu hiện tại</th>
+                <th className="py-3 px-4 min-w-[140px] text-center whitespace-nowrap">
+                  <AdminSortButton label="Trạng thái" align="center" active={sortKey === "status"} direction={sortDirection} onClick={() => changeSort("status")} />
+                </th>
+                <th className="py-3 px-4 min-w-[110px] whitespace-nowrap">Ngày tạo</th>
+                <th className="py-3 px-4 min-w-[100px] text-right whitespace-nowrap">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -561,7 +788,7 @@ export function AdminSimsTab() {
                     <span>Đang tải danh sách SIM từ cơ sở dữ liệu...</span>
                   </td>
                 </tr>
-              ) : sims.length === 0 ? (
+              ) : displaySims.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-12 text-center text-slate-400">
                     <Smartphone size={32} className="mx-auto text-slate-300 mb-2" />
@@ -583,7 +810,7 @@ export function AdminSimsTab() {
                       }`}
                     >
                       {/* Checkbox */}
-                      <td className="py-3 px-4 text-center" onClick={(e) => e.stopPropagation()}>
+                      <td className="py-3 px-4 text-center shrink-0" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           checked={isSelected}
@@ -593,23 +820,24 @@ export function AdminSimsTab() {
                       </td>
 
                       {/* Phone number */}
-                      <td className="py-3 px-4">
-                        <div className="font-extrabold text-sm text-[#001743] font-mono tracking-wider tabular-nums">
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="font-extrabold text-sm text-[#001743] font-mono tracking-wider tabular-nums whitespace-nowrap">
                           {formatPhoneNumber(s.phoneNumber)}
                         </div>
-                        <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                          Đầu số: <strong className="text-slate-600">{s.prefixValue || "N/A"}</strong>
+                        <div className="text-[10px] text-slate-400 font-mono mt-0.5 whitespace-nowrap flex items-center gap-1">
+                          <span>Đầu số:</span>
+                          <strong className="text-slate-600">{s.prefixValue || "N/A"}</strong>
                         </div>
                       </td>
 
                       {/* Carrier */}
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           {s.carrierLogo ? (
                             <img
                               src={s.carrierLogo}
                               alt={s.carrierName}
-                              className="w-5 h-5 object-contain rounded-sm border border-slate-100 shrink-0"
+                              className="w-5 h-5 object-contain rounded-sm border border-slate-100 shrink-0 bg-white p-0.5"
                               onError={(e) => {
                                 (e.target as HTMLImageElement).style.display = "none";
                               }}
@@ -622,22 +850,32 @@ export function AdminSimsTab() {
                               {s.carrierName.slice(0, 2)}
                             </div>
                           )}
-                          <span className="font-semibold text-slate-700">{s.carrierName}</span>
+                          <span className="font-semibold text-slate-700 whitespace-nowrap">{s.carrierName}</span>
                         </div>
                       </td>
 
                       {/* Categories */}
                       <td className="py-3 px-4">
-                        <div className="flex flex-wrap gap-1 max-w-[200px]">
+                        <div className="flex flex-wrap gap-1 max-w-[220px]">
                           {s.categoryNames && s.categoryNames.length > 0 ? (
-                            s.categoryNames.map((cat, idx) => (
-                              <span
-                                key={idx}
-                                className="px-2 py-0.5 bg-slate-100 text-[#001743] text-[10px] font-semibold rounded-md border border-slate-200"
-                              >
-                                {cat}
-                              </span>
-                            ))
+                            s.categoryNames.map((cat, idx) => {
+                              const isMatched = selectedCategories.length > 0 && categories
+                                .filter((c) => selectedCategories.includes(c.id))
+                                .some((c) => c.categoryName.toLowerCase() === cat.toLowerCase());
+
+                              return (
+                                <span
+                                  key={idx}
+                                  className={`px-2 py-0.5 text-[10px] font-semibold rounded-md border whitespace-nowrap transition-colors ${
+                                    isMatched
+                                      ? "bg-blue-100/90 text-[#001743] border-blue-300 font-bold"
+                                      : "bg-slate-100 text-[#001743] border-slate-200"
+                                  }`}
+                                >
+                                  {cat}
+                                </span>
+                              );
+                            })
                           ) : (
                             <span className="text-slate-400 text-[11px]">—</span>
                           )}
@@ -646,34 +884,36 @@ export function AdminSimsTab() {
 
                       {/* Format Rhythm */}
                       <td className="py-3 px-4 text-slate-600 font-medium">
-                        {s.formatRhythmName || <span className="text-slate-400">—</span>}
+                        <span className="line-clamp-2" title={s.formatRhythmName || ""}>
+                          {s.formatRhythmName || <span className="text-slate-400">—</span>}
+                        </span>
                       </td>
 
                       {/* Current Owner */}
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4 whitespace-nowrap">
                         {s.ownerFullName ? (
                           <div>
-                            <div className="font-medium text-slate-800 flex items-center gap-1">
-                              <User size={12} className="text-slate-400" />
-                              <span>{s.ownerFullName}</span>
+                            <div className="font-medium text-slate-800 flex items-center gap-1.5 whitespace-nowrap">
+                              <User size={12} className="text-slate-400 shrink-0" />
+                              <span className="truncate max-w-[160px]" title={s.ownerFullName}>{s.ownerFullName}</span>
                             </div>
                             {s.ownerPhoneNumber && (
-                              <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                              <div className="text-[10px] text-slate-400 font-mono mt-0.5 whitespace-nowrap">
                                 {s.ownerPhoneNumber}
                               </div>
                             )}
                           </div>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 whitespace-nowrap">
                             Kho sàn TrustSim
                           </span>
                         )}
                       </td>
 
                       {/* Status */}
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-3 px-4 text-center whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap ${
                             s.simStatus === "AVAILABLE"
                               ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                               : s.simStatus === "IN_AUCTION"
@@ -686,7 +926,7 @@ export function AdminSimsTab() {
                           }`}
                         >
                           <span
-                            className={`w-1.5 h-1.5 rounded-full ${
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                               s.simStatus === "AVAILABLE"
                                 ? "bg-emerald-500"
                                 : s.simStatus === "IN_AUCTION"
@@ -703,12 +943,12 @@ export function AdminSimsTab() {
                       </td>
 
                       {/* Created Date */}
-                      <td className="py-3 px-4 text-slate-400 font-mono text-[11px]">
+                      <td className="py-3 px-4 text-slate-400 font-mono text-[11px] whitespace-nowrap">
                         {s.createdDate ? new Date(s.createdDate).toLocaleDateString("vi-VN") : "—"}
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                      <td className="py-3 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
                           <button
                             type="button"

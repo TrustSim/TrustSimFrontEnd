@@ -15,11 +15,18 @@ export interface RegisterRequest {
   userName: string;
   email: string;
   password: string;
-  fullName: string;
-  phoneNumber: string;
-  identityNumber: string;
-  address?: string;
-  dateOfBirth?: string;
+}
+
+export interface RegisterInitiatedDto {
+  email: string;
+  message: string;
+  cooldownSeconds: number;
+  expiryMinutes: number;
+}
+
+export interface VerifyEmailRequest {
+  email: string;
+  otpCode: string;
 }
 
 export interface AuthResponseDto {

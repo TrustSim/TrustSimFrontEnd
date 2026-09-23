@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { Suspense, useState, useEffect, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authService } from "@/services/authService";
 import { walletService } from "@/services/walletService";
 import { ekycService, IdentityVerificationDto } from "@/services/ekycService";
@@ -34,7 +35,9 @@ const TABS: { key: ProfileTab; icon: React.ComponentType<{ size?: number }>; lab
   { key: "settings", icon: Icons.Settings, label: "Cài đặt & Bảo mật" },
 ];
 
-export default function ProfilePage() {
+function ProfilePageInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<ProfileTab>("overview");
   const [user, setUser] = useState<AuthResponseDto | null>(null);
   const [profile, setProfile] = useState<UserProfileDto | null>(null);
@@ -51,6 +54,11 @@ export default function ProfilePage() {
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
   const [walletRefreshKey, setWalletRefreshKey] = useState(0);
+
+  const handleTabChange = useCallback((tab: ProfileTab) => {
+    setActiveTab(tab);
+    router.replace(`/profile?tab=${tab}`, { scroll: false });
+  }, [router]);
 
   const addToast = (toast: Omit<ToastMessage, "id">) => {
     const id = Date.now().toString() + Math.random().toString(36).substring(2, 5);
@@ -92,8 +100,7 @@ export default function ProfilePage() {
     setUser(currentUser);
 
     if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const tabParam = params.get("tab") as ProfileTab;
+      const tabParam = searchParams.get("tab") as ProfileTab;
       if (tabParam && ["overview", "ekyc", "auctions", "bids", "transactions", "contracts", "settings"].includes(tabParam)) {
         setActiveTab(tabParam);
       }
@@ -108,20 +115,20 @@ export default function ProfilePage() {
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [searchParams]);
 
   // Người dùng được xem là ĐÃ XÁC THỰC nếu có bất kỳ hồ sơ eKYC nào hợp lệ (VERIFIED)
   const isEkycVerified =
     ekycService.isVerified(kycStatus) ||
     kycHistory.some((h) => ekycService.isVerified(h));
 
-  const displayName = profile?.fullName || user?.fullName || "Nguyễn Văn An";
+  const displayName = profile?.fullName || user?.fullName || "";
   const displayEmail = profile?.email || user?.email || "customer@trustsim.vn";
-  const displayPhone = profile?.phoneNumber || user?.phoneNumber || "0901 234 567";
-  const displayIdentity = profile?.identityNumber || "001201012345";
+  const displayPhone = profile?.phoneNumber || user?.phoneNumber || "";
+  const displayIdentity = profile?.identityNumber || "";
   const rawAvatar = profile?.avatarImg || user?.avatarImg || "";
   const displayAvatar = rawAvatar && !rawAvatar.includes("trustsim.vn") ? rawAvatar : "";
-  const initialChar = displayName.charAt(0).toUpperCase();
+  const initialChar = (displayName || user?.userName || "T").charAt(0).toUpperCase();
 
   // Cloudinary Avatar upload state
   const avatarInputRef = React.useRef<HTMLInputElement>(null);
@@ -366,7 +373,7 @@ export default function ProfilePage() {
                     </span>
                   ) : (
                     <button
-                      onClick={() => setActiveTab("ekyc")}
+                      onClick={() => handleTabChange("ekyc")}
                       style={{
                         display: "inline-flex",
                         alignItems: "center",
@@ -389,10 +396,8 @@ export default function ProfilePage() {
 
                 <div style={{ display: "flex", alignItems: "center", gap: 14, color: "rgba(255, 255, 255, 0.72)", fontSize: 13, flexWrap: "wrap", marginBottom: 10 }}>
                   <span>{displayEmail}</span>
-                  <span>·</span>
-                  <span>{displayPhone}</span>
-                  <span>·</span>
-                  <span>CCCD: {displayIdentity}</span>
+                  {displayPhone && <><span>·</span><span>{displayPhone}</span></>}
+                  {displayIdentity && <><span>·</span><span>CCCD: {displayIdentity}</span></>}
                 </div>
 
                 <div style={{ display: "flex", gap: 20, fontSize: 12, color: "rgba(255, 255, 255, 0.65)" }}>
@@ -492,38 +497,36 @@ export default function ProfilePage() {
       {/* ═══════════════════════════════════════════════════════════
           2. NAVIGATION: Modern Underline Tabs Bar (Sticky Top)
       ═══════════════════════════════════════════════════════════ */}
-      <div
-        style={{
-          background: "#FFFFFF",
-          borderBottom: "1px solid #E5E7EB",
-          position: "sticky",
-          top: 64,
-          zIndex: 40,
-          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.02)",
-        }}
-      >
-        <div className="container" style={{ maxWidth: 1180, margin: "0 auto", padding: "0 20px" }}>
-          <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none" }}>
+      <div className="profile-workspace" style={{ maxWidth: 1180, margin: "0 auto", padding: "28px 20px 60px", display: "grid", gridTemplateColumns: "220px minmax(0, 1fr)", gap: 28, alignItems: "start" }}>
+        <aside className="profile-sidebar" style={{ background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: 10, padding: 10, position: "sticky", top: 92 }}>
+          <div style={{ padding: "10px 12px 12px", borderBottom: "1px solid #F0F2F5", marginBottom: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "#98A2B3", textTransform: "uppercase", letterSpacing: ".08em" }}>Tài khoản</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#101828", marginTop: 4 }}>Không gian cá nhân</div>
+          </div>
+          <nav style={{ display: "grid", gap: 3 }} aria-label="Điều hướng hồ sơ">
             {TABS.map((tab) => {
               const isActive = activeTab === tab.key;
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
+                  onClick={() => handleTabChange(tab.key)}
+                  aria-current={isActive ? "page" : undefined}
                   style={{
-                    padding: "14px 18px",
-                    background: "none",
+                    padding: "11px 12px",
+                    background: isActive ? "#FDEBEC" : "transparent",
                     border: "none",
-                    borderBottom: `3px solid ${isActive ? "#E4011E" : "transparent"}`,
-                    color: isActive ? "#E4011E" : "#4B5563",
-                    fontSize: 13.5,
+                    borderLeft: `3px solid ${isActive ? "#E4011E" : "transparent"}`,
+                    color: isActive ? "#B42318" : "#667085",
+                    fontSize: 13,
                     fontWeight: isActive ? 700 : 500,
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     gap: 8,
-                    whiteSpace: "nowrap",
+                    textAlign: "left",
+                    width: "100%",
+                    borderRadius: 6,
                     transition: "all 0.2s ease",
                   }}
                   onMouseEnter={(e) => {
@@ -538,21 +541,32 @@ export default function ProfilePage() {
                 </button>
               );
             })}
-          </div>
-        </div>
-      </div>
+          </nav>
+        </aside>
 
-      {/* ═══════════════════════════════════════════════════════════
-          3. MAIN CONTENT CONTAINER (Modular Tab Routing)
-      ═══════════════════════════════════════════════════════════ */}
-      <main className="container" style={{ maxWidth: 1180, margin: "0 auto", padding: "28px 20px 60px" }}>
+        <main className="profile-content" style={{ minWidth: 0 }}>
+          <div className="flex items-center justify-between gap-4 mb-5">
+            <div>
+              <div className="text-xs text-slate-400 font-semibold tracking-wide">
+                Tài khoản / {TABS.find((tab) => tab.key === activeTab)?.label}
+              </div>
+              <h1 className="text-2xl font-black text-[#001743] tracking-tight font-inter mt-1 m-0">
+                {TABS.find((tab) => tab.key === activeTab)?.label}
+              </h1>
+            </div>
+            <div className="text-xs font-semibold text-slate-600 bg-white border border-slate-200/80 rounded-lg px-3 py-1.5 shadow-2xs">
+              TrustSim account
+            </div>
+          </div>
+
+          <div>
         {activeTab === "overview" && (
           <OverviewTab
             user={user}
             profile={profile}
             walletBalance={availableBalance}
             isEkycVerified={isEkycVerified}
-            onNavigateTab={setActiveTab}
+            onNavigateTab={handleTabChange}
             addToast={addToast}
           />
         )}
@@ -570,7 +584,7 @@ export default function ProfilePage() {
           <OwnedSimsTab
             isEkycVerified={isEkycVerified}
             addToast={addToast}
-            onNavigateToEkyc={() => setActiveTab("ekyc")}
+            onNavigateToEkyc={() => handleTabChange("ekyc")}
           />
         )}
         {activeTab === "bids" && <BidsTab addToast={addToast} />}
@@ -586,7 +600,17 @@ export default function ProfilePage() {
         {activeTab === "settings" && (
           <SettingsTab user={user} profile={profile} addToast={addToast} />
         )}
-      </main>
+          </div>
+        </main>
+      </div>
     </div>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center text-sm text-slate-500">Đang tải hồ sơ...</div>}>
+      <ProfilePageInner />
+    </Suspense>
   );
 }

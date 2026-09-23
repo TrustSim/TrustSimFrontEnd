@@ -22,16 +22,16 @@ export function AdminSortButton({
     <button
       type="button"
       onClick={onClick}
-      className={`admin-sort-button inline-flex items-center gap-1.5 w-full text-[10px] font-bold uppercase tracking-[.06em] text-[#667085] hover:text-[#101828] ${
-        align === "right" ? "justify-end" : align === "center" ? "justify-center" : "justify-start"
+      className={`admin-sort-button inline-flex items-center gap-1.5 whitespace-nowrap text-[10px] font-bold uppercase tracking-[.06em] text-[#667085] hover:text-[#101828] ${
+        align === "right" ? "justify-end w-full" : align === "center" ? "justify-center w-full" : "justify-start"
       }`}
       aria-label={`Sắp xếp theo ${label}`}
     >
-      <span>{label}</span>
+      <span className="whitespace-nowrap">{label}</span>
       {active ? (
-        direction === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+        direction === "asc" ? <ArrowUp size={12} className="shrink-0" /> : <ArrowDown size={12} className="shrink-0" />
       ) : (
-        <ChevronsUpDown size={12} className="text-[#98a2b3]" />
+        <ChevronsUpDown size={12} className="text-[#98a2b3] shrink-0" />
       )}
     </button>
   );

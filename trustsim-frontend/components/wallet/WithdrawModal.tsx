@@ -181,6 +181,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
 
   return (
     <div
+      className="profile-modal-backdrop"
       style={{
         position: "fixed",
         inset: 0,
@@ -198,9 +199,10 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
       }}
     >
       <div
+        className="profile-modal-panel profile-withdraw-panel"
         style={{
           width: "100%",
-          maxWidth: "520px",
+          maxWidth: "640px",
           background: "#FFFFFF",
           borderRadius: "14px",
           boxShadow: "0 25px 60px -15px rgba(0, 23, 67, 0.25)",
@@ -208,13 +210,13 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
-          maxHeight: "92vh",
+          maxHeight: "calc(100vh - 32px)",
         }}
       >
         {/* Header */}
         <div
           style={{
-            padding: "18px 24px",
+            padding: "12px 18px",
             borderBottom: "1px solid #E5E7EB",
             display: "flex",
             alignItems: "center",
@@ -225,27 +227,29 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div
               style={{
-                width: 38,
-                height: 38,
+                width: 34,
+                height: 34,
                 borderRadius: 10,
-                background: "linear-gradient(135deg, #001743 0%, #0A2566 100%)",
-                color: "#FFFFFF",
+                background: "linear-gradient(135deg, #001743 0%, #002B7F 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 4px 12px rgba(0, 23, 67, 0.15)",
+                boxShadow: "0 4px 12px rgba(0, 23, 67, 0.2)",
+                padding: 6,
+                flexShrink: 0,
               }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="7" y1="17" x2="17" y2="7" />
-                <polyline points="7 7 17 7 17 17" />
-              </svg>
+              <img
+                src="/logo/S-White-Logo.png"
+                alt="TrustSim"
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+              />
             </div>
             <div>
-              <h3 style={{ fontSize: 16.5, fontWeight: 800, color: "#001743", margin: 0, letterSpacing: "-0.01em" }}>
+              <h3 style={{ fontSize: 15, fontWeight: 800, color: "#001743", margin: 0, letterSpacing: "-0.01em" }}>
                 {completedTx ? "Rút tiền thành công" : "Rút tiền về tài khoản ngân hàng"}
               </h3>
-              <p style={{ fontSize: 12, color: "#6B7280", margin: "2px 0 0" }}>
+              <p style={{ fontSize: 11, color: "#6B7280", margin: "1px 0 0" }}>
                 {completedTx ? "Giao dịch đã được hệ thống phê duyệt tức thì" : "Chuyển khoản tự động 24/7 (Tối thiểu 10.000 ₫)"}
               </p>
             </div>
@@ -274,11 +278,11 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
         {/* Modal Body */}
         {completedTx ? (
           /* ─── SUCCESS RECEIPT VIEW ─── */
-          <div style={{ padding: "26px 24px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 18, textAlign: "center" }}>
+          <div style={{ padding: "18px 20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 14, textAlign: "center" }}>
             <div
               style={{
-                width: 64,
-                height: 64,
+              width: 56,
+              height: 56,
                 borderRadius: "50%",
                 background: "#F0FDF4",
                 border: "2px solid #BBF7D0",
@@ -296,7 +300,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
             </div>
 
             <div>
-              <h3 style={{ fontSize: 20, fontWeight: 900, color: "#001743", margin: "0 0 4px" }}>
+              <h3 style={{ fontSize: 18, fontWeight: 900, color: "#001743", margin: "0 0 4px" }}>
                 Yêu cầu rút tiền thành công!
               </h3>
               <p style={{ fontSize: 13.5, color: "#16A34A", fontWeight: 700, margin: 0 }}>
@@ -310,7 +314,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                 background: "#F8FAFC",
                 border: "1px solid #E2E8F0",
                 borderRadius: 10,
-                padding: "16px 18px",
+                padding: "12px 14px",
                 textAlign: "left",
                 fontSize: 13,
                 color: "#475569",
@@ -393,11 +397,11 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
           <form
             onSubmit={handleSubmit}
             style={{
-              padding: "20px 24px",
+              padding: "14px 18px",
               overflowY: "auto",
               display: "flex",
               flexDirection: "column",
-              gap: 16,
+              gap: 12,
             }}
           >
             {/* Balance Overview Card */}
@@ -406,7 +410,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                 background: "linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)",
                 border: "1px solid #E2E8F0",
                 borderRadius: 10,
-                padding: "14px 18px",
+                padding: "10px 14px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
@@ -416,7 +420,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                 <span style={{ fontSize: 11.5, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                   Số Dư Khả Dụng Hiện Có
                 </span>
-                <div style={{ fontSize: 20, fontWeight: 900, color: "#001743", fontVariantNumeric: "tabular-nums", marginTop: 2 }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "#001743", fontVariantNumeric: "tabular-nums", marginTop: 2 }}>
                   {availableBalance.toLocaleString("vi-VN")}{" "}
                   <span style={{ fontSize: 14, fontWeight: 700, color: "#E4011E" }}>₫</span>
                 </div>
@@ -464,14 +468,14 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
               <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#001743", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.03em" }}>
                 Chọn nhanh số tiền rút
               </label>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+              <div className="withdraw-presets" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
                 {PRESET_AMOUNTS.map((item) => (
                   <button
                     key={item.val}
                     type="button"
                     onClick={() => handleSelectPreset(item.val)}
                     style={{
-                      padding: "8px 4px",
+                      padding: "7px 4px",
                       fontSize: 12,
                       fontWeight: amount === item.val ? 800 : 600,
                       borderRadius: 6,
@@ -506,8 +510,8 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                   required
                   style={{
                     width: "100%",
-                    padding: "12px 48px 12px 14px",
-                    fontSize: 16,
+                    padding: "10px 48px 10px 14px",
+                    fontSize: 15,
                     fontWeight: 800,
                     fontVariantNumeric: "tabular-nums",
                     borderRadius: 8,
@@ -546,8 +550,8 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                 onChange={(e) => setBankCode(e.target.value)}
                 style={{
                   width: "100%",
-                  padding: "11px 14px",
-                  fontSize: 13.5,
+                  padding: "9px 12px",
+                  fontSize: 13,
                   borderRadius: 8,
                   border: "1.5px solid #D1D5DB",
                   outline: "none",
@@ -582,8 +586,8 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                   required
                   style={{
                     width: "100%",
-                    padding: "11px 14px",
-                    fontSize: 13.5,
+                    padding: "9px 12px",
+                    fontSize: 13,
                     fontWeight: 700,
                     fontVariantNumeric: "tabular-nums",
                     borderRadius: 8,
@@ -609,8 +613,8 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                   required
                   style={{
                     width: "100%",
-                    padding: "11px 14px",
-                    fontSize: 13.5,
+                    padding: "9px 12px",
+                    fontSize: 13,
                     fontWeight: 800,
                     borderRadius: 8,
                     border: "1.5px solid #D1D5DB",
@@ -655,7 +659,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                   background: "#F8FAFC",
                   border: "1px solid #E2E8F0",
                   borderRadius: 8,
-                  padding: "12px 14px",
+                  padding: "9px 12px",
                   fontSize: 12.5,
                   display: "flex",
                   flexDirection: "column",
@@ -708,7 +712,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                 onClick={onClose}
                 disabled={loading}
                 style={{
-                  padding: "12px",
+                  padding: "10px",
                   borderRadius: 8,
                   border: "1.5px solid #D1D5DB",
                   background: "#FFFFFF",
@@ -724,7 +728,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                 type="submit"
                 disabled={loading || amount < 10_000 || amount > availableBalance || !accountNumber || !accountHolderName}
                 style={{
-                  padding: "12px",
+                  padding: "10px",
                   borderRadius: 8,
                   border: "none",
                   background:
@@ -732,7 +736,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                       ? "#9CA3AF"
                       : "linear-gradient(135deg, #001743 0%, #0A2566 100%)",
                   color: "#FFFFFF",
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: 800,
                   cursor:
                     loading || amount < 10_000 || amount > availableBalance || !accountNumber || !accountHolderName

@@ -356,10 +356,10 @@ export default function AdminControlCenter() {
             s.simStatus === "AVAILABLE"
               ? "Available"
               : s.simStatus === "IN_AUCTION"
-              ? "InAuction"
-              : s.simStatus === "TRANFERED"
-              ? "Sold"
-              : "Locked",
+                ? "InAuction"
+                : s.simStatus === "TRANFERED"
+                  ? "Sold"
+                  : "Locked",
           type: "Trả trước",
           created: s.createdDate ? new Date(s.createdDate).toLocaleDateString("vi-VN") : "—",
           patternDesc: s.formatRhythmName || "",
@@ -560,33 +560,28 @@ export default function AdminControlCenter() {
             <div className="hidden lg:block lg:col-span-1 h-14 w-px bg-slate-100 mx-auto" />
 
             {/* Metric 4 (Thứ cấp): Cảnh báo rủi ro AI - Tự động hiển thị an toàn khi chưa có cảnh báo */}
-            <div className={`lg:col-span-2 flex flex-col justify-between pl-3 border-l-2 ${
-              highRiskAlerts > 0 ? "border-rose-500/80" : "border-emerald-500/80"
-            }`}>
+            <div className={`lg:col-span-2 flex flex-col justify-between pl-3 border-l-2 ${highRiskAlerts > 0 ? "border-rose-500/80" : "border-emerald-500/80"
+              }`}>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-slate-700">Rủi ro AI</span>
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
-                  highRiskAlerts > 0
-                    ? "text-rose-700 bg-rose-50 border-rose-200/60"
-                    : "text-emerald-700 bg-emerald-50 border-emerald-200/60"
-                }`}>
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${highRiskAlerts > 0
+                  ? "text-rose-700 bg-rose-50 border-rose-200/60"
+                  : "text-emerald-700 bg-emerald-50 border-emerald-200/60"
+                  }`}>
                   {highRiskAlerts > 0 ? "KHẨN CẤP" : "AN TOÀN"}
                 </span>
               </div>
               <div className="mt-2">
-                <div className={`text-xl font-bold tabular-nums tracking-tight flex items-baseline gap-1.5 ${
-                  highRiskAlerts > 0 ? "text-[#E4011E]" : "text-emerald-700"
-                }`}>
+                <div className={`text-xl font-bold tabular-nums tracking-tight flex items-baseline gap-1.5 ${highRiskAlerts > 0 ? "text-[#E4011E]" : "text-emerald-700"
+                  }`}>
                   <AnimatedNumber value={highRiskAlerts} />
                   <span className="text-xs font-normal text-slate-500">cảnh báo</span>
                 </div>
                 <div className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-slate-500">
-                  <div className={`flex items-center gap-1 font-medium truncate ${
-                    highRiskAlerts > 0 ? "text-rose-700" : "text-emerald-700"
-                  }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                      highRiskAlerts > 0 ? "bg-rose-600" : "bg-emerald-600"
-                    }`}></span>
+                  <div className={`flex items-center gap-1 font-medium truncate ${highRiskAlerts > 0 ? "text-rose-700" : "text-emerald-700"
+                    }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${highRiskAlerts > 0 ? "bg-rose-600" : "bg-emerald-600"
+                      }`}></span>
                     <span className="truncate">
                       {highRiskAlerts > 0 ? "Shill Bidding / IP" : "Chưa có cảnh báo"}
                     </span>
@@ -612,11 +607,10 @@ export default function AdminControlCenter() {
                     Cảnh báo rủi ro AI &amp; Gian lận
                   </h2>
                 </div>
-                <span className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full border ${
-                  anomalies.filter((a) => a.status === "open").length > 0
-                    ? "bg-rose-50 text-rose-700 border-rose-200/60"
-                    : "bg-slate-50 text-slate-500 border-slate-200/60"
-                }`}>
+                <span className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full border ${anomalies.filter((a) => a.status === "open").length > 0
+                  ? "bg-rose-50 text-rose-700 border-rose-200/60"
+                  : "bg-slate-50 text-slate-500 border-slate-200/60"
+                  }`}>
                   {anomalies.filter((a) => a.status === "open").length} cảnh báo đang mở
                 </span>
               </div>
@@ -657,11 +651,10 @@ export default function AdminControlCenter() {
                             </td>
                             <td className="py-2 px-3 whitespace-nowrap">
                               <span
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                                  anom.level === "high"
-                                    ? "bg-rose-50 text-rose-700 border border-rose-200/60"
-                                    : "bg-amber-50 text-amber-800 border border-amber-200/60"
-                                }`}
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${anom.level === "high"
+                                  ? "bg-rose-50 text-rose-700 border border-rose-200/60"
+                                  : "bg-amber-50 text-amber-800 border border-amber-200/60"
+                                  }`}
                               >
                                 {anom.level === "high" ? "Khẩn cấp" : "Theo dõi"}
                               </span>
@@ -735,13 +728,13 @@ export default function AdminControlCenter() {
                           r="42"
                           fill="none"
                           stroke="#001743"
-                          strokeWidth={hoveredDonutSegment?.label === "Đang bid sôi nổi" ? 16 : 13}
+                          strokeWidth={hoveredDonutSegment?.label === "Đang được đặt giá" ? 16 : 13}
                           strokeDasharray={`${activeBiddingDash} ${circumference}`}
                           strokeDashoffset="0"
                           className="cursor-pointer transition-all duration-300 ease-out"
                           onMouseEnter={() =>
                             setHoveredDonutSegment({
-                              label: "Đang bid sôi nổi",
+                              label: "Đang được đặt giá",
                               count: `${activeBiddingCount} phiên (${Math.round((activeBiddingCount / liveCount) * 100)}%)`,
                               color: "#001743",
                             })
@@ -779,13 +772,13 @@ export default function AdminControlCenter() {
                           r="42"
                           fill="none"
                           stroke="#3B82F6"
-                          strokeWidth={hoveredDonutSegment?.label === "Chưa có lượt bid" ? 16 : 13}
+                          strokeWidth={hoveredDonutSegment?.label === "Chưa có lượt đặt giá" ? 16 : 13}
                           strokeDasharray={`${newAuctionDash} ${circumference}`}
                           strokeDashoffset={String(-(activeBiddingDash + urgentDash))}
                           className="cursor-pointer transition-all duration-300 ease-out"
                           onMouseEnter={() =>
                             setHoveredDonutSegment({
-                              label: "Chưa có lượt bid",
+                              label: "Chưa có lượt đặt giá",
                               count: `${newAuctionCount} phiên (${Math.round((newAuctionCount / liveCount) * 100)}%)`,
                               color: "#3B82F6",
                             })
@@ -833,12 +826,11 @@ export default function AdminControlCenter() {
                 ) : (
                   <>
                     <div
-                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${
-                        hoveredDonutSegment?.label === "Đang bid sôi nổi" ? "bg-slate-50" : "hover:bg-slate-50/70"
-                      }`}
+                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${hoveredDonutSegment?.label === "Đang được đặt giá" ? "bg-slate-50" : "hover:bg-slate-50/70"
+                        }`}
                       onMouseEnter={() =>
                         setHoveredDonutSegment({
-                          label: "Đang bid sôi nổi",
+                          label: "Đang được đặt giá",
                           count: `${activeBiddingCount} phiên (${Math.round((activeBiddingCount / liveCount) * 100)}%)`,
                           color: "#001743",
                         })
@@ -847,7 +839,7 @@ export default function AdminControlCenter() {
                     >
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-[#001743]"></span>
-                        <span className="text-slate-600 font-normal">Đang bid sôi nổi</span>
+                        <span className="text-slate-600 font-normal">Đang được đặt giá</span>
                       </div>
                       <span className="font-semibold text-[#001743] tabular-nums">
                         {activeBiddingCount} phiên ({Math.round((activeBiddingCount / liveCount) * 100)}%)
@@ -855,9 +847,8 @@ export default function AdminControlCenter() {
                     </div>
 
                     <div
-                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${
-                        hoveredDonutSegment?.label === "Sắp kết thúc" ? "bg-amber-50/60" : "hover:bg-slate-50/70"
-                      }`}
+                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${hoveredDonutSegment?.label === "Sắp kết thúc" ? "bg-amber-50/60" : "hover:bg-slate-50/70"
+                        }`}
                       onMouseEnter={() =>
                         setHoveredDonutSegment({
                           label: "Sắp kết thúc",
@@ -877,12 +868,11 @@ export default function AdminControlCenter() {
                     </div>
 
                     <div
-                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${
-                        hoveredDonutSegment?.label === "Chưa có lượt bid" ? "bg-blue-50/60" : "hover:bg-slate-50/70"
-                      }`}
+                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${hoveredDonutSegment?.label === "Chưa có lượt đặt giá" ? "bg-blue-50/60" : "hover:bg-slate-50/70"
+                        }`}
                       onMouseEnter={() =>
                         setHoveredDonutSegment({
-                          label: "Chưa có lượt bid",
+                          label: "Chưa có lượt đặt giá",
                           count: `${newAuctionCount} phiên (${Math.round((newAuctionCount / liveCount) * 100)}%)`,
                           color: "#3B82F6",
                         })
@@ -891,7 +881,7 @@ export default function AdminControlCenter() {
                     >
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                        <span className="text-slate-600 font-normal">Chưa có lượt bid</span>
+                        <span className="text-slate-600 font-normal">Chưa có lượt đặt giá</span>
                       </div>
                       <span className="font-semibold text-blue-700 tabular-nums">
                         {newAuctionCount} phiên ({Math.round((newAuctionCount / liveCount) * 100)}%)
@@ -939,7 +929,7 @@ export default function AdminControlCenter() {
                   <th className="py-2 px-4">SIM &amp; Người bán</th>
                   <th className="py-2 px-3 text-right">Giá hiện tại</th>
                   <th className="py-2 px-3">Người dẫn đầu</th>
-                  <th className="py-2 px-3 text-center">Lượt bid</th>
+                  <th className="py-2 px-3 text-center">Lượt đặt giá</th>
                   <th className="py-2 px-3">Thời gian còn lại</th>
                   <th className="py-2 px-3">Mức rủi ro AI</th>
                   <th className="py-2 px-4 text-right">Thao tác</th>

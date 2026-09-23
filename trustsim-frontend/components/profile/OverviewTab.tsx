@@ -29,12 +29,6 @@ export default function OverviewTab({
       current: false,
     },
     {
-      title: "Xác thực Số điện thoại qua OTP",
-      desc: "Đã kích hoạt và xác nhận số điện thoại chính chủ",
-      done: true,
-      current: false,
-    },
-    {
       title: "Định danh điện tử CCCD (eKYC)",
       desc: isEkycVerified
         ? "Đã đối soát ảnh CCCD 2 mặt và khuôn mặt thành công"
@@ -114,7 +108,7 @@ export default function OverviewTab({
                 fontWeight: 700,
               }}
             >
-              {isEkycVerified ? "Cấp độ 3/3 (Hoàn tất 100%)" : "Cấp độ 2/3 (Chờ eKYC)"}
+              {isEkycVerified ? "Cấp độ 2/2 (Hoàn tất 100%)" : "Cấp độ 1/2 (Chờ eKYC)"}
             </span>
           </div>
 

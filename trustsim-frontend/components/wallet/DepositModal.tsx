@@ -141,6 +141,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
 
   return (
     <div
+      className="profile-modal-backdrop"
       style={{
         position: "fixed",
         inset: 0,
@@ -158,9 +159,10 @@ export const DepositModal: React.FC<DepositModalProps> = ({
       }}
     >
       <div
+        className="profile-modal-panel profile-deposit-panel"
         style={{
           width: "100%",
-          maxWidth: depositData ? "580px" : "520px",
+          maxWidth: "640px",
           background: "#FFFFFF",
           borderRadius: "14px",
           boxShadow: "0 25px 60px -15px rgba(0, 23, 67, 0.25)",
@@ -168,13 +170,13 @@ export const DepositModal: React.FC<DepositModalProps> = ({
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
-          maxHeight: "92vh",
+          maxHeight: "calc(100vh - 32px)",
         }}
       >
         {/* Header */}
         <div
           style={{
-            padding: "18px 24px",
+            padding: "12px 18px",
             borderBottom: "1px solid #E5E7EB",
             display: "flex",
             alignItems: "center",
@@ -185,28 +187,29 @@ export const DepositModal: React.FC<DepositModalProps> = ({
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div
               style={{
-                width: 38,
-                height: 38,
+                width: 34,
+                height: 34,
                 borderRadius: 10,
-                background: "linear-gradient(135deg, #E4011E 0%, #B91C1C 100%)",
-                color: "#FFFFFF",
+                background: "linear-gradient(135deg, #001743 0%, #002B7F 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 4px 12px rgba(228, 1, 30, 0.25)",
+                boxShadow: "0 4px 12px rgba(0, 23, 67, 0.25)",
+                padding: 6,
+                flexShrink: 0,
               }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
-                <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
-                <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
-              </svg>
+              <img
+                src="/logo/S-White-Logo.png"
+                alt="TrustSim"
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+              />
             </div>
             <div>
-              <h3 style={{ fontSize: 16.5, fontWeight: 800, color: "#001743", margin: 0, letterSpacing: "-0.01em" }}>
+              <h3 style={{ fontSize: 15, fontWeight: 800, color: "#001743", margin: 0, letterSpacing: "-0.01em" }}>
                 {depositData ? "Chuyển khoản VietQR SePay" : "Nạp tiền vào ví TrustSim"}
               </h3>
-              <p style={{ fontSize: 12, color: "#6B7280", margin: "2px 0 0" }}>
+              <p style={{ fontSize: 11, color: "#6B7280", margin: "1px 0 0" }}>
                 {depositData ? "Quét mã QR để cộng tiền tự động tức thì" : "Cổng thanh toán tự động 24/7 (Tối thiểu 10.000 ₫)"}
               </p>
             </div>
@@ -233,14 +236,14 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         </div>
 
         {/* Content Body */}
-        <div style={{ padding: "22px 24px", overflowY: "auto", flex: 1 }}>
+        <div style={{ padding: "14px 18px", overflowY: "auto", flex: 1 }}>
           {isCompleted && depositData ? (
             /* Bước 3: Nạp tiền thành công tức thì */
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "16px 0" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "12px 0" }}>
               <div
                 style={{
-                  width: 64,
-                  height: 64,
+                  width: 58,
+                  height: 58,
                   borderRadius: "50%",
                   background: "#F0FDF4",
                   border: "2px solid #BBF7D0",
@@ -248,19 +251,19 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  marginBottom: 16,
+                  marginBottom: 14,
                   boxShadow: "0 6px 18px rgba(22, 163, 74, 0.15)",
                 }}
               >
-                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               </div>
 
-              <h3 style={{ fontSize: 20, fontWeight: 900, color: "#001743", margin: "0 0 6px" }}>
+              <h3 style={{ fontSize: 19, fontWeight: 900, color: "#001743", margin: "0 0 6px" }}>
                 Nạp tiền thành công!
               </h3>
-              <p style={{ fontSize: 14.5, color: "#16A34A", fontWeight: 800, margin: "0 0 16px" }}>
+              <p style={{ fontSize: 14, color: "#16A34A", fontWeight: 800, margin: "0 0 16px" }}>
                 +{depositData.amount.toLocaleString("vi-VN")} ₫ đã được cộng vào ví của bạn
               </p>
 
@@ -270,13 +273,13 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   background: "#F8FAFC",
                   border: "1px solid #E2E8F0",
                   borderRadius: 10,
-                  padding: "16px 18px",
-                  marginBottom: 20,
-                  fontSize: 13,
+                  padding: "14px 16px",
+                  marginBottom: 18,
+                  fontSize: 12.5,
                   color: "#475569",
                   display: "flex",
                   flexDirection: "column",
-                  gap: 10,
+                  gap: 8,
                   textAlign: "left",
                 }}
               >
@@ -299,11 +302,11 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 onClick={handleComplete}
                 style={{
                   width: "100%",
-                  padding: "13px",
+                  padding: "12px",
                   borderRadius: 8,
                   background: "#001743",
                   color: "#FFFFFF",
-                  fontSize: 14.5,
+                  fontSize: 14,
                   fontWeight: 800,
                   border: "none",
                   cursor: "pointer",
@@ -317,25 +320,25 @@ export const DepositModal: React.FC<DepositModalProps> = ({
             </div>
           ) : !depositData ? (
             /* Bước 1: Chọn số tiền */
-            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div>
-                <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#001743", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#001743", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.03em" }}>
                   Chọn nhanh số tiền nạp
                 </label>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(105px, 1fr))", gap: 8 }}>
+                <div className="deposit-presets" style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 6 }}>
                   {PRESET_AMOUNTS.map((item) => (
                     <button
                       key={item.val}
                       type="button"
                       onClick={() => handleSelectPreset(item.val)}
                       style={{
-                        padding: "10px 6px",
-                        fontSize: 12.5,
+                        padding: "8px 4px",
+                        fontSize: 12,
                         fontWeight: amount === item.val ? 800 : 600,
                         borderRadius: 6,
-                        border: amount === item.val ? "2px solid #E4011E" : "1px solid #E5E7EB",
-                        background: amount === item.val ? "#FEF2F2" : "#FFFFFF",
-                        color: amount === item.val ? "#E4011E" : "#374151",
+                        border: amount === item.val ? "2px solid #001743" : "1px solid #E5E7EB",
+                        background: amount === item.val ? "#EFF6FF" : "#FFFFFF",
+                        color: amount === item.val ? "#001743" : "#374151",
                         cursor: "pointer",
                         transition: "all 0.15s ease",
                         textAlign: "center",
@@ -348,7 +351,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
               </div>
 
               <div>
-                <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#001743", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#001743", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.03em" }}>
                   Hoặc nhập số tiền tùy ý (VNĐ) <span style={{ color: "#E4011E" }}>*</span>
                 </label>
                 <div style={{ position: "relative" }}>
@@ -359,8 +362,8 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                     placeholder="Tối thiểu 10.000 ₫"
                     style={{
                       width: "100%",
-                      padding: "13px 48px 13px 16px",
-                      fontSize: 17,
+                      padding: "10px 48px 10px 14px",
+                      fontSize: 15,
                       fontWeight: 800,
                       fontVariantNumeric: "tabular-nums",
                       borderRadius: 8,
@@ -370,16 +373,16 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                       background: "#FFFFFF",
                       transition: "border-color 0.15s ease",
                     }}
-                    onFocus={(e) => !error && (e.currentTarget.style.borderColor = "#E4011E")}
+                    onFocus={(e) => !error && (e.currentTarget.style.borderColor = "#001743")}
                     onBlur={(e) => !error && (e.currentTarget.style.borderColor = "#D1D5DB")}
                   />
                   <span
                     style={{
                       position: "absolute",
-                      right: 16,
+                      right: 14,
                       top: "50%",
                       transform: "translateY(-50%)",
-                      fontSize: 13,
+                      fontSize: 12.5,
                       fontWeight: 800,
                       color: "#64748B",
                     }}
@@ -388,9 +391,9 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   </span>
                 </div>
                 {error ? (
-                  <p style={{ fontSize: 12, color: "#EF4444", marginTop: 6, fontWeight: 600 }}>{error}</p>
+                  <p style={{ fontSize: 11.5, color: "#EF4444", marginTop: 4, fontWeight: 600 }}>{error}</p>
                 ) : (
-                  <p style={{ fontSize: 11.5, color: "#6B7280", marginTop: 6 }}>
+                  <p style={{ fontSize: 11, color: "#6B7280", marginTop: 4 }}>
                     Tối thiểu <strong>10.000 ₫</strong>. Số tiền sẽ được cộng tự động vào ví sau 5–30 giây.
                   </p>
                 )}
@@ -401,8 +404,8 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   background: "#F8FAFC",
                   border: "1px solid #E2E8F0",
                   borderRadius: 8,
-                  padding: "12px 16px",
-                  fontSize: 12,
+                  padding: "8px 12px",
+                  fontSize: 11.5,
                   color: "#475569",
                   lineHeight: 1.5,
                 }}
@@ -419,11 +422,11 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 disabled={loading || amount < 10_000}
                 style={{
                   width: "100%",
-                  padding: "14px",
+                  padding: "11px",
                   borderRadius: 8,
-                  background: loading || amount < 10_000 ? "#9CA3AF" : "#E4011E",
+                  background: loading || amount < 10_000 ? "#9CA3AF" : "linear-gradient(135deg, #001743 0%, #002B7F 100%)",
                   color: "#FFFFFF",
-                  fontSize: 14.5,
+                  fontSize: 13,
                   fontWeight: 800,
                   border: "none",
                   cursor: loading || amount < 10_000 ? "not-allowed" : "pointer",
@@ -431,7 +434,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 8,
-                  boxShadow: loading || amount < 10_000 ? "none" : "0 4px 14px rgba(228, 1, 30, 0.25)",
+                  boxShadow: loading || amount < 10_000 ? "none" : "0 4px 14px rgba(0, 23, 67, 0.25)",
                   transition: "all 0.15s ease",
                 }}
               >
@@ -457,7 +460,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
             </div>
           ) : (
             /* Bước 2: Hiển thị VietQR Code & Thông tin chuyển khoản */
-            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {/* Alert đếm ngược */}
               <div
                 style={{
@@ -467,13 +470,13 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   background: "#FEF2F2",
                   border: "1px solid #FECACA",
                   borderRadius: 8,
-                  padding: "10px 14px",
-                  fontSize: 12.5,
+                  padding: "8px 12px",
+                  fontSize: 12,
                   color: "#991B1B",
                 }}
               >
                 <span>Mã nạp có hiệu lực trong:</span>
-                <span style={{ fontWeight: 900, fontVariantNumeric: "tabular-nums", fontSize: 15, color: "#DC2626" }}>
+                <span style={{ fontWeight: 900, fontVariantNumeric: "tabular-nums", fontSize: 14, color: "#DC2626" }}>
                   {formatCountdown(timeLeft)}
                 </span>
               </div>
@@ -485,27 +488,27 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   flexDirection: "column",
                   alignItems: "center",
                   background: "#F8FAFC",
-                  border: "1.5px solid #E2E8F0",
+                  border: "1px solid #E2E8F0",
                   borderRadius: 10,
-                  padding: 16,
+                  padding: "12px",
                 }}
               >
                 <div
                   style={{
                     background: "#FFFFFF",
-                    padding: 8,
+                    padding: 6,
                     borderRadius: 8,
                     border: "1px solid #E2E8F0",
-                    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.04)",
+                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
                   }}
                 >
                   <img
                     src={depositData.qrCodeUrl}
                     alt="VietQR SePay Payment"
-                    style={{ width: 240, height: 240, objectFit: "contain", display: "block" }}
+                    style={{ width: 150, height: 150, objectFit: "contain", display: "block" }}
                   />
                 </div>
-                <p style={{ fontSize: 11.5, color: "#64748B", marginTop: 10, textAlign: "center" }}>
+                <p style={{ fontSize: 11, color: "#64748B", marginTop: 8, textAlign: "center", margin: "8px 0 0" }}>
                   Mở ứng dụng Ngân hàng hoặc MoMo / Viettel Money để quét mã QR thanh toán nhanh
                 </p>
               </div>
@@ -522,25 +525,25 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 {/* Số tiền */}
                 <div
                   style={{
-                    padding: "12px 16px",
+                    padding: "10px 14px",
                     borderBottom: "1px solid #F3F4F6",
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
                   }}
                 >
-                  <span style={{ fontSize: 12.5, color: "#6B7280" }}>Số tiền cần nạp:</span>
+                  <span style={{ fontSize: 12, color: "#6B7280" }}>Số tiền cần nạp:</span>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 16, fontWeight: 900, color: "#E4011E", fontVariantNumeric: "tabular-nums" }}>
+                    <span style={{ fontSize: 15, fontWeight: 900, color: "#E4011E", fontVariantNumeric: "tabular-nums" }}>
                       {depositData.amount.toLocaleString("vi-VN")} ₫
                     </span>
                     <button
                       type="button"
                       onClick={() => handleCopy(String(depositData.amount), "amount")}
                       style={{
-                        fontSize: 11,
+                        fontSize: 10.5,
                         fontWeight: 700,
-                        padding: "3px 8px",
+                        padding: "3px 7px",
                         borderRadius: 4,
                         border: "1px solid #D1D5DB",
                         background: copiedField === "amount" ? "#10B981" : "#F3F4F6",
@@ -556,19 +559,18 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 {/* Cú pháp chuyển khoản */}
                 <div
                   style={{
-                    padding: "12px 16px",
+                    padding: "10px 14px",
                     background: "#FEF9C3",
-                    borderBottom: "1px solid #FEF08A",
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
                   }}
                 >
                   <div>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "#854D0E", display: "block" }}>
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color: "#854D0E", display: "block" }}>
                       Nội dung chuyển khoản (BẮT BUỘC):
                     </span>
-                    <span style={{ fontSize: 15, fontWeight: 900, color: "#A16207", fontVariantNumeric: "tabular-nums" }}>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: "#A16207", fontVariantNumeric: "tabular-nums" }}>
                       {depositData.transferContent}
                     </span>
                   </div>
@@ -576,9 +578,9 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                     type="button"
                     onClick={() => handleCopy(depositData.transferContent, "content")}
                     style={{
-                      fontSize: 12,
+                      fontSize: 11.5,
                       fontWeight: 800,
-                      padding: "5px 12px",
+                      padding: "5px 10px",
                       borderRadius: 4,
                       border: "none",
                       background: copiedField === "content" ? "#10B981" : "#CA8A04",
@@ -591,39 +593,35 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 </div>
               </div>
 
-              {/* Action buttons */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
+
+
+              {/* Action button */}
+              <div>
                 <button
                   type="button"
                   onClick={() => setDepositData(null)}
                   style={{
-                    padding: 12,
-                    borderRadius: 6,
-                    border: "1px solid #D1D5DB",
-                    background: "#F3F4F6",
-                    color: "#374151",
+                    width: "100%",
+                    padding: "11px",
+                    borderRadius: 8,
+                    border: "1.5px solid #D1D5DB",
+                    background: "#FFFFFF",
+                    color: "#001743",
                     fontSize: 13,
                     fontWeight: 700,
                     cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#F8FAFC";
+                    e.currentTarget.style.borderColor = "#001743";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#FFFFFF";
+                    e.currentTarget.style.borderColor = "#D1D5DB";
                   }}
                 >
-                  ← Đổi số tiền khác
-                </button>
-                <button
-                  type="button"
-                  onClick={handleComplete}
-                  style={{
-                    padding: 12,
-                    borderRadius: 6,
-                    border: "none",
-                    background: "#16A34A",
-                    color: "#FFFFFF",
-                    fontSize: 13,
-                    fontWeight: 800,
-                    cursor: "pointer",
-                  }}
-                >
-                  ✓ Tôi đã chuyển khoản xong
+                  ← Quay lại & Đổi số tiền khác
                 </button>
               </div>
             </div>

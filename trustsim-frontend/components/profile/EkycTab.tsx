@@ -982,6 +982,7 @@ function EkycWizardModal({
 
   return (
     <div
+      className="profile-modal-backdrop profile-kyc-modal"
       style={{
         position: "fixed",
         inset: 0,
@@ -994,6 +995,7 @@ function EkycWizardModal({
       }}
     >
       <div
+        className="profile-modal-panel"
         style={{
           background: "#FFFFFF",
           borderRadius: 8,
@@ -1842,5 +1844,4 @@ function EkycWizardModal({
     </div>
   );
 }
-
 

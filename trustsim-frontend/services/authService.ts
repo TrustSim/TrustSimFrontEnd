@@ -3,6 +3,8 @@ import {
   AuthResponseDto,
   LoginRequest,
   RegisterRequest,
+  RegisterInitiatedDto,
+  VerifyEmailRequest,
   UserProfileDto,
 } from "@/types/auth";
 import type { SendOtpResponseDto, VerifyOtpResponseDto } from "@/types/common";
@@ -12,10 +14,24 @@ const USER_KEY = "trustsim_user";
 
 export const authService = {
   /**
-   * Đăng ký tài khoản người dùng mới (Backend tự động ghi HttpOnly Cookies)
+   * Bước 1 Đăng ký: Gửi thông tin (userName, email, password), hệ thống lưu tạm và gửi Email OTP.
+   * Chưa tạo tài khoản vào DB ở bước này.
    */
-  async register(data: RegisterRequest): Promise<AuthResponseDto> {
-    const res = await apiFetch<AuthResponseDto>("/Auth/register", {
+  async register(data: RegisterRequest): Promise<RegisterInitiatedDto> {
+    const res = await apiFetch<RegisterInitiatedDto>("/Auth/register", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+
+    if (res.data) return res.data;
+    throw new Error(res.message || "Đăng ký không thành công");
+  },
+
+  /**
+   * Bước 2 Đăng ký: Xác thực Email OTP. Hệ thống tạo tài khoản, Wallet, thiết lập HttpOnly Cookies và tự động đăng nhập.
+   */
+  async verifyEmail(data: VerifyEmailRequest): Promise<AuthResponseDto> {
+    const res = await apiFetch<AuthResponseDto>("/Auth/verify-email", {
       method: "POST",
       body: JSON.stringify(data),
     });
@@ -24,7 +40,7 @@ export const authService = {
       this.saveSession(res.data);
       return res.data;
     }
-    throw new Error(res.message || "Đăng ký không thành công");
+    throw new Error(res.message || "Xác thực email không thành công");
   },
 
   /**
