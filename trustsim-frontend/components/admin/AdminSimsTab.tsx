@@ -50,6 +50,7 @@ import {
   BtnSecondary,
 } from "@/components/ui/RightDrawer";
 import { Pagination } from "@/components/ui/Pagination";
+import { AdminSortButton, toggleSort, type SortDirection } from "@/components/admin/AdminPrimitives";
 import { PhysicalSimCard } from "@/components/ui/PhysicalSimCard";
 
 // --- Excel Export Columns ---
@@ -172,6 +173,18 @@ export function AdminSimsTab() {
 
   // Total pages
   const totalPages = Math.ceil(totalCount / pageSize) || 1;
+  const [sortKey, setSortKey] = useState<"phone" | "status">("phone");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const displaySims = [...sims].sort((a, b) => {
+    const left = sortKey === "phone" ? a.phoneNumber : a.simStatus;
+    const right = sortKey === "phone" ? b.phoneNumber : b.simStatus;
+    const result = String(left).localeCompare(String(right), "vi");
+    return sortDirection === "asc" ? result : -result;
+  });
+  const changeSort = (key: "phone" | "status") => {
+    const next = toggleSort(sortKey, sortDirection, key);
+    setSortKey(next.key); setSortDirection(next.direction);
+  };
 
   // KPIs
   const kpiAvailable = useMemo(() => sims.filter((s) => s.simStatus === "AVAILABLE").length, [sims]);
@@ -315,7 +328,7 @@ export function AdminSimsTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="admin-tab admin-tab-sims space-y-6">
       {/* Toast Alert */}
       {toastMessage && (
         <div
@@ -530,12 +543,12 @@ export function AdminSimsTab() {
                     className="rounded border-slate-300 text-[#001743] focus:ring-0 cursor-pointer"
                   />
                 </th>
-                <th className="py-3 px-4">Số SIM / Đầu số</th>
+                <th className="py-3 px-4"><AdminSortButton label="Số SIM / Đầu số" active={sortKey === "phone"} direction={sortDirection} onClick={() => changeSort("phone")} /></th>
                 <th className="py-3 px-4">Nhà mạng</th>
                 <th className="py-3 px-4">Thể loại</th>
                 <th className="py-3 px-4">Định dạng nhịp</th>
                 <th className="py-3 px-4">Chủ sở hữu hiện tại</th>
-                <th className="py-3 px-4 text-center">Trạng thái</th>
+                <th className="py-3 px-4 text-center"><AdminSortButton label="Trạng thái" align="center" active={sortKey === "status"} direction={sortDirection} onClick={() => changeSort("status")} /></th>
                 <th className="py-3 px-4">Ngày tạo</th>
                 <th className="py-3 px-4 text-right">Thao tác</th>
               </tr>
@@ -557,7 +570,7 @@ export function AdminSimsTab() {
                   </td>
                 </tr>
               ) : (
-                sims.map((s) => {
+                displaySims.map((s) => {
                   const isSelected = selectedSimIds.includes(s.id);
                   const carrierColor = getCarrierColor(s.carrierName);
 

@@ -266,6 +266,71 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
 ::selection { background: rgba(228,1,30,0.12); color: var(--primary-dark); }
 
+/* ─── Admin workspace ───────────────────────────────────────
+   Operational UI: quiet surfaces, strong hierarchy, data-first tables. */
+.admin-shell {
+  --admin-ink: #101828;
+  --admin-muted: #667085;
+  --admin-line: #e6e8ec;
+  --admin-paper: #ffffff;
+  --admin-canvas: #f5f6f8;
+}
+.admin-shell .admin-content { background: var(--admin-canvas); }
+.admin-shell .admin-content h1 { letter-spacing: -0.025em; }
+.admin-shell .admin-content .elevation-card,
+.admin-shell .admin-content .glass-panel {
+  box-shadow: none;
+  border-color: var(--admin-line);
+}
+.admin-shell .admin-content .elevation-card:hover { transform: none; box-shadow: 0 2px 8px rgba(16,24,40,.04); }
+.admin-shell .admin-content .rounded-xl { border-radius: 8px; }
+.admin-shell .admin-content .rounded-lg { border-radius: 6px; }
+.admin-shell .admin-content table thead tr { background: #f8f9fb; }
+.admin-shell .admin-content table th {
+  color: #667085;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.admin-shell .admin-content table tbody tr { border-color: #eef0f3; }
+.admin-shell .admin-content table tbody tr:hover { background: #fafafa; }
+.admin-shell .admin-content input,
+.admin-shell .admin-content select,
+.admin-shell .admin-content textarea { border-radius: 6px; }
+.admin-shell .admin-content button { transition: background-color .15s ease, border-color .15s ease, color .15s ease; }
+.admin-shell .admin-tab { color: var(--admin-ink); }
+.admin-shell .admin-tab > .bg-white.border,
+.admin-shell .admin-tab > div.bg-white.border {
+  border-color: var(--admin-line);
+  box-shadow: 0 1px 2px rgba(16,24,40,.02);
+}
+.admin-shell .admin-tab > div:first-of-type h1 {
+  font-size: 17px;
+  line-height: 1.35;
+  letter-spacing: -.02em;
+}
+.admin-shell .admin-tab > div:first-of-type p { color: #667085; }
+.admin-shell .admin-tab .bg-white.border.rounded-xl,
+.admin-shell .admin-tab .bg-white.border.rounded-\[8px\] { box-shadow: 0 1px 2px rgba(16,24,40,.02); }
+.admin-shell .admin-tab .admin-sort-button { min-height: 28px; }
+.admin-shell .admin-tab .admin-sort-button:focus-visible {
+  outline: 2px solid rgba(228,1,30,.35);
+  outline-offset: 2px;
+}
+.admin-shell .admin-tab table { min-width: 860px; }
+.admin-shell .admin-tab .overflow-x-auto { scrollbar-color: #cbd5e1 transparent; }
+.admin-shell .admin-tab .text-\[\#001743\] { color: #101828; }
+.admin-shell .admin-tab .bg-\[\#001743\] { background-color: #101828; }
+.admin-shell .admin-tab .hover\:bg-\[\#00266B\]:hover { background-color: #1d2939; }
+
+@media (max-width: 768px) {
+  .admin-shell .admin-sidebar { width: 68px; }
+  .admin-shell .admin-main { margin-left: 68px; }
+  .admin-shell .admin-content { padding: 20px 16px; }
+  .admin-shell .admin-topbar { padding: 0 16px; }
+}
+
 /* Soft Modern Enterprise: Subtle Elevation & Micro-interactions */
 .elevation-card {
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02);

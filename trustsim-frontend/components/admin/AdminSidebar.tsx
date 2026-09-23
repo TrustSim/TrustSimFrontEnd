@@ -83,29 +83,31 @@ export default function AdminSidebar({
 }: AdminSidebarProps) {
   return (
     <aside
-      className={`fixed top-0 bottom-0 left-0 z-40 bg-white border-r border-slate-200/70 flex flex-col transition-all duration-300 ease-in-out select-none ${collapsed ? "w-[68px]" : "w-[245px]"
+      className={`admin-sidebar fixed top-0 bottom-0 left-0 z-40 bg-[#101828] border-r border-[#1d2939] flex flex-col transition-all duration-300 ease-in-out select-none ${collapsed ? "w-[68px]" : "w-[248px]"
         }`}
     >
       {/* Brand Header */}
-      <div className="h-14 border-b border-slate-100 flex items-center justify-center px-4">
-        <Link href="/admin" className="flex items-center justify-center">
+      <div className="h-[68px] border-b border-[#1d2939] flex items-center px-5">
+        <Link href="/admin" className="flex items-center gap-3 justify-center w-full">
           <Image
             src="/logo/S-Logo.png"
             alt="TrustSim"
-            width={24}
-            height={24}
+            width={27}
+            height={27}
             className="object-contain"
+            style={{ width: "auto", height: "27px" }}
             priority
           />
+          {!collapsed && <span className="text-white font-semibold tracking-tight text-[15px]">TrustSim <span className="text-[#98a2b3] font-normal">Admin</span></span>}
         </Link>
       </div>
 
       {/* Navigation Sections */}
-      <nav className="flex-1 overflow-y-auto px-2.5 py-4 space-y-5">
+      <nav className="admin-nav flex-1 overflow-y-auto px-3 py-6 space-y-6">
         {ADMIN_NAV_SECTIONS.map((section) => (
           <div key={section.title}>
             {!collapsed && (
-              <div className="px-3 pb-1 text-[11px] font-semibold text-slate-400 tracking-normal">
+              <div className="px-3 pb-2 text-[10px] font-semibold text-[#667085] uppercase tracking-[0.12em]">
                 {section.title}
               </div>
             )}
@@ -119,16 +121,16 @@ export default function AdminSidebar({
                     key={item.id}
                     href={`/admin?tab=${item.tab}`}
                     title={collapsed ? item.label : undefined}
-                    className={`group flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-150 relative ${isActive
-                      ? "bg-[#001743]/[0.06] text-[#001743] font-semibold border-l-[3px] border-[#001743] pl-[calc(0.5rem-3px)]"
-                      : "text-slate-500 hover:text-[#001743] hover:bg-slate-50 border-l-[3px] border-transparent"
+                      className={`group flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] font-medium transition-all duration-150 relative ${isActive
+                        ? "bg-white/[0.1] text-white font-semibold border-l-2 border-[#e4011e] pl-[10px]"
+                        : "text-[#98a2b3] hover:text-white hover:bg-white/[0.06] border-l-2 border-transparent"
                       }`}
                   >
                     {/* Icon with relative positioning for dot indicator */}
                     <div className="relative flex items-center justify-center">
                       <Icon
                         size={17}
-                        className={`shrink-0 transition-all duration-150 ${isActive ? "text-[#001743]" : "text-slate-400 group-hover:text-[#001743]"
+                          className={`shrink-0 transition-all duration-150 ${isActive ? "text-[#ff5365]" : "text-[#667085] group-hover:text-white"
                           }`}
                       />
                       {/* Dot indicator: only shown in collapsed mode when badge exists */}
@@ -149,10 +151,10 @@ export default function AdminSidebar({
                     {!collapsed && item.badge !== undefined && (
                       <span
                         className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none ${item.badgeType === "danger"
-                          ? "bg-rose-100 text-rose-700"
+                            ? "bg-[#e4011e] text-white"
                           : item.badgeType === "warning"
                             ? "bg-amber-100 text-amber-800"
-                            : "bg-blue-100 text-blue-700"
+                            : "bg-[#344054] text-[#d0d5dd]"
                           }`}
                       >
                         {item.badge}
@@ -167,7 +169,7 @@ export default function AdminSidebar({
       </nav>
 
       {/* Sidebar Footer */}
-      <div className="p-2.5 border-t border-slate-100 bg-white">
+      <div className="p-3 border-t border-[#1d2939] bg-[#101828]">
         {/* Collapsed: just action icons */}
         {collapsed ? (
           <div className="flex flex-col items-center gap-1">
@@ -175,7 +177,7 @@ export default function AdminSidebar({
               href="/"
               title="Về trang người dùng"
               aria-label="Về trang người dùng"
-              className="flex items-center justify-center p-2 rounded-[6px] text-slate-400 hover:text-[#001743] hover:bg-slate-100 transition-colors"
+              className="flex items-center justify-center p-2 rounded-md text-[#98a2b3] hover:text-white hover:bg-white/[0.08] transition-colors"
             >
               <Home size={17} strokeWidth={1.5} />
             </Link>
@@ -183,7 +185,7 @@ export default function AdminSidebar({
               onClick={onToggleCollapse}
               title="Mở rộng thanh điều hướng"
               aria-label="Mở rộng thanh điều hướng"
-              className="flex items-center justify-center p-2 rounded-[6px] text-slate-400 hover:text-[#001743] hover:bg-slate-100 transition-colors"
+              className="flex items-center justify-center p-2 rounded-md text-[#98a2b3] hover:text-white hover:bg-white/[0.08] transition-colors"
             >
               <ChevronRight size={17} strokeWidth={1.5} />
             </button>

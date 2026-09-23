@@ -54,6 +54,7 @@ import {
   BtnSecondary,
 } from "@/components/ui/RightDrawer";
 import { Pagination } from "@/components/ui/Pagination";
+import { AdminSortButton, toggleSort, type SortDirection } from "@/components/admin/AdminPrimitives";
 
 const DOCUMENT_EXPORT_COLUMNS: ExcelColumnDef<DocumentDto>[] = [
   { header: "Mã tài liệu", key: "id", width: 36 },
@@ -95,6 +96,8 @@ export function AdminDocumentsTab() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState<"name" | "date">("date");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [activeOnly, setActiveOnly] = useState(false);
 
   // Pagination
@@ -159,14 +162,26 @@ export function AdminDocumentsTab() {
   // Filtered list
   const filteredDocs = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return documents;
-    return documents.filter(
+    const filtered = !q ? [...documents] : documents.filter(
       (d) =>
         d.documentName.toLowerCase().includes(q) ||
         d.linkUrl.toLowerCase().includes(q) ||
         d.id.toLowerCase().includes(q)
     );
-  }, [documents, search]);
+    return filtered.sort((a, b) => {
+      const left = sortKey === "name" ? a.documentName : new Date(a.createdDate).getTime();
+      const right = sortKey === "name" ? b.documentName : new Date(b.createdDate).getTime();
+      const result = typeof left === "number" && typeof right === "number" ? left - right : String(left).localeCompare(String(right), "vi");
+      return sortDirection === "asc" ? result : -result;
+    });
+  }, [documents, search, sortKey, sortDirection]);
+
+  const changeSort = (key: "name" | "date") => {
+    const next = toggleSort(sortKey, sortDirection, key);
+    setSortKey(next.key);
+    setSortDirection(next.direction);
+    setCurrentPage(1);
+  };
 
   // Paginated list
   const totalPages = Math.ceil(filteredDocs.length / pageSize) || 1;
@@ -421,7 +436,7 @@ export function AdminDocumentsTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="admin-tab admin-tab-documents space-y-4">
       {/* Toast Notification */}
       {toastMessage && (
         <div
@@ -625,10 +640,10 @@ export function AdminDocumentsTab() {
                 <thead>
                   <tr className="border-b border-slate-200/80 bg-slate-50/75 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                     <th className="py-3 px-4 w-12 text-center">STT</th>
-                    <th className="py-3 px-4">Tên tài liệu / Văn bản</th>
+                    <th className="py-3 px-4"><AdminSortButton label="Tên tài liệu / Văn bản" active={sortKey === "name"} direction={sortDirection} onClick={() => changeSort("name")} /></th>
                     <th className="py-3 px-4">Đường dẫn / Tệp nguồn</th>
                     <th className="py-3 px-4 w-36">Trạng thái học dữ liệu</th>
-                    <th className="py-3 px-4 w-40">Ngày tạo</th>
+                    <th className="py-3 px-4 w-40"><AdminSortButton label="Ngày tạo" active={sortKey === "date"} direction={sortDirection} onClick={() => changeSort("date")} /></th>
                     <th className="py-3 px-4 w-36 text-right">Thao tác</th>
                   </tr>
                 </thead>

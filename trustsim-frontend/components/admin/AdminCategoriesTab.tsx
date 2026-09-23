@@ -14,6 +14,7 @@ import {
   BtnPrimary, BtnSecondary,
 } from "@/components/ui/RightDrawer";
 import { Pagination } from "@/components/ui/Pagination";
+import { AdminSortButton, toggleSort, type SortDirection } from "@/components/admin/AdminPrimitives";
 
 // --- Delete Modal ---
 function DeleteModal({ name, onConfirm, onCancel, loading }: {
@@ -202,6 +203,8 @@ export function AdminCategoriesTab() {
   const [search, setSearch] = useState("");
   const [pageIndex, setPageIndex] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [sortKey, setSortKey] = useState<"name" | "multiplier">("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [toast, setToast] = useState<string | null>(null);
   const [updatedId, setUpdatedId] = useState<string | null>(null);
 
@@ -285,10 +288,23 @@ export function AdminCategoriesTab() {
       c.description?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const paged = filtered.slice((pageIndex - 1) * pageSize, pageIndex * pageSize);
+  const sorted = [...filtered].sort((a, b) => {
+    const left = sortKey === "name" ? a.categoryName : Number(a.valuationMultiplier ?? 0);
+    const right = sortKey === "name" ? b.categoryName : Number(b.valuationMultiplier ?? 0);
+    const result = typeof left === "number" && typeof right === "number" ? left - right : String(left).localeCompare(String(right), "vi");
+    return sortDirection === "asc" ? result : -result;
+  });
+  const paged = sorted.slice((pageIndex - 1) * pageSize, pageIndex * pageSize);
+
+  const changeSort = (key: "name" | "multiplier") => {
+    const next = toggleSort(sortKey, sortDirection, key);
+    setSortKey(next.key);
+    setSortDirection(next.direction);
+    setPageIndex(1);
+  };
 
   return (
-    <div className="space-y-4">
+    <div className="admin-tab admin-tab-categories space-y-4">
       {/* ── 1. Header Card (Matching Kho SIM) ── */}
       <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -353,8 +369,8 @@ export function AdminCategoriesTab() {
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
-                <th className="py-3 px-4">Thể loại / Mã thế số</th>
-                <th className="py-3 px-4 text-center">Hệ số định giá AI</th>
+                <th className="py-3 px-4"><AdminSortButton label="Thể loại / Mã thế số" active={sortKey === "name"} direction={sortDirection} onClick={() => changeSort("name")} /></th>
+                <th className="py-3 px-4 text-center"><AdminSortButton label="Hệ số định giá AI" align="center" active={sortKey === "multiplier"} direction={sortDirection} onClick={() => changeSort("multiplier")} /></th>
                 <th className="py-3 px-4">Quy tắc nhận diện &amp; Mô tả phong thủy</th>
                 <th className="py-3 px-4 text-center">Thanh khoản dự báo</th>
                 <th className="py-3 px-4 text-right">Thao tác</th>

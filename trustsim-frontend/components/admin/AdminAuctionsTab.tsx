@@ -33,6 +33,7 @@ import {
   BtnSecondary,
 } from "@/components/ui/RightDrawer";
 import { Pagination } from "@/components/ui/Pagination";
+import { AdminSortButton, toggleSort, type SortDirection } from "@/components/admin/AdminPrimitives";
 import { PhysicalSimCard } from "@/components/ui/PhysicalSimCard";
 import {
   auctionService,
@@ -198,6 +199,8 @@ export function AdminAuctionsTab() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sortKey, setSortKey] = useState<"code" | "start" | "current">("code");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   // --- Drawer & Modal State ---
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -352,6 +355,17 @@ export function AdminAuctionsTab() {
     return { active, schedule, draft, end, cancelled };
   }, [auctions]);
 
+  const displayAuctions = [...auctions].sort((a, b) => {
+    const left = sortKey === "code" ? a.auctionCode : sortKey === "start" ? a.startingPrice : a.currentPrice;
+    const right = sortKey === "code" ? b.auctionCode : sortKey === "start" ? b.startingPrice : b.currentPrice;
+    const result = typeof left === "number" && typeof right === "number" ? left - right : String(left).localeCompare(String(right), "vi");
+    return sortDirection === "asc" ? result : -result;
+  });
+  const changeSort = (key: "code" | "start" | "current") => {
+    const next = toggleSort(sortKey, sortDirection, key);
+    setSortKey(next.key); setSortDirection(next.direction);
+  };
+
   // Trạng thái badge helper
   const renderStatusBadge = (status: number | AuctionStatusEnum) => {
     switch (status) {
@@ -396,7 +410,7 @@ export function AdminAuctionsTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="admin-tab admin-tab-auctions space-y-4">
       {/* Toast Notification */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#001743] text-white px-4 py-3 rounded-[8px] shadow-lg border border-slate-700 text-xs font-semibold flex items-center gap-2 animate-fade-up">
@@ -536,10 +550,10 @@ export function AdminAuctionsTab() {
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
-                <th className="py-3 px-4">Mã phiên / Số SIM</th>
+                <th className="py-3 px-4"><AdminSortButton label="Mã phiên / Số SIM" active={sortKey === "code"} direction={sortDirection} onClick={() => changeSort("code")} /></th>
                 <th className="py-3 px-4 text-center">Hình thức đấu giá</th>
-                <th className="py-3 px-4 text-right">Giá khởi điểm</th>
-                <th className="py-3 px-4 text-right">Giá hiện tại</th>
+                <th className="py-3 px-4 text-right"><AdminSortButton label="Giá khởi điểm" align="right" active={sortKey === "start"} direction={sortDirection} onClick={() => changeSort("start")} /></th>
+                <th className="py-3 px-4 text-right"><AdminSortButton label="Giá hiện tại" align="right" active={sortKey === "current"} direction={sortDirection} onClick={() => changeSort("current")} /></th>
                 <th className="py-3 px-4">Lịch thi đấu</th>
                 <th className="py-3 px-4 text-center">Trạng thái</th>
                 <th className="py-3 px-4 text-right">Thao tác</th>
@@ -576,7 +590,7 @@ export function AdminAuctionsTab() {
                   </td>
                 </tr>
               ) : (
-                auctions.map((auction) => {
+                displayAuctions.map((auction) => {
                   const isUpdated = updatedId === auction.auctionId;
                   const isEnglish = auction.auctionType === AuctionTypeEnum.ENGLISH;
                   const isSchedule = auction.auctionStatus === AuctionStatusEnum.SCHEDULE;

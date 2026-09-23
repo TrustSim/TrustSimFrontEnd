@@ -30,7 +30,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const currentTab = searchParams?.get("tab") || "dashboard";
 
   return (
-    <div className="min-h-screen flex bg-[#F8F9FA] text-[#001743] font-sans antialiased">
+    <div className="admin-shell min-h-screen flex bg-[#f5f6f8] text-[#101828] font-sans antialiased">
       {/* Modular Admin Sidebar */}
       <AdminSidebar
         collapsed={collapsed}
@@ -40,17 +40,17 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* Main Container */}
       <div
-        className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out ${
+        className={`admin-main flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out ${
           collapsed ? "ml-[68px]" : "ml-[250px]"
         }`}
       >
         {/* Top Header */}
-        <header className="sticky top-0 z-30 h-14 bg-white border-b border-slate-200 shadow-[0_1px_4px_0_rgba(0,23,67,0.06)] px-6 flex items-center justify-between">
+        <header className="admin-topbar sticky top-0 z-30 h-[68px] bg-white border-b border-[#e6e8ec] px-7 flex items-center justify-between">
           {/* Breadcrumb / Title */}
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-slate-400 font-normal">Quản trị</span>
-            <span className="text-slate-300">/</span>
-            <span className="font-semibold text-[#001743] text-xs tracking-tight">
+          <div className="flex items-center gap-2 text-[13px]">
+            <span className="text-[#98a2b3] font-medium">Workspace</span>
+            <span className="text-[#d0d5dd]">/</span>
+            <span className="font-semibold text-[#101828] tracking-tight">
               {TAB_LABELS[currentTab] || "Quản trị"}
             </span>
           </div>
@@ -58,9 +58,8 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
           {/* Header Utilities */}
           <div className="flex items-center gap-3.5">
             {/* System Health Pulse */}
-            <div className="hidden sm:flex items-center gap-2 px-2.5 py-0.5 bg-emerald-50/80 text-emerald-700 border border-emerald-200/60 rounded-full text-xs font-medium">
+            <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 text-[#667085] text-xs font-medium border-r border-[#e6e8ec] pr-5">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
               <span>Hệ thống trực tuyến</span>
@@ -70,7 +69,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
             <div className="relative">
               <button
                 type="button"
-                className="p-1.5 rounded-lg text-slate-500 hover:text-[#001743] hover:bg-slate-100 transition-colors relative"
+                className="p-2 rounded-md text-[#667085] hover:text-[#101828] hover:bg-[#f2f4f7] transition-colors relative"
                 aria-label="Thông báo"
               >
                 <Bell size={17} strokeWidth={1.5} />
@@ -81,7 +80,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
             {/* Admin Avatar + Info */}
             <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200/60">
               {/* Initials Avatar */}
-              <div className="w-8 h-8 rounded-full bg-[#001743] flex items-center justify-center shrink-0 shadow-sm">
+              <div className="w-8 h-8 rounded-md bg-[#001743] flex items-center justify-center shrink-0">
                 <span className="text-white text-[11px] font-bold tracking-wide select-none">AD</span>
               </div>
               <div className="hidden md:block text-left leading-none">
@@ -93,7 +92,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Content View */}
-        <main className="flex-1 p-6 max-w-[1600px] w-full mx-auto">
+        <main className="admin-content flex-1 px-7 py-7 max-w-[1680px] w-full mx-auto">
           {children}
         </main>
       </div>

@@ -32,6 +32,7 @@ import {
   BtnPrimary,
 } from "@/components/ui/RightDrawer";
 import { Pagination } from "@/components/ui/Pagination";
+import { AdminSortButton, toggleSort, type SortDirection } from "@/components/admin/AdminPrimitives";
 import ImportExportBar from "@/components/admin/ImportExportBar";
 import { ExcelColumnDef } from "@/services/excelService";
 
@@ -128,6 +129,8 @@ export function AdminCustomersTab() {
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [pageIndex, setPageIndex] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [sortKey, setSortKey] = useState<"name" | "wallet">("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [totalCount, setTotalCount] = useState(0);
 
   // Toast & selection
@@ -215,6 +218,16 @@ export function AdminCustomersTab() {
   };
 
   const hasActiveFilters = debouncedSearch || selectedKyc !== "" || selectedStatus !== "";
+  const displayCustomers = [...customers].sort((a, b) => {
+    const left = sortKey === "name" ? (a.fullName || a.userName || "") : Number(a.availableBalance ?? 0);
+    const right = sortKey === "name" ? (b.fullName || b.userName || "") : Number(b.availableBalance ?? 0);
+    const result = typeof left === "number" && typeof right === "number" ? left - right : String(left).localeCompare(String(right), "vi");
+    return sortDirection === "asc" ? result : -result;
+  });
+  const changeSort = (key: "name" | "wallet") => {
+    const next = toggleSort(sortKey, sortDirection, key);
+    setSortKey(next.key); setSortDirection(next.direction);
+  };
 
   const handleResetFilters = () => {
     setSearch("");
@@ -236,7 +249,7 @@ export function AdminCustomersTab() {
   }, [customers]);
 
   return (
-    <div className="space-y-4">
+    <div className="admin-tab admin-tab-customers space-y-4">
       {/* ── 1. Header Workspace ── */}
       <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -375,11 +388,11 @@ export function AdminCustomersTab() {
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
-                <th className="py-3 px-4">Khách hàng</th>
+                <th className="py-3 px-4"><AdminSortButton label="Khách hàng" active={sortKey === "name"} direction={sortDirection} onClick={() => changeSort("name")} /></th>
                 <th className="py-3 px-4">Số điện thoại / CCCD</th>
                 <th className="py-3 px-4">Định danh eKYC</th>
                 <th className="py-3 px-4 text-center">Chữ ký số</th>
-                <th className="py-3 px-4 text-right">Ví khả dụng</th>
+                <th className="py-3 px-4 text-right"><AdminSortButton label="Ví khả dụng" align="right" active={sortKey === "wallet"} direction={sortDirection} onClick={() => changeSort("wallet")} /></th>
                 <th className="py-3 px-4 text-center">Trạng thái</th>
                 <th className="py-3 px-4 text-right">Thao tác</th>
               </tr>
@@ -442,7 +455,7 @@ export function AdminCustomersTab() {
                   </td>
                 </tr>
               ) : (
-                customers.map((customer) => {
+                displayCustomers.map((customer) => {
                   const kycBadge = getKycBadge(customer.verificationStatus);
                   const isUpdated = updatedCustomerId === customer.id;
 

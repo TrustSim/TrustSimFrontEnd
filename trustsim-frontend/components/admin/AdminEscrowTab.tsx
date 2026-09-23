@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/RightDrawer";
 import ImportExportBar from "@/components/admin/ImportExportBar";
 import { ExcelColumnDef } from "@/services/excelService";
+import { AdminSortButton, toggleSort, type SortDirection } from "@/components/admin/AdminPrimitives";
 
 // Helper định dạng tiền tệ VNĐ
 const formatVND = (value: number) =>
@@ -177,6 +178,8 @@ export default function AdminEscrowTab() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [pageIndex, setPageIndex] = useState(1);
   const pageSize = 10;
+  const [sortKey, setSortKey] = useState<"order" | "amount" | "deadline">("order");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   // Drawer detail state
   const [selectedTx, setSelectedTx] = useState<EscrowTransaction | null>(null);
@@ -227,7 +230,19 @@ export default function AdminEscrowTab() {
     });
   }, [transactions, search, statusFilter]);
 
-  const paged = filtered.slice((pageIndex - 1) * pageSize, pageIndex * pageSize);
+  const sorted = [...filtered].sort((a, b) => {
+    const left = sortKey === "order" ? a.orderCode : sortKey === "amount" ? a.amount : a.deadline;
+    const right = sortKey === "order" ? b.orderCode : sortKey === "amount" ? b.amount : b.deadline;
+    const result = typeof left === "number" && typeof right === "number" ? left - right : String(left).localeCompare(String(right), "vi");
+    return sortDirection === "asc" ? result : -result;
+  });
+  const paged = sorted.slice((pageIndex - 1) * pageSize, pageIndex * pageSize);
+  const changeSort = (key: "order" | "amount" | "deadline") => {
+    const next = toggleSort(sortKey, sortDirection, key);
+    setSortKey(next.key);
+    setSortDirection(next.direction);
+    setPageIndex(1);
+  };
 
   const openDetail = (tx: EscrowTransaction) => {
     setSelectedTx(tx);
@@ -291,7 +306,7 @@ export default function AdminEscrowTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="admin-tab admin-tab-escrow space-y-4">
       {/* Toast */}
       {toastMessage && (
         <div className="fixed bottom-5 right-5 z-[80] bg-[#001743] text-white text-xs px-4 py-2.5 rounded-[6px] shadow-lg border border-slate-700 animate-fade-in flex items-center gap-2">
@@ -428,12 +443,12 @@ export default function AdminEscrowTab() {
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
-                <th className="py-3 px-4">Đơn hàng / SIM</th>
+                <th className="py-3 px-4"><AdminSortButton label="Đơn hàng / SIM" active={sortKey === "order"} direction={sortDirection} onClick={() => changeSort("order")} /></th>
                 <th className="py-3 px-4">Người mua – Người bán</th>
-                <th className="py-3 px-4 text-right">Giá trị ký quỹ</th>
+                <th className="py-3 px-4 text-right"><AdminSortButton label="Giá trị ký quỹ" align="right" active={sortKey === "amount"} direction={sortDirection} onClick={() => changeSort("amount")} /></th>
                 <th className="py-3 px-4 text-center">Tiến độ</th>
                 <th className="py-3 px-4 text-center">Trạng thái</th>
-                <th className="py-3 px-4">Hạn xử lý</th>
+                <th className="py-3 px-4"><AdminSortButton label="Hạn xử lý" active={sortKey === "deadline"} direction={sortDirection} onClick={() => changeSort("deadline")} /></th>
                 <th className="py-3 px-4 text-right">Thao tác</th>
               </tr>
             </thead>

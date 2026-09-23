@@ -36,6 +36,7 @@ import {
   BtnSecondary,
 } from "@/components/ui/RightDrawer";
 import { Pagination } from "@/components/ui/Pagination";
+import { AdminSortButton, toggleSort, type SortDirection } from "@/components/admin/AdminPrimitives";
 import ImportExportBar from "@/components/admin/ImportExportBar";
 import { ExcelColumnDef } from "@/services/excelService";
 
@@ -102,6 +103,8 @@ export function AdminStaffTab() {
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [pageIndex, setPageIndex] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [sortKey, setSortKey] = useState<"name" | "date">("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [totalCount, setTotalCount] = useState(0);
 
   // Toast & selection
@@ -130,6 +133,16 @@ export function AdminStaffTab() {
   };
 
   const targetRole = activeSegment === "admins" ? UserRoleEnum.ADMIN : UserRoleEnum.CONSULTANT;
+  const displayStaff = [...staffList].sort((a, b) => {
+    const left = sortKey === "name" ? (a.fullName || a.userName || "") : String(a.createdDate || "");
+    const right = sortKey === "name" ? (b.fullName || b.userName || "") : String(b.createdDate || "");
+    const result = String(left).localeCompare(String(right), "vi");
+    return sortDirection === "asc" ? result : -result;
+  });
+  const changeSort = (key: "name" | "date") => {
+    const next = toggleSort(sortKey, sortDirection, key);
+    setSortKey(next.key); setSortDirection(next.direction);
+  };
 
   const fetchStaff = useCallback(async () => {
     setLoading(true);
@@ -207,7 +220,7 @@ export function AdminStaffTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="admin-tab admin-tab-staff space-y-4">
       {/* ── 1. Header Workspace with Segmented Control ── */}
       <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -360,12 +373,12 @@ export function AdminStaffTab() {
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
-                <th className="py-3 px-4">Nhân sự</th>
+                <th className="py-3 px-4"><AdminSortButton label="Nhân sự" active={sortKey === "name"} direction={sortDirection} onClick={() => changeSort("name")} /></th>
                 <th className="py-3 px-4">Số điện thoại</th>
                 <th className="py-3 px-4">
                   {activeSegment === "admins" ? "Thẩm quyền quản trị" : "Phụ trách chuyên môn"}
                 </th>
-                <th className="py-3 px-4">Ngày cấp quyền</th>
+                <th className="py-3 px-4"><AdminSortButton label="Ngày cấp quyền" active={sortKey === "date"} direction={sortDirection} onClick={() => changeSort("date")} /></th>
                 <th className="py-3 px-4 text-center">Trạng thái</th>
                 <th className="py-3 px-4 text-right">Thao tác</th>
               </tr>
@@ -414,7 +427,7 @@ export function AdminStaffTab() {
                   </td>
                 </tr>
               ) : (
-                staffList.map((member) => {
+                displayStaff.map((member) => {
                   const isUpdated = updatedStaffId === member.id;
 
                   return (

@@ -405,7 +405,7 @@ export default function AdminControlCenter() {
     const newAuctionDash = liveCount > 0 ? (newAuctionCount / liveCount) * circumference : 0;
 
     return (
-      <div className="space-y-6">
+      <div className="admin-tab admin-tab-dashboard space-y-6">
         {/* 1. PAGE HEADER (OPEN & BREATHING - NO ENCLOSING CARD BOX) */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
           <div>

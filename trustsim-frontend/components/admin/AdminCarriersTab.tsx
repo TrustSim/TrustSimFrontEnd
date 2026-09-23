@@ -43,6 +43,7 @@ import {
   BtnSecondary,
 } from "@/components/ui/RightDrawer";
 import { Pagination } from "@/components/ui/Pagination";
+import { AdminSortButton, toggleSort, type SortDirection } from "@/components/admin/AdminPrimitives";
 
 // --- Brand color map ---
 const BRAND_COLORS: Record<string, string> = {
@@ -584,6 +585,8 @@ export function AdminCarriersTab() {
   const [search, setSearch] = useState("");
   const [pageIndex, setPageIndex] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [sortKey, setSortKey] = useState<"name" | "code" | "prefixes">("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [updatedId, setUpdatedId] = useState<string | null>(null);
 
@@ -793,10 +796,22 @@ export function AdminCarriersTab() {
     return matchName || matchPrefix;
   });
 
-  const paged = filtered.slice((pageIndex - 1) * pageSize, pageIndex * pageSize);
+  const sorted = [...filtered].sort((a, b) => {
+    const left = sortKey === "name" ? a.carrierName : sortKey === "code" ? a.carrierCode : (prefixesByCarrier[a.id] || []).length;
+    const right = sortKey === "name" ? b.carrierName : sortKey === "code" ? b.carrierCode : (prefixesByCarrier[b.id] || []).length;
+    const result = typeof left === "number" && typeof right === "number" ? left - right : String(left).localeCompare(String(right), "vi");
+    return sortDirection === "asc" ? result : -result;
+  });
+  const paged = sorted.slice((pageIndex - 1) * pageSize, pageIndex * pageSize);
+  const changeSort = (key: "name" | "code" | "prefixes") => {
+    const next = toggleSort(sortKey, sortDirection, key);
+    setSortKey(next.key);
+    setSortDirection(next.direction);
+    setPageIndex(1);
+  };
 
   return (
-    <div className="space-y-4">
+    <div className="admin-tab admin-tab-carriers space-y-4">
       {/* ── 1. Header Card (Matching Kho SIM) ── */}
       <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -875,10 +890,10 @@ export function AdminCarriersTab() {
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
-                <th className="py-3 px-4">Nhà mạng</th>
-                <th className="py-3 px-4">Mã viết tắt</th>
+                <th className="py-3 px-4"><AdminSortButton label="Nhà mạng" active={sortKey === "name"} direction={sortDirection} onClick={() => changeSort("name")} /></th>
+                <th className="py-3 px-4"><AdminSortButton label="Mã viết tắt" active={sortKey === "code"} direction={sortDirection} onClick={() => changeSort("code")} /></th>
                 <th className="py-3 px-4">Logo</th>
-                <th className="py-3 px-4">Dải đầu số liên kết ({prefixes.length})</th>
+                <th className="py-3 px-4"><AdminSortButton label={`Dải đầu số liên kết (${prefixes.length})`} active={sortKey === "prefixes"} direction={sortDirection} onClick={() => changeSort("prefixes")} /></th>
                 <th className="py-3 px-4 text-center">Trạng thái</th>
                 <th className="py-3 px-4 text-right">Thao tác</th>
               </tr>
