@@ -18,7 +18,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { OwnedSim } from "./types";
+import { OwnedSim } from "../../types/types";
 import { aiValuationService, SimValuationDto } from "@/services/aiValuationService";
 import { updateSim } from "@/services/simService";
 import { ToastMessage } from "@/components/ui/Toast";

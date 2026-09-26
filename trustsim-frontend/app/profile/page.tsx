@@ -12,7 +12,7 @@ import { DepositModal } from "@/components/wallet/DepositModal";
 import { WithdrawModal } from "@/components/wallet/WithdrawModal";
 
 import { ProfileIcons as Icons } from "@/components/profile/ProfileIcons";
-import { ProfileTab } from "@/components/profile/types";
+import { ProfileTab } from "@/types/types";
 import { Camera, Loader2 } from "lucide-react";
 import { uploadImageToCloudinary } from "@/services/cloudinaryService";
 
@@ -554,52 +554,49 @@ function ProfilePageInner() {
                 {TABS.find((tab) => tab.key === activeTab)?.label}
               </h1>
             </div>
-            <div className="text-xs font-semibold text-slate-600 bg-white border border-slate-200/80 rounded-lg px-3 py-1.5 shadow-2xs">
-              TrustSim account
-            </div>
           </div>
 
           <div>
-        {activeTab === "overview" && (
-          <OverviewTab
-            user={user}
-            profile={profile}
-            walletBalance={availableBalance}
-            isEkycVerified={isEkycVerified}
-            onNavigateTab={handleTabChange}
-            addToast={addToast}
-          />
-        )}
-        {activeTab === "ekyc" && (
-          <EkycTab
-            kycStatus={kycStatus}
-            kycHistory={kycHistory}
-            isVerified={isEkycVerified}
-            loading={loadingKyc}
-            onRefresh={fetchKyc}
-            addToast={addToast}
-          />
-        )}
-        {activeTab === "auctions" && (
-          <OwnedSimsTab
-            isEkycVerified={isEkycVerified}
-            addToast={addToast}
-            onNavigateToEkyc={() => handleTabChange("ekyc")}
-          />
-        )}
-        {activeTab === "bids" && <BidsTab addToast={addToast} />}
-        {activeTab === "transactions" && (
-          <TransactionsTab
-            onOpenDeposit={() => setDepositModalOpen(true)}
-            onOpenWithdraw={() => setWithdrawModalOpen(true)}
-            addToast={addToast}
-            refreshTrigger={walletRefreshKey}
-          />
-        )}
-        {activeTab === "contracts" && <ContractsTab addToast={addToast} />}
-        {activeTab === "settings" && (
-          <SettingsTab user={user} profile={profile} addToast={addToast} />
-        )}
+            {activeTab === "overview" && (
+              <OverviewTab
+                user={user}
+                profile={profile}
+                walletBalance={availableBalance}
+                isEkycVerified={isEkycVerified}
+                onNavigateTab={handleTabChange}
+                addToast={addToast}
+              />
+            )}
+            {activeTab === "ekyc" && (
+              <EkycTab
+                kycStatus={kycStatus}
+                kycHistory={kycHistory}
+                isVerified={isEkycVerified}
+                loading={loadingKyc}
+                onRefresh={fetchKyc}
+                addToast={addToast}
+              />
+            )}
+            {activeTab === "auctions" && (
+              <OwnedSimsTab
+                isEkycVerified={isEkycVerified}
+                addToast={addToast}
+                onNavigateToEkyc={() => handleTabChange("ekyc")}
+              />
+            )}
+            {activeTab === "bids" && <BidsTab addToast={addToast} />}
+            {activeTab === "transactions" && (
+              <TransactionsTab
+                onOpenDeposit={() => setDepositModalOpen(true)}
+                onOpenWithdraw={() => setWithdrawModalOpen(true)}
+                addToast={addToast}
+                refreshTrigger={walletRefreshKey}
+              />
+            )}
+            {activeTab === "contracts" && <ContractsTab addToast={addToast} />}
+            {activeTab === "settings" && (
+              <SettingsTab user={user} profile={profile} addToast={addToast} />
+            )}
           </div>
         </main>
       </div>

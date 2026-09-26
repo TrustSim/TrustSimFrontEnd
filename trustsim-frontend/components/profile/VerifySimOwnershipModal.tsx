@@ -13,7 +13,7 @@ import {
   Gavel,
   Clock,
 } from "lucide-react";
-import { OwnedSim } from "./types";
+import { OwnedSim } from "../../types/types";
 import { ToastMessage } from "@/components/ui/Toast";
 import { sendSimOwnershipOtp, verifySimOwnership } from "@/services/simService";
 

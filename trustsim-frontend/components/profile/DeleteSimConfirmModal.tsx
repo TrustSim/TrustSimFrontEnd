@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { X, Trash2, AlertTriangle, RefreshCw } from "lucide-react";
-import { OwnedSim } from "./types";
+import { OwnedSim } from "../../types/types";
 import { ToastMessage } from "@/components/ui/Toast";
 import { deleteSim } from "@/services/simService";
 

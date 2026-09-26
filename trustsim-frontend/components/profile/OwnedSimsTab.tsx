@@ -28,7 +28,7 @@ import {
   KeyRound,
 } from "lucide-react";
 import { ToastMessage } from "@/components/ui/Toast";
-import { OwnedSim } from "./types";
+import { OwnedSim } from "../../types/types";
 import CreateAuctionWizardModal from "./CreateAuctionWizardModal";
 import VerifySimOwnershipModal from "./VerifySimOwnershipModal";
 import SimDetailModal from "./SimDetailModal";
@@ -966,8 +966,8 @@ export default function OwnedSimsTab({
               type="button"
               onClick={() => setViewMode("table")}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${viewMode === "table"
-                  ? "bg-white text-[#001743] shadow-xs"
-                  : "text-slate-500 hover:text-slate-800"
+                ? "bg-white text-[#001743] shadow-xs"
+                : "text-slate-500 hover:text-slate-800"
                 }`}
               title="Chuyển sang chế độ xem bảng chi tiết"
             >
@@ -978,8 +978,8 @@ export default function OwnedSimsTab({
               type="button"
               onClick={() => setViewMode("grid")}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${viewMode === "grid"
-                  ? "bg-[#001743] text-white shadow-xs"
-                  : "text-slate-500 hover:text-slate-800"
+                ? "bg-[#001743] text-white shadow-xs"
+                : "text-slate-500 hover:text-slate-800"
                 }`}
               title="Chuyển sang chế độ xem thẻ SIM Luxury độc đáo"
             >
@@ -1248,11 +1248,10 @@ export default function OwnedSimsTab({
                       placeholder="Ví dụ: 0912 345 678"
                       value={newSimNumber}
                       onChange={(e) => handleSimNumberInput(e.target.value)}
-                      className={`w-full text-xs p-3 border rounded-[12px] font-mono font-bold text-[#001743] focus:ring-2 focus:outline-none transition-all ${
-                        addSimError
+                      className={`w-full text-xs p-3 border rounded-[12px] font-mono font-bold text-[#001743] focus:ring-2 focus:outline-none transition-all ${addSimError
                           ? "border-red-400 bg-red-50/20 focus:border-red-500 focus:ring-red-500/10"
                           : "border-slate-200 focus:border-[#001743] focus:ring-[#001743]/10"
-                      }`}
+                        }`}
                       required
                     />
                     {addSimError ? (

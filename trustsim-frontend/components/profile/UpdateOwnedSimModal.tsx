@@ -12,7 +12,7 @@ import {
   ChevronUp,
   Lock,
 } from "lucide-react";
-import { OwnedSim } from "./types";
+import { OwnedSim } from "../../types/types";
 import { ToastMessage } from "@/components/ui/Toast";
 import { updateSim, FormatRhythmItemDto, getCarrierColor } from "@/services/simService";
 import { SimCategoryDto } from "@/services/categoryService";

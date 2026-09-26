@@ -2,7 +2,7 @@ import React from "react";
 import { AuthResponseDto, UserProfileDto } from "@/types/auth";
 import { ToastMessage } from "@/components/ui/Toast";
 import { ProfileIcons as Icons } from "./ProfileIcons";
-import { ProfileTab } from "./types";
+import { ProfileTab } from "../../types/types";
 
 interface OverviewTabProps {
   user: AuthResponseDto | null;

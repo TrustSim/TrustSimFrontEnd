@@ -9,7 +9,7 @@ import {
   ShieldCheck,
   Loader2,
 } from "lucide-react";
-import { OwnedSim } from "./types";
+import { OwnedSim } from "../../types/types";
 import { auctionService, CreateAuctionPayload, AuctionTypeEnum } from "@/services/auctionService";
 import { aiValuationService, SimValuationDto } from "@/services/aiValuationService";
 
@@ -273,10 +273,10 @@ export default function CreateAuctionWizardModal({
                   step === 1
                     ? "0%"
                     : step === 2
-                    ? "33.3%"
-                    : step === 3
-                    ? "66.6%"
-                    : "calc(100% - 32px)",
+                      ? "33.3%"
+                      : step === 3
+                        ? "66.6%"
+                        : "calc(100% - 32px)",
               }}
             />
 
@@ -293,24 +293,22 @@ export default function CreateAuctionWizardModal({
                 return (
                   <div key={s.num} className="flex flex-col items-center">
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 z-10 ${
-                        isActive
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 z-10 ${isActive
                           ? "bg-[#001743] text-white ring-4 ring-[#001743]/10 shadow-sm"
                           : isCompleted
-                          ? "bg-emerald-600 text-white"
-                          : "bg-white border-2 border-slate-200 text-slate-400"
-                      }`}
+                            ? "bg-emerald-600 text-white"
+                            : "bg-white border-2 border-slate-200 text-slate-400"
+                        }`}
                     >
                       {isCompleted ? <Check size={14} strokeWidth={2.5} /> : s.num}
                     </div>
                     <span
-                      className={`text-[11px] mt-1.5 transition-colors ${
-                        isActive
+                      className={`text-[11px] mt-1.5 transition-colors ${isActive
                           ? "font-bold text-[#001743]"
                           : isCompleted
-                          ? "font-semibold text-emerald-700"
-                          : "font-medium text-slate-400"
-                      }`}
+                            ? "font-semibold text-emerald-700"
+                            : "font-medium text-slate-400"
+                        }`}
                     >
                       {s.label}
                     </span>
@@ -342,11 +340,10 @@ export default function CreateAuctionWizardModal({
                     setAuctionType(AuctionTypeEnum.ENGLISH);
                     setReservePrice(Math.round(startingPrice * 1.2));
                   }}
-                  className={`relative p-5 rounded-[16px] border-2 cursor-pointer transition-all duration-200 overflow-hidden flex flex-col justify-between ${
-                    auctionType === AuctionTypeEnum.ENGLISH
+                  className={`relative p-5 rounded-[16px] border-2 cursor-pointer transition-all duration-200 overflow-hidden flex flex-col justify-between ${auctionType === AuctionTypeEnum.ENGLISH
                       ? "border-[#001743] bg-gradient-to-b from-blue-50/30 to-white shadow-md -translate-y-1"
                       : "border-slate-200 hover:border-slate-300 hover:-translate-y-0.5 hover:shadow-sm bg-white"
-                  }`}
+                    }`}
                 >
                   <div>
                     {/* Header Thẻ */}
@@ -355,11 +352,10 @@ export default function CreateAuctionWizardModal({
                         Tăng giá công khai
                       </span>
                       <div
-                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                          auctionType === AuctionTypeEnum.ENGLISH
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${auctionType === AuctionTypeEnum.ENGLISH
                             ? "border-[#001743] bg-[#001743]"
                             : "border-slate-300"
-                        }`}
+                          }`}
                       >
                         {auctionType === AuctionTypeEnum.ENGLISH && (
                           <div className="w-2 h-2 rounded-full bg-white" />
@@ -414,11 +410,10 @@ export default function CreateAuctionWizardModal({
                     setAuctionType(AuctionTypeEnum.DUTCH);
                     setReservePrice(Math.round(startingPrice * 0.5));
                   }}
-                  className={`relative p-5 rounded-[16px] border-2 cursor-pointer transition-all duration-200 overflow-hidden flex flex-col justify-between ${
-                    auctionType === AuctionTypeEnum.DUTCH
+                  className={`relative p-5 rounded-[16px] border-2 cursor-pointer transition-all duration-200 overflow-hidden flex flex-col justify-between ${auctionType === AuctionTypeEnum.DUTCH
                       ? "border-[#001743] bg-gradient-to-b from-amber-50/30 to-white shadow-md -translate-y-1"
                       : "border-slate-200 hover:border-slate-300 hover:-translate-y-0.5 hover:shadow-sm bg-white"
-                  }`}
+                    }`}
                 >
                   <div>
                     {/* Header Thẻ */}
@@ -427,11 +422,10 @@ export default function CreateAuctionWizardModal({
                         Hạ giá tự động
                       </span>
                       <div
-                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                          auctionType === AuctionTypeEnum.DUTCH
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${auctionType === AuctionTypeEnum.DUTCH
                             ? "border-[#001743] bg-[#001743]"
                             : "border-slate-300"
-                        }`}
+                          }`}
                       >
                         {auctionType === AuctionTypeEnum.DUTCH && (
                           <div className="w-2 h-2 rounded-full bg-white" />
