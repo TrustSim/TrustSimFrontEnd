@@ -38,6 +38,7 @@ const TAB_LABELS: Record<string, string> = {
   categories: "Danh mục & Định giá SIM",
   carriers: "Nhà mạng & Dải đầu số",
   transactions: "Giao dịch ký quỹ",
+  ledger: "Sổ cái kế toán ghi kép",
   customers: "Quản lý Khách hàng & Tài chính Ví",
   staff: "Quản lý Nhân sự & Quản trị viên",
   users: "Quản lý Khách hàng",
@@ -47,6 +48,7 @@ const TAB_LABELS: Record<string, string> = {
   anomalies: "AI Giám sát bất thường & Gian lận",
   settings: "Cài đặt & Cấu hình sàn",
 };
+
 
 function formatRelativeTime(dateStr?: string) {
   if (!dateStr) return "";

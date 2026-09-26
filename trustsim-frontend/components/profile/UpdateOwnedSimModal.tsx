@@ -424,7 +424,7 @@ export default function UpdateOwnedSimModal({
 
             {/* Thẻ hiển thị kết quả định giá AI */}
             {aiResult && !loadingAi && (
-              <div className="p-3.5 bg-gradient-to-br from-blue-50/90 via-indigo-50/40 to-slate-50/80 rounded-[16px] border border-blue-100/70 shadow-xs relative overflow-hidden transition-all animate-fadeIn">
+              <div className="p-3.5 bg-gradient-to-br from-blue-50/90 via-indigo-50/40 to-slate-50/80 rounded-[16px] border border-blue-100/70 shadow-xs relative shrink-0 flex flex-col gap-2.5 w-full transition-all animate-fadeIn">
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <img src="/logo/S-Logo.png" alt="TrustSim AI" className="w-4 h-4 object-contain shrink-0" />

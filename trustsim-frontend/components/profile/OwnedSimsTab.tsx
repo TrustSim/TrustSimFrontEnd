@@ -506,6 +506,7 @@ export default function OwnedSimsTab({
   const [newEstimatedValueFormatted, setNewEstimatedValueFormatted] = useState<string>("10.000.000");
   const [addSimOtp, setAddSimOtp] = useState<string>("");
   const [addSimCooldown, setAddSimCooldown] = useState<number>(0);
+  const [addSimError, setAddSimError] = useState<string | null>(null);
   const [sendingOtp, setSendingOtp] = useState<boolean>(false);
   const [submittingSim, setSubmittingSim] = useState(false);
 
@@ -598,6 +599,7 @@ export default function OwnedSimsTab({
   // ─── 2. Auto-Detect Carrier from Phone Prefix ───────────────────────────
   const handleSimNumberInput = (val: string) => {
     setNewSimNumber(val);
+    if (addSimError) setAddSimError(null);
     const clean = val.replace(/\D/g, "");
     if (clean.length >= 3) {
       const prefix3 = clean.substring(0, 3);
@@ -657,6 +659,7 @@ export default function OwnedSimsTab({
     setAddSimStep(1);
     setAddSimOtp("");
     setAddSimCooldown(0);
+    setAddSimError(null);
     setAiValuationResult(null);
     setShowAiAnalysisDetail(false);
     setShowAiDetailModal(false);
@@ -667,6 +670,7 @@ export default function OwnedSimsTab({
     setAddSimStep(1);
     setAddSimOtp("");
     setAddSimCooldown(0);
+    setAddSimError(null);
     setAiValuationResult(null);
     setShowAiAnalysisDetail(false);
     setShowAiDetailModal(false);
@@ -729,9 +733,9 @@ export default function OwnedSimsTab({
         }
       }
 
-      // Tự động cuộn mượt đưa thẻ kết quả định giá AI vào trung tâm màn hình
+      // Tự động cuộn mượt đưa thẻ kết quả định giá AI vào tầm nhìn
       setTimeout(() => {
-        aiValuationCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        aiValuationCardRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }, 100);
     } catch (err: any) {
       addToast({
@@ -798,10 +802,17 @@ export default function OwnedSimsTab({
         message: res.message || `Mã OTP đã được gửi tới số SIM ${formatPhoneNumber(cleanNumber)}. Vui lòng kiểm tra tin nhắn.`,
       });
     } catch (err: any) {
+      const errorMsg = err.message || "Đã xảy ra lỗi khi gửi mã OTP. Vui lòng kiểm tra lại số điện thoại.";
+      const isAlreadyOwned =
+        err.status === 409 ||
+        errorMsg.toLowerCase().includes("đã được đăng ký") ||
+        errorMsg.toLowerCase().includes("thuộc sở hữu");
+
+      setAddSimError(errorMsg);
       addToast({
         type: "error",
-        title: "Không thể gửi OTP",
-        message: err.message || "Đã xảy ra lỗi khi gửi mã OTP. Vui lòng kiểm tra lại số điện thoại.",
+        title: isAlreadyOwned ? "Số SIM đã được đăng ký" : "Không thể gửi OTP",
+        message: errorMsg,
       });
     } finally {
       setSendingOtp(false);
@@ -906,10 +917,16 @@ export default function OwnedSimsTab({
       // Tải lại danh sách từ Database thật
       await fetchSimsFromDb();
     } catch (err: any) {
+      const errorMsg = err.message || "Mã OTP không chính xác hoặc thông tin thuê bao không khớp với CCCD của bạn.";
+      const isAlreadyOwned =
+        err.status === 409 ||
+        errorMsg.toLowerCase().includes("đã được đăng ký") ||
+        errorMsg.toLowerCase().includes("thuộc sở hữu");
+
       addToast({
         type: "error",
-        title: "Xác thực SIM thất bại",
-        message: err.message || "Mã OTP không chính xác hoặc thông tin thuê bao không khớp với CCCD của bạn.",
+        title: isAlreadyOwned ? "Số SIM đã được đăng ký" : "Xác thực SIM thất bại",
+        message: errorMsg,
       });
     } finally {
       setSubmittingSim(false);
@@ -1222,7 +1239,7 @@ export default function OwnedSimsTab({
                   )}
 
                   {/* Field 1: Số điện thoại SIM * */}
-                  <div>
+                  <div className="shrink-0">
                     <label className="block text-xs font-bold text-[#001743] mb-1.5">
                       Số điện thoại SIM <span className="text-red-600">*</span>
                     </label>
@@ -1231,16 +1248,30 @@ export default function OwnedSimsTab({
                       placeholder="Ví dụ: 0912 345 678"
                       value={newSimNumber}
                       onChange={(e) => handleSimNumberInput(e.target.value)}
-                      className="w-full text-xs p-3 border border-slate-200 rounded-[12px] font-mono font-bold text-[#001743] focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 focus:outline-none transition-all"
+                      className={`w-full text-xs p-3 border rounded-[12px] font-mono font-bold text-[#001743] focus:ring-2 focus:outline-none transition-all ${
+                        addSimError
+                          ? "border-red-400 bg-red-50/20 focus:border-red-500 focus:ring-red-500/10"
+                          : "border-slate-200 focus:border-[#001743] focus:ring-[#001743]/10"
+                      }`}
                       required
                     />
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      Nhập đúng 10 chữ số bắt đầu bằng số 0. Hệ thống sẽ tự động nhận diện nhà mạng tương ứng.
-                    </p>
+                    {addSimError ? (
+                      <div className="p-3 mt-2 bg-rose-50 rounded-[12px] border border-rose-200 text-rose-800 text-xs flex items-start gap-2 animate-fadeIn">
+                        <AlertTriangle size={15} className="text-rose-600 shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <strong className="block text-rose-900 font-bold mb-0.5">Thông báo:</strong>
+                          <span>{addSimError}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        Nhập đúng 10 chữ số bắt đầu bằng số 0. Hệ thống sẽ tự động nhận diện nhà mạng tương ứng.
+                      </p>
+                    )}
                   </div>
 
                   {/* Field 2 & 3: Nhà mạng * & Loại thuê bao * */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-3 shrink-0">
                     <div>
                       <label className="block text-xs font-bold text-[#001743] mb-1.5">
                         Nhà mạng <span className="text-red-600">*</span>
@@ -1269,7 +1300,7 @@ export default function OwnedSimsTab({
 
                   {/* Trạng thái AI Thinking / Skeleton Loading */}
                   {loadingAiValuation && (
-                    <div className="p-3.5 bg-gradient-to-r from-blue-50/70 via-purple-50/40 to-slate-50/70 rounded-[14px] border border-purple-100/60 animate-pulse transition-all">
+                    <div className="p-3.5 bg-gradient-to-r from-blue-50/70 via-purple-50/40 to-slate-50/70 rounded-[14px] border border-purple-100/60 animate-pulse transition-all shrink-0">
                       <div className="flex items-center gap-2 mb-2">
                         <Sparkles size={13} className="text-[#E4011E] animate-spin" />
                         <span className="text-xs font-bold text-[#001743]">
@@ -1287,7 +1318,7 @@ export default function OwnedSimsTab({
                   {aiValuationResult && !loadingAiValuation && (
                     <div
                       ref={aiValuationCardRef}
-                      className="p-4 bg-gradient-to-br from-blue-50/90 via-indigo-50/40 to-slate-50/80 rounded-[16px] border border-blue-200/80 shadow-xs relative overflow-hidden transition-all animate-fadeIn space-y-3"
+                      className="p-4 bg-gradient-to-br from-blue-50/90 via-indigo-50/40 to-slate-50/80 rounded-[16px] border border-blue-200/80 shadow-xs relative shrink-0 flex flex-col gap-3 w-full transition-all animate-fadeIn"
                     >
                       {/* Header card: S-Logo + Nhịp phát hiện + Nút Xem chi tiết phân tích + Nút Đóng */}
                       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -1426,23 +1457,12 @@ export default function OwnedSimsTab({
                   )}
 
                   {/* Field 4: Định giá ước tính * */}
-                  <div>
+                  <div className="shrink-0">
                     <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1.5">
                       <label className="block text-xs font-bold text-[#001743]">
                         Định giá ước tính <span className="text-red-600">*</span>
                       </label>
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        {aiValuationResult && (
-                          <button
-                            type="button"
-                            onClick={() => setShowAiDetailModal(true)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-blue-50 text-[#001743] hover:text-[#E4011E] border border-blue-200/80 rounded-full text-[10px] font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
-                            title="Mở xem chi tiết phân tích định giá"
-                          >
-                            <Sparkles size={11} className="text-[#E4011E]" />
-                            <span>Chi tiết phân tích</span>
-                          </button>
-                        )}
                         <button
                           type="button"
                           onClick={handleAiEstimateForNewSim}

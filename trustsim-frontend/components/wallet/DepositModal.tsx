@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { walletService } from "@/services/walletService";
 import type { DepositResponseDto } from "@/types/wallet";
 
@@ -103,6 +103,14 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     }
   };
 
+  // Mỗi lần mở modal tạo một idempotencyKey mới để tránh trùng lệnh nạp
+  const idempotencyKeyRef = useRef<string>("");
+  useEffect(() => {
+    if (isOpen) {
+      idempotencyKeyRef.current = `DEP-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
+    }
+  }, [isOpen]);
+
   const handleCreateDeposit = async () => {
     if (amount < 10_000) {
       setError("Số tiền nạp tối thiểu là 10.000 ₫");
@@ -112,9 +120,30 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     setLoading(true);
     setError("");
     try {
-      const res = await walletService.createDeposit({ amount });
+      // Ưu tiên endpoint /deposit-intent (idempotent) để đảm bảo không tạo lệnh trùng
+      let res: DepositResponseDto;
+      try {
+        const intent = await walletService.createDepositIntent(amount, idempotencyKeyRef.current);
+        res = {
+          transactionId: intent.transactionId,
+          transactionCode: intent.transactionCode,
+          amount: intent.amount,
+          transferContent: intent.transferContent,
+          qrCodeUrl: intent.qrCodeUrl,
+          expiredAt: intent.expiredAt,
+        };
+      } catch {
+        // Fallback sang endpoint cũ nếu backend chưa có /deposit-intent
+        res = await walletService.createDeposit({ amount });
+      }
       setDepositData(res);
-      setTimeLeft(1800);
+      // Tính thời gian còn lại từ expiredAt nếu có
+      if (res.expiredAt) {
+        const remaining = Math.max(0, Math.floor((new Date(res.expiredAt).getTime() - Date.now()) / 1000));
+        setTimeLeft(remaining || 1800);
+      } else {
+        setTimeLeft(1800);
+      }
     } catch (err: any) {
       setError(err.message || "Không thể tạo yêu cầu nạp tiền. Vui lòng thử lại.");
     } finally {

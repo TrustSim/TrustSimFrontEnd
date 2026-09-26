@@ -10,6 +10,7 @@ import { AdminStaffTab } from "@/components/admin/AdminStaffTab";
 import AdminEscrowTab from "@/components/admin/AdminEscrowTab";
 import AdminDisputesTab from "@/components/admin/AdminDisputesTab";
 import AdminSettingsTab from "@/components/admin/AdminSettingsTab";
+import AdminLedgerTab from "@/components/admin/AdminLedgerTab";
 import { AdminDocumentsTab } from "@/components/admin/AdminDocumentsTab";
 import ImportExportBar from "@/components/admin/ImportExportBar";
 import { ExcelColumnDef } from "@/services/excelService";
@@ -1088,6 +1089,7 @@ export default function AdminControlCenter() {
       {currentTab === "users" && <AdminCustomersTab />}
       {currentTab === "disputes" && <AdminDisputesTab />}
       {currentTab === "documents" && <AdminDocumentsTab />}
+      {currentTab === "ledger" && <AdminLedgerTab />}
       {currentTab === "settings" && <AdminSettingsTab />}
 
 

@@ -11,7 +11,6 @@ import {
   CreditCard,
   Users,
   UserCheck,
-  ShieldCheck,
   AlertOctagon,
   Bot,
   Settings,
@@ -19,6 +18,7 @@ import {
   ChevronRight,
   Home,
   FileText,
+  BookOpen,
 } from "lucide-react";
 
 export interface NavItem {
@@ -55,6 +55,7 @@ export const ADMIN_NAV_SECTIONS: NavSection[] = [
     title: "Tài chính & Tài khoản",
     items: [
       { id: "transactions", label: "Giao dịch Ký quỹ", tab: "transactions", icon: CreditCard },
+      { id: "ledger", label: "Sổ cái kế toán", tab: "ledger", icon: BookOpen },
       { id: "customers", label: "Khách hàng", tab: "customers", icon: Users },
       { id: "staff", label: "Nhân sự & Nội bộ", tab: "staff", icon: UserCheck },
     ],

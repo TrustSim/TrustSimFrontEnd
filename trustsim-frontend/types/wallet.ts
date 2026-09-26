@@ -89,3 +89,81 @@ export interface AdminWalletFilter extends WalletTransactionFilter {
   userId?: string;
   walletStatus?: "ACTIVE" | "FROZEN" | "SUSPENDED";
 }
+
+// ─── Ledger DTOs ─────────────────────────────────────────────────────────────
+
+export interface LedgerEntryDto {
+  id: string;
+  accountCode: string;
+  accountName: string;
+  debitAmount: number;
+  creditAmount: number;
+  entryType: "DEBIT" | "CREDIT";
+  description?: string;
+  hash?: string;
+  previousHash?: string;
+  digitalSignature?: string;
+  sequence: number;
+}
+
+export interface LedgerJournalDto {
+  id: string;
+  journalCode: string;
+  transactionType: string;
+  description?: string;
+  totalDebit: number;
+  totalCredit: number;
+  isBalanced: boolean;
+  hash?: string;
+  previousHash?: string;
+  digitalSignature?: string;
+  isSignatureValid?: boolean;
+  sequence: number;
+  createdAt: string;
+  entries?: LedgerEntryDto[];
+}
+
+export interface UserBalanceAuditDto {
+  userId: string;
+  userName: string;
+  ledgerBalance: number;
+  materializedBalance: number;
+  discrepancy: number;
+  isMatch: boolean;
+}
+
+export interface LedgerIntegrityReportDto {
+  isChainValid: boolean;
+  isSignatureValid: boolean;
+  totalEntriesScanned: number;
+  totalUsersAudited: number;
+  discrepanciesFound: number;
+  firstBrokenSequence?: number;
+  totalDebit: number;
+  totalCredit: number;
+  netBalance: number;
+  userAudits?: UserBalanceAuditDto[];
+  generatedAt: string;
+}
+
+export interface LedgerJournalFilter {
+  transactionType?: string;
+  fromDate?: string;
+  toDate?: string;
+  pageIndex?: number;
+  pageSize?: number;
+}
+
+// ─── Payment Intent ──────────────────────────────────────────────────────────
+
+export interface PaymentIntentDto {
+  intentId: string;
+  transactionId: string;
+  transactionCode: string;
+  amount: number;
+  transferContent: string;
+  qrCodeUrl: string;
+  status: string;
+  expiredAt: string;
+  idempotencyKey: string;
+}
