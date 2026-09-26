@@ -78,6 +78,14 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     return () => clearInterval(timer);
   }, [depositData, timeLeft, isCompleted]);
 
+  // Mỗi lần mở modal tạo một idempotencyKey mới để tránh trùng lệnh nạp
+  const idempotencyKeyRef = useRef<string>("");
+  useEffect(() => {
+    if (isOpen) {
+      idempotencyKeyRef.current = `DEP-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleSelectPreset = (val: number) => {
@@ -102,14 +110,6 @@ export const DepositModal: React.FC<DepositModalProps> = ({
       setError("");
     }
   };
-
-  // Mỗi lần mở modal tạo một idempotencyKey mới để tránh trùng lệnh nạp
-  const idempotencyKeyRef = useRef<string>("");
-  useEffect(() => {
-    if (isOpen) {
-      idempotencyKeyRef.current = `DEP-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
-    }
-  }, [isOpen]);
 
   const handleCreateDeposit = async () => {
     if (amount < 10_000) {

@@ -2,20 +2,24 @@ import type { PagedResult } from "./common";
 
 export type TradeTransactionStatus =
   | "PendingEscrow"
-  | "EscrowFunded"
-  | "ContractSigned"
-  | "SimTransferred"
+  | "PendingSignature"
+  | "PendingTransfer"
   | "Completed"
+  | "Cancelled_EscrowTimeout"
+  | "Cancelled_SigningTimeout"
+  | "Cancelled_TransferTimeout"
+  | "Cancelled_ByAdmin"
   | "Disputed"
-  | "Cancelled";
+  | string;
 
 export type EscrowStatus =
   | "PENDING_FUNDING"
   | "HELD"
-  | "RELEASED_TO_SELLER"
-  | "REFUNDED_TO_BUYER"
-  | "PARTIALLY_RELEASED"
-  | "DISPUTED";
+  | "FROZEN"
+  | "RELEASED"
+  | "REFUNDED"
+  | "CANCELLED"
+  | string;
 
 export interface TradeTransactionDto {
   id: string;
@@ -31,6 +35,14 @@ export interface TradeTransactionDto {
   status: TradeTransactionStatus;
   escrowStatus: EscrowStatus;
   escrowDeadline: string;
+  signingDeadline?: string;
+  transferDeadline?: string;
+  completedAt?: string;
+  cancelledReason?: string;
+  documentUrl?: string;
+  documentHash?: string;
+  blockchainTxHash?: string;
+  contractStatus?: string;
   createdDate: string;
 }
 

@@ -441,7 +441,8 @@ function CameraCapture({
   const streamRef = useRef<MediaStream | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const maskId = useRef(`camera-mask-${mode}-${Math.floor(Math.random() * 10000)}`).current;
+  const reactId = React.useId();
+  const maskId = `camera-mask-${mode}-${reactId.replace(/:/g, "")}`;
 
   const stopStream = useCallback(() => {
     if (streamRef.current) {

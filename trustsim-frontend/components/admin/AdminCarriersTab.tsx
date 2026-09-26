@@ -184,6 +184,8 @@ function CarrierForm({
     logoImg: initial?.logoImg ?? "",
   });
 
+  const [errors, setErrors] = useState<Partial<Record<keyof CreateCarrierPayload, string>>>({});
+
   useEffect(() => {
     setForm({
       carrierName: initial?.carrierName ?? "",
@@ -192,7 +194,6 @@ function CarrierForm({
     });
     setErrors({});
   }, [initial]);
-  const [errors, setErrors] = useState<Partial<Record<keyof CreateCarrierPayload, string>>>({});
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoError, setLogoError] = useState(false);

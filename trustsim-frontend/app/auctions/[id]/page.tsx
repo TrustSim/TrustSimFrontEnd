@@ -147,7 +147,7 @@ function useCountUp(target: number, duration: number = 500) {
   const [current, setCurrent] = useState(target);
 
   useEffect(() => {
-    let start = current;
+    const start = current;
     const diff = target - start;
     if (diff === 0) return;
     const startTime = performance.now();
