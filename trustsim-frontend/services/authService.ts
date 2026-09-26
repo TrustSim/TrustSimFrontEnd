@@ -178,6 +178,7 @@ export const authService = {
     if (typeof window === "undefined") return;
     if (authData.token) {
       localStorage.setItem(TOKEN_KEY, authData.token);
+      localStorage.setItem("accessToken", authData.token);
     }
     localStorage.setItem(USER_KEY, JSON.stringify(authData));
 
@@ -191,6 +192,7 @@ export const authService = {
   clearSession() {
     if (typeof window === "undefined") return;
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem("accessToken");
     localStorage.removeItem(USER_KEY);
 
     window.dispatchEvent(new Event("trustsim_auth_change"));
@@ -215,7 +217,7 @@ export const authService = {
    */
   getToken(): string | null {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem(TOKEN_KEY);
+    return localStorage.getItem("accessToken") || localStorage.getItem(TOKEN_KEY);
   },
 
   /**

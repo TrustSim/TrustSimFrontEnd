@@ -271,7 +271,7 @@ export default function RegisterPage() {
                     {confirmPassword && confirmPassword !== password && (<div style={{ fontSize: 11, color: "#EF4444", marginTop: 3 }}>Mật khẩu không khớp.</div>)}
                   </div>
                   <button type="submit" disabled={loading} className="btn-red" style={{ width: "100%", padding: "12px 18px", fontSize: 14, fontWeight: 700, borderRadius: 7, display: "flex", justifyContent: "center", alignItems: "center", gap: 7, marginTop: 4 }}>
-                    {loading ? (<><span style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#FFF", borderRadius: "50%", animation: "spin 0.8s linear infinite", display: "inline-block" }} />Đang xử lý...</>) : ("Tiếp tục → Nhận mã xác thực Email")}
+                    {loading ? (<><span style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#FFF", borderRadius: "50%", animation: "spin 0.8s linear infinite", display: "inline-block" }} />Đang xử lý...</>) : ("Tiếp tục →")}
                   </button>
                 </form>
                 <p style={{ textAlign: "center", fontSize: 12.5, color: "#6B7280", marginTop: 14, marginBottom: 0 }}>

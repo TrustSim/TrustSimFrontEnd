@@ -747,11 +747,11 @@ export function AdminSimsTab() {
 
       {/* 4. Data Table */}
       <div className="bg-white border border-slate-200/80 rounded-xl overflow-hidden shadow-2xs">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1100px] text-left border-collapse text-xs">
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+          <table className="w-full min-w-[900px] text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
-                <th className="py-3 px-4 w-12 text-center shrink-0">
+                <th className="py-3 px-4 w-10 text-center shrink-0">
                   <input
                     type="checkbox"
                     checked={sims.length > 0 && selectedSimIds.length === sims.length}
@@ -759,11 +759,11 @@ export function AdminSimsTab() {
                     className="rounded border-slate-300 text-[#001743] focus:ring-0 cursor-pointer"
                   />
                 </th>
-                <th className="py-3 px-4 min-w-[170px] whitespace-nowrap">
+                <th className="py-3 px-4 whitespace-nowrap w-[160px]">
                   <AdminSortButton label="Số SIM / Đầu số" active={sortKey === "phone"} direction={sortDirection} onClick={() => changeSort("phone")} />
                 </th>
-                <th className="py-3 px-4 min-w-[130px] whitespace-nowrap">Nhà mạng</th>
-                <th className="py-3 px-4 min-w-[160px] whitespace-nowrap">
+                <th className="py-3 px-4 whitespace-nowrap w-[130px]">Nhà mạng</th>
+                <th className="py-3 px-4 whitespace-nowrap w-[150px]">
                   <AdminSortButton
                     label="Thể loại"
                     active={sortKey === "category" || sortKey === "categoryCount"}
@@ -771,13 +771,13 @@ export function AdminSimsTab() {
                     onClick={() => changeSort("category")}
                   />
                 </th>
-                <th className="py-3 px-4 min-w-[170px] whitespace-nowrap">Định dạng nhịp</th>
-                <th className="py-3 px-4 min-w-[180px] whitespace-nowrap">Chủ sở hữu hiện tại</th>
-                <th className="py-3 px-4 min-w-[140px] text-center whitespace-nowrap">
+                <th className="py-3 px-4 whitespace-nowrap w-[160px]">Định dạng nhịp</th>
+                <th className="py-3 px-4 whitespace-nowrap w-[170px]">Chủ sở hữu hiện tại</th>
+                <th className="py-3 px-4 whitespace-nowrap w-[130px] text-center">
                   <AdminSortButton label="Trạng thái" align="center" active={sortKey === "status"} direction={sortDirection} onClick={() => changeSort("status")} />
                 </th>
-                <th className="py-3 px-4 min-w-[110px] whitespace-nowrap">Ngày tạo</th>
-                <th className="py-3 px-4 min-w-[100px] text-right whitespace-nowrap">Thao tác</th>
+                <th className="py-3 px-4 whitespace-nowrap w-[100px]">Ngày tạo</th>
+                <th className="py-3 px-4 whitespace-nowrap w-[90px] text-right">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">

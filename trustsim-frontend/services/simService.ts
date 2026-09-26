@@ -185,17 +185,13 @@ export async function getMySims(params: {
 }
 
 /**
- * Đăng ký số SIM cá nhân mới vào kho của người dùng
+ * Đăng ký số SIM cá nhân mới vào kho:
+ * Thay vì lưu SIM chưa kiểm soát (/sims/register), hệ thống kích hoạt quy trình xác thực chính chủ OTP 2 bước:
+ * - Bước 1: Gửi mã OTP xác thực qua SMS (/Sims/ownership-verification/send-otp)
+ * - Bước 2: Xác nhận OTP và đối soát nhà mạng qua verifySimOwnership(phoneNumber, otpCode)
  */
-export async function registerSim(payload: RegisterSimPayload): Promise<any> {
-  const res = await apiFetch<any>("/sims/register", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-  if (!res.data && !res.success) {
-    throw new Error(res.message || "Đăng ký SIM không thành công.");
-  }
-  return res.data;
+export async function registerSim(payload: RegisterSimPayload): Promise<SendOtpResponseDto> {
+  return sendSimOwnershipOtp(payload.phoneNumber);
 }
 
 /**
