@@ -12,6 +12,7 @@ import {
 import { OwnedSim } from "../../types/types";
 import { auctionService, CreateAuctionPayload, AuctionTypeEnum } from "@/services/auctionService";
 import { aiValuationService, SimValuationDto } from "@/services/aiValuationService";
+import { auctionValidators } from "@/utils/validators";
 
 interface CreateAuctionWizardModalProps {
   sim: OwnedSim;
@@ -192,11 +193,32 @@ export default function CreateAuctionWizardModal({
 
   // Submit Auction
   const handleSubmit = async () => {
+    const regStartDate = new Date(Date.now() + 30 * 1000); // 30s tương lai thỏa mãn GreaterThan(DateTime.UtcNow)
+    const startAtDate = new Date(Date.now() + Math.max(startDelayMinutes, 1) * 60 * 1000);
+    const endAtDate = new Date(startAtDate.getTime() + durationHours * 3600 * 1000);
+
+    // Validate using auctionValidators mirroring CreateAuctionCommandValidator
+    const valRes = auctionValidators.validateCreateAuction({
+      simNumberId: sim.id,
+      startingPrice: Number(startingPrice),
+      reservePrice: reservePrice > 0 ? Number(reservePrice) : undefined,
+      registrationStartAt: regStartDate,
+      registrationEndAt: startAtDate,
+      startAt: startAtDate,
+      endAt: endAtDate,
+    });
+
+    if (!valRes.isValid) {
+      addToast({
+        type: "error",
+        title: "Thiết lập phiên đấu giá chưa hợp lệ",
+        message: valRes.error || "Vui lòng kiểm tra lại thời gian và mức giá.",
+      });
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const startAtDate = new Date(Date.now() + startDelayMinutes * 60 * 1000);
-      const endAtDate = new Date(startAtDate.getTime() + durationHours * 3600 * 1000);
-
       const payload: CreateAuctionPayload = {
         simNumberId: sim.id,
         auctionType: Number(auctionType),
@@ -205,7 +227,7 @@ export default function CreateAuctionWizardModal({
         depositAmount: depositAmount > 0 ? Number(depositAmount) : undefined,
         startAt: startAtDate.toISOString(),
         endAt: endAtDate.toISOString(),
-        registrationStartAt: new Date().toISOString(),
+        registrationStartAt: regStartDate.toISOString(),
         registrationEndAt: startAtDate.toISOString(),
         // English Rules
         minimumBidIncrement: auctionType === AuctionTypeEnum.ENGLISH ? Number(minimumBidIncrement) : undefined,

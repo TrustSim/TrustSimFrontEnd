@@ -1,5 +1,4 @@
 import { apiFetch } from "./apiClient";
-import { ApiResponse } from "@/types/auth";
 
 // ─── Enums (mirror của SimStatus trong Backend) ───────────────────────────────
 export type SimStatus =

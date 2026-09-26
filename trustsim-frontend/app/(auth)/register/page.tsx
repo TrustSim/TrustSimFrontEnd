@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authService } from "@/services/authService";
 import { ToastContainer, ToastMessage } from "@/components/ui/Toast";
+import { identityValidators } from "@/utils/validators";
 
 /* --- Inline SVG Icons ---------------------------------------- */
 const Icons = {
@@ -91,23 +92,26 @@ export default function RegisterPage() {
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userName.trim() || userName.length < 3) {
-      addToast({ type: "error", title: "Tên đăng nhập không hợp lệ", message: "Username phải có ít nhất 3 ký tự (chữ thường, số, dấu gạch dưới)." });
+
+    const valRes = identityValidators.validateRegister({
+      userName,
+      email,
+      password,
+    });
+    if (!valRes.isValid) {
+      addToast({
+        type: "error",
+        title: "Thông tin đăng ký chưa hợp lệ",
+        message: valRes.error || "Vui lòng kiểm tra lại thông tin đăng ký.",
+      });
       return;
     }
-    if (!email.trim() || !/^[^@]+@[^@]+\.[^@]+$/.test(email)) {
-      addToast({ type: "error", title: "Email không hợp lệ", message: "Vui lòng nhập địa chỉ email hợp lệ." });
-      return;
-    }
+
     if (password !== confirmPassword) {
       addToast({ type: "error", title: "Mật khẩu không khớp", message: "Mật khẩu xác nhận không trùng khớp." });
       return;
     }
-    const strength = getPasswordStrength(password);
-    if (strength.score < 4) {
-      addToast({ type: "error", title: "Mật khẩu chưa đủ mạnh", message: "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ HOA, chữ thường, số và 1 ký tự đặc biệt." });
-      return;
-    }
+
     setLoading(true);
     try {
       const result = await authService.register({

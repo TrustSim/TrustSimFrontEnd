@@ -21,6 +21,7 @@ import {
 import ImportExportBar from "@/components/admin/ImportExportBar";
 import { ExcelColumnDef } from "@/services/excelService";
 import { uploadImageToCloudinary } from "@/services/cloudinaryService";
+import { simValidators } from "@/utils/validators";
 import {
   getCarriers,
   createCarrier,
@@ -251,8 +252,16 @@ function CarrierForm({
 
   const validate = () => {
     const e: typeof errors = {};
-    if (!form.carrierName.trim()) e.carrierName = "Tên nhà mạng không được để trống.";
-    if (!form.carrierCode.trim()) e.carrierCode = "Mã viết tắt không được để trống.";
+    const res = simValidators.validateCarrier(form.carrierName, form.carrierCode, form.logoImg);
+    if (!res.isValid && res.error) {
+      if (res.error.includes("Tên")) {
+        e.carrierName = res.error;
+      } else if (res.error.includes("Mã")) {
+        e.carrierCode = res.error;
+      } else {
+        e.carrierName = res.error;
+      }
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };

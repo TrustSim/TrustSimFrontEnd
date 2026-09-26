@@ -145,27 +145,32 @@ const getAvatarStyle = (name: string = "") => {
 /* ─── Count-Up Price Hook (500ms Smooth Easing) ──────────────────────────── */
 function useCountUp(target: number, duration: number = 500) {
   const [current, setCurrent] = useState(target);
+  const currentRef = useRef(target);
 
   useEffect(() => {
-    const start = current;
+    const start = currentRef.current;
     const diff = target - start;
     if (diff === 0) return;
     const startTime = performance.now();
+    let req: number;
     const animate = (now: number) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
       // Easing: easeOutCubic
       const eased = 1 - Math.pow(1 - progress, 3);
-      setCurrent(Math.round(start + diff * eased));
+      const val = Math.round(start + diff * eased);
+      currentRef.current = val;
+      setCurrent(val);
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        req = requestAnimationFrame(animate);
       } else {
+        currentRef.current = target;
         setCurrent(target);
       }
     };
-    const req = requestAnimationFrame(animate);
+    req = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(req);
-  }, [target]);
+  }, [target, duration]);
 
   return current;
 }
@@ -417,6 +422,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
 
   useEffect(() => {
     fetchAuctionData(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auctionId]);
 
   // ─── 1.1. SignalR WebSockets Real-time Stream (Thay thế hoàn toàn Polling) ──

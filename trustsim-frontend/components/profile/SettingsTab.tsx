@@ -5,6 +5,7 @@ import { authService } from "@/services/authService";
 import { AuthResponseDto, UserProfileDto } from "@/types/auth";
 import { ToastMessage } from "@/components/ui/Toast";
 import { ProfileIcons as Icons } from "./ProfileIcons";
+import { identityValidators } from "@/utils/validators";
 
 interface SettingsTabProps {
   user: AuthResponseDto | null;
@@ -26,6 +27,21 @@ export default function SettingsTab({ user, profile, addToast }: SettingsTabProp
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const valRes = identityValidators.validateProfileUpdate({
+      fullName,
+      phoneNumber,
+      identityNumber,
+    });
+    if (!valRes.isValid) {
+      addToast({
+        type: "error",
+        title: "Thông tin hồ sơ chưa hợp lệ",
+        message: valRes.error || "Vui lòng kiểm tra lại thông tin hồ sơ.",
+      });
+      return;
+    }
+
     setLoadingProfile(true);
     try {
       await authService.updateProfile({
@@ -52,6 +68,35 @@ export default function SettingsTab({ user, profile, addToast }: SettingsTabProp
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!currentPassword) {
+      addToast({
+        type: "error",
+        title: "Thiếu mật khẩu hiện tại",
+        message: "Vui lòng nhập mật khẩu hiện tại.",
+      });
+      return;
+    }
+
+    const valPwd = identityValidators.validatePassword(newPassword);
+    if (!valPwd.isValid) {
+      addToast({
+        type: "error",
+        title: "Mật khẩu mới chưa hợp lệ",
+        message: valPwd.error || "Mật khẩu phải từ 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.",
+      });
+      return;
+    }
+
+    if (newPassword === currentPassword) {
+      addToast({
+        type: "error",
+        title: "Mật khẩu không đổi",
+        message: "Mật khẩu mới không được trùng với mật khẩu hiện tại.",
+      });
+      return;
+    }
+
     if (newPassword !== confirmNewPassword) {
       addToast({
         type: "error",

@@ -654,6 +654,7 @@ export function AiConsultantChatWidget() {
                       onKeyDown={handleKeyDown}
                       placeholder="Nhập câu hỏi tư vấn SIM, phong thủy..."
                       rows={1}
+                      maxLength={2000}
                       disabled={isStreaming}
                       className="w-full text-xs p-2.5 pr-2 bg-transparent resize-none focus:outline-none max-h-[120px] text-slate-800 placeholder-slate-400"
                     />

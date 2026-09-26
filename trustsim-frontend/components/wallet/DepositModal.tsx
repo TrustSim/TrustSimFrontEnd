@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { walletService } from "@/services/walletService";
 import type { DepositResponseDto } from "@/types/wallet";
+import { financialValidators } from "@/utils/validators";
 
 interface DepositModalProps {
   isOpen: boolean;
@@ -104,16 +105,18 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     const val = parseInt(raw, 10);
     setAmount(val);
     setCustomInput(val.toLocaleString("vi-VN"));
-    if (val < 10_000) {
-      setError("Số tiền nạp tối thiểu là 10.000 ₫");
+    const valRes = financialValidators.validateDeposit(val);
+    if (!valRes.isValid) {
+      setError(valRes.error || "Số tiền nạp không hợp lệ");
     } else {
       setError("");
     }
   };
 
   const handleCreateDeposit = async () => {
-    if (amount < 10_000) {
-      setError("Số tiền nạp tối thiểu là 10.000 ₫");
+    const valRes = financialValidators.validateDeposit(amount);
+    if (!valRes.isValid) {
+      setError(valRes.error || "Số tiền nạp không hợp lệ");
       return;
     }
 

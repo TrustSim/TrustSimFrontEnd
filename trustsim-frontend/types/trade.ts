@@ -1,4 +1,3 @@
-import type { PagedResult } from "./common";
 
 export type TradeTransactionStatus =
   | "PendingEscrow"

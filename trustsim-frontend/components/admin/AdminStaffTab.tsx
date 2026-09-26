@@ -817,6 +817,15 @@ export function AdminStaffTab() {
 }
 
 // --- Sub-component: Staff Form ---
+function parseStaffRole(item?: AdminUserDetailDto | null, defaultRole: UserRoleEnum = UserRoleEnum.CONSULTANT): number {
+  if (!item) return defaultRole;
+  if (typeof item.role === "number") return item.role;
+  if (item.role === "ADMIN") return UserRoleEnum.ADMIN;
+  if (item.role === "CONSULTANT") return UserRoleEnum.CONSULTANT;
+  if (item.role === "USER") return UserRoleEnum.USER;
+  return defaultRole;
+}
+
 function StaffForm({
   mode,
   defaultRole,
@@ -832,15 +841,6 @@ function StaffForm({
 }) {
   const isCreate = mode === "create";
 
-  const getInitialRole = (item?: AdminUserDetailDto | null): number => {
-    if (!item) return defaultRole;
-    if (typeof item.role === "number") return item.role;
-    if (item.role === "ADMIN") return UserRoleEnum.ADMIN;
-    if (item.role === "CONSULTANT") return UserRoleEnum.CONSULTANT;
-    if (item.role === "USER") return UserRoleEnum.USER;
-    return defaultRole;
-  };
-
   const [userName, setUserName] = useState(initial?.userName || "");
   const [email, setEmail] = useState(initial?.email || "");
   const [password, setPassword] = useState("");
@@ -848,7 +848,7 @@ function StaffForm({
   const [phoneNumber, setPhoneNumber] = useState(initial?.phoneNumber || "");
   const [identityNumber, setIdentityNumber] = useState(initial?.identityNumber || "");
   const [address, setAddress] = useState(initial?.address || "");
-  const [role, setRole] = useState<number>(getInitialRole(initial));
+  const [role, setRole] = useState<number>(parseStaffRole(initial, defaultRole));
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -862,7 +862,7 @@ function StaffForm({
       setPhoneNumber(initial.phoneNumber || "");
       setIdentityNumber(initial.identityNumber || "");
       setAddress(initial.address || "");
-      setRole(getInitialRole(initial));
+      setRole(parseStaffRole(initial, defaultRole));
       setPassword("");
     } else {
       setUserName("");

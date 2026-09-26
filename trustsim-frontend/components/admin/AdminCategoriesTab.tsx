@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/RightDrawer";
 import { Pagination } from "@/components/ui/Pagination";
 import { AdminSortButton, toggleSort, type SortDirection } from "@/components/admin/AdminPrimitives";
+import { simValidators } from "@/utils/validators";
 
 // --- Delete Modal ---
 function DeleteModal({ name, onConfirm, onCancel, loading }: {
@@ -81,8 +82,16 @@ function CategoryForm({ initial, onSave, onClose }: {
   };
   const validate = () => {
     const e: typeof errors = {};
-    if (!form.categoryCode.trim()) e.categoryCode = "Mã thể loại không được để trống.";
-    if (!form.categoryName.trim()) e.categoryName = "Tên thể loại không được để trống.";
+    const res = simValidators.validateCategory(form.categoryName, form.categoryCode);
+    if (!res.isValid && res.error) {
+      if (res.error.includes("Tên")) {
+        e.categoryName = res.error;
+      } else if (res.error.includes("Mã")) {
+        e.categoryCode = res.error;
+      } else {
+        e.categoryName = res.error;
+      }
+    }
     if ((form.valuationMultiplier ?? 0) <= 0) e.valuationMultiplier = "Hệ số AI phải lớn hơn 0.";
     setErrors(e);
     return Object.keys(e).length === 0;

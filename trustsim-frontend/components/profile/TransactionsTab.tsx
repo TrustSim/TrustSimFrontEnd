@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { walletService } from "@/services/walletService";
 import { WalletTransactionDto, WalletTransactionType, TransactionStatus } from "@/types/wallet";
 import { ToastMessage } from "@/components/ui/Toast";
@@ -24,7 +24,7 @@ export default function TransactionsTab({
   const [filterType, setFilterType] = useState<string>("ALL");
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
 
-  const loadTransactions = async () => {
+  const loadTransactions = useCallback(async () => {
     setLoading(true);
     try {
       const typeParam = filterType !== "ALL" ? (filterType as WalletTransactionType) : undefined;
@@ -46,11 +46,11 @@ export default function TransactionsTab({
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterType, filterStatus, pageIndex, addToast]);
 
   useEffect(() => {
     loadTransactions();
-  }, [pageIndex, filterType, filterStatus, refreshTrigger]);
+  }, [loadTransactions, refreshTrigger]);
 
   const getStatusBadge = (status: TransactionStatus) => {
     switch (status) {

@@ -34,8 +34,9 @@ const POPULAR_BANKS = [
   { code: "TIMO", name: "Timo by BVBank (Ngân hàng số)", short: "Timo" },
 ];
 
+import { financialValidators } from "@/utils/validators";
+
 const PRESET_AMOUNTS = [
-  { label: "10.000 ₫", val: 10_000 },
   { label: "50.000 ₫", val: 50_000 },
   { label: "100.000 ₫", val: 100_000 },
   { label: "200.000 ₫", val: 200_000 },
@@ -43,6 +44,7 @@ const PRESET_AMOUNTS = [
   { label: "1.000.000 ₫", val: 1_000_000 },
   { label: "2.000.000 ₫", val: 2_000_000 },
   { label: "5.000.000 ₫", val: 5_000_000 },
+  { label: "10.000.000 ₫", val: 10_000_000 },
 ];
 
 export const WithdrawModal: React.FC<WithdrawModalProps> = ({
@@ -90,8 +92,10 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
 
     if (val > availableBalance) {
       setError(`Số tiền vượt quá số dư khả dụng (${availableBalance.toLocaleString("vi-VN")} ₫)`);
-    } else if (val < 10_000) {
-      setError("Số tiền rút tối thiểu là 10.000 ₫");
+    } else if (val < 50_000) {
+      setError("Số tiền rút tối thiểu là 50.000 ₫");
+    } else if (val > 100_000_000) {
+      setError("Số tiền rút tối đa mỗi lần là 100.000.000 ₫");
     } else {
       setError("");
     }
@@ -102,8 +106,10 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
     setAmountInput(val.toLocaleString("vi-VN"));
     if (val > availableBalance) {
       setError(`Số tiền vượt quá số dư khả dụng (${availableBalance.toLocaleString("vi-VN")} ₫)`);
-    } else if (val < 10_000) {
-      setError("Số tiền rút tối thiểu là 10.000 ₫");
+    } else if (val < 50_000) {
+      setError("Số tiền rút tối thiểu là 50.000 ₫");
+    } else if (val > 100_000_000) {
+      setError("Số tiền rút tối đa mỗi lần là 100.000.000 ₫");
     } else {
       setError("");
     }
@@ -115,12 +121,14 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
       return;
     }
     const calculated = Math.floor((availableBalance * percent) / 100);
-    const finalAmount = calculated < 10_000 ? availableBalance : calculated;
+    const finalAmount = calculated < 50_000 ? availableBalance : calculated;
     setAmount(finalAmount);
     setAmountInput(finalAmount.toLocaleString("vi-VN"));
 
-    if (finalAmount < 10_000) {
-      setError("Số tiền rút tối thiểu là 10.000 ₫");
+    if (finalAmount < 50_000) {
+      setError("Số tiền rút tối thiểu là 50.000 ₫");
+    } else if (finalAmount > 100_000_000) {
+      setError("Số tiền rút tối đa mỗi lần là 100.000.000 ₫");
     } else {
       setError("");
     }
@@ -129,25 +137,24 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!accountNumber.trim()) {
-      setError("Vui lòng nhập số tài khoản ngân hàng nhận tiền");
-      return;
-    }
-    if (!accountHolderName.trim()) {
-      setError("Vui lòng nhập tên chủ tài khoản ngân hàng");
-      return;
-    }
-    if (amount < 10_000) {
-      setError("Số tiền rút tối thiểu là 10.000 ₫");
-      return;
-    }
-    if (amount > availableBalance) {
-      setError(`Số dư khả dụng không đủ để rút ${amount.toLocaleString("vi-VN")} ₫`);
-      return;
-    }
-
     const selectedBank = POPULAR_BANKS.find((b) => b.code === bankCode);
     const bankName = selectedBank?.name || bankCode;
+
+    // Strict validation matching CreateWithdrawCommandValidator
+    const valResult = financialValidators.validateWithdraw({
+      amount,
+      destinationBankCode: bankCode,
+      destinationBankName: bankName,
+      destinationAccountNumber: accountNumber,
+      destinationAccountHolderName: accountHolderName,
+      note,
+      availableBalance,
+    });
+
+    if (!valResult.isValid) {
+      setError(valResult.error || "Thông tin rút tiền không hợp lệ.");
+      return;
+    }
 
     setLoading(true);
     setError("");
