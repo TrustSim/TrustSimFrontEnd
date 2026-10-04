@@ -7,7 +7,8 @@ import { walletService } from "@/services/walletService";
 import { ekycService, IdentityVerificationDto } from "@/services/ekycService";
 import { AuthResponseDto, UserProfileDto } from "@/types/auth";
 import { WalletDto } from "@/types/wallet";
-import { ToastContainer, ToastMessage } from "@/components/ui/Toast";
+import { ToastMessage } from "@/components/ui/Toast";
+import { showToast } from "@/components/layout/AppShell";
 import { DepositModal } from "@/components/wallet/DepositModal";
 import { WithdrawModal } from "@/components/wallet/WithdrawModal";
 
@@ -43,7 +44,6 @@ function ProfilePageInner() {
   const [profile, setProfile] = useState<UserProfileDto | null>(null);
   const [wallet, setWallet] = useState<WalletDto | null>(null);
   const [loading, setLoading] = useState(true);
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // eKYC State
   const [kycStatus, setKycStatus] = useState<IdentityVerificationDto | null>(null);
@@ -61,12 +61,7 @@ function ProfilePageInner() {
   }, [router]);
 
   const addToast = (toast: Omit<ToastMessage, "id">) => {
-    const id = Date.now().toString() + Math.random().toString(36).substring(2, 5);
-    setToasts((prev) => [...prev, { ...toast, id }]);
-  };
-
-  const removeToast = (id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
+    showToast(toast);
   };
 
   const fetchWallet = () => {
@@ -194,8 +189,6 @@ function ProfilePageInner() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#F8F9FA", paddingTop: 64 }}>
-      <ToastContainer toasts={toasts} onClose={removeToast} />
-
       {/* Modals */}
       <DepositModal
         isOpen={depositModalOpen}
@@ -203,11 +196,6 @@ function ProfilePageInner() {
         onSuccess={() => {
           fetchWallet();
           setWalletRefreshKey((k) => k + 1);
-          addToast({
-            type: "success",
-            title: "Yêu cầu nạp tiền",
-            message: "Hệ thống sẽ tự động cập nhật số dư khi nhận được thanh toán.",
-          });
         }}
       />
 

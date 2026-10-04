@@ -39,6 +39,15 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [error, setError] = useState<string>("");
   const [timeLeft, setTimeLeft] = useState<number>(1800); // 30 phút đếm ngược
+  const [autoCloseCountdown, setAutoCloseCountdown] = useState<number>(3);
+
+  // Refs giữ ổn định callbacks và cờ để tránh re-render từ cha làm reset timer
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const onSuccessRef = useRef(onSuccess);
+  onSuccessRef.current = onSuccess;
+  const hasNotifiedRef = useRef<boolean>(false);
+  const idempotencyKeyRef = useRef<string>("");
 
   useEffect(() => {
     if (isOpen) {
@@ -48,27 +57,45 @@ export const DepositModal: React.FC<DepositModalProps> = ({
       setIsCompleted(false);
       setError("");
       setTimeLeft(1800);
+      setAutoCloseCountdown(3);
+      hasNotifiedRef.current = false;
+      idempotencyKeyRef.current = `DEP-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
     }
   }, [isOpen, initialAmount]);
 
-  // Tự động kiểm tra trạng thái giao dịch nạp tiền mỗi 3 giây (Auto-polling)
+  // Tự động kiểm tra trạng thái giao dịch nạp tiền mỗi 2.5 giây (Auto-polling)
   useEffect(() => {
-    if (!depositData || isCompleted || !isOpen) return;
+    if (!depositData?.transactionId || isCompleted || !isOpen) return;
 
-    const pollInterval = setInterval(async () => {
+    let isPolling = true;
+
+    const checkTransactionStatus = async () => {
       try {
         const tx = await walletService.getTransactionById(depositData.transactionId);
-        if (tx && tx.transactionStatus === "COMPLETED") {
+        if (!isPolling) return;
+
+        const status = String(tx?.transactionStatus ?? (tx as any)?.status ?? "").toUpperCase();
+        const isDone =
+          status === "COMPLETED" ||
+          (tx?.transactionStatus as any) === 1 ||
+          (tx as any)?.status === 1;
+
+        if (isDone) {
           setIsCompleted(true);
-          if (onSuccess) onSuccess();
         }
       } catch {
-        // Bỏ qua lỗi mạng nền
+        // Bỏ qua lỗi mạng tạm thời trong lúc chờ SePay webhook xử lý
       }
-    }, 3000);
+    };
 
-    return () => clearInterval(pollInterval);
-  }, [depositData, isCompleted, isOpen, onSuccess]);
+    checkTransactionStatus();
+    const pollInterval = setInterval(checkTransactionStatus, 2500);
+
+    return () => {
+      isPolling = false;
+      clearInterval(pollInterval);
+    };
+  }, [depositData?.transactionId, isCompleted, isOpen]);
 
   // Bộ đếm thời gian hiệu lực 30 phút
   useEffect(() => {
@@ -79,13 +106,50 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     return () => clearInterval(timer);
   }, [depositData, timeLeft, isCompleted]);
 
-  // Mỗi lần mở modal tạo một idempotencyKey mới để tránh trùng lệnh nạp
-  const idempotencyKeyRef = useRef<string>("");
+  // Xử lý khi nạp tiền hoàn tất: thông báo Toast thành công và tự động đóng modal sau 3 giây
   useEffect(() => {
-    if (isOpen) {
-      idempotencyKeyRef.current = `DEP-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
+    if (!isCompleted || !isOpen) return;
+
+    // 1. Phát thông báo Toast thành công ngay lập tức (chỉ 1 lần duy nhất)
+    if (!hasNotifiedRef.current) {
+      hasNotifiedRef.current = true;
+      const depositAmount = depositData?.amount ?? amount;
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("trustsim_toast", {
+            detail: {
+              type: "success",
+              title: "Nạp tiền thành công!",
+              message: `Tài khoản của bạn đã được cộng ${depositAmount.toLocaleString("vi-VN")} ₫. Số dư khả dụng đã được cập nhật.`,
+              duration: 5000,
+            },
+          })
+        );
+      }
+
+      // Kích hoạt callback cập nhật số dư cho component cha
+      if (onSuccessRef.current) {
+        onSuccessRef.current();
+      }
     }
-  }, [isOpen]);
+
+    // 2. Bắt đầu đếm ngược trực quan 3 giây
+    setAutoCloseCountdown(3);
+    const countdownInterval = setInterval(() => {
+      setAutoCloseCountdown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+
+    // 3. Tự động đóng modal sau 3 giây (độc lập, không bị reset khi cha re-render)
+    const closeTimeout = setTimeout(() => {
+      onCloseRef.current();
+    }, 3000);
+
+    return () => {
+      clearInterval(countdownInterval);
+      clearTimeout(closeTimeout);
+    };
+  }, [isCompleted, isOpen, depositData, amount]);
 
   if (!isOpen) return null;
 
@@ -123,22 +187,11 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     setLoading(true);
     setError("");
     try {
-      // Ưu tiên endpoint /deposit-intent (idempotent) để đảm bảo không tạo lệnh trùng
-      let res: DepositResponseDto;
-      try {
-        const intent = await walletService.createDepositIntent(amount, idempotencyKeyRef.current);
-        res = {
-          transactionId: intent.transactionId,
-          transactionCode: intent.transactionCode,
-          amount: intent.amount,
-          transferContent: intent.transferContent,
-          qrCodeUrl: intent.qrCodeUrl,
-          expiredAt: intent.expiredAt,
-        };
-      } catch {
-        // Fallback sang endpoint cũ nếu backend chưa có /deposit-intent
-        res = await walletService.createDeposit({ amount });
-      }
+      // Tạo lệnh nạp tiền với IdempotencyKey qua endpoint /Wallets/deposit
+      const res = await walletService.createDeposit({
+        amount,
+        idempotencyKey: idempotencyKeyRef.current,
+      });
       setDepositData(res);
       // Tính thời gian còn lại từ expiredAt nếu có
       if (res.expiredAt) {
@@ -167,8 +220,8 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   };
 
   const handleComplete = () => {
-    if (onSuccess) onSuccess();
-    onClose();
+    if (onSuccessRef.current) onSuccessRef.current();
+    onCloseRef.current();
   };
 
   return (
@@ -187,7 +240,10 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         fontFamily: 'var(--font-inter), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
       onClick={(e) => {
-        if (e.target === e.currentTarget && !loading) onClose();
+        if (e.target === e.currentTarget && !loading) {
+          if (isCompleted && onSuccessRef.current) onSuccessRef.current();
+          onCloseRef.current();
+        }
       }}
     >
       <div
@@ -239,16 +295,19 @@ export const DepositModal: React.FC<DepositModalProps> = ({
             </div>
             <div>
               <h3 style={{ fontSize: 15, fontWeight: 800, color: "#001743", margin: 0, letterSpacing: "-0.01em" }}>
-                {depositData ? "Chuyển khoản VietQR SePay" : "Nạp tiền vào ví TrustSim"}
+                {isCompleted ? "Nạp tiền thành công" : depositData ? "Chuyển khoản VietQR SePay" : "Nạp tiền vào ví TrustSim"}
               </h3>
               <p style={{ fontSize: 11, color: "#6B7280", margin: "1px 0 0" }}>
-                {depositData ? "Quét mã QR để cộng tiền tự động tức thì" : "Cổng thanh toán tự động 24/7 (Tối thiểu 10.000 ₫)"}
+                {isCompleted ? "Giao dịch đã được ghi nhận tự động" : depositData ? "Quét mã QR để cộng tiền tự động tức thì" : "Cổng thanh toán tự động 24/7 (Tối thiểu 10.000 ₫)"}
               </p>
             </div>
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => {
+              if (isCompleted && onSuccessRef.current) onSuccessRef.current();
+              onCloseRef.current();
+            }}
             style={{
               background: "none",
               border: "none",
@@ -269,7 +328,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
 
         {/* Content Body */}
         <div style={{ padding: "14px 18px", overflowY: "auto", flex: 1 }}>
-          {isCompleted && depositData ? (
+          {isCompleted ? (
             /* Bước 3: Nạp tiền thành công tức thì */
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "12px 0" }}>
               <div
@@ -296,7 +355,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 Nạp tiền thành công!
               </h3>
               <p style={{ fontSize: 14, color: "#16A34A", fontWeight: 800, margin: "0 0 16px" }}>
-                +{depositData.amount.toLocaleString("vi-VN")} ₫ đã được cộng vào ví của bạn
+                +{((depositData?.amount ?? amount) || 0).toLocaleString("vi-VN")} ₫ đã được cộng vào ví của bạn
               </p>
 
               <div
@@ -317,7 +376,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
               >
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span style={{ color: "#64748B" }}>Mã giao dịch:</span>
-                  <strong style={{ color: "#001743", fontWeight: 800 }}>{depositData.transactionCode}</strong>
+                  <strong style={{ color: "#001743", fontWeight: 800 }}>{depositData?.transactionCode || "GD-SEPAY"}</strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span style={{ color: "#64748B" }}>Cổng thanh toán:</span>
@@ -326,6 +385,22 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px dashed #E2E8F0", paddingTop: 8 }}>
                   <span style={{ color: "#64748B" }}>Trạng thái:</span>
                   <strong style={{ color: "#16A34A", fontWeight: 800 }}>● Hoàn tất tức thì</strong>
+                </div>
+              </div>
+
+              <div style={{ width: "100%", marginBottom: 14, textAlign: "center" }}>
+                <span style={{ fontSize: 12, color: "#6B7280" }}>
+                  Đang tự động đóng trong <strong>{autoCloseCountdown} giây</strong>...
+                </span>
+                <div style={{ width: "100%", height: 3, background: "#E5E7EB", borderRadius: 2, marginTop: 6, overflow: "hidden" }}>
+                  <div
+                    style={{
+                      height: "100%",
+                      background: "#16A34A",
+                      width: `${(autoCloseCountdown / 3) * 100}%`,
+                      transition: "width 1s linear",
+                    }}
+                  />
                 </div>
               </div>
 
@@ -347,7 +422,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 onMouseEnter={(e) => (e.currentTarget.style.background = "#0A2566")}
                 onMouseLeave={(e) => (e.currentTarget.style.background = "#001743")}
               >
-                Hoàn tất & Đóng
+                Hoàn tất & Đóng ngay
               </button>
             </div>
           ) : !depositData ? (

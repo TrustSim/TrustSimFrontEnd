@@ -51,6 +51,7 @@ export interface DepositResponseDto {
 export interface CreateDepositRequest {
   amount: number;
   note?: string;
+  idempotencyKey?: string;
 }
 
 export interface CreateWithdrawRequest {
@@ -90,60 +91,87 @@ export interface AdminWalletFilter extends WalletTransactionFilter {
   walletStatus?: "ACTIVE" | "FROZEN" | "SUSPENDED";
 }
 
-// ─── Ledger DTOs ─────────────────────────────────────────────────────────────
+// ─── Ledger DTOs (aligned with backend response) ─────────────────────────────
 
+/** Backend: LedgerEntryDto — một dòng bút toán Nợ/Có trong sổ cái */
 export interface LedgerEntryDto {
   id: string;
-  accountCode: string;
-  accountName: string;
-  debitAmount: number;
-  creditAmount: number;
-  entryType: "DEBIT" | "CREDIT";
+  journalId: string;
+  walletId?: string;
+  /** Tên enum tài khoản kế toán (e.g. "USER_WALLET_1010") */
+  accountType: string;
+  accountTypeName: string;
+  accountTypeCode: number;
+  /** "DEBIT" | "CREDIT" */
+  entryType: string;
+  entryTypeName: string;
+  /** Số tiền (luôn > 0, không phân biệt Nợ/Có) */
+  amount: number;
+  sequenceNumber: number;
+  prevHash: string;
+  entryHash: string;
+  signature: string;
+  createdAt: string;
   description?: string;
-  hash?: string;
-  previousHash?: string;
-  digitalSignature?: string;
-  sequence: number;
 }
 
+/** Backend: LedgerJournalDto — chứng từ kế toán ghi kép */
 export interface LedgerJournalDto {
   id: string;
   journalCode: string;
+  /** Enum string, e.g. "TOP_UP" | "WITHDRAW" | "ESCROW_LOCK" … */
   transactionType: string;
+  transactionTypeName: string;
+  referenceType?: string;
+  referenceId?: string;
+  idempotencyKey?: string;
   description?: string;
-  totalDebit: number;
-  totalCredit: number;
-  isBalanced: boolean;
-  hash?: string;
-  previousHash?: string;
-  digitalSignature?: string;
-  isSignatureValid?: boolean;
-  sequence: number;
-  createdAt: string;
-  entries?: LedgerEntryDto[];
+  /** Tổng giá trị giao dịch (Nợ = Có = totalAmount trong kế toán ghi kép) */
+  totalAmount: number;
+  status: string;
+  statusName: string;
+  signedHash?: string;
+  postedAt: string;
+  entries: LedgerEntryDto[];
 }
 
-export interface UserBalanceAuditDto {
-  userId: string;
-  userName: string;
-  ledgerBalance: number;
-  materializedBalance: number;
+/** Backend: AccountReconciliationDetail — đối soát từng tài khoản */
+export interface AccountReconciliationDetail {
+  accountCode: string;
+  accountName: string;
+  walletId?: string;
+  ledgerCalculatedBalance: number;
+  snapshotBalance: number;
   discrepancy: number;
-  isMatch: boolean;
+  isBalanced: boolean;
 }
 
+/** Backend: ChainAnomalyDetail — chi tiết bất thường chuỗi hash */
+export interface ChainAnomalyDetail {
+  sequenceNumber: number;
+  entryId: string;
+  anomalyType: string;
+  description: string;
+  expectedValue: string;
+  actualValue: string;
+}
+
+/** Backend: LedgerIntegrityReportDto — báo cáo kiểm toán toàn vẹn */
 export interface LedgerIntegrityReportDto {
   isChainValid: boolean;
   isSignatureValid: boolean;
+  isBalanceReconciled: boolean;
+  isAccountingEquationBalanced: boolean;
+  hasFraudDetected: boolean;
+  isFraudDetected: boolean;
+  fraudStatus: string;
+  fraudAlertMessage: string;
   totalEntriesScanned: number;
-  totalUsersAudited: number;
-  discrepanciesFound: number;
-  firstBrokenSequence?: number;
-  totalDebit: number;
-  totalCredit: number;
-  netBalance: number;
-  userAudits?: UserBalanceAuditDto[];
-  generatedAt: string;
+  totalJournalsScanned: number;
+  auditedAt: string;
+  executionTimeMs: number;
+  anomalies: ChainAnomalyDetail[];
+  reconciliations: AccountReconciliationDetail[];
 }
 
 export interface LedgerJournalFilter {
