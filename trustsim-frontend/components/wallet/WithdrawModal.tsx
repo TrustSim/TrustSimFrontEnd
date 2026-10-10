@@ -1,10 +1,28 @@
+/* Hallmark · component: modal · genre: modern-minimal · theme: trustsim-navy
+ * states: default · hover · focus-visible · active · disabled · loading · error · success
+ * contrast: pass (46–50)
+ */
+
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
+import {
+  X,
+  CheckCircle2,
+  AlertCircle,
+  Building2,
+  CreditCard,
+  User,
+  ArrowRight,
+  Loader2,
+  FileText,
+} from "lucide-react";
 import { walletService } from "@/services/walletService";
 import type { WalletTransactionDto } from "@/types/wallet";
+import { financialValidators } from "@/utils/validators";
 
-interface WithdrawModalProps {
+export interface WithdrawModalProps {
   isOpen: boolean;
   onClose: () => void;
   availableBalance: number;
@@ -33,8 +51,6 @@ const POPULAR_BANKS = [
   { code: "CAKE", name: "Cake by VPBank (Ngân hàng số)", short: "Cake" },
   { code: "TIMO", name: "Timo by BVBank (Ngân hàng số)", short: "Timo" },
 ];
-
-import { financialValidators } from "@/utils/validators";
 
 const PRESET_AMOUNTS = [
   { label: "50.000 ₫", val: 50_000 },
@@ -180,260 +196,131 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
     }
   };
 
-  const handleFinish = () => {
-    onClose();
-  };
-
   const selectedBankObj = POPULAR_BANKS.find((b) => b.code === bankCode);
 
   return (
     <div
-      className="profile-modal-backdrop"
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 9999,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "16px",
-        background: "rgba(0, 23, 67, 0.65)",
-        backdropFilter: "blur(4px)",
-        fontFamily: 'var(--font-inter), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#001743]/60 backdrop-blur-xs transition-opacity duration-150 animate-in fade-in"
       onClick={(e) => {
         if (e.target === e.currentTarget && !loading) onClose();
       }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="withdraw-modal-title"
     >
-      <div
-        className="profile-modal-panel profile-withdraw-panel"
-        style={{
-          width: "100%",
-          maxWidth: "640px",
-          background: "#FFFFFF",
-          borderRadius: "14px",
-          boxShadow: "0 25px 60px -15px rgba(0, 23, 67, 0.25)",
-          border: "1px solid #E5E7EB",
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-          maxHeight: "calc(100vh - 32px)",
-        }}
-      >
+      <div className="relative w-full max-w-lg bg-white rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden flex flex-col max-h-[calc(100vh-2rem)] animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div
-          style={{
-            padding: "12px 18px",
-            borderBottom: "1px solid #E5E7EB",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            background: "#FAFAFA",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: 10,
-                background: "linear-gradient(135deg, #001743 0%, #002B7F 100%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 4px 12px rgba(0, 23, 67, 0.2)",
-                padding: 6,
-                flexShrink: 0,
-              }}
-            >
-              <img
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#001743] flex items-center justify-center shadow-xs border border-white/10 shrink-0">
+              <Image
                 src="/logo/S-White-Logo.png"
                 alt="TrustSim"
-                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                width={20}
+                height={20}
+                className="w-5 h-5 object-contain"
               />
             </div>
             <div>
-              <h3 style={{ fontSize: 15, fontWeight: 800, color: "#001743", margin: 0, letterSpacing: "-0.01em" }}>
+              <h2 id="withdraw-modal-title" className="text-sm font-bold text-[#001743] tracking-tight">
                 {completedTx ? "Rút tiền thành công" : "Rút tiền về tài khoản ngân hàng"}
-              </h3>
-              <p style={{ fontSize: 11, color: "#6B7280", margin: "1px 0 0" }}>
-                {completedTx ? "Giao dịch đã được hệ thống phê duyệt tức thì" : "Chuyển khoản tự động 24/7 (Tối thiểu 10.000 ₫)"}
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {completedTx
+                  ? "Giao dịch đã được hệ thống phê duyệt tức thì"
+                  : "Chuyển khoản tự động 24/7 (Tối thiểu 50.000 ₫)"}
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#9CA3AF",
-              cursor: "pointer",
-              padding: 6,
-              borderRadius: 6,
-              fontSize: 18,
-              lineHeight: 1,
-              transition: "color 0.15s ease",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#001743")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "#9CA3AF")}
+            disabled={loading}
+            className="p-1.5 text-slate-400 hover:text-[#001743] hover:bg-slate-100 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E4011E] disabled:opacity-40"
+            aria-label="Đóng cửa sổ"
           >
-            ✕
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Modal Body */}
         {completedTx ? (
           /* ─── SUCCESS RECEIPT VIEW ─── */
-          <div style={{ padding: "18px 20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 14, textAlign: "center" }}>
-            <div
-              style={{
-              width: 56,
-              height: 56,
-                borderRadius: "50%",
-                background: "#F0FDF4",
-                border: "2px solid #BBF7D0",
-                color: "#16A34A",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto",
-                boxShadow: "0 6px 18px rgba(22, 163, 74, 0.15)",
-              }}
-            >
-              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
+          <div className="p-5 overflow-y-auto flex flex-col items-center text-center">
+            <div className="w-14 h-14 rounded-full bg-emerald-50 border-2 border-emerald-200 text-emerald-600 flex items-center justify-center mb-3 shadow-xs">
+              <CheckCircle2 className="w-8 h-8" />
             </div>
 
-            <div>
-              <h3 style={{ fontSize: 18, fontWeight: 900, color: "#001743", margin: "0 0 4px" }}>
-                Yêu cầu rút tiền thành công!
-              </h3>
-              <p style={{ fontSize: 13.5, color: "#16A34A", fontWeight: 700, margin: 0 }}>
-                -{completedTx.amount.toLocaleString("vi-VN")} ₫ đã được xuất lệnh về tài khoản
-              </p>
-            </div>
+            <h3 className="text-lg font-bold text-[#001743]">
+              Yêu cầu rút tiền thành công!
+            </h3>
+            <p className="text-sm font-bold text-emerald-600 mt-1 mb-4 font-mono tabular-nums">
+              -{completedTx.amount.toLocaleString("vi-VN")} ₫ đã được xuất lệnh về tài khoản
+            </p>
 
             {/* Receipt Summary Card */}
-            <div
-              style={{
-                background: "#F8FAFC",
-                border: "1px solid #E2E8F0",
-                borderRadius: 10,
-                padding: "12px 14px",
-                textAlign: "left",
-                fontSize: 13,
-                color: "#475569",
-                display: "flex",
-                flexDirection: "column",
-                gap: 10,
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ color: "#64748B" }}>Mã giao dịch:</span>
-                <strong style={{ color: "#001743", fontWeight: 800, letterSpacing: "0.02em" }}>
+            <div className="w-full bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 mb-4 text-xs text-slate-600 flex flex-col gap-2.5 text-left">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Mã giao dịch:</span>
+                <span className="font-mono font-bold text-[#001743] tracking-wider">
                   {completedTx.transactionCode}
-                </strong>
+                </span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ color: "#64748B" }}>Ngân hàng thụ hưởng:</span>
-                <strong style={{ color: "#001743", fontWeight: 700 }}>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Ngân hàng thụ hưởng:</span>
+                <span className="font-semibold text-[#001743]">
                   {completedTx.destinationBankName || selectedBankObj?.short}
-                </strong>
+                </span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ color: "#64748B" }}>Số tài khoản nhận:</span>
-                <strong style={{ color: "#001743", fontWeight: 800 }}>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Số tài khoản nhận:</span>
+                <span className="font-mono font-bold text-[#001743]">
                   {completedTx.destinationAccountNumberMasked || accountNumber}
-                </strong>
+                </span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ color: "#64748B" }}>Tên chủ tài khoản:</span>
-                <strong style={{ color: "#001743", fontWeight: 800 }}>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Tên chủ tài khoản:</span>
+                <span className="font-bold text-[#001743] uppercase">
                   {completedTx.destinationAccountHolderName || accountHolderName}
-                </strong>
+                </span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px dashed #E2E8F0", paddingTop: 8 }}>
-                <span style={{ color: "#64748B" }}>Trạng thái xử lý:</span>
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: "#16A34A",
-                    background: "#DCFCE7",
-                    padding: "2px 8px",
-                    borderRadius: 9999,
-                  }}
-                >
-                  ● Hoàn tất tức thì
+              <div className="flex justify-between items-center border-t border-dashed border-slate-200 pt-2">
+                <span className="text-slate-500">Trạng thái xử lý:</span>
+                <span className="inline-flex items-center gap-1.5 font-bold text-emerald-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Hoàn tất tức thì
                 </span>
               </div>
             </div>
 
-            <p style={{ fontSize: 12, color: "#6B7280", margin: 0, lineHeight: 1.5 }}>
-              Số dư khả dụng của bạn đã được cập nhật. Tiền sẽ về tài khoản ngân hàng trong vòng 1-5 phút tùy theo liên ngân hàng NAPAS 247.
+            <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+              Số dư khả dụng của bạn đã được cập nhật. Tiền sẽ về tài khoản ngân hàng trong vòng 1–5 phút tùy theo liên ngân hàng NAPAS 247.
             </p>
 
             <button
               type="button"
-              onClick={handleFinish}
-              style={{
-                width: "100%",
-                padding: "13px",
-                borderRadius: 8,
-                background: "#001743",
-                color: "#FFFFFF",
-                fontSize: 14.5,
-                fontWeight: 800,
-                border: "none",
-                cursor: "pointer",
-                transition: "background 0.15s ease",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#0A2566")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "#001743")}
+              onClick={onClose}
+              className="w-full py-2.5 px-4 rounded-xl bg-[#001743] hover:bg-[#0A2566] text-white text-xs font-bold transition-colors shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E4011E] active:scale-[0.99]"
             >
               Hoàn tất & Đóng
             </button>
           </div>
         ) : (
           /* ─── WITHDRAW FORM VIEW ─── */
-          <form
-            onSubmit={handleSubmit}
-            style={{
-              padding: "14px 18px",
-              overflowY: "auto",
-              display: "flex",
-              flexDirection: "column",
-              gap: 12,
-            }}
-          >
-            {/* Balance Overview Card */}
-            <div
-              style={{
-                background: "linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)",
-                border: "1px solid #E2E8F0",
-                borderRadius: 10,
-                padding: "10px 14px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
+          <form onSubmit={handleSubmit} className="p-5 overflow-y-auto flex flex-col gap-4">
+            {/* Balance Overview */}
+            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex items-center justify-between">
               <div>
-                <span style={{ fontSize: 11.5, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                  Số Dư Khả Dụng Hiện Có
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                  Số Dư Khả Dụng
                 </span>
-                <div style={{ fontSize: 18, fontWeight: 900, color: "#001743", fontVariantNumeric: "tabular-nums", marginTop: 2 }}>
+                <div className="text-base font-bold text-[#001743] font-mono tabular-nums mt-0.5">
                   {availableBalance.toLocaleString("vi-VN")}{" "}
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "#E4011E" }}>₫</span>
+                  <span className="text-xs font-bold text-[#E4011E]">₫</span>
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: 6 }}>
+              <div className="flex items-center gap-1">
                 {[
                   { label: "25%", val: 25 },
                   { label: "50%", val: 50 },
@@ -444,25 +331,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                     key={p.val}
                     type="button"
                     onClick={() => handleSelectPercentage(p.val)}
-                    style={{
-                      padding: "5px 9px",
-                      fontSize: 11.5,
-                      fontWeight: 700,
-                      borderRadius: 6,
-                      border: "1px solid #CBD5E1",
-                      background: "#FFFFFF",
-                      color: "#001743",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "#001743";
-                      e.currentTarget.style.background = "#F8FAFC";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "#CBD5E1";
-                      e.currentTarget.style.background = "#FFFFFF";
-                    }}
+                    className="px-2 py-1 text-[11px] font-bold rounded-md border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E4011E] active:scale-[0.98]"
                   >
                     {p.label}
                   </button>
@@ -472,76 +341,52 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
 
             {/* Quick Amount Presets */}
             <div>
-              <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#001743", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.03em" }}>
+              <label className="block text-[11px] font-bold text-[#001743] uppercase tracking-wider mb-2">
                 Chọn nhanh số tiền rút
               </label>
-              <div className="withdraw-presets" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
-                {PRESET_AMOUNTS.map((item) => (
-                  <button
-                    key={item.val}
-                    type="button"
-                    onClick={() => handleSelectPreset(item.val)}
-                    style={{
-                      padding: "7px 4px",
-                      fontSize: 12,
-                      fontWeight: amount === item.val ? 800 : 600,
-                      borderRadius: 6,
-                      border: amount === item.val ? "2px solid #001743" : "1px solid #E5E7EB",
-                      background: amount === item.val ? "#EFF6FF" : "#FFFFFF",
-                      color: amount === item.val ? "#001743" : "#4B5563",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                      textAlign: "center",
-                    }}
-                  >
-                    {item.label}
-                  </button>
-                ))}
+              <div className="grid grid-cols-4 gap-1.5">
+                {PRESET_AMOUNTS.map((item) => {
+                  const isSelected = amount === item.val;
+                  return (
+                    <button
+                      key={item.val}
+                      type="button"
+                      onClick={() => handleSelectPreset(item.val)}
+                      className={`py-2 px-1 text-xs rounded-lg border font-mono tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E4011E] active:scale-[0.98] ${
+                        isSelected
+                          ? "bg-[#001743] text-white border-[#001743] font-bold shadow-xs"
+                          : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50 font-medium"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             {/* Input Amount */}
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <label style={{ fontSize: 11.5, fontWeight: 700, color: "#001743", textTransform: "uppercase", letterSpacing: "0.03em" }}>
-                  Số tiền muốn rút (VNĐ) <span style={{ color: "#E4011E" }}>*</span>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="text-[11px] font-bold text-[#001743] uppercase tracking-wider">
+                  Số tiền muốn rút (VNĐ) <span className="text-[#E4011E]">*</span>
                 </label>
-                <span style={{ fontSize: 11.5, color: "#6B7280" }}>Tối thiểu 10.000 ₫</span>
+                <span className="text-[11px] text-slate-400">Tối thiểu 50.000 ₫</span>
               </div>
-              <div style={{ position: "relative" }}>
+              <div className="relative">
                 <input
                   type="text"
                   value={amountInput}
                   onChange={handleAmountChange}
-                  placeholder="Nhập số tiền (tối thiểu 10.000 ₫)"
+                  placeholder="Nhập số tiền (tối thiểu 50.000 ₫)"
                   required
-                  style={{
-                    width: "100%",
-                    padding: "10px 48px 10px 14px",
-                    fontSize: 15,
-                    fontWeight: 800,
-                    fontVariantNumeric: "tabular-nums",
-                    borderRadius: 8,
-                    border: error ? "1.5px solid #EF4444" : "1.5px solid #D1D5DB",
-                    outline: "none",
-                    color: "#001743",
-                    background: "#FFFFFF",
-                    transition: "border-color 0.15s ease",
-                  }}
-                  onFocus={(e) => !error && (e.currentTarget.style.borderColor = "#001743")}
-                  onBlur={(e) => !error && (e.currentTarget.style.borderColor = "#D1D5DB")}
+                  className={`w-full py-2.5 pl-3.5 pr-14 text-sm font-bold font-mono tabular-nums text-[#001743] bg-white border rounded-lg outline-none transition-colors focus-visible:ring-2 ${
+                    error
+                      ? "border-rose-400 focus-visible:ring-rose-500"
+                      : "border-slate-200 focus-visible:border-[#001743] focus-visible:ring-[#001743]"
+                  }`}
                 />
-                <span
-                  style={{
-                    position: "absolute",
-                    right: 14,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    fontSize: 13,
-                    fontWeight: 800,
-                    color: "#64748B",
-                  }}
-                >
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
                   VNĐ
                 </span>
               </div>
@@ -549,95 +394,62 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
 
             {/* Bank Select */}
             <div>
-              <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#001743", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.03em" }}>
-                Ngân hàng nhận tiền <span style={{ color: "#E4011E" }}>*</span>
+              <label className="block text-[11px] font-bold text-[#001743] uppercase tracking-wider mb-1.5">
+                Ngân hàng nhận tiền <span className="text-[#E4011E]">*</span>
               </label>
-              <select
-                value={bankCode}
-                onChange={(e) => setBankCode(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "9px 12px",
-                  fontSize: 13,
-                  borderRadius: 8,
-                  border: "1.5px solid #D1D5DB",
-                  outline: "none",
-                  background: "#FFFFFF",
-                  color: "#001743",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "#001743")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "#D1D5DB")}
-              >
-                {POPULAR_BANKS.map((b) => (
-                  <option key={b.code} value={b.code}>
-                    {b.code} - {b.name}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={bankCode}
+                  onChange={(e) => setBankCode(e.target.value)}
+                  className="w-full py-2.5 pl-3.5 pr-8 text-xs font-semibold text-[#001743] bg-white border border-slate-200 rounded-lg outline-none cursor-pointer focus-visible:border-[#001743] focus-visible:ring-2 focus-visible:ring-[#001743] transition-colors"
+                >
+                  {POPULAR_BANKS.map((b) => (
+                    <option key={b.code} value={b.code}>
+                      {b.code} — {b.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            {/* Account Number & Account Holder Name in 2 columns */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              {/* Account Number */}
+            {/* Account Number & Account Holder Name */}
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#001743", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.03em" }}>
-                  Số tài khoản nhận <span style={{ color: "#E4011E" }}>*</span>
+                <label className="block text-[11px] font-bold text-[#001743] uppercase tracking-wider mb-1.5">
+                  Số tài khoản nhận <span className="text-[#E4011E]">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={accountNumber}
-                  onChange={(e) => setAccountNumber(e.target.value.replace(/[^0-9A-Za-z]/g, ""))}
-                  placeholder="VD: 19036582910012"
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "9px 12px",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    fontVariantNumeric: "tabular-nums",
-                    borderRadius: 8,
-                    border: "1.5px solid #D1D5DB",
-                    outline: "none",
-                    color: "#001743",
-                  }}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = "#001743")}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = "#D1D5DB")}
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={accountNumber}
+                    onChange={(e) => setAccountNumber(e.target.value.replace(/[^0-9A-Za-z]/g, ""))}
+                    placeholder="VD: 19036582910012"
+                    required
+                    className="w-full py-2 pl-3 pr-3 text-xs font-bold font-mono tabular-nums text-[#001743] bg-white border border-slate-200 rounded-lg outline-none focus-visible:border-[#001743] focus-visible:ring-2 focus-visible:ring-[#001743] transition-colors"
+                  />
+                </div>
               </div>
 
-              {/* Account Holder Name */}
               <div>
-                <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#001743", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.03em" }}>
-                  Tên chủ tài khoản <span style={{ color: "#E4011E" }}>*</span>
+                <label className="block text-[11px] font-bold text-[#001743] uppercase tracking-wider mb-1.5">
+                  Tên chủ tài khoản <span className="text-[#E4011E]">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={accountHolderName}
-                  onChange={(e) => setAccountHolderName(e.target.value.toUpperCase())}
-                  placeholder="VD: NGUYEN VAN AN"
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "9px 12px",
-                    fontSize: 13,
-                    fontWeight: 800,
-                    borderRadius: 8,
-                    border: "1.5px solid #D1D5DB",
-                    outline: "none",
-                    color: "#001743",
-                    textTransform: "uppercase",
-                  }}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = "#001743")}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = "#D1D5DB")}
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={accountHolderName}
+                    onChange={(e) => setAccountHolderName(e.target.value.toUpperCase())}
+                    placeholder="VD: NGUYEN VAN AN"
+                    required
+                    className="w-full py-2 pl-3 pr-3 text-xs font-bold uppercase text-[#001743] bg-white border border-slate-200 rounded-lg outline-none focus-visible:border-[#001743] focus-visible:ring-2 focus-visible:ring-[#001743] transition-colors"
+                  />
+                </div>
               </div>
             </div>
 
             {/* Note Field */}
             <div>
-              <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#001743", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.03em" }}>
+              <label className="block text-[11px] font-bold text-[#001743] uppercase tracking-wider mb-1.5">
                 Ghi chú rút tiền (Không bắt buộc)
               </label>
               <input
@@ -645,150 +457,77 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="VD: Rút tiền về tài khoản ngân hàng chính chủ"
-                style={{
-                  width: "100%",
-                  padding: "10px 14px",
-                  fontSize: 13,
-                  borderRadius: 8,
-                  border: "1px solid #D1D5DB",
-                  outline: "none",
-                  color: "#374151",
-                }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "#001743")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "#D1D5DB")}
+                className="w-full py-2 px-3 text-xs text-slate-700 bg-white border border-slate-200 rounded-lg outline-none focus-visible:border-[#001743] focus-visible:ring-2 focus-visible:ring-[#001743] transition-colors"
               />
             </div>
 
-            {/* Summary preview */}
-            {amount >= 10_000 && amount <= availableBalance && (
-              <div
-                style={{
-                  background: "#F8FAFC",
-                  border: "1px solid #E2E8F0",
-                  borderRadius: 8,
-                  padding: "9px 12px",
-                  fontSize: 12.5,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 6,
-                  color: "#475569",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Số tiền trừ số dư ví:</span>
-                  <strong style={{ color: "#001743" }}>{amount.toLocaleString("vi-VN")} ₫</strong>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Phí giao dịch rút tiền:</span>
-                  <span style={{ color: "#16A34A", fontWeight: 700 }}>0 ₫ (Miễn phí)</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px dashed #E2E8F0", paddingTop: 6 }}>
-                  <span style={{ fontWeight: 700, color: "#001743" }}>Thực nhận vào tài khoản:</span>
-                  <strong style={{ color: "#E4011E", fontSize: 14, fontWeight: 900 }}>
+            {/* Settlement Summary Preview */}
+            {amount >= 50_000 && amount <= availableBalance && (
+              <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-xs text-slate-600 flex flex-col gap-1.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Số tiền trừ số dư ví:</span>
+                  <span className="font-mono font-bold text-[#001743]">
                     {amount.toLocaleString("vi-VN")} ₫
-                  </strong>
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Phí giao dịch rút tiền:</span>
+                  <span className="font-semibold text-emerald-600">0 ₫ (Miễn phí)</span>
+                </div>
+                <div className="flex justify-between items-center border-t border-dashed border-slate-200 pt-1.5">
+                  <span className="font-bold text-[#001743]">Thực nhận vào tài khoản:</span>
+                  <span className="font-mono font-bold text-sm text-[#E4011E] tabular-nums">
+                    {amount.toLocaleString("vi-VN")} ₫
+                  </span>
                 </div>
               </div>
             )}
 
             {/* Error Message */}
             {error && (
-              <div
-                style={{
-                  background: "#FEF2F2",
-                  border: "1px solid #FECACA",
-                  borderRadius: 8,
-                  padding: "10px 14px",
-                  fontSize: 12.5,
-                  color: "#DC2626",
-                  fontWeight: 600,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
-                <span>⚠</span>
+              <div className="bg-rose-50 border border-rose-200/80 rounded-xl px-3 py-2 text-xs text-rose-700 font-medium flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
             {/* Actions */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 10, marginTop: 4 }}>
+            <div className="grid grid-cols-[1fr_1.6fr] gap-2.5 pt-1">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                style={{
-                  padding: "10px",
-                  borderRadius: 8,
-                  border: "1.5px solid #D1D5DB",
-                  background: "#FFFFFF",
-                  color: "#374151",
-                  fontSize: 13.5,
-                  fontWeight: 700,
-                  cursor: loading ? "not-allowed" : "pointer",
-                }}
+                className="py-2.5 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E4011E] active:scale-[0.99]"
               >
                 Hủy bỏ
               </button>
               <button
                 type="submit"
-                disabled={loading || amount < 10_000 || amount > availableBalance || !accountNumber || !accountHolderName}
-                style={{
-                  padding: "10px",
-                  borderRadius: 8,
-                  border: "none",
-                  background:
-                    loading || amount < 10_000 || amount > availableBalance || !accountNumber || !accountHolderName
-                      ? "#9CA3AF"
-                      : "linear-gradient(135deg, #001743 0%, #0A2566 100%)",
-                  color: "#FFFFFF",
-                  fontSize: 13,
-                  fontWeight: 800,
-                  cursor:
-                    loading || amount < 10_000 || amount > availableBalance || !accountNumber || !accountHolderName
-                      ? "not-allowed"
-                      : "pointer",
-                  boxShadow:
-                    loading || amount < 10_000 || amount > availableBalance || !accountNumber || !accountHolderName
-                      ? "none"
-                      : "0 4px 14px rgba(0, 23, 67, 0.25)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                }}
+                disabled={
+                  loading ||
+                  amount < 50_000 ||
+                  amount > availableBalance ||
+                  !accountNumber.trim() ||
+                  !accountHolderName.trim()
+                }
+                className="py-2.5 px-4 rounded-xl bg-[#001743] hover:bg-[#0A2566] disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold transition-colors shadow-xs flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E4011E] active:scale-[0.99]"
               >
                 {loading ? (
                   <>
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      style={{ animation: "spin 1s linear infinite" }}
-                    >
-                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                    </svg>
-                    Đang gửi lệnh rút...
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Đang gửi lệnh rút…
                   </>
                 ) : (
-                  `Xác nhận rút tiền →`
+                  <>
+                    <span>Xác nhận rút tiền</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </>
                 )}
               </button>
             </div>
           </form>
         )}
       </div>
-
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 };
