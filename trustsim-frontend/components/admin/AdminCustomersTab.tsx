@@ -1,3 +1,4 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
@@ -251,7 +252,7 @@ export function AdminCustomersTab() {
   return (
     <div className="admin-tab admin-tab-customers space-y-4">
       {/* ── 1. Header Workspace ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white border border-[#e4e7ec] rounded-xl p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-base font-bold text-[#001743]">Quản Lý Khách Hàng</h1>
@@ -297,14 +298,14 @@ export function AdminCustomersTab() {
               }
             }}
           />
-          <div className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-right">
+          <div className="px-3 py-1.5 bg-slate-50 border border-[#e4e7ec] rounded-lg text-right">
             <span className="text-[10px] block text-slate-400 font-mono uppercase">Tổng số dư trang này</span>
             <span className="text-xs font-bold text-[#001743] font-mono tabular-nums">{formatVND(totalBalance)}</span>
           </div>
           <button
             onClick={fetchCustomers}
             disabled={loading}
-            className="p-2 text-[#4B5563] hover:text-[#001743] hover:bg-slate-100 border border-[#D1D5DB] rounded-[6px] transition-colors bg-white disabled:opacity-50"
+            className="p-2 text-[#4B5563] hover:text-[#001743] hover:bg-slate-50 border border-[#e4e7ec] rounded-lg transition-colors bg-white disabled:opacity-50"
             title="Tải lại danh sách"
           >
             <RefreshCw size={15} className={loading ? "animate-spin" : ""} strokeWidth={1.5} />
@@ -313,7 +314,7 @@ export function AdminCustomersTab() {
       </div>
 
       {/* ── 2. Filter Toolbar Card ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+      <div className="bg-white border border-[#e4e7ec] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
         <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
           {/* Search box */}
           <div className="relative w-72">
@@ -322,8 +323,8 @@ export function AdminCustomersTab() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm theo tên khách, tên đăng nhập, email, số điện thoại..."
-              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
+              placeholder="Tìm theo tên khách, username, email, SĐT…"
+              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none transition-colors"
             />
             {search && (
               <button
@@ -342,7 +343,7 @@ export function AdminCustomersTab() {
               setSelectedKyc(e.target.value);
               setPageIndex(1);
             }}
-            className="text-xs py-1.5 px-2.5 bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none text-[#001743]"
+            className="text-xs py-1.5 px-2.5 bg-white border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none text-[#001743] transition-colors"
           >
             <option value="">Tất cả trạng thái eKYC</option>
             <option value="2">Đã xác thực</option>
@@ -358,7 +359,7 @@ export function AdminCustomersTab() {
               setSelectedStatus(e.target.value);
               setPageIndex(1);
             }}
-            className="text-xs py-1.5 px-2.5 bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none text-[#001743]"
+            className="text-xs py-1.5 px-2.5 bg-white border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none text-[#001743] transition-colors"
           >
             <option value="">Tất cả trạng thái tài khoản</option>
             <option value="active">Đang hoạt động</option>
@@ -383,11 +384,11 @@ export function AdminCustomersTab() {
       </div>
 
       {/* ── 3. Table Card (CRUD Workspace 60-30-10 layout) ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] overflow-hidden shadow-xs">
+      <div className="bg-white border border-[#e4e7ec] rounded-xl overflow-hidden shadow-2xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
+              <tr className="border-b border-[#e4e7ec] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
                 <th className="py-3 px-4"><AdminSortButton label="Khách hàng" active={sortKey === "name"} direction={sortDirection} onClick={() => changeSort("name")} /></th>
                 <th className="py-3 px-4">Số điện thoại / CCCD</th>
                 <th className="py-3 px-4">Định danh eKYC</th>
@@ -591,7 +592,7 @@ export function AdminCustomersTab() {
 
         {/* Chân bảng: Phân trang chuẩn Pagination */}
         {!loading && totalCount > 0 && (
-          <div className="border-t border-[#E2E8F0]">
+          <div className="border-t border-[#e4e7ec]">
             <Pagination
               pageIndex={pageIndex}
               pageSize={pageSize}
@@ -744,8 +745,8 @@ export function AdminCustomersTab() {
 
       {/* ── 5. Modal xác nhận khóa / mở khóa tài khoản ── */}
       {statusConfirm && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 animate-fade-in">
-          <div className="bg-white border border-[#E2E8F0] rounded-[8px] shadow-xl p-5 w-full max-w-sm animate-fade-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs px-4 animate-fade-in">
+          <div className="bg-white border border-[#e4e7ec] rounded-xl shadow-xl p-5 w-full max-w-sm animate-fade-up">
             <div className="flex items-start gap-3 mb-3">
               <div
                 className={`p-2 rounded-lg shrink-0 ${
@@ -778,7 +779,7 @@ export function AdminCustomersTab() {
                 type="button"
                 onClick={() => setStatusConfirm(null)}
                 disabled={statusLoading}
-                className="px-3.5 py-1.5 border border-[#D1D5DB] text-xs font-semibold text-[#4B5563] rounded-[6px] hover:bg-slate-50 transition-colors"
+                className="px-3.5 py-1.5 border border-[#e4e7ec] text-xs font-semibold text-[#4B5563] rounded-lg hover:bg-slate-50 transition-colors"
               >
                 Hủy bỏ
               </button>
@@ -786,10 +787,10 @@ export function AdminCustomersTab() {
                 type="button"
                 onClick={handleToggleStatusConfirm}
                 disabled={statusLoading}
-                className={`flex items-center gap-1.5 px-4 py-1.5 text-white text-xs font-bold rounded-[6px] transition-colors disabled:opacity-50 ${
+                className={`flex items-center gap-1.5 px-4 py-1.5 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 ${
                   statusConfirm.targetStatus
                     ? "bg-emerald-600 hover:bg-emerald-700"
-                    : "bg-rose-600 hover:bg-rose-700"
+                    : "bg-[#E4011E] hover:bg-[#c8001a]"
                 }`}
               >
                 {statusLoading ? (
@@ -808,7 +809,7 @@ export function AdminCustomersTab() {
 
       {/* ── 6. Toast thông báo nổi ── */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#001743] text-white px-4 py-3 rounded-[8px] shadow-lg border border-slate-700 text-xs font-semibold flex items-center gap-2 animate-fade-up">
+        <div className="fixed bottom-6 right-6 z-50 bg-[#001743] text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 text-xs font-semibold flex items-center gap-2 animate-fade-up">
           <CheckCircle2 size={16} strokeWidth={1.5} className="text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>

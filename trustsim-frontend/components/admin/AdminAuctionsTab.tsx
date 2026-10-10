@@ -1,3 +1,4 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 "use client";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
@@ -371,11 +372,8 @@ export function AdminAuctionsTab() {
     switch (status) {
       case AuctionStatusEnum.ACTIVE:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[4px] text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-            </span>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
             <span>Đang live</span>
           </span>
         );
@@ -420,28 +418,28 @@ export function AdminAuctionsTab() {
       )}
 
       {/* ── 1. Header Card (Matching Kho SIM & CRUD Workspace) ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white border border-[#e4e7ec] rounded-xl p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-base font-bold text-[#001743]">Quản Lý Phiên Đấu Giá SIM</h1>
-          <p className="text-xs text-[#6B7280] mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5">
             Giám sát vận hành các phiên đấu giá, điều phối lịch mở thưởng và kích hoạt sớm.
           </p>
         </div>
         <button
           onClick={() => loadAuctions()}
           disabled={loading}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-[#D1D5DB] hover:border-[#001743] hover:text-[#001743] text-slate-700 text-xs font-semibold rounded-[6px] transition-colors shadow-xs shrink-0 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-[#e4e7ec] hover:border-[#001743] hover:text-[#001743] text-slate-700 text-xs font-semibold rounded-lg transition-colors shadow-2xs shrink-0 disabled:opacity-50 cursor-pointer"
         >
           <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           <span>Làm mới</span>
         </button>
       </div>
 
-      {/* ── 2. Contextual KPI Strip (Tối giản theo CRUD_WORKSPACE.md) ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3 shadow-xs">
+      {/* ── 2. Contextual KPI Strip (Tối giản theo Workbench) ── */}
+      <div className="bg-white border border-[#e4e7ec] rounded-xl p-3 shadow-2xs">
         <div className="flex flex-wrap items-center gap-6 text-xs divide-x divide-slate-100">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span className="text-slate-500 font-medium">Đang live:</span>
             <span className="font-extrabold text-[#001743] text-sm tabular-nums">{kpi.active}</span>
           </div>
@@ -468,12 +466,12 @@ export function AdminAuctionsTab() {
         </div>
       </div>
 
-      {/* ── 3. Filter Toolbar Card (Matching Kho SIM) ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+      {/* ── 3. Filter Toolbar Card ── */}
+      <div className="bg-white border border-[#e4e7ec] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
         <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
           {/* Ô tìm kiếm */}
           <div className="relative w-64">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={search}
@@ -481,8 +479,8 @@ export function AdminAuctionsTab() {
                 setSearch(e.target.value);
                 setPageIndex(1); // Reset trang theo chuẩn
               }}
-              placeholder="Tìm theo mã phiên, số SIM..."
-              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
+              placeholder="Tìm theo mã phiên, số SIM…"
+              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none"
             />
             {search && (
               <button

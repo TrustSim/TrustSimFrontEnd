@@ -1,3 +1,4 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
@@ -455,7 +456,7 @@ export function AdminDocumentsTab() {
       )}
 
       {/* ─── 1. Header Card with Direct Ingest & Upload Action Buttons ─── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white border border-[#e4e7ec] rounded-xl p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-base font-bold text-[#001743]">
@@ -485,7 +486,7 @@ export function AdminDocumentsTab() {
             onClick={() => fetchDocuments(true)}
             disabled={refreshing || loading}
             title="Làm mới dữ liệu"
-            className="p-2 text-[#4B5563] hover:text-[#001743] hover:bg-slate-100 border border-[#D1D5DB] rounded-[6px] transition-colors bg-white disabled:opacity-50"
+            className="p-2 text-[#4B5563] hover:text-[#001743] hover:bg-slate-50 border border-[#e4e7ec] rounded-lg transition-colors bg-white disabled:opacity-50"
           >
             <RefreshCw size={14} className={refreshing ? "animate-spin text-[#001743]" : ""} />
           </button>
@@ -494,7 +495,7 @@ export function AdminDocumentsTab() {
           <button
             type="button"
             onClick={() => handleOpenAddDocument("ingest")}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-lg transition-colors shadow-2xs"
           >
             <Plus size={15} />
             <span>Thêm tài liệu</span>
@@ -505,7 +506,7 @@ export function AdminDocumentsTab() {
       {/* ─── 2. KPI Overview Cards ─── */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
         {/* Total Docs */}
-        <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3.5 shadow-xs flex items-center gap-3.5">
+        <div className="bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
             <FileText size={18} strokeWidth={1.75} />
           </div>
@@ -520,7 +521,7 @@ export function AdminDocumentsTab() {
         </div>
 
         {/* External Links */}
-        <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3.5 shadow-xs flex items-center gap-3.5">
+        <div className="bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
             <Globe size={18} strokeWidth={1.75} />
           </div>
@@ -535,7 +536,7 @@ export function AdminDocumentsTab() {
         </div>
 
         {/* Direct Uploads / Internal */}
-        <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3.5 shadow-xs flex items-center gap-3.5">
+        <div className="bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center shrink-0">
             <Cpu size={18} strokeWidth={1.75} />
           </div>
@@ -550,7 +551,7 @@ export function AdminDocumentsTab() {
         </div>
 
         {/* Latest Update */}
-        <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3.5 shadow-xs flex items-center gap-3.5">
+        <div className="bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
             <Calendar size={18} strokeWidth={1.75} />
           </div>
@@ -572,15 +573,15 @@ export function AdminDocumentsTab() {
       </div>
 
       {/* ─── 3. Search & Filters Bar ─── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+      <div className="bg-white border border-[#e4e7ec] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
         <div className="relative flex-1 max-w-md">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm kiếm theo tên tài liệu, URL hoặc ID..."
-            className="w-full text-xs pl-9 pr-8 py-1.5 bg-white border border-[#D1D5DB] rounded-[6px] focus:outline-none focus:border-[#001743] transition-colors"
+            placeholder="Tìm kiếm theo tên tài liệu, URL hoặc ID…"
+            className="w-full text-xs pl-9 pr-8 py-1.5 bg-white border border-[#e4e7ec] rounded-lg focus:outline-none focus:border-[#001743] transition-colors"
           />
           {search && (
             <button
@@ -606,7 +607,7 @@ export function AdminDocumentsTab() {
       </div>
 
       {/* ─── 4. Table / Content View ─── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] shadow-xs overflow-hidden">
+      <div className="bg-white border border-[#e4e7ec] rounded-xl shadow-2xs overflow-hidden">
         {loading ? (
           <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-3">
             <Loader2 size={28} className="animate-spin text-[#001743]" />
@@ -821,7 +822,7 @@ export function AdminDocumentsTab() {
                     setActiveTab("ingest");
                     setFormError(null);
                   }}
-                  className={`py-2 rounded-md transition-all flex items-center justify-center gap-1.5 ${activeTab === "ingest"
+                  className={`py-2 rounded-md transition-colors duration-150 flex items-center justify-center gap-1.5 ${activeTab === "ingest"
                       ? "bg-white text-[#001743] shadow-xs"
                       : "text-slate-600 hover:text-slate-900"
                     }`}
@@ -835,7 +836,7 @@ export function AdminDocumentsTab() {
                     setActiveTab("upload");
                     setFormError(null);
                   }}
-                  className={`py-2 rounded-md transition-all flex items-center justify-center gap-1.5 ${activeTab === "upload"
+                  className={`py-2 rounded-md transition-colors duration-150 flex items-center justify-center gap-1.5 ${activeTab === "upload"
                       ? "bg-white text-[#001743] shadow-xs"
                       : "text-slate-600 hover:text-slate-900"
                     }`}
@@ -849,7 +850,7 @@ export function AdminDocumentsTab() {
                     setActiveTab("create");
                     setFormError(null);
                   }}
-                  className={`py-2 rounded-md transition-all flex items-center justify-center gap-1.5 ${activeTab === "create"
+                  className={`py-2 rounded-md transition-colors duration-150 flex items-center justify-center gap-1.5 ${activeTab === "create"
                       ? "bg-white text-[#001743] shadow-xs"
                       : "text-slate-600 hover:text-slate-900"
                     }`}
@@ -878,7 +879,7 @@ export function AdminDocumentsTab() {
                   onDragLeave={() => setDragOver(false)}
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
-                  className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${dragOver
+                  className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-[border-color,background-color] duration-150 ${dragOver
                       ? "border-[#001743] bg-blue-50/50"
                       : selectedFile
                         ? "border-emerald-300 bg-emerald-50/30"
@@ -1257,7 +1258,7 @@ export function AdminDocumentsTab() {
                 type="button"
                 onClick={() => setDeleteModalDoc(null)}
                 disabled={deleting}
-                className="px-3.5 py-1.5 border border-slate-200 text-xs font-semibold text-slate-600 rounded-lg hover:bg-slate-50 transition-colors"
+                className="px-3.5 py-1.5 border border-[#e4e7ec] text-xs font-semibold text-slate-600 rounded-lg hover:bg-slate-50 transition-colors"
               >
                 Hủy bỏ
               </button>
@@ -1265,12 +1266,12 @@ export function AdminDocumentsTab() {
                 type="button"
                 onClick={handleDeleteConfirm}
                 disabled={deleting}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition-colors shadow-xs disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#E4011E] hover:bg-[#c8001a] text-white text-xs font-bold rounded-lg transition-colors shadow-2xs disabled:opacity-50"
               >
                 {deleting ? (
                   <>
                     <Loader2 size={12} className="animate-spin" />
-                    <span>Đang xóa...</span>
+                    <span>Đang xóa…</span>
                   </>
                 ) : (
                   <span>Xác nhận xóa</span>

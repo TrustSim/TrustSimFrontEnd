@@ -1,3 +1,4 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 "use client";
 import React, { useState } from "react";
 import {
@@ -65,14 +66,14 @@ export default function AdminSettingsTab() {
     <div className="space-y-4">
       {/* Toast */}
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-[80] bg-[#001743] text-white text-xs px-4 py-2.5 rounded-[6px] shadow-lg border border-slate-700 animate-fade-in flex items-center gap-2">
+        <div className="fixed bottom-5 right-5 z-50 bg-[#001743] text-white text-xs px-4 py-2.5 rounded-xl shadow-lg border border-slate-700 animate-fade-in flex items-center gap-2">
           <CheckCircle2 size={14} className="text-emerald-400" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* ── 1. Header Card ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white border border-[#e4e7ec] rounded-xl p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-base font-bold text-[#001743]">Cấu Hình &amp; Tham Số Hệ Thống</h1>
@@ -89,7 +90,7 @@ export default function AdminSettingsTab() {
       {/* ── 2. Two-Column Layout (Navigation + Form) ── */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
         {/* Left Nav Menu */}
-        <div className="md:col-span-4 lg:col-span-3 bg-white border border-[#E2E8F0] rounded-[8px] p-2 shadow-xs space-y-1">
+        <div className="md:col-span-4 lg:col-span-3 bg-white border border-[#e4e7ec] rounded-xl p-2 shadow-2xs space-y-1">
           {SECTIONS.map((sec) => {
             const Icon = sec.icon;
             const isActive = activeSection === sec.id;
@@ -99,9 +100,9 @@ export default function AdminSettingsTab() {
                 key={sec.id}
                 type="button"
                 onClick={() => setActiveSection(sec.id)}
-                className={`w-full text-left px-3 py-2.5 rounded-[6px] text-xs transition-all flex items-start gap-2.5 ${
+                className={`w-full text-left px-3 py-2.5 rounded-lg text-xs transition-colors duration-150 flex items-start gap-2.5 ${
                   isActive
-                    ? "bg-[#001743] text-white font-bold shadow-xs"
+                    ? "bg-[#001743] text-white font-bold shadow-2xs"
                     : "text-slate-700 hover:bg-slate-50 font-medium"
                 }`}
               >
@@ -121,8 +122,8 @@ export default function AdminSettingsTab() {
         <div className="md:col-span-8 lg:col-span-9">
           {/* Section: Finance */}
           {activeSection === "finance" && (
-            <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-5 shadow-xs space-y-5">
-              <div className="border-b border-[#E2E8F0] pb-3">
+            <div className="bg-white border border-[#e4e7ec] rounded-xl p-5 shadow-2xs space-y-5">
+              <div className="border-b border-[#e4e7ec] pb-3">
                 <h2 className="text-sm font-bold text-[#001743]">Cấu hình Tài chính &amp; Ký Quỹ (Escrow)</h2>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Kiểm soát dòng tiền giao dịch giữa bên mua và bên bán, các loại phí dịch vụ sàn.
@@ -143,7 +144,7 @@ export default function AdminSettingsTab() {
                     onChange={(e) =>
                       setFinanceConfig({ ...financeConfig, commissionRate: parseFloat(e.target.value) || 0 })
                     }
-                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-mono font-bold"
+                    className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-mono font-bold transition-colors"
                   />
                   <span className="text-[10px] text-slate-400 mt-1 block">Mặc định 3.0% trừ khi giải ngân bên bán</span>
                 </div>
@@ -159,7 +160,7 @@ export default function AdminSettingsTab() {
                     onChange={(e) =>
                       setFinanceConfig({ ...financeConfig, escrowHoldingHours: parseInt(e.target.value) || 0 })
                     }
-                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-mono font-bold"
+                    className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-mono font-bold transition-colors"
                   />
                   <span className="text-[10px] text-slate-400 mt-1 block">Tự động kích hoạt khiếu nại nếu quá 48h</span>
                 </div>
@@ -176,7 +177,7 @@ export default function AdminSettingsTab() {
                     onChange={(e) =>
                       setFinanceConfig({ ...financeConfig, minDepositRate: parseInt(e.target.value) || 0 })
                     }
-                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-mono font-bold"
+                    className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-mono font-bold transition-colors"
                   />
                   <span className="text-[10px] text-slate-400 mt-1 block">Số tiền tạm khóa trên giá khởi điểm</span>
                 </div>
@@ -192,17 +193,17 @@ export default function AdminSettingsTab() {
                     onChange={(e) =>
                       setFinanceConfig({ ...financeConfig, maxWithdrawDaily: parseInt(e.target.value) || 0 })
                     }
-                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-mono font-bold"
+                    className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-mono font-bold transition-colors"
                   />
                   <span className="text-[10px] text-slate-400 mt-1 block">500.000.000 đ mỗi ngày / tài khoản</span>
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-[#E2E8F0] flex justify-end">
+              <div className="pt-3 border-t border-[#e4e7ec] flex justify-end">
                 <button
                   type="button"
                   onClick={() => handleSaveSection("Tài chính & Phí")}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors shadow-xs"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-lg transition-colors shadow-2xs"
                 >
                   <Save size={14} />
                   <span>Lưu cấu hình tài chính</span>
@@ -213,8 +214,8 @@ export default function AdminSettingsTab() {
 
           {/* Section: Auction */}
           {activeSection === "auction" && (
-            <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-5 shadow-xs space-y-5">
-              <div className="border-b border-[#E2E8F0] pb-3">
+            <div className="bg-white border border-[#e4e7ec] rounded-xl p-5 shadow-2xs space-y-5">
+              <div className="border-b border-[#e4e7ec] pb-3">
                 <h2 className="text-sm font-bold text-[#001743]">Quy Chuẩn &amp; Cơ Chế Phòng Đấu Giá</h2>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Quy tắc chống bắn tỉa (Anti-Snipe), gia hạn tự động và bước giá chuẩn.
@@ -234,7 +235,7 @@ export default function AdminSettingsTab() {
                     onChange={(e) =>
                       setAuctionConfig({ ...auctionConfig, autoExtendMinutes: parseInt(e.target.value) || 0 })
                     }
-                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-mono font-bold"
+                    className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-mono font-bold transition-colors"
                   />
                   <span className="text-[10px] text-slate-400 mt-1 block">Cộng thêm thời gian nếu có lượt trả giá dưới 3 phút</span>
                 </div>
@@ -251,7 +252,7 @@ export default function AdminSettingsTab() {
                     onChange={(e) =>
                       setAuctionConfig({ ...auctionConfig, maxExtensions: parseInt(e.target.value) || 0 })
                     }
-                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-mono font-bold"
+                    className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-mono font-bold transition-colors"
                   />
                   <span className="text-[10px] text-slate-400 mt-1 block">Giới hạn tránh phiên đấu giá kéo dài vô tận</span>
                 </div>
@@ -270,7 +271,7 @@ export default function AdminSettingsTab() {
                         defaultAuctionDurationHours: parseInt(e.target.value) || 0,
                       })
                     }
-                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-mono font-bold"
+                    className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-mono font-bold transition-colors"
                   />
                 </div>
 
@@ -285,16 +286,16 @@ export default function AdminSettingsTab() {
                     onChange={(e) =>
                       setAuctionConfig({ ...auctionConfig, minBidStepVnd: parseInt(e.target.value) || 0 })
                     }
-                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-mono font-bold"
+                    className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-mono font-bold transition-colors"
                   />
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-[#E2E8F0] flex justify-end">
+              <div className="pt-3 border-t border-[#e4e7ec] flex justify-end">
                 <button
                   type="button"
                   onClick={() => handleSaveSection("Đấu giá & Quy chuẩn")}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors shadow-xs"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-lg transition-colors shadow-2xs"
                 >
                   <Save size={14} />
                   <span>Lưu cấu hình đấu giá</span>
@@ -305,8 +306,8 @@ export default function AdminSettingsTab() {
 
           {/* Section: Notification */}
           {activeSection === "notification" && (
-            <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-5 shadow-xs space-y-5">
-              <div className="border-b border-[#E2E8F0] pb-3">
+            <div className="bg-white border border-[#e4e7ec] rounded-xl p-5 shadow-2xs space-y-5">
+              <div className="border-b border-[#e4e7ec] pb-3">
                 <h2 className="text-sm font-bold text-[#001743]">Tích Hợp Cổng Dịch Vụ &amp; Thông Báo</h2>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Trạng thái kết nối dịch vụ SMS Gateway (SpeedSMS) và Cổng thanh toán VietQR SePay.
@@ -314,7 +315,7 @@ export default function AdminSettingsTab() {
               </div>
 
               <div className="space-y-3">
-                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-[6px] flex items-center justify-between">
+                <div className="p-3.5 bg-slate-50 border border-[#e4e7ec] rounded-lg flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
                       SMS
@@ -329,7 +330,7 @@ export default function AdminSettingsTab() {
                   </span>
                 </div>
 
-                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-[6px] flex items-center justify-between">
+                <div className="p-3.5 bg-slate-50 border border-[#e4e7ec] rounded-lg flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
                       QR
@@ -344,7 +345,7 @@ export default function AdminSettingsTab() {
                   </span>
                 </div>
 
-                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-[6px] flex items-center justify-between">
+                <div className="p-3.5 bg-slate-50 border border-[#e4e7ec] rounded-lg flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xs">
                       PKI
@@ -364,8 +365,8 @@ export default function AdminSettingsTab() {
 
           {/* Section: Security */}
           {activeSection === "security" && (
-            <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-5 shadow-xs space-y-5">
-              <div className="border-b border-[#E2E8F0] pb-3">
+            <div className="bg-white border border-[#e4e7ec] rounded-xl p-5 shadow-2xs space-y-5">
+              <div className="border-b border-[#e4e7ec] pb-3">
                 <h2 className="text-sm font-bold text-[#001743]">Bảo Mật &amp; Phiên Đăng Nhập</h2>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Ràng buộc thời hạn token xác thực và quy tắc bảo vệ phiên làm việc.
@@ -385,7 +386,7 @@ export default function AdminSettingsTab() {
                     onChange={(e) =>
                       setSecurityConfig({ ...securityConfig, otpExpirySeconds: parseInt(e.target.value) || 0 })
                     }
-                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-mono font-bold"
+                    className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-mono font-bold transition-colors"
                   />
                   <span className="text-[10px] text-slate-400 mt-1 block">Mặc định 120 giây (2 phút)</span>
                 </div>
@@ -402,7 +403,7 @@ export default function AdminSettingsTab() {
                     onChange={(e) =>
                       setSecurityConfig({ ...securityConfig, maxOtpRetries: parseInt(e.target.value) || 0 })
                     }
-                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-mono font-bold"
+                    className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-mono font-bold transition-colors"
                   />
                   <span className="text-[10px] text-slate-400 mt-1 block">Khóa tạm thời 15 phút nếu nhập sai quá giới hạn</span>
                 </div>
@@ -421,7 +422,7 @@ export default function AdminSettingsTab() {
                         sessionTimeoutMinutes: parseInt(e.target.value) || 0,
                       })
                     }
-                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-mono font-bold"
+                    className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-mono font-bold transition-colors"
                   />
                 </div>
 
@@ -439,16 +440,16 @@ export default function AdminSettingsTab() {
                         requireEkycForBidAbove: parseInt(e.target.value) || 0,
                       })
                     }
-                    className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-mono font-bold"
+                    className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-mono font-bold transition-colors"
                   />
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-[#E2E8F0] flex justify-end">
+              <div className="pt-3 border-t border-[#e4e7ec] flex justify-end">
                 <button
                   type="button"
                   onClick={() => handleSaveSection("Bảo mật & Phiên")}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors shadow-xs"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-lg transition-colors shadow-2xs"
                 >
                   <Save size={14} />
                   <span>Lưu cấu hình bảo mật</span>

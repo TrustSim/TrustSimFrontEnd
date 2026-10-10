@@ -1,3 +1,4 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 "use client";
 import React, { useState, useCallback, useEffect } from "react";
 import {
@@ -103,7 +104,7 @@ function KpiCard({
     <div
       onClick={onClick}
       className={`bg-white border border-slate-200/80 rounded-xl p-4 shadow-2xs flex items-center justify-between ${
-        onClick ? "cursor-pointer hover:border-slate-300 hover:shadow-xs transition-all active:scale-[0.99]" : ""
+        onClick ? "cursor-pointer hover:border-slate-300 hover:shadow-xs transition-[border-color,box-shadow] duration-150" : ""
       }`}
     >
       <div>
@@ -969,9 +970,9 @@ export default function AdminLedgerTab() {
           <button
             onClick={() => fetchJournals()}
             disabled={journalLoading}
-            className="px-4 py-1.5 text-xs font-bold bg-[#001743] text-white rounded-[6px] hover:bg-[#00266B] transition-colors disabled:opacity-50"
+            className="px-4 py-1.5 text-xs font-bold bg-[#001743] text-white rounded-lg hover:bg-[#00266B] transition-colors disabled:opacity-50 cursor-pointer"
           >
-            {journalLoading ? "Đang tải..." : "Áp dụng"}
+            {journalLoading ? "Đang tải…" : "Áp dụng"}
           </button>
         </div>
       </div>
@@ -982,7 +983,7 @@ export default function AdminLedgerTab() {
           <div>
             <h2 className="text-sm font-bold text-[#001743]">Danh sách phiếu kế toán</h2>
             <p className="text-[11px] text-slate-400 mt-0.5">
-              {journals ? `${journals.totalCount.toLocaleString()} phiếu thu chi` : "Đang tải..."}
+              {journals ? `${journals.totalCount.toLocaleString()} phiếu thu chi` : "Đang tải…"}
             </p>
           </div>
           <button
@@ -1018,7 +1019,7 @@ export default function AdminLedgerTab() {
                 <tr>
                   <td colSpan={6} className="py-14 text-center">
                     <Loader2 size={22} className="animate-spin mx-auto text-slate-300 mb-2" />
-                    <p className="text-xs text-slate-400">Đang tải dữ liệu sổ cái...</p>
+                    <p className="text-xs text-slate-400">Đang tải dữ liệu sổ cái…</p>
                   </td>
                 </tr>
               ) : !journals || journals.items.length === 0 ? (
@@ -1063,7 +1064,7 @@ export default function AdminLedgerTab() {
                       <button
                         onClick={() => handleViewDetail(j.id)}
                         disabled={detailLoading}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#001743] hover:bg-[#001743] hover:text-white border border-[#D1D5DB] rounded-[6px] transition-all disabled:opacity-40"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#001743] hover:bg-[#001743] hover:text-white border border-[#e4e7ec] rounded-lg transition-colors disabled:opacity-40 cursor-pointer"
                       >
                         <Eye size={12} />
                         Xem

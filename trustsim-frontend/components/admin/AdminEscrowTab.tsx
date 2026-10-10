@@ -1,3 +1,4 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 "use client";
 import React, { useState, useMemo } from "react";
 import {
@@ -309,14 +310,14 @@ export default function AdminEscrowTab() {
     <div className="admin-tab admin-tab-escrow space-y-4">
       {/* Toast */}
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-[80] bg-[#001743] text-white text-xs px-4 py-2.5 rounded-[6px] shadow-lg border border-slate-700 animate-fade-in flex items-center gap-2">
+        <div className="fixed bottom-5 right-5 z-50 bg-[#001743] text-white text-xs px-4 py-2.5 rounded-lg shadow-lg border border-slate-700 animate-fade-in flex items-center gap-2">
           <CheckCircle2 size={14} className="text-emerald-400" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* ── 1. Header Card (Matching CRUD Workspace & Admin Tabs Guidelines) ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* ── 1. Header Card (Matching Workbench Guidelines) ── */}
+      <div className="bg-white border border-[#e4e7ec] rounded-xl p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-base font-bold text-[#001743]">Quản Lý Giao Dịch Ký Quỹ</h1>
@@ -324,7 +325,7 @@ export default function AdminEscrowTab() {
               {transactions.length} giao dịch
             </span>
           </div>
-          <p className="text-xs text-[#6B7280] mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5">
             Giám sát tiền ký quỹ của người mua, tiền cọc người bán và quy trình giải ngân an toàn theo từng bước.
           </p>
         </div>
@@ -340,9 +341,9 @@ export default function AdminEscrowTab() {
         </div>
       </div>
 
-      {/* ── 2. KPI Metrics Cards (Enclosed in Clean Cards) ── */}
+      {/* ── 2. KPI Metrics Cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3.5 shadow-xs">
+        <div className="bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs">
           <span className="text-[11px] font-medium text-slate-500 block">Đang giữ ký quỹ</span>
           <div className="text-base font-bold text-amber-600 font-mono tabular-nums mt-0.5">
             {formatVND(heldAmount)}
@@ -350,7 +351,7 @@ export default function AdminEscrowTab() {
           <span className="text-[10px] text-slate-400 mt-0.5 block">{heldTxs.length} giao dịch</span>
         </div>
 
-        <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3.5 shadow-xs">
+        <div className="bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs">
           <span className="text-[11px] font-medium text-slate-500 block">Đang tranh chấp</span>
           <div className="text-base font-bold text-[#E4011E] font-mono tabular-nums mt-0.5">
             {formatVND(disputedAmount)}
@@ -358,7 +359,7 @@ export default function AdminEscrowTab() {
           <span className="text-[10px] text-slate-400 mt-0.5 block">{disputedTxs.length} vụ khiếu nại</span>
         </div>
 
-        <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3.5 shadow-xs">
+        <div className="bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs">
           <span className="text-[11px] font-medium text-slate-500 block">Đã giải ngân</span>
           <div className="text-base font-bold text-emerald-600 font-mono tabular-nums mt-0.5">
             {formatVND(releasedAmount)}
@@ -366,7 +367,7 @@ export default function AdminEscrowTab() {
           <span className="text-[10px] text-slate-400 mt-0.5 block">{releasedTxs.length} giao dịch</span>
         </div>
 
-        <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3.5 shadow-xs">
+        <div className="bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs">
           <span className="text-[11px] font-medium text-slate-500 block">Tổng giá trị quản lý</span>
           <div className="text-base font-bold text-[#001743] font-mono tabular-nums mt-0.5">
             {formatVND(totalAmount)}
@@ -376,7 +377,7 @@ export default function AdminEscrowTab() {
       </div>
 
       {/* ── 3. Filter Toolbar Card ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+      <div className="bg-white border border-[#e4e7ec] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
         <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
           <div className="relative w-80">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -387,8 +388,8 @@ export default function AdminEscrowTab() {
                 setSearch(e.target.value);
                 setPageIndex(1);
               }}
-              placeholder="Tìm mã đơn, số SIM, tên người mua/bán..."
-              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
+              placeholder="Tìm mã đơn, số SIM, tên người mua/bán…"
+              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none"
             />
             {search && (
               <button

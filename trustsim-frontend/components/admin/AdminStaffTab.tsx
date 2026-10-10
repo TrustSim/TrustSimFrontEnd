@@ -1,3 +1,4 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -222,7 +223,7 @@ export function AdminStaffTab() {
   return (
     <div className="admin-tab admin-tab-staff space-y-4">
       {/* ── 1. Header Workspace with Segmented Control ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white border border-[#e4e7ec] rounded-xl p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-base font-bold text-[#001743]">Quản Lý Nhân Sự &amp; Nội Bộ</h1>
@@ -273,7 +274,7 @@ export function AdminStaffTab() {
           />
           <button
             onClick={openCreate}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors shadow-xs shrink-0"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-lg transition-colors shadow-2xs shrink-0"
           >
             <Plus size={15} strokeWidth={1.5} />
             <span>{activeSegment === "admins" ? "Thêm Quản trị viên" : "Thêm Tư vấn viên"}</span>
@@ -282,14 +283,14 @@ export function AdminStaffTab() {
       </div>
 
       {/* ── 2. Segmented Tabs Switcher ── */}
-      <div className="flex items-center gap-2 border-b border-slate-200">
+      <div className="flex items-center gap-2 border-b border-[#e4e7ec]">
         <button
           type="button"
           onClick={() => {
             setActiveSegment("admins");
             setPageIndex(1);
           }}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors duration-150 ${
             activeSegment === "admins"
               ? "border-[#001743] text-[#001743]"
               : "border-transparent text-slate-500 hover:text-slate-800"
@@ -305,7 +306,7 @@ export function AdminStaffTab() {
             setActiveSegment("consultants");
             setPageIndex(1);
           }}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors duration-150 ${
             activeSegment === "consultants"
               ? "border-[#001743] text-[#001743]"
               : "border-transparent text-slate-500 hover:text-slate-800"
@@ -317,7 +318,7 @@ export function AdminStaffTab() {
       </div>
 
       {/* ── 3. Filter Toolbar Card ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+      <div className="bg-white border border-[#e4e7ec] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
         <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
           <div className="relative w-72">
             <Search size={15} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -325,8 +326,8 @@ export function AdminStaffTab() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm theo họ tên, tên đăng nhập, email..."
-              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
+              placeholder="Tìm theo họ tên, username, email…"
+              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none transition-colors"
             />
             {search && (
               <button
@@ -344,7 +345,7 @@ export function AdminStaffTab() {
               setSelectedStatus(e.target.value);
               setPageIndex(1);
             }}
-            className="text-xs py-1.5 px-2.5 bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none text-[#001743]"
+            className="text-xs py-1.5 px-2.5 bg-white border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none text-[#001743] transition-colors"
           >
             <option value="">Tất cả trạng thái</option>
             <option value="active">Đang hoạt động</option>
@@ -354,7 +355,7 @@ export function AdminStaffTab() {
           <button
             onClick={fetchStaff}
             disabled={loading}
-            className="p-1.5 text-[#4B5563] hover:text-[#001743] hover:bg-slate-100 border border-[#D1D5DB] rounded-[6px] transition-colors bg-white disabled:opacity-50"
+            className="p-1.5 text-[#4B5563] hover:text-[#001743] hover:bg-slate-50 border border-[#e4e7ec] rounded-lg transition-colors bg-white disabled:opacity-50"
             title="Tải lại danh sách"
           >
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} strokeWidth={1.5} />
@@ -368,11 +369,11 @@ export function AdminStaffTab() {
       </div>
 
       {/* ── 4. Table Card (CRUD Workspace 60-30-10 layout) ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] overflow-hidden shadow-xs">
+      <div className="bg-white border border-[#e4e7ec] rounded-xl overflow-hidden shadow-2xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
+              <tr className="border-b border-[#e4e7ec] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
                 <th className="py-3 px-4"><AdminSortButton label="Nhân sự" active={sortKey === "name"} direction={sortDirection} onClick={() => changeSort("name")} /></th>
                 <th className="py-3 px-4">Số điện thoại</th>
                 <th className="py-3 px-4">
@@ -539,7 +540,7 @@ export function AdminStaffTab() {
 
         {/* Chân bảng: Phân trang chuẩn Pagination */}
         {!loading && totalCount > 0 && (
-          <div className="border-t border-[#E2E8F0]">
+          <div className="border-t border-[#e4e7ec]">
             <Pagination
               pageIndex={pageIndex}
               pageSize={pageSize}
@@ -749,8 +750,8 @@ export function AdminStaffTab() {
 
       {/* ── 6. Modal xác nhận khóa / mở khóa ── */}
       {statusConfirm && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 animate-fade-in">
-          <div className="bg-white border border-[#E2E8F0] rounded-[8px] shadow-xl p-5 w-full max-w-sm animate-fade-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs px-4 animate-fade-in">
+          <div className="bg-white border border-[#e4e7ec] rounded-xl shadow-xl p-5 w-full max-w-sm animate-fade-up">
             <div className="flex items-start gap-3 mb-3">
               <div
                 className={`p-2 rounded-lg shrink-0 ${
@@ -779,7 +780,7 @@ export function AdminStaffTab() {
                 type="button"
                 onClick={() => setStatusConfirm(null)}
                 disabled={statusLoading}
-                className="px-3.5 py-1.5 border border-[#D1D5DB] text-xs font-semibold text-[#4B5563] rounded-[6px] hover:bg-slate-50 transition-colors"
+                className="px-3.5 py-1.5 border border-[#e4e7ec] text-xs font-semibold text-[#4B5563] rounded-lg hover:bg-slate-50 transition-colors"
               >
                 Hủy bỏ
               </button>
@@ -787,8 +788,8 @@ export function AdminStaffTab() {
                 type="button"
                 onClick={handleToggleStatusConfirm}
                 disabled={statusLoading}
-                className={`px-3.5 py-1.5 text-xs font-semibold text-white rounded-[6px] flex items-center gap-1.5 transition-colors ${
-                  statusConfirm.targetStatus ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"
+                className={`px-3.5 py-1.5 text-xs font-semibold text-white rounded-lg flex items-center gap-1.5 transition-colors ${
+                  statusConfirm.targetStatus ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#E4011E] hover:bg-[#c8001a]"
                 }`}
               >
                 {statusLoading ? (
@@ -807,7 +808,7 @@ export function AdminStaffTab() {
 
       {/* ── 7. Toast thông báo nổi ── */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#001743] text-white px-4 py-3 rounded-[8px] shadow-lg border border-slate-700 text-xs font-semibold flex items-center gap-2 animate-fade-up">
+        <div className="fixed bottom-6 right-6 z-50 bg-[#001743] text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 text-xs font-semibold flex items-center gap-2 animate-fade-up">
           <CheckCircle2 size={16} strokeWidth={1.5} className="text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -981,7 +982,7 @@ function StaffForm({
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
                   placeholder="VD: admin_hieu"
-                  className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-mono font-semibold"
+                  className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-mono font-semibold transition-colors"
                 />
               </FormField>
 
@@ -991,7 +992,7 @@ function StaffForm({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Tối thiểu 6 ký tự"
-                  className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
+                  className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none transition-colors"
                 />
               </FormField>
             </div>
@@ -1001,7 +1002,7 @@ function StaffForm({
                 type="text"
                 value={`@${userName}`}
                 disabled
-                className="w-full text-xs p-2.5 border border-[#E2E8F0] bg-slate-100 text-slate-500 rounded-[6px] font-mono font-semibold cursor-not-allowed"
+                className="w-full text-xs p-2.5 border border-[#e4e7ec] bg-slate-100 text-slate-500 rounded-lg font-mono font-semibold cursor-not-allowed"
               />
             </FormField>
           )}
@@ -1013,7 +1014,7 @@ function StaffForm({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="tennhanvien@trustsim.vn"
-                className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
+                className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none transition-colors"
               />
             </FormField>
 
@@ -1021,7 +1022,7 @@ function StaffForm({
               <select
                 value={role}
                 onChange={(e) => setRole(Number(e.target.value))}
-                className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-semibold text-[#001743]"
+                className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-semibold text-[#001743] transition-colors"
               >
                 <option value={UserRoleEnum.ADMIN}>Quản trị viên</option>
                 <option value={UserRoleEnum.CONSULTANT}>Tư vấn viên</option>
@@ -1038,7 +1039,7 @@ function StaffForm({
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="VD: Lê Hoàng Chuyên Viên"
-                className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-semibold text-[#001743]"
+                className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-semibold text-[#001743] transition-colors"
               />
             </FormField>
 
@@ -1048,7 +1049,7 @@ function StaffForm({
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 placeholder="VD: 0900000002"
-                className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-mono"
+                className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-mono transition-colors"
               />
             </FormField>
           </div>
@@ -1060,7 +1061,7 @@ function StaffForm({
                 value={identityNumber}
                 onChange={(e) => setIdentityNumber(e.target.value)}
                 placeholder="VD: 001201012345"
-                className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-mono"
+                className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-mono transition-colors"
               />
             </FormField>
 
@@ -1070,7 +1071,7 @@ function StaffForm({
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="VD: Trụ sở chính Hà Nội"
-                className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
+                className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none transition-colors"
               />
             </FormField>
           </div>

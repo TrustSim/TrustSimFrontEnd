@@ -1,3 +1,4 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
@@ -258,14 +259,14 @@ export default function AdminDisputesTab() {
     <div className="space-y-4">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-[80] bg-[#001743] text-white text-xs px-4 py-2.5 rounded-[6px] shadow-lg border border-slate-700 animate-fade-in flex items-center gap-2">
+        <div className="fixed bottom-5 right-5 z-50 bg-[#001743] text-white text-xs px-4 py-2.5 rounded-xl shadow-lg border border-slate-700 animate-fade-in flex items-center gap-2">
           <CheckCircle2 size={14} className="text-emerald-400" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* ── 1. Header Card (Theo quy chuẩn đồng nhất: White card, text-[#001743], Lucide icon line) ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* ── 1. Header Card ── */}
+      <div className="bg-white border border-[#e4e7ec] rounded-xl p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-base font-bold text-[#001743]">Giải Quyết Khiếu Nại &amp; Trọng Tài</h1>
@@ -282,7 +283,7 @@ export default function AdminDisputesTab() {
           <button
             onClick={() => fetchDisputes()}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 border border-[#D1D5DB] rounded-[6px] text-xs font-semibold text-slate-700 transition-colors shadow-2xs disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 border border-[#e4e7ec] rounded-lg text-xs font-semibold text-slate-700 transition-colors shadow-2xs disabled:opacity-50"
           >
             <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
             <span>Làm mới</span>
@@ -291,7 +292,7 @@ export default function AdminDisputesTab() {
           <button
             onClick={handleExport}
             disabled={exportLoading}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#001743] hover:bg-[#00266B] text-white rounded-[6px] text-xs font-semibold transition-colors shadow-2xs disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#001743] hover:bg-[#00266B] text-white rounded-lg text-xs font-semibold transition-colors shadow-2xs disabled:opacity-50"
           >
             {exportLoading ? (
               <Loader2 size={13} className="animate-spin" />
@@ -305,7 +306,7 @@ export default function AdminDisputesTab() {
 
       {/* ── 2. KPI Metrics Grid ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3.5 shadow-xs">
+        <div className="bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs">
           <span className="text-[11px] font-medium text-slate-500 block">Đang chờ xử lý</span>
           <div className="text-base font-bold text-amber-600 font-mono tabular-nums mt-0.5">
             {openCount} vụ việc
@@ -313,7 +314,7 @@ export default function AdminDisputesTab() {
           <span className="text-[10px] text-slate-400 mt-0.5 block">Hồ sơ mới &amp; đang xác minh</span>
         </div>
 
-        <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3.5 shadow-xs">
+        <div className="bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs">
           <span className="text-[11px] font-medium text-slate-500 block">Xử Bên Mua thắng</span>
           <div className="text-base font-bold text-emerald-600 font-mono tabular-nums mt-0.5">
             {buyerWinsCount} hồ sơ
@@ -321,7 +322,7 @@ export default function AdminDisputesTab() {
           <span className="text-[10px] text-slate-400 mt-0.5 block">Đã hoàn trả 100% tiền ký quỹ</span>
         </div>
 
-        <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3.5 shadow-xs">
+        <div className="bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs">
           <span className="text-[11px] font-medium text-slate-500 block">Xử Bên Bán thắng</span>
           <div className="text-base font-bold text-indigo-600 font-mono tabular-nums mt-0.5">
             {sellerWinsCount} hồ sơ
@@ -329,7 +330,7 @@ export default function AdminDisputesTab() {
           <span className="text-[10px] text-slate-400 mt-0.5 block">Đã giải ngân cho người bán</span>
         </div>
 
-        <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3.5 shadow-xs">
+        <div className="bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs">
           <span className="text-[11px] font-medium text-slate-500 block">Tổng số khiếu nại</span>
           <div className="text-base font-bold text-[#001743] font-mono tabular-nums mt-0.5">
             {totalCount} hồ sơ
@@ -339,7 +340,7 @@ export default function AdminDisputesTab() {
       </div>
 
       {/* ── 3. Filter Toolbar Card ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+      <div className="bg-white border border-[#e4e7ec] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
         <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
           <div className="relative w-80">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -347,8 +348,8 @@ export default function AdminDisputesTab() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm mã khiếu nại, mã giao dịch, người gửi, lý do..."
-              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
+              placeholder="Tìm mã khiếu nại, mã GD, người gửi, lý do…"
+              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none transition-colors"
             />
             {search && (
               <button
@@ -366,7 +367,7 @@ export default function AdminDisputesTab() {
               setStatusFilter(e.target.value);
               setPageIndex(1);
             }}
-            className="text-xs py-1.5 px-3 bg-white border border-[#D1D5DB] rounded-[6px] text-slate-700 focus:border-[#001743] focus:outline-none"
+            className="text-xs py-1.5 px-3 bg-white border border-[#e4e7ec] rounded-lg text-slate-700 focus:border-[#001743] focus:outline-none transition-colors"
           >
             <option value="all">Tất cả trạng thái</option>
             <option value="OPEN">Chờ tiếp nhận</option>
@@ -395,11 +396,11 @@ export default function AdminDisputesTab() {
       </div>
 
       {/* ── 4. Main Table Card ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] overflow-hidden shadow-xs">
+      <div className="bg-white border border-[#e4e7ec] rounded-xl overflow-hidden shadow-2xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
+              <tr className="border-b border-[#e4e7ec] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
                 <th className="py-3 px-4">Mã khiếu nại</th>
                 <th className="py-3 px-4">Giao dịch liên quan</th>
                 <th className="py-3 px-4">Người khiếu nại</th>
@@ -409,13 +410,13 @@ export default function AdminDisputesTab() {
                 <th className="py-3 px-4 text-right">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E2E8F0]">
+            <tbody className="divide-y divide-[#e4e7ec]">
               {loading ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-400">
                     <div className="inline-flex items-center gap-2">
                       <Loader2 size={16} className="animate-spin text-[#001743]" />
-                      <span>Đang tải danh sách khiếu nại từ máy chủ...</span>
+                      <span>Đang tải danh sách khiếu nại từ máy chủ…</span>
                     </div>
                   </td>
                 </tr>
@@ -446,7 +447,7 @@ export default function AdminDisputesTab() {
                           #{item.id.slice(0, 8)}
                         </div>
                         <span className="text-[10px] text-slate-400 font-mono block">
-                          {item.id.slice(8, 18)}...
+                          {item.id.slice(8, 18)}…
                         </span>
                       </td>
 
@@ -502,7 +503,7 @@ export default function AdminDisputesTab() {
                       <td className="py-3 px-4 text-right">
                         <button
                           onClick={() => openDetail(item)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-slate-100 border border-[#D1D5DB] rounded-[6px] text-xs font-semibold text-slate-700 transition-colors shadow-2xs"
+                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-slate-100 border border-[#e4e7ec] rounded-lg text-xs font-semibold text-slate-700 transition-colors shadow-2xs"
                         >
                           <Eye size={13} strokeWidth={1.75} />
                           <span>{isPending ? "Thẩm định" : "Xem chi tiết"}</span>
@@ -518,7 +519,7 @@ export default function AdminDisputesTab() {
 
         {/* Pagination Toolbar */}
         {totalPages > 1 && (
-          <div className="p-3 border-t border-[#E2E8F0] flex items-center justify-between text-xs text-slate-600 bg-[#F8FAFC]">
+          <div className="p-3 border-t border-[#e4e7ec] flex items-center justify-between text-xs text-slate-600 bg-[#F8FAFC]">
             <span>
               Trang <strong className="text-[#001743]">{pageIndex}</strong> / {totalPages}
             </span>
@@ -526,7 +527,7 @@ export default function AdminDisputesTab() {
               <button
                 disabled={pageIndex <= 1 || loading}
                 onClick={() => setPageIndex((p) => Math.max(1, p - 1))}
-                className="px-2.5 py-1 border border-[#D1D5DB] rounded-[4px] bg-white hover:bg-slate-50 disabled:opacity-40"
+                className="px-2.5 py-1 border border-[#e4e7ec] rounded-lg bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors"
               >
                 Trang trước
               </button>
@@ -718,8 +719,8 @@ export default function AdminDisputesTab() {
 
       {/* ── 6. Confirm Decision Modal with Backend FluentValidation Compliance ── */}
       {adjudicateAction && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white border border-[#E2E8F0] rounded-[8px] w-full max-w-lg shadow-xl p-5 animate-fade-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="bg-white border border-[#e4e7ec] rounded-xl w-full max-w-lg shadow-xl p-5 animate-fade-up">
             <div className="flex items-start gap-3 mb-3">
               <div className="p-2.5 rounded-lg bg-[#001743]/10 text-[#001743] shrink-0">
                 <Scale size={22} strokeWidth={2} />
@@ -741,7 +742,7 @@ export default function AdminDisputesTab() {
 
             {/* Error banner */}
             {adjudicateError && (
-              <div className="mb-3 p-2.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-[6px] flex items-center gap-2">
+              <div className="mb-3 p-2.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg flex items-center gap-2">
                 <AlertTriangle size={14} className="shrink-0" />
                 <span>{adjudicateError}</span>
               </div>
@@ -772,19 +773,19 @@ export default function AdminDisputesTab() {
                     setAdjudicateReason(e.target.value);
                     if (adjudicateError) setAdjudicateError(null);
                   }}
-                  placeholder="Ghi rõ điều khoản thỏa thuận, xác minh nhà mạng viễn thông hoặc chứng cứ vi phạm làm căn cứ ra phán quyết (tối thiểu 10 ký tự)..."
-                  className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
+                  placeholder="Ghi rõ điều khoản thỏa thuận, xác minh nhà mạng viễn thông hoặc chứng cứ vi phạm làm căn cứ ra phán quyết (tối thiểu 10 ký tự)…"
+                  className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none transition-colors"
                 />
               </div>
 
-              <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-[6px] text-[11px] text-slate-600 leading-normal flex items-start gap-2">
+              <div className="p-2.5 bg-slate-50 border border-[#e4e7ec] rounded-lg text-[11px] text-slate-600 leading-normal flex items-start gap-2">
                 <Clock size={13} className="text-slate-400 shrink-0 mt-0.5" />
                 <span>
                   Sau khi ban hành, phán quyết có hiệu lực ngay lập tức. Tiền ký quỹ trong giao dịch sẽ được điều hướng xử lý tương ứng theo quy định bảo vệ sàn TrustSim.
                 </span>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-[#E2E8F0]">
+              <div className="flex justify-end gap-2 pt-2 border-t border-[#e4e7ec]">
                 <button
                   type="button"
                   disabled={adjudicateSubmitting}
@@ -793,7 +794,7 @@ export default function AdminDisputesTab() {
                     setAdjudicateReason("");
                     setAdjudicateError(null);
                   }}
-                  className="px-3.5 py-1.5 border border-[#D1D5DB] text-xs font-semibold text-[#4B5563] rounded-[6px] hover:bg-slate-50 transition-colors disabled:opacity-50"
+                  className="px-3.5 py-1.5 border border-[#e4e7ec] text-xs font-semibold text-[#4B5563] rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
                 >
                   Hủy bỏ
                 </button>
@@ -801,10 +802,10 @@ export default function AdminDisputesTab() {
                   type="button"
                   disabled={adjudicateSubmitting}
                   onClick={handleConfirmDecision}
-                  className="px-4 py-1.5 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors disabled:opacity-50 inline-flex items-center gap-1.5"
+                  className="px-4 py-1.5 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 inline-flex items-center gap-1.5"
                 >
                   {adjudicateSubmitting && <Loader2 size={13} className="animate-spin" />}
-                  <span>{adjudicateSubmitting ? "Đang xử lý..." : "Ban hành phán quyết"}</span>
+                  <span>{adjudicateSubmitting ? "Đang xử lý…" : "Ban hành phán quyết"}</span>
                 </button>
               </div>
             </div>

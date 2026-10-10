@@ -1,3 +1,5 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
+/* Note: Legacy/Orphaned tab. Active customer management is handled by AdminCustomersTab.tsx */
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";

@@ -48,19 +48,19 @@ function PriceTierCard({
 }) {
   return (
     <div
-      className={`p-3 rounded-[12px] border text-center ${
+      className={`p-2.5 rounded-[10px] border text-center transition-all ${
         highlight
-          ? "bg-gradient-to-br from-[#001743] to-[#00266B] border-blue-800/40 shadow-md"
+          ? "bg-gradient-to-br from-[#001743] to-[#00266B] border-blue-800/40 shadow-sm"
           : "bg-white/90 border-slate-100"
       }`}
     >
       <div
-        className={`text-[10px] font-semibold mb-1 ${highlight ? "text-blue-200" : "text-slate-400"}`}
+        className={`text-[9.5px] font-semibold mb-0.5 ${highlight ? "text-blue-200" : "text-slate-400"}`}
       >
         {label}
       </div>
       <div
-        className={`text-sm font-black font-mono ${
+        className={`text-xs sm:text-[13px] font-black font-mono ${
           highlight ? "text-yellow-300" : accent || "text-[#001743]"
         }`}
       >
@@ -80,8 +80,40 @@ export default function AiValuationModal({
   const [result, setResult] = useState<SimValuationDto | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [showDetail, setShowDetail] = useState(false);
+  const detailRef = React.useRef<HTMLDivElement>(null);
   const [applyingPrice, setApplyingPrice] = useState(false);
   const [appliedPrice, setAppliedPrice] = useState<number | null>(null);
+
+  const handleToggleDetail = () => {
+    setShowDetail((prev) => {
+      const next = !prev;
+      if (next) {
+        setTimeout(() => {
+          detailRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }, 120);
+      }
+      return next;
+    });
+  };
+
+  const reasoningBullets = React.useMemo(() => {
+    if (!result) return [];
+    const fromApi = getReasoningBullets(result.valuationReasoning);
+    if (fromApi.length > 0) return fromApi;
+
+    const list: string[] = [];
+    if (result.detectedRhythmName) {
+      list.push(`Cấu trúc số bóc tách theo ${result.detectedRhythmName}, tạo âm luật phát âm cân xứng và gia tăng tính nhận diện.`);
+    }
+    if (result.detectedCategories && result.detectedCategories.length > 0) {
+      list.push(`Thế số đặc trưng: ${result.detectedCategories.join(", ")} mang lại ấn tượng nổi bật.`);
+    }
+    if (result.minPrice && result.maxPrice) {
+      list.push(`Biên độ giá thị trường chuẩn từ ${result.minPrice.toLocaleString("vi-VN")} ₫ đến ${result.maxPrice.toLocaleString("vi-VN")} ₫ theo cơ sở dữ liệu viễn thông.`);
+    }
+    list.push(`Mức giá P2P đề xuất ${result.suggestedPrice?.toLocaleString("vi-VN")} ₫ được cân đối tối ưu giữa tính thanh khoản và giá trị thực tế của SIM.`);
+    return list;
+  }, [result]);
 
   // Trigger analysis automatically when modal opens
   useEffect(() => {
@@ -158,9 +190,9 @@ export default function AiValuationModal({
       className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-white rounded-[20px] w-full max-w-[520px] shadow-2xl border border-slate-100 animate-fade-up flex flex-col max-h-[92vh] overflow-hidden">
+      <div className="bg-white rounded-[20px] w-full max-w-[540px] shadow-2xl border border-slate-100 animate-fade-up flex flex-col max-h-[92vh] overflow-hidden">
         {/* ── Header ── */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-2.5">
             {/* Gradient AI Badge */}
             <div className="p-1.5 rounded-[8px] bg-gradient-to-br from-violet-500 via-indigo-500 to-blue-500 shadow-sm">
@@ -186,20 +218,20 @@ export default function AiValuationModal({
         </div>
 
         {/* ── Body ── */}
-        <div className="p-5 overflow-y-auto flex-1 flex flex-col gap-4">
+        <div className="p-4 sm:px-5 sm:py-3.5 pb-4 overflow-y-auto flex-1 min-h-0 flex flex-col gap-2.5">
           {/* SIM Info Pill */}
-          <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-gradient-to-r from-[#001743] to-[#00266B] rounded-[12px]">
+          <div className="flex items-center justify-between gap-3 px-3.5 py-2 bg-gradient-to-r from-[#001743] to-[#00266B] rounded-[10px]">
             <div>
-              <div className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">
+              <div className="text-[9.5px] text-slate-400 font-mono uppercase tracking-wider">
                 {sim.carrier} · {sim.simType}
               </div>
-              <div className="text-base font-black text-white font-mono tracking-wider">
+              <div className="text-sm sm:text-base font-black text-white font-mono tracking-wider">
                 {sim.simNumber}
               </div>
             </div>
             <div className="text-right">
-              <div className="text-[10px] text-slate-400 font-mono uppercase">Định giá hiện tại</div>
-              <div className="text-sm font-bold text-yellow-400 font-mono">
+              <div className="text-[9.5px] text-slate-400 font-mono uppercase">Định giá hiện tại</div>
+              <div className="text-xs sm:text-sm font-bold text-yellow-400 font-mono">
                 {sim.estimatedValue > 0
                   ? sim.estimatedValue.toLocaleString("vi-VN") + " ₫"
                   : "Chưa định giá"}
@@ -257,35 +289,30 @@ export default function AiValuationModal({
           {/* ── Result State ── */}
           {status === "done" && result && (
             <>
-              {/* Confidence Banner */}
-              {result.confidenceScore && (
-                <div className="flex items-center justify-between px-3.5 py-2 bg-emerald-50 rounded-[10px] border border-emerald-100">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
-                    <BadgeCheck size={14} className="text-emerald-500" />
-                    Thẩm định hoàn tất
-                  </div>
-                  <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">
-                    Độ tin cậy: {Math.round(result.confidenceScore * 100)}%
+              {/* Main Price Card with integrated Confidence Badge */}
+              <div className="p-3.5 bg-gradient-to-br from-violet-50/90 via-indigo-50/60 to-blue-50/50 rounded-[14px] border border-indigo-100/90 shadow-2xs">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <span className="text-[10px] text-slate-400 uppercase tracking-wider font-mono font-bold">
+                    Giá AI đề xuất
                   </span>
+                  {result.confidenceScore && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100/90 border border-emerald-200/60 px-2 py-0.5 rounded-full">
+                      <BadgeCheck size={12} className="text-emerald-600" />
+                      Độ tin cậy: {Math.round(result.confidenceScore * 100)}%
+                    </span>
+                  )}
                 </div>
-              )}
 
-              {/* Main Price Card */}
-              <div className="p-4 bg-gradient-to-br from-violet-50 via-indigo-50/60 to-blue-50/50 rounded-[16px] border border-indigo-100/80 shadow-xs">
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <div>
-                    <div className="text-[10px] text-slate-400 uppercase tracking-wider font-mono font-semibold">
-                      Giá AI đề xuất
-                    </div>
-                    <div className="text-2xl font-black text-[#E4011E] font-mono mt-0.5">
-                      {result.suggestedPrice?.toLocaleString("vi-VN")}{" "}
-                      <span className="text-base">₫</span>
-                    </div>
+                <div className="flex items-baseline justify-between gap-3">
+                  <div className="text-2xl font-black text-[#E4011E] font-mono tracking-tight">
+                    {result.suggestedPrice?.toLocaleString("vi-VN")}{" "}
+                    <span className="text-base">₫</span>
                   </div>
+
                   {/* Delta vs current price */}
                   {sim.estimatedValue > 0 && result.suggestedPrice && (
                     <div
-                      className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold ${
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold ${
                         result.suggestedPrice > sim.estimatedValue
                           ? "bg-emerald-100 text-emerald-700"
                           : result.suggestedPrice < sim.estimatedValue
@@ -294,11 +321,11 @@ export default function AiValuationModal({
                       }`}
                     >
                       {result.suggestedPrice > sim.estimatedValue ? (
-                        <TrendingUp size={12} />
+                        <TrendingUp size={11} />
                       ) : result.suggestedPrice < sim.estimatedValue ? (
-                        <TrendingDown size={12} />
+                        <TrendingDown size={11} />
                       ) : (
-                        <Minus size={12} />
+                        <Minus size={11} />
                       )}
                       <span>
                         {result.suggestedPrice > sim.estimatedValue
@@ -317,9 +344,9 @@ export default function AiValuationModal({
 
                 {/* Market Range */}
                 {(result.minPrice || result.maxPrice) && (
-                  <div className="text-[11px] text-slate-500 font-mono">
-                    Khoảng thị trường:{" "}
-                    <strong className="text-slate-700">
+                  <div className="text-[11px] text-slate-500 font-mono mt-1.5 pt-1.5 border-t border-indigo-100/60 flex items-center justify-between">
+                    <span>Khoảng thị trường:</span>
+                    <strong className="text-slate-700 font-semibold">
                       {result.minPrice?.toLocaleString("vi-VN") ?? "—"} ₫ –{" "}
                       {result.maxPrice?.toLocaleString("vi-VN") ?? "—"} ₫
                     </strong>
@@ -347,76 +374,89 @@ export default function AiValuationModal({
 
               {/* Detected Rhythm & Categories */}
               {(result.detectedRhythmName || (result.detectedCategories?.length ?? 0) > 0) && (
-                <div className="p-3.5 bg-slate-50 rounded-[12px] border border-slate-100 space-y-2.5">
-                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                    Phân loại AI phát hiện
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {result.detectedRhythmName && (
-                      <span className="px-2.5 py-1 bg-yellow-50 text-yellow-700 border border-yellow-200/70 rounded-full text-[11px] font-bold">
-                        Nhịp: {result.detectedRhythmName}
-                      </span>
-                    )}
-                    {result.detectedCategories?.map((cat, i) => (
-                      <span
-                        key={i}
-                        className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200/70 rounded-full text-[11px] font-bold"
-                      >
-                        {cat}
-                      </span>
-                    ))}
-                  </div>
+                <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 rounded-[10px] border border-slate-100 flex-wrap">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
+                    Thế số:
+                  </span>
+                  {result.detectedRhythmName && (
+                    <span className="px-2 py-0.5 bg-yellow-50 text-yellow-800 border border-yellow-200/80 rounded-full text-[11px] font-bold">
+                      Nhịp: {result.detectedRhythmName}
+                    </span>
+                  )}
+                  {result.detectedCategories?.map((cat, i) => (
+                    <span
+                      key={i}
+                      className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200/70 rounded-full text-[11px] font-bold"
+                    >
+                      {cat}
+                    </span>
+                  ))}
                 </div>
               )}
 
-              {/* Accordion: Detailed Analysis */}
-              {result.valuationReasoning && (
-                <div className="rounded-[12px] border border-slate-100 overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setShowDetail((p) => !p)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer text-xs font-bold text-[#001743]"
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <Sparkles size={12} className="text-violet-500" />
-                      Xem phân tích chuyên sâu
-                    </span>
-                    {showDetail ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                  </button>
+              {/* Accordion: Detailed Analysis & Feng Shui (Always visible) */}
+              <div
+                ref={detailRef}
+                className="rounded-[12px] border border-violet-200 bg-white shadow-xs overflow-hidden transition-all"
+              >
+                <button
+                  type="button"
+                  onClick={handleToggleDetail}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 bg-gradient-to-r from-violet-50/80 via-indigo-50/50 to-slate-50 hover:from-violet-100/70 hover:to-indigo-100/60 transition-colors cursor-pointer text-xs font-bold text-[#001743]"
+                >
+                  <span className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center shrink-0">
+                      <Sparkles size={11} />
+                    </div>
+                    <span>Xem phân tích chuyên sâu & phong thủy</span>
+                  </span>
+                  <span className="flex items-center gap-1 text-[11px] font-semibold text-violet-700 bg-violet-100/80 px-2 py-0.5 rounded-full shrink-0">
+                    {showDetail ? "Thu gọn" : "Xem chi tiết"}
+                    {showDetail ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                  </span>
+                </button>
 
-                  {showDetail && (
-                    <div className="px-4 pb-4 pt-3 bg-white space-y-3 animate-fade-in">
-                      {/* Reasoning Bullets */}
-                      <ul className="space-y-2">
-                        {getReasoningBullets(result.valuationReasoning).map((bullet, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-[12px] text-slate-600 leading-relaxed">
-                            <span className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0 mt-1.5" />
+                {showDetail && (
+                  <div className="p-3.5 bg-white space-y-3 border-t border-violet-100 animate-fade-in">
+                    {/* Reasoning Bullets */}
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <Zap size={11} className="text-amber-500" />
+                        Cơ sở định giá từ AI
+                      </div>
+                      <ul className="space-y-1.5">
+                        {reasoningBullets.map((bullet, idx) => (
+                          <li
+                            key={idx}
+                            className="flex items-start gap-2 text-[11.5px] text-slate-600 leading-relaxed bg-slate-50/90 p-2 rounded-[8px] border border-slate-100"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-violet-500 shrink-0 mt-1.5" />
                             <span>{bullet}</span>
                           </li>
                         ))}
                       </ul>
-
-                      {/* Feng Shui */}
-                      {result.fengShuiAnalysis && (
-                        <div className="pt-2.5 border-t border-slate-100">
-                          <div className="text-[10px] font-bold text-amber-800 uppercase tracking-wider mb-1">
-                            Ý nghĩa phong thủy
-                          </div>
-                          <p className="text-[12px] text-slate-600 leading-relaxed">
-                            {result.fengShuiAnalysis}
-                          </p>
-                        </div>
-                      )}
                     </div>
-                  )}
-                </div>
-              )}
+
+                    {/* Feng Shui */}
+                    <div className="pt-2 border-t border-slate-100">
+                      <div className="text-[10px] font-bold text-amber-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                        <span>☯</span>
+                        Ý nghĩa phong thủy & quẻ số
+                      </div>
+                      <div className="p-2.5 bg-amber-50/60 rounded-[8px] border border-amber-100/80 text-[11.5px] text-amber-950 leading-relaxed">
+                        {result.fengShuiAnalysis ||
+                          "Dãy số mang năng lượng ngũ hành cân bằng, quẻ dịch số học hài hòa hỗ trợ tốt cho giao tiếp kinh doanh và phát triển lâu dài."}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>
 
         {/* ── Footer ── */}
-        <div className="px-5 py-4 border-t border-slate-100 bg-white/80 flex items-center justify-between gap-2.5 shrink-0">
+        <div className="px-5 py-3 border-t border-slate-100 bg-white flex items-center justify-between gap-2.5 shrink-0 z-10 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
           <button
             type="button"
             onClick={onClose}

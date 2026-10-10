@@ -403,15 +403,7 @@ function OwnedSimHeroCard({
               <span className="text-[9.5px] uppercase font-semibold text-[#9CA3AF] block tracking-wider font-mono">
                 Định giá ước tính
               </span>
-              <button
-                type="button"
-                onClick={() => onOpenAiValuation(sim)}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-violet-600/40 to-indigo-600/40 hover:from-violet-600/60 hover:to-indigo-600/60 text-violet-200 border border-violet-400/40 hover:border-violet-300 hover:text-white transition-all cursor-pointer shadow-xs active:scale-95"
-                title="Yêu cầu AI thẩm định giá SIM này"
-              >
-                <Sparkles size={10} className="text-yellow-400" />
-                <span>Thẩm định AI</span>
-              </button>
+
             </div>
             <div className="flex items-baseline gap-0.5 font-mono tabular-nums whitespace-nowrap">
               {sim.estimatedValue > 0 ? (
@@ -1236,16 +1228,7 @@ export default function OwnedSimsTab({
                     </div>
                   </div>
 
-                  {/* Gợi ý thẩm định AI sau khi thêm vào kho */}
-                  <div className="p-3 bg-violet-50/70 rounded-[12px] border border-violet-100 text-violet-900 text-xs flex items-start gap-2.5">
-                    <Sparkles size={16} className="text-violet-600 shrink-0 mt-0.5" />
-                    <div className="leading-relaxed">
-                      <strong className="block text-violet-950 font-semibold mb-0.5">Không cần nhập giá ở bước này</strong>
-                      <span className="text-slate-600">
-                        SIM sau khi thêm vào kho có thể sử dụng tính năng <strong>Thẩm định AI</strong> để phân tích phong thủy, nhận định giá thông minh và áp dụng mức giá phù hợp bất cứ lúc nào.
-                      </span>
-                    </div>
-                  </div>
+
                 </div>
 
                 {/* Sticky Footer - Bước 1 */}
@@ -1260,7 +1243,7 @@ export default function OwnedSimsTab({
                   </button>
                   <button
                     type="submit"
-                    disabled={sendingOtp || !newSimNumber.trim()}
+                    disabled={sendingOtp || !isEkycVerified || !newSimNumber.trim()}
                     className="px-6 py-2.5 bg-[#001743] hover:bg-[#00266B] text-white rounded-full text-xs font-bold shadow-sm cursor-pointer flex items-center gap-1.5 transition-all active:scale-95 disabled:opacity-50"
                   >
                     {sendingOtp ? (

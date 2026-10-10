@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "runs": [
+    {
+      "timestamp": "2026-10-10T00:52:00Z",
+      "scope": "app",
+      "target": "app/admin",
+      "verb": "redesign",
+      "genre": "modern-minimal",
+      "macrostructure": "Workbench",
+      "theme": "TrustSim Brand OKLCH (Navy + Crimson Red)",
+      "designSystem": "design.md",
+      "filesModified": [
+        "app/admin/layout.tsx",
+        "app/admin/page.tsx",
+        "components/admin/AdminSidebar.tsx",
+        "app/globals.css",
+        "design.md"
+      ]
+    },
+    {
+      "timestamp": "2026-10-10T07:52:00Z",
+      "scope": "components",
+      "target": "components/admin",
+      "verb": "redesign",
+      "genre": "modern-minimal",
+      "macrostructure": "Workbench",
+      "theme": "TrustSim Brand OKLCH (Navy + Crimson Red)",
+      "designSystem": "design.md",
+      "filesModified": [
+        "components/admin/AdminPrimitives.tsx",
+        "components/admin/ImportExportBar.tsx",
+        "components/admin/AdminAuctionsTab.tsx",
+        "components/admin/AdminCarriersTab.tsx",
+        "components/admin/AdminEscrowTab.tsx",
+        "components/admin/AdminLedgerTab.tsx",
+        "components/admin/AdminSimsTab.tsx",
+        "components/admin/AdminCustomersTab.tsx",
+        "components/admin/AdminStaffTab.tsx",
+        "components/admin/AdminCategoriesTab.tsx",
+        "components/admin/AdminDisputesTab.tsx",
+        "components/admin/AdminDocumentsTab.tsx",
+        "components/admin/AdminSettingsTab.tsx",
+        "components/admin/AdminUsersTab.tsx"
+      ]
+    }
+  ]
+}

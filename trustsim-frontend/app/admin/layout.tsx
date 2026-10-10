@@ -1,3 +1,4 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 "use client";
 import React, { Suspense, useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -215,7 +216,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const availableBalance = wallet?.availableBalance ?? 0;
 
   return (
-    <div className="admin-shell min-h-screen flex bg-[#f5f6f8] text-[#101828] font-sans antialiased">
+    <div className="admin-shell min-h-screen flex bg-[#f8f9fa] text-[#001743] font-sans antialiased">
       {/* Modular Admin Sidebar */}
       <AdminSidebar
         collapsed={collapsed}
@@ -225,28 +226,26 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* Main Container */}
       <div
-        className={`admin-main flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out ${
-          collapsed ? "ml-[68px]" : "ml-[250px]"
+        className={`admin-main flex-1 flex flex-col min-h-screen transition-[margin] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          collapsed ? "ml-[68px]" : "ml-[248px]"
         }`}
       >
         {/* Top Header */}
-        <header className="admin-topbar sticky top-0 z-30 h-[60px] bg-white border-b border-[#e6e8ec] px-6 flex items-center justify-between shadow-xs">
+        <header className="admin-topbar sticky top-0 z-30 h-[60px] bg-white border-b border-[#e4e7ec] px-6 flex items-center justify-between shadow-xs">
           {/* Breadcrumb / Title */}
           <div className="flex items-center gap-2 text-[13px]">
-            <span className="text-[#98a2b3] font-medium">Workspace</span>
-            <span className="text-[#d0d5dd]">/</span>
-            <span className="font-semibold text-[#101828] tracking-tight">
+            <span className="text-slate-400 font-medium">Bàn làm việc</span>
+            <span className="text-slate-300">/</span>
+            <span className="font-semibold text-[#001743] tracking-tight">
               {TAB_LABELS[currentTab] || "Quản trị"}
             </span>
           </div>
 
           {/* Right Controls */}
           <div className="flex items-center gap-3">
-            {/* System Health Pulse */}
-            <div className="hidden sm:flex items-center gap-2 pr-4 border-r border-[#e6e8ec] text-[#667085] text-xs font-medium">
-              <span className="relative flex h-2 w-2">
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
+            {/* System Health Status */}
+            <div className="hidden sm:flex items-center gap-2 pr-4 border-r border-[#e4e7ec] text-slate-500 text-xs font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
               <span>Hệ thống trực tuyến</span>
             </div>
 
@@ -297,7 +296,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
                   <div className="max-h-[340px] overflow-y-auto divide-y divide-slate-50">
                     {loadingNotifs ? (
                       <div className="py-8 text-center text-slate-400 text-xs">
-                        Đang tải thông báo...
+                        Đang tải thông báo…
                       </div>
                     ) : notifications.length === 0 ? (
                       <div className="py-10 text-center text-slate-400 text-xs">
@@ -501,8 +500,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center text-xs text-[#6B7280]">
-          Đang tải giao diện quản trị...
+        <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center text-xs text-slate-500">
+          Đang tải giao diện quản trị…
         </div>
       }
     >

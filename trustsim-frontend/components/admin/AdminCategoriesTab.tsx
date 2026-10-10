@@ -1,3 +1,4 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -22,8 +23,8 @@ function DeleteModal({ name, onConfirm, onCancel, loading }: {
   name: string; onConfirm: () => void; onCancel: () => void; loading: boolean;
 }) {
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 animate-fade-in">
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] shadow-xl p-5 w-full max-w-sm animate-fade-up">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs px-4 animate-fade-in">
+      <div className="bg-white border border-[#e4e7ec] rounded-xl shadow-xl p-5 w-full max-w-sm animate-fade-up">
         <div className="flex items-start gap-3 mb-3">
           <div className="p-2 rounded-lg bg-rose-50 text-rose-600 shrink-0">
             <AlertTriangle size={18} strokeWidth={2} />
@@ -41,7 +42,7 @@ function DeleteModal({ name, onConfirm, onCancel, loading }: {
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="px-3.5 py-1.5 border border-[#D1D5DB] text-xs font-semibold text-[#4B5563] rounded-[6px] hover:bg-slate-50 transition-colors"
+            className="px-3.5 py-1.5 border border-[#e4e7ec] text-xs font-semibold text-[#4B5563] rounded-lg hover:bg-slate-50 transition-colors"
           >
             Hủy bỏ
           </button>
@@ -49,7 +50,7 @@ function DeleteModal({ name, onConfirm, onCancel, loading }: {
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className="flex items-center gap-1.5 px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-[6px] transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-1.5 bg-[#E4011E] hover:bg-[#c8001a] text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
           >
             {loading ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
             <span>Xác nhận xóa</span>
@@ -132,7 +133,7 @@ function CategoryForm({ initial, onSave, onClose }: {
               value={form.categoryCode}
               onChange={e => set("categoryCode", e.target.value.toUpperCase())}
               placeholder="VD: BAT_QUY"
-              className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-mono font-bold uppercase text-[#001743]"
+              className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-mono font-bold uppercase text-[#001743] transition-colors"
             />
           </FormField>
 
@@ -142,7 +143,7 @@ function CategoryForm({ initial, onSave, onClose }: {
               value={form.categoryName}
               onChange={e => set("categoryName", e.target.value)}
               placeholder="VD: Bát quý (88888888)"
-              className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none font-semibold text-[#001743]"
+              className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-semibold text-[#001743] transition-colors"
             />
           </FormField>
         </DrawerSection>
@@ -157,19 +158,19 @@ function CategoryForm({ initial, onSave, onClose }: {
                 min="0.1"
                 value={form.valuationMultiplier}
                 onChange={e => set("valuationMultiplier", parseFloat(e.target.value) || 1.0)}
-                className="w-full pl-9 pr-3 py-2 text-xs border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none tabular-nums font-bold text-[#001743]"
+                className="w-full pl-9 pr-3 py-2 text-xs border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none tabular-nums font-bold text-[#001743] transition-colors"
               />
             </div>
           </FormField>
 
           <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
-            <div className="bg-white p-2.5 rounded-[6px] border border-[#E2E8F0]">
+            <div className="bg-white p-2.5 rounded-lg border border-[#e4e7ec]">
               <span className="text-[#6B7280] block text-[10px]">Độ hiếm phân loại:</span>
               <strong className="text-[#001743] font-bold">
                 {form.valuationMultiplier && form.valuationMultiplier >= 3.0 ? "Cực hiếm (Super Rare)" : "Phổ biến / Tiêu chuẩn"}
               </strong>
             </div>
-            <div className="bg-white p-2.5 rounded-[6px] border border-[#E2E8F0]">
+            <div className="bg-white p-2.5 rounded-lg border border-[#e4e7ec]">
               <span className="text-[#6B7280] block text-[10px]">Dự báo thanh khoản:</span>
               <strong className="text-emerald-700 font-bold">Rất cao (A+)</strong>
             </div>
@@ -181,9 +182,9 @@ function CategoryForm({ initial, onSave, onClose }: {
             <textarea
               value={form.description}
               onChange={e => set("description", e.target.value)}
-              placeholder="VD: Dãy số tiến liên tục hoặc lặp lại chữ số đại cát, mang lại tài lộc và hanh thông..."
+              placeholder="VD: Dãy số tiến liên tục hoặc lặp lại chữ số đại cát, mang lại tài lộc và hanh thông…"
               rows={4}
-              className="w-full p-2.5 text-xs border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none text-slate-700 resize-none leading-relaxed"
+              className="w-full p-2.5 text-xs border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none text-slate-700 resize-none leading-relaxed transition-colors"
             />
           </FormField>
         </DrawerSection>
@@ -315,7 +316,7 @@ export function AdminCategoriesTab() {
   return (
     <div className="admin-tab admin-tab-categories space-y-4">
       {/* ── 1. Header Card (Matching Kho SIM) ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white border border-[#e4e7ec] rounded-xl p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-base font-bold text-[#001743]">Quản Lý Thể Loại SIM &amp; Mô Hình Định Giá AI</h1>
           <p className="text-xs text-[#6B7280] mt-0.5">
@@ -324,7 +325,7 @@ export function AdminCategoriesTab() {
         </div>
         <button
           onClick={openCreate}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors shadow-xs shrink-0"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-lg transition-colors shadow-2xs shrink-0"
         >
           <Plus size={15} strokeWidth={1.75} />
           <span>Thêm thể loại</span>
@@ -332,7 +333,7 @@ export function AdminCategoriesTab() {
       </div>
 
       {/* ── 2. Filter Toolbar Card (Matching Kho SIM) ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+      <div className="bg-white border border-[#e4e7ec] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
         <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
           <div className="relative w-72">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -343,8 +344,8 @@ export function AdminCategoriesTab() {
                 setSearch(e.target.value);
                 setPageIndex(1);
               }}
-              placeholder="Tìm theo tên thể loại, mã nhận diện, mô tả..."
-              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
+              placeholder="Tìm theo tên thể loại, mã nhận diện, mô tả…"
+              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none transition-colors"
             />
             {search && (
               <button
@@ -361,7 +362,7 @@ export function AdminCategoriesTab() {
           <button
             onClick={load}
             disabled={loading}
-            className="p-1.5 text-[#4B5563] hover:text-[#001743] hover:bg-slate-100 border border-[#D1D5DB] rounded-[6px] transition-colors bg-white disabled:opacity-50"
+            className="p-1.5 text-[#4B5563] hover:text-[#001743] hover:bg-slate-50 border border-[#e4e7ec] rounded-lg transition-colors bg-white disabled:opacity-50"
             title="Tải lại danh sách"
           >
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} strokeWidth={1.75} />
@@ -373,11 +374,11 @@ export function AdminCategoriesTab() {
       </div>
 
       {/* ── 3. Table Card (Matching Kho SIM) ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] overflow-hidden shadow-xs">
+      <div className="bg-white border border-[#e4e7ec] rounded-xl overflow-hidden shadow-2xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
+              <tr className="border-b border-[#e4e7ec] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
                 <th className="py-3 px-4"><AdminSortButton label="Thể loại / Mã thế số" active={sortKey === "name"} direction={sortDirection} onClick={() => changeSort("name")} /></th>
                 <th className="py-3 px-4 text-center"><AdminSortButton label="Hệ số định giá AI" align="center" active={sortKey === "multiplier"} direction={sortDirection} onClick={() => changeSort("multiplier")} /></th>
                 <th className="py-3 px-4">Quy tắc nhận diện &amp; Mô tả phong thủy</th>
@@ -552,7 +553,7 @@ export function AdminCategoriesTab() {
 
       {/* ── 6. Toast Feedback ── */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#001743] text-white px-4 py-3 rounded-[8px] shadow-lg border border-slate-700 text-xs font-semibold flex items-center gap-2 animate-fade-up">
+        <div className="fixed bottom-6 right-6 z-50 bg-[#001743] text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 text-xs font-semibold flex items-center gap-2 animate-fade-up">
           <Check size={16} className="text-emerald-400 shrink-0" />
           <span>{toast}</span>
         </div>

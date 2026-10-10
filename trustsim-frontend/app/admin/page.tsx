@@ -1,3 +1,4 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 "use client";
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -407,7 +408,7 @@ export default function AdminControlCenter() {
 
     return (
       <div className="admin-tab admin-tab-dashboard space-y-6">
-        {/* 1. PAGE HEADER (OPEN & BREATHING - NO ENCLOSING CARD BOX) */}
+        {/* 1. PAGE HEADER (OPEN & BREATHING WORKBENCH HEAD) */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
           <div>
             <div className="flex items-center gap-3">
@@ -415,23 +416,20 @@ export default function AdminControlCenter() {
                 Trung tâm điều hành TrustSim
               </h1>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200/60">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                 <span>Vận hành ổn định</span>
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1 font-normal">
               {new Date().toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })}
               {" · "}
-              <span>{liveCount} phiên đang diễn ra</span>
+              <span className="font-mono">{liveCount}</span> phiên đang diễn ra
               {" · "}
-              <span className="text-emerald-700 font-medium">Định danh eKYC tự động AI</span>
+              <span className="text-emerald-700 font-medium">Định danh eKYC trực tiếp</span>
               {highRiskAlerts > 0 && (
                 <>
                   {" · "}
-                  <span className="text-[#E4011E] font-medium">{highRiskAlerts} cảnh báo rủi ro</span>
+                  <span className="text-[#E4011E] font-medium font-mono">{highRiskAlerts} cảnh báo rủi ro</span>
                 </>
               )}
             </p>
@@ -445,11 +443,11 @@ export default function AdminControlCenter() {
                 fetchDashboardData();
               }}
               disabled={refreshing}
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-medium rounded-lg transition-colors shadow-2xs disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-medium rounded-lg transition-colors shadow-2xs disabled:opacity-50 cursor-pointer"
               title="Làm mới dữ liệu thời gian thực"
             >
               <RefreshCw size={13} className={refreshing ? "animate-spin text-[#001743]" : ""} />
-              <span>{refreshing ? "Đang tải..." : "Làm mới"}</span>
+              <span>{refreshing ? "Đang tải…" : "Làm mới"}</span>
             </button>
             <a
               href="/admin?tab=sims"
@@ -460,7 +458,7 @@ export default function AdminControlCenter() {
             </a>
             <button
               onClick={() => setAuctionModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-semibold rounded-lg transition-all shadow-xs"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-semibold rounded-lg transition-colors shadow-xs cursor-pointer"
             >
               <Gavel size={14} strokeWidth={1.75} />
               <span>+ Mở phiên đấu giá</span>
@@ -468,129 +466,119 @@ export default function AdminControlCenter() {
           </div>
         </div>
 
-        {/* 2. UNIFIED KPI OVERVIEW (HERO METRIC + 3 SECONDARY METRICS, NO HEAVY GRIDS) */}
-        <div className="bg-white border border-slate-200/70 rounded-xl p-5 shadow-xs elevation-card">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 items-center">
-            {/* Hero Metric: Tổng ký quỹ đang giữ (Chiếm ưu thế thị giác) */}
-            <div className="lg:col-span-3 flex flex-col justify-between pr-0 lg:pr-4">
-              <div className="flex items-center justify-between text-slate-500">
-                <span className="text-xs font-medium text-slate-500">Tổng ký quỹ đang giữ</span>
-                <div className="p-1.5 rounded-md bg-blue-50 text-[#001743]">
-                  <CreditCard size={15} strokeWidth={1.75} />
-                </div>
+        {/* 2. FLAT KPI WORKBENCH STRIP (OPEN BREATHING PANELS, ZERO CARD-IN-CARD) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Metric 1: Tổng ký quỹ đang giữ */}
+          <div className="bg-white border border-[#e4e7ec] rounded-xl p-4 shadow-2xs flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-xs font-medium text-slate-500">Tổng ký quỹ đang giữ</span>
+              <div className="p-1.5 rounded-md bg-blue-50 text-[#001743]">
+                <CreditCard size={15} strokeWidth={1.75} />
               </div>
-              <div className="mt-2">
-                <div className="text-2xl lg:text-3xl font-bold text-[#001743] tabular-nums tracking-tight">
-                  <AnimatedNumber value={totalHeldEscrow} isCurrency />
+            </div>
+            <div className="mt-3">
+              <div className="text-2xl font-bold text-[#001743] font-mono tabular-nums tracking-tight">
+                <AnimatedNumber value={totalHeldEscrow} isCurrency />
+              </div>
+              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                <span className="flex items-center gap-1 font-medium text-emerald-700">
+                  <TrendingUp size={12} />
+                  <span>Sổ cái ký quỹ Escrow</span>
+                </span>
+                <span className="text-slate-400">Thời gian thực</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Metric 2: Phiên đấu giá trực tiếp */}
+          <div className="bg-white border border-[#e4e7ec] rounded-xl p-4 shadow-2xs flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-xs font-medium text-slate-500">Phiên trực tiếp</span>
+              <div className="p-1.5 rounded-md bg-amber-50 text-amber-700">
+                <Gavel size={15} strokeWidth={1.75} />
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="text-2xl font-bold text-[#001743] font-mono tabular-nums tracking-tight flex items-baseline gap-1.5">
+                <AnimatedNumber value={liveCount} />
+                <span className="text-xs font-normal text-slate-500">phiên</span>
+              </div>
+              <div className="mt-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1">
+                  <span className="text-amber-700 font-medium flex items-center gap-1">
+                    <Clock size={11} />
+                    <span>{urgentCount} sắp kết thúc (&lt; 5p)</span>
+                  </span>
+                  <span className="font-mono text-slate-400">
+                    {liveCount > 0 ? `${Math.round((urgentCount / liveCount) * 100)}%` : "0%"}
+                  </span>
                 </div>
-                {/* Mini Sparkline Chart với Glowing Dot */}
-                <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between gap-3">
-                  <div className="text-[11px] text-emerald-700 font-medium flex items-center gap-1 shrink-0">
-                    <TrendingUp size={12} />
-                    <span>Dữ liệu thực từ DB</span>
-                  </div>
-                  <svg className="w-24 h-5 overflow-visible" viewBox="0 0 100 22" fill="none">
-                    <polyline
-                      className="animate-sparkline"
-                      points="0,17 18,15 35,18 52,11 68,14 84,7 100,4"
-                      fill="none"
-                      stroke="#059669"
-                      strokeWidth="1.75"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <g>
-                      <circle cx="100" cy="4" r="4" fill="#059669" className="animate-ping opacity-75 origin-center" />
-                      <circle cx="100" cy="4" r="2" fill="#059669" />
-                    </g>
-                  </svg>
+                <div className="w-full bg-slate-100 rounded-full h-1 overflow-hidden">
+                  <div
+                    className="bg-amber-500 h-1 rounded-full transition-[width] duration-300"
+                    style={{ width: liveCount > 0 ? `${Math.round((urgentCount / liveCount) * 100)}%` : "0%" }}
+                  />
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Subtle Divider */}
-            <div className="hidden lg:block lg:col-span-1 h-14 w-px bg-slate-100 mx-auto" />
-
-            {/* Metric 2 (Thứ cấp): Phiên đấu giá trực tiếp */}
-            <div className="lg:col-span-2 flex flex-col justify-between">
-              <div className="text-xs font-medium text-slate-500">Phiên trực tiếp</div>
-              <div className="mt-2">
-                <div className="text-xl font-bold text-slate-900 tabular-nums tracking-tight flex items-baseline gap-1.5">
-                  <AnimatedNumber value={liveCount} />
-                  <span className="text-xs font-normal text-slate-500">phiên</span>
-                </div>
-                <div className="mt-2.5 pt-2 border-t border-slate-100">
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1">
-                    <span className="text-amber-700 font-medium flex items-center gap-1">
-                      <Clock size={11} />
-                      <span>{urgentCount} sắp hết (&lt; 5p)</span>
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-1 overflow-hidden">
-                    <div
-                      className="bg-amber-500 h-1 rounded-full"
-                      style={{ width: liveCount > 0 ? `${Math.round((urgentCount / liveCount) * 100)}%` : "0%" }}
-                    />
-                  </div>
-                </div>
+          {/* Metric 3: eKYC Định danh */}
+          <div className="bg-white border border-[#e4e7ec] rounded-xl p-4 shadow-2xs flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-xs font-medium text-slate-500">Định danh eKYC</span>
+              <div className="p-1.5 rounded-md bg-emerald-50 text-emerald-700">
+                <UserCheck size={15} strokeWidth={1.75} />
               </div>
             </div>
-
-            {/* Subtle Divider */}
-            <div className="hidden lg:block lg:col-span-1 h-14 w-px bg-slate-100 mx-auto" />
-
-            {/* Metric 3 (Thứ cấp): eKYC tự động AI */}
-            <div className="lg:col-span-2 flex flex-col justify-between">
-              <div className="text-xs font-medium text-slate-500">eKYC Tự động (AI)</div>
-              <div className="mt-2">
-                <div className="text-xl font-bold text-slate-900 tabular-nums tracking-tight flex items-baseline gap-1.5">
-                  <span className="text-emerald-600 font-bold">100%</span>
-                  <span className="text-xs font-normal text-slate-500">tự động hóa</span>
-                </div>
-                <div className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-slate-500 space-y-0.5">
-                  <div>Tốc độ xác thực: <span className="font-medium text-slate-700">&lt; 3 giây</span></div>
-                  <div className="text-emerald-700 font-medium flex items-center gap-1">
-                    <CheckCircle2 size={11} />
-                    <span>Hệ thống AI xử lý 24/7</span>
-                  </div>
-                </div>
+            <div className="mt-3">
+              <div className="text-2xl font-bold text-slate-900 tracking-tight flex items-baseline gap-1.5">
+                <span className="text-emerald-700 font-semibold text-lg">AI Tự động</span>
+                <span className="text-xs font-normal text-slate-500">OCR & Liveness</span>
+              </div>
+              <div className="mt-2 pt-2 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
+                <span className="text-emerald-700 font-medium flex items-center gap-1">
+                  <CheckCircle2 size={11} />
+                  <span>Xử lý trực tiếp 24/7</span>
+                </span>
+                <span className="text-slate-400">CCCD/Hộ chiếu</span>
               </div>
             </div>
+          </div>
 
-            {/* Subtle Divider */}
-            <div className="hidden lg:block lg:col-span-1 h-14 w-px bg-slate-100 mx-auto" />
-
-            {/* Metric 4 (Thứ cấp): Cảnh báo rủi ro AI - Tự động hiển thị an toàn khi chưa có cảnh báo */}
-            <div className={`lg:col-span-2 flex flex-col justify-between pl-3 border-l-2 ${highRiskAlerts > 0 ? "border-rose-500/80" : "border-emerald-500/80"
-              }`}>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-700">Rủi ro AI</span>
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${highRiskAlerts > 0
+          {/* Metric 4: Giám sát an toàn & AI Fraud */}
+          <div className={`bg-white border rounded-xl p-4 shadow-2xs flex flex-col justify-between ${
+            highRiskAlerts > 0 ? "border-rose-300/80" : "border-[#e4e7ec]"
+          }`}>
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-xs font-medium text-slate-700">Giám sát rủi ro</span>
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                highRiskAlerts > 0
                   ? "text-rose-700 bg-rose-50 border-rose-200/60"
                   : "text-emerald-700 bg-emerald-50 border-emerald-200/60"
-                  }`}>
-                  {highRiskAlerts > 0 ? "KHẨN CẤP" : "AN TOÀN"}
-                </span>
+              }`}>
+                {highRiskAlerts > 0 ? "CẦN XỬ LÝ" : "AN TOÀN"}
+              </span>
+            </div>
+            <div className="mt-3">
+              <div className={`text-2xl font-bold tabular-nums font-mono tracking-tight flex items-baseline gap-1.5 ${
+                highRiskAlerts > 0 ? "text-[#E4011E]" : "text-emerald-700"
+              }`}>
+                <AnimatedNumber value={highRiskAlerts} />
+                <span className="text-xs font-normal text-slate-500">cảnh báo</span>
               </div>
-              <div className="mt-2">
-                <div className={`text-xl font-bold tabular-nums tracking-tight flex items-baseline gap-1.5 ${highRiskAlerts > 0 ? "text-[#E4011E]" : "text-emerald-700"
-                  }`}>
-                  <AnimatedNumber value={highRiskAlerts} />
-                  <span className="text-xs font-normal text-slate-500">cảnh báo</span>
+              <div className="mt-2 pt-2 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
+                <div className={`flex items-center gap-1 font-medium truncate ${
+                  highRiskAlerts > 0 ? "text-rose-700" : "text-emerald-700"
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                    highRiskAlerts > 0 ? "bg-rose-600" : "bg-emerald-600"
+                  }`}></span>
+                  <span className="truncate">
+                    {highRiskAlerts > 0 ? "Nghi vấn đặt giá liên minh" : "Bình thường"}
+                  </span>
                 </div>
-                <div className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-slate-500">
-                  <div className={`flex items-center gap-1 font-medium truncate ${highRiskAlerts > 0 ? "text-rose-700" : "text-emerald-700"
-                    }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${highRiskAlerts > 0 ? "bg-rose-600" : "bg-emerald-600"
-                      }`}></span>
-                    <span className="truncate">
-                      {highRiskAlerts > 0 ? "Shill Bidding / IP" : "Chưa có cảnh báo"}
-                    </span>
-                  </div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">
-                    {highRiskAlerts > 0 ? "Quét 30s/lần" : "Hệ thống an toàn"}
-                  </div>
-                </div>
+                <span className="text-slate-400 font-mono">Real-time</span>
               </div>
             </div>
           </div>
@@ -699,7 +687,7 @@ export default function AdminControlCenter() {
 
             <div className="px-5 py-2.5 border-t border-slate-100 text-[11px] text-slate-400 flex items-center justify-between">
               <span>Hệ thống phân tích hành vi tự động gắn cờ tài khoản nghi vấn liên minh đặt giá</span>
-              <span className="font-medium text-slate-500">Độ tin cậy AI: 98.6%</span>
+              <span className="font-medium text-slate-500">Trạng thái: Giám sát chủ động</span>
             </div>
           </div>
 
@@ -895,21 +883,18 @@ export default function AdminControlCenter() {
 
             <div className="pt-3 border-t border-slate-100 mt-4">
               <div className="text-xs text-slate-400 flex items-center justify-between">
-                <span>Tỷ lệ hoàn thành phiên:</span>
-                <span className="font-semibold text-emerald-700">96.8%</span>
+                <span>Tổng số phiên ghi nhận:</span>
+                <span className="font-semibold font-mono text-[#001743]">{auctions.length} phiên</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* 4. LIVE AUCTIONS TABLE: TINH GỌN 7 CỘT CHÍNH (FLAT, BREADCRUMB HEADER) */}
-        <div className="bg-white border border-slate-200/70 rounded-xl overflow-hidden elevation-card">
+        <div className="bg-white border border-[#e4e7ec] rounded-xl overflow-hidden shadow-2xs">
           <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-white">
             <div className="flex items-center gap-2.5">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
               <h2 className="text-sm font-semibold text-[#001743]">
                 Giám sát trả giá trực tiếp
               </h2>
@@ -943,7 +928,7 @@ export default function AdminControlCenter() {
                       <Gavel size={36} className="mx-auto text-slate-300 mb-2" strokeWidth={1.5} />
                       <p className="font-semibold text-xs text-[#001743]">Chưa có phiên đấu giá trực tiếp</p>
                       <p className="text-[11px] text-slate-400 mt-1">
-                        Hiện không có phiên đấu giá nào đang mở. Bấm &quot;+ Mở phiên đấu giá&quot; để tạo phiên mới.
+                        Hiện không có phiên đấu giá nào đang mở. Bấm “+ Mở phiên đấu giá” để tạo phiên mới.
                       </p>
                     </td>
                   </tr>

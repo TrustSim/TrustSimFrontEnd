@@ -1,3 +1,4 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 "use client";
 import React, { useRef, useState } from "react";
 import { Download, Upload, FileSpreadsheet, Check, X, AlertCircle } from "lucide-react";
@@ -77,7 +78,7 @@ export default function ImportExportBar<T = any>({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-[#D1D5DB] rounded-[6px] text-xs font-semibold transition-colors shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-[#e4e7ec] rounded-lg text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
               title="Nhập dữ liệu từ file Excel"
             >
               <Upload size={13} strokeWidth={2} className="text-slate-500" />
@@ -89,7 +90,7 @@ export default function ImportExportBar<T = any>({
         <button
           type="button"
           onClick={handleExport}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-[#D1D5DB] rounded-[6px] text-xs font-semibold transition-colors shadow-xs"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-[#e4e7ec] rounded-lg text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
           title="Xuất bảng ra file Excel"
         >
           <Download size={13} strokeWidth={2} className="text-slate-500" />
@@ -99,18 +100,18 @@ export default function ImportExportBar<T = any>({
 
       {/* Modal Preview Import */}
       {importModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white border border-[#E2E8F0] rounded-[8px] w-full max-w-2xl shadow-xl overflow-hidden animate-fade-up">
-            <div className="px-5 py-4 border-b border-[#E2E8F0] flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white border border-[#e4e7ec] rounded-xl w-full max-w-2xl shadow-xl overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-[#e4e7ec] flex items-center justify-between bg-slate-50/50">
               <div className="flex items-center gap-2">
-                <FileSpreadsheet size={18} className="text-emerald-600" />
-                <h3 className="text-sm font-bold text-[#001743]">
+                <FileSpreadsheet size={17} className="text-emerald-600" />
+                <h3 className="text-sm font-semibold text-[#001743]">
                   Xem trước dữ liệu nhập ({previewRows.length} dòng từ {importFileName})
                 </h3>
               </div>
               <button
                 onClick={() => setImportModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 p-1 rounded-md"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors cursor-pointer"
               >
                 <X size={16} />
               </button>
@@ -127,10 +128,10 @@ export default function ImportExportBar<T = any>({
                   <span>File không có dòng dữ liệu hợp lệ</span>
                 </div>
               ) : (
-                <div className="border border-slate-200 rounded-[6px] overflow-x-auto text-xs">
+                <div className="border border-[#e4e7ec] rounded-lg overflow-x-auto text-xs">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] font-semibold">
+                      <tr className="bg-slate-50 border-b border-[#e4e7ec] text-slate-500 text-[11px] font-semibold">
                         <th className="p-2.5">#</th>
                         {Object.keys(previewRows[0] || {}).slice(0, 6).map((headerKey) => (
                           <th key={headerKey} className="p-2.5 whitespace-nowrap">
@@ -153,19 +154,19 @@ export default function ImportExportBar<T = any>({
                     </tbody>
                   </table>
                   {previewRows.length > 8 && (
-                    <div className="p-2 bg-slate-50 text-center text-slate-400 text-[11px] border-t border-slate-200">
-                      ... và {previewRows.length - 8} dòng khác
+                    <div className="p-2 bg-slate-50 text-center text-slate-400 text-[11px] border-t border-[#e4e7ec]">
+                      … và {previewRows.length - 8} dòng khác
                     </div>
                   )}
                 </div>
               )}
             </div>
 
-            <div className="px-5 py-3 border-t border-[#E2E8F0] bg-slate-50 flex items-center justify-end gap-2">
+            <div className="px-5 py-3 border-t border-[#e4e7ec] bg-slate-50/60 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setImportModalOpen(false)}
-                className="px-3.5 py-1.5 border border-[#D1D5DB] text-xs font-semibold text-slate-600 rounded-[6px] hover:bg-white transition-colors"
+                className="px-3.5 py-1.5 border border-[#e4e7ec] text-xs font-semibold text-slate-600 rounded-lg hover:bg-white transition-colors cursor-pointer"
               >
                 Hủy
               </button>
@@ -173,10 +174,10 @@ export default function ImportExportBar<T = any>({
                 type="button"
                 disabled={previewRows.length === 0 || isProcessing}
                 onClick={handleConfirmImport}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
               >
                 <Check size={14} />
-                <span>{isProcessing ? "Đang xử lý..." : `Xác nhận nhập ${previewRows.length} bản ghi`}</span>
+                <span>{isProcessing ? "Đang xử lý…" : `Xác nhận nhập ${previewRows.length} bản ghi`}</span>
               </button>
             </div>
           </div>

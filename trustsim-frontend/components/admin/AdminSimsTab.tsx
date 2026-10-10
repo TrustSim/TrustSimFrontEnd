@@ -1,3 +1,4 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
@@ -431,7 +432,7 @@ export function AdminSimsTab() {
             filename={`TrustSim_KhoSIM_${new Date().toISOString().slice(0, 10)}`}
             entityName="SIM"
             onImport={async (rows) => {
-              showToast(`Đang xử lý ${rows.length} bản ghi nhập từ tệp...`);
+              showToast(`Đang xử lý ${rows.length} bản ghi nhập từ tệp…`);
               fetchSims();
             }}
           />
@@ -511,7 +512,7 @@ export function AdminSimsTab() {
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Tìm theo số SIM (ví dụ 0988, 8888)..."
+              placeholder="Tìm theo số SIM (ví dụ 0988, 8888)…"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -543,7 +544,7 @@ export function AdminSimsTab() {
             <button
               type="button"
               onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
-              className={`text-xs py-1.5 px-3 bg-slate-50 border rounded-lg hover:bg-white focus:outline-none transition-all flex items-center gap-2 ${
+              className={`text-xs py-1.5 px-3 bg-slate-50 border rounded-lg hover:bg-white focus:outline-none transition-colors flex items-center gap-2 cursor-pointer ${
                 selectedCategories.length > 0
                   ? "border-[#001743] bg-blue-50/50 text-[#001743] font-semibold ring-1 ring-[#001743]/10"
                   : "border-slate-200 text-slate-700"
@@ -573,7 +574,7 @@ export function AdminSimsTab() {
                   <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
-                    placeholder="Tìm thể loại SIM..."
+                    placeholder="Tìm thể loại SIM…"
                     value={categorySearch}
                     onChange={(e) => setCategorySearch(e.target.value)}
                     className="w-full pl-8 pr-7 py-1 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:border-[#001743] focus:outline-none"
@@ -785,7 +786,7 @@ export function AdminSimsTab() {
                 <tr>
                   <td colSpan={9} className="py-12 text-center text-slate-400">
                     <Loader2 size={24} className="animate-spin mx-auto text-[#001743] mb-2" />
-                    <span>Đang tải danh sách SIM từ cơ sở dữ liệu...</span>
+                    <span>Đang tải danh sách SIM từ cơ sở dữ liệu…</span>
                   </td>
                 </tr>
               ) : displaySims.length === 0 ? (
@@ -1351,7 +1352,7 @@ export function AdminSimsTab() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
                 >
                   {submitting ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                   <span>Tạo SIM mới</span>

@@ -1,3 +1,4 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
@@ -382,7 +383,7 @@ function CarrierForm({
               <div className="relative group shrink-0">
                 <div
                   onClick={() => !uploadingLogo && logoInputRef.current?.click()}
-                  className="w-20 h-20 rounded-full border-2 border-white shadow-md bg-white flex items-center justify-center overflow-hidden cursor-pointer relative transition-transform hover:scale-105"
+                  className="w-20 h-20 rounded-full border-2 border-white shadow-md bg-white flex items-center justify-center overflow-hidden cursor-pointer relative transition-[box-shadow,border-color] hover:shadow-lg hover:border-slate-300"
                   style={{
                     backgroundColor: form.logoImg ? "#FFFFFF" : `${color}14`,
                   }}
@@ -414,7 +415,7 @@ function CarrierForm({
                   {uploadingLogo && (
                     <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white z-10">
                       <Loader2 size={20} className="animate-spin text-white mb-0.5" />
-                      <span className="text-[9px] font-medium">Đang tải...</span>
+                      <span className="text-[9px] font-medium">Đang tải…</span>
                     </div>
                   )}
                 </div>
@@ -424,7 +425,7 @@ function CarrierForm({
                   type="button"
                   onClick={() => !uploadingLogo && logoInputRef.current?.click()}
                   disabled={uploadingLogo}
-                  className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#001743] hover:bg-[#00266B] text-white border-2 border-white flex items-center justify-center shadow-md transition-transform hover:scale-110 disabled:opacity-50 cursor-pointer"
+                  className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#001743] hover:bg-[#00266B] text-white border-2 border-white flex items-center justify-center shadow-md transition-colors disabled:opacity-50 cursor-pointer"
                   title="Tải ảnh mới từ máy tính"
                 >
                   <Camera size={13} strokeWidth={2.2} />
