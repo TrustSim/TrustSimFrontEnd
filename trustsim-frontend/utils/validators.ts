@@ -351,6 +351,7 @@ export const auctionValidators = {
     simNumberId: string;
     startingPrice: number;
     reservePrice?: number;
+    auctionType?: number;
     registrationStartAt: Date | string;
     registrationEndAt: Date | string;
     startAt: Date | string;
@@ -362,18 +363,30 @@ export const auctionValidators = {
     if (payload.startingPrice <= 0) {
       return { isValid: false, error: "Giá khởi điểm phải lớn hơn 0 ₫." };
     }
-    if (payload.reservePrice !== undefined && payload.reservePrice > 0 && payload.reservePrice < payload.startingPrice) {
-      return { isValid: false, error: "Giá bảo lưu phải lớn hơn hoặc bằng giá khởi điểm." };
+
+    // Dutch Auction: ReservePrice is floor price and must be <= startingPrice
+    if (payload.auctionType === 1) {
+      if (!payload.reservePrice || payload.reservePrice <= 0) {
+        return { isValid: false, error: "Đấu giá kiểu Hà Lan bắt buộc phải có giá sàn (Reserve Price) lớn hơn 0 ₫." };
+      }
+      if (payload.reservePrice > payload.startingPrice) {
+        return { isValid: false, error: "Trong đấu giá kiểu Hà Lan, giá sàn dừng giảm phải nhỏ hơn hoặc bằng giá khởi điểm." };
+      }
+    } else {
+      // English Auction: Reserve price (if specified) should be >= startingPrice
+      if (payload.reservePrice !== undefined && payload.reservePrice > 0 && payload.reservePrice < payload.startingPrice) {
+        return { isValid: false, error: "Trong đấu giá kiểu Anh, giá kỳ vọng bảo lưu phải lớn hơn hoặc bằng giá khởi điểm." };
+      }
     }
 
     const regStart = new Date(payload.registrationStartAt).getTime();
     const regEnd = new Date(payload.registrationEndAt).getTime();
     const start = new Date(payload.startAt).getTime();
     const end = new Date(payload.endAt).getTime();
-    const now = Date.now();
+    const now = Date.now() - 5 * 60 * 1000; // Allow 5 mins grace for network latency matching backend
 
-    if (regStart <= now) {
-      return { isValid: false, error: "Thời gian bắt đầu đăng ký phải ở tương lai." };
+    if (regStart < now) {
+      return { isValid: false, error: "Thời gian bắt đầu đăng ký không được ở quá khứ." };
     }
     if (regEnd <= regStart) {
       return { isValid: false, error: "Thời gian kết thúc đăng ký phải sau thời gian bắt đầu đăng ký." };

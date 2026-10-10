@@ -113,11 +113,35 @@ export interface GetAdminAuctionsParams {
   startTo?: string;
 }
 
+export interface PendingSettlementDto {
+  auctionId: string;
+  auctionCode: string;
+  simPhoneNumber: string;
+  carrierName: string;
+  auctionType: number | string;
+  auctionStatus: number | string;
+  auctionResultStatus: number | string;
+  role: "WINNER" | "RUNNER_UP" | "SELLER" | string;
+  actionRequired: "PAY_SETTLEMENT" | "DECIDE_RUNNER_UP" | "RESPOND_RUNNER_UP_OFFER" | string;
+  finalPrice: number;
+  depositLocked: number;
+  remainingPaymentRequired: number;
+  availableBalance: number;
+  deficitAmount: number;
+  canDirectPay: boolean;
+  deadline?: string;
+  remainingSeconds?: number;
+  runnerUpFinalPrice?: number;
+  runnerUpParticipantId?: string;
+}
+
 export interface GetAuctionsParams {
   keyword?: string;
   status?: string | number;
   type?: string | number;
   authorId?: string;
+  myParticipations?: boolean;
+  myAuctions?: boolean;
   pageIndex?: number;
   pageSize?: number;
 }
@@ -134,9 +158,16 @@ export interface CreateAuctionPayload {
   depositAmount?: number;
   // English Auction Rules
   minimumBidIncrement?: number;
+  maxStepMultiplier?: number;
   extensionThresholdSeconds?: number;
   extensionDurationSeconds?: number;
   maximumExtensionCount?: number;
+  maxSnipeExtensionsPerParticipant?: number;
+  // Runner-Up & Anti-shill Rules
+  marginPercentage?: number;
+  maxPriceGapRatioForRunnerUp?: number;
+  minimumUniqueBiddersForRunnerUp?: number;
+  requireSellerApprovalForRunnerUp?: boolean;
   // Dutch Auction Rules
   dutchDecreaseAmount?: number;
   dutchDecreaseIntervalSeconds?: number;
@@ -144,6 +175,8 @@ export interface CreateAuctionPayload {
   maximumBidCountPerParticipant?: number;
   maximumBidCountPerMinute?: number;
   minimumBidIntervalSeconds?: number;
+  paymentGracePeriodHours?: number;
+  paymentGracePeriodMinutes?: number;
   // Legacy aliases (backward compat)
   stepPrice?: number;
   bidExtensionSeconds?: number;
@@ -151,7 +184,7 @@ export interface CreateAuctionPayload {
 
 export const auctionService = {
   /**
-   * Lấy danh sách các phiên đấu giá công khai từ Backend (hỗ trợ search mã phiên, số sim, lọc trạng thái, loại hình)
+   * Lấy danh sách các phiên đấu giá công khai từ Backend (hỗ trợ search mã phiên, số sim, lọc trạng thái, loại hình, phiên tôi tạo, phiên tôi tham gia)
    */
   async getAuctions(params: GetAuctionsParams = {}): Promise<PagedResult<AuctionDto>> {
     const query = new URLSearchParams();
@@ -163,6 +196,8 @@ export const auctionService = {
       query.append("type", params.type.toString());
     }
     if (params.authorId) query.append("authorId", params.authorId);
+    if (params.myParticipations) query.append("myParticipations", "true");
+    if (params.myAuctions) query.append("myAuctions", "true");
     if (params.pageIndex) query.append("pageIndex", params.pageIndex.toString());
     if (params.pageSize) query.append("pageSize", params.pageSize.toString());
 
@@ -302,4 +337,74 @@ export const auctionService = {
     });
     return res.success;
   },
+
+  /**
+   * Lấy danh sách các phiên đấu giá đang cần người dùng thanh toán hoặc xử lý quyết định
+   */
+  async getPendingSettlements(): Promise<PendingSettlementDto[]> {
+    const res = await apiFetch<PendingSettlementDto[]>("/Auctions/my-pending-settlements");
+    return res.data || [];
+  },
+
+  /**
+   * Người thắng hoàn tất thanh toán số tiền còn lại
+   */
+  async confirmWinnerPayment(auctionId: string): Promise<any> {
+    const res = await apiFetch<any>(`/Auctions/${auctionId}/confirm-payment`, {
+      method: "POST",
+    });
+    if (!res.success) throw new Error(res.message || "Thanh toán không thành công.");
+    return res.data;
+  },
+
+  /**
+   * Người thắng chủ động từ bỏ quyền mua SIM (chấp nhận phạt cọc)
+   */
+  async forfeitWinnerPurchase(auctionId: string, reason?: string): Promise<any> {
+    const res = await apiFetch<any>(`/Auctions/${auctionId}/forfeit-purchase`, {
+      method: "POST",
+      body: JSON.stringify({ reason: reason || "Người dùng chủ động từ bỏ" }),
+    });
+    if (!res.success) throw new Error(res.message || "Từ bỏ quyền mua không thành công.");
+    return res.data;
+  },
+
+  /**
+   * Người về nhì chấp nhận mua SIM
+   */
+  async acceptRunnerUpOffer(auctionId: string): Promise<any> {
+    const res = await apiFetch<any>(`/Auctions/${auctionId}/runner-up/accept`, {
+      method: "POST",
+    });
+    if (!res.success) throw new Error(res.message || "Chấp nhận nhận mua không thành công.");
+    return res.data;
+  },
+
+  /**
+   * Người về nhì từ chối mua SIM
+   */
+  async rejectRunnerUpOffer(auctionId: string): Promise<any> {
+    const res = await apiFetch<any>(`/Auctions/${auctionId}/runner-up/reject`, {
+      method: "POST",
+    });
+    if (!res.success) throw new Error(res.message || "Từ chối không thành công.");
+    return res.data;
+  },
+
+  /**
+   * Người bán duyệt bán hoặc từ chối bán SIM cho Á quân
+   */
+  async sellerDecideRunnerUp(
+    auctionId: string,
+    isApproved: boolean,
+    rejectionReason?: string
+  ): Promise<any> {
+    const res = await apiFetch<any>(`/Auctions/${auctionId}/runner-up/seller-decision`, {
+      method: "POST",
+      body: JSON.stringify({ isApproved, rejectionReason: rejectionReason || "" }),
+    });
+    if (!res.success) throw new Error(res.message || "Xử lý phê duyệt không thành công.");
+    return res.data;
+  },
 };
+

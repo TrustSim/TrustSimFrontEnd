@@ -531,6 +531,7 @@ export default function OwnedSimsTab({
 
   // Modal: Tạo phiên đấu giá
   const [selectedSimForAuction, setSelectedSimForAuction] = useState<OwnedSim | null>(null);
+  const [isCreateAuctionOpen, setIsCreateAuctionOpen] = useState(false);
 
   // Modal: Xác thực chính chủ 2 bước
   const [selectedSimForVerify, setSelectedSimForVerify] = useState<OwnedSim | null>(null);
@@ -839,8 +840,8 @@ export default function OwnedSimsTab({
   };
 
   // ─── 5. Handle Open Create Auction ───────────────────────────────────────
-  const handleOpenCreateAuction = (sim: OwnedSim) => {
-    if (sim.ownershipStatus !== "VERIFIED_OWNER") {
+  const handleOpenCreateAuction = (sim?: OwnedSim) => {
+    if (sim && sim.ownershipStatus !== "VERIFIED_OWNER") {
       addToast({
         type: "error",
         title: "Chưa đủ điều kiện mở đấu giá",
@@ -848,7 +849,8 @@ export default function OwnedSimsTab({
       });
       return;
     }
-    setSelectedSimForAuction(sim);
+    setSelectedSimForAuction(sim || null);
+    setIsCreateAuctionOpen(true);
   };
 
   return (
@@ -909,10 +911,21 @@ export default function OwnedSimsTab({
           <button
             type="button"
             onClick={handleOpenAddModal}
-            className="h-[34px] px-3.5 inline-flex items-center gap-1.5 bg-[#001743] hover:bg-[#002266] text-white rounded-lg text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
+            className="h-[34px] px-3 inline-flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-[#001743] rounded-lg text-xs font-bold shadow-2xs hover:border-[#001743] transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
           >
             <Plus size={15} strokeWidth={2.5} />
             <span>Thêm SIM cá nhân</span>
+          </button>
+
+          {/* Nút Mở phiên đấu giá */}
+          <button
+            type="button"
+            onClick={() => handleOpenCreateAuction()}
+            className="h-[34px] px-3.5 inline-flex items-center gap-1.5 bg-[#E4011E] hover:bg-[#C00119] text-white rounded-lg text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
+            title="Tạo phiên đấu giá cho số SIM đã xác thực"
+          >
+            <Gavel size={15} strokeWidth={2.5} />
+            <span>Tạo phiên đấu giá</span>
           </button>
         </div>
       </div>
@@ -1372,16 +1385,25 @@ export default function OwnedSimsTab({
       )}
 
       {/* ── 4. Modal: Tạo phiên đấu giá (Wizard Modal 4 bước) ── */}
-      {selectedSimForAuction && (
+      {(isCreateAuctionOpen || selectedSimForAuction) && (
         <CreateAuctionWizardModal
           sim={selectedSimForAuction}
           isEkycVerified={isEkycVerified}
-          onClose={() => setSelectedSimForAuction(null)}
+          onClose={() => {
+            setIsCreateAuctionOpen(false);
+            setSelectedSimForAuction(null);
+          }}
           onSuccess={() => {
+            setIsCreateAuctionOpen(false);
             setSelectedSimForAuction(null);
             fetchSimsFromDb();
           }}
           onNavigateToEkyc={onNavigateToEkyc}
+          onNavigateToVerifySim={(s) => {
+            setIsCreateAuctionOpen(false);
+            setSelectedSimForAuction(null);
+            if (s) setSelectedSimForVerify(s);
+          }}
           addToast={addToast}
         />
       )}

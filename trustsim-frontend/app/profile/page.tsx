@@ -572,7 +572,13 @@ function ProfilePageInner() {
                 onNavigateToEkyc={() => handleTabChange("ekyc")}
               />
             )}
-            {activeTab === "bids" && <BidsTab addToast={addToast} />}
+            {activeTab === "bids" && (
+              <BidsTab
+                addToast={addToast}
+                onNavigateTab={handleTabChange}
+                onOpenDeposit={() => setDepositModalOpen(true)}
+              />
+            )}
             {activeTab === "transactions" && (
               <TransactionsTab
                 onOpenDeposit={() => setDepositModalOpen(true)}
