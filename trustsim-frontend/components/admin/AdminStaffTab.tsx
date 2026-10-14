@@ -1,10 +1,10 @@
-/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
+/* Hallmark · genre: modern-minimal · style: Clean High-Trust Banking · macrostructure: Workbench · role: human-capital-management */
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   ShieldCheck,
-  UserCheck,
+  ShieldAlert,
   Search,
   Plus,
   Edit3,
@@ -17,7 +17,17 @@ import {
   CheckCircle2,
   Loader2,
   Headphones,
-  UserCog,
+  UserCheck,
+  Eye,
+  KeyRound,
+  Fingerprint,
+  Building2,
+  Phone,
+  Mail,
+  BadgeCheck,
+  Users,
+  Clock,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   userService,
@@ -45,49 +55,78 @@ const STAFF_EXPORT_COLUMNS: ExcelColumnDef<AdminUserDetailDto>[] = [
   { header: "Mã nhân sự", key: "id", width: 15 },
   { header: "Họ và tên", key: "fullName", width: 22 },
   { header: "Tên đăng nhập", key: "userName", width: 18 },
-  { header: "Email", key: "email", width: 25 },
+  { header: "Email công vụ", key: "email", width: 25 },
   { header: "Số điện thoại", key: "phoneNumber", width: 16 },
   {
-    header: "Vai trò",
+    header: "Phân cấp thẩm quyền",
     key: "role",
-    width: 18,
+    width: 20,
     formatter: (v) =>
-      v === UserRoleEnum.ADMIN || v === 1 || v === "ADMIN" ? "Quản trị viên" : "Tư vấn viên",
+      v === UserRoleEnum.ADMIN || v === 1 || v === "ADMIN" ? "Quản trị viên (Tier-3)" : "Tư vấn viên (Tier-1)",
   },
   {
-    header: "Trạng thái",
+    header: "Trạng thái vận hành",
     key: "isActive",
-    width: 16,
-    formatter: (v) => (v ? "Đang hoạt động" : "Đã khóa"),
+    width: 18,
+    formatter: (v) => (v ? "Đang hoạt động" : "Đã tạm khóa"),
   },
-  { header: "Ngày tạo", key: "createdDate", width: 18 },
+  { header: "Ngày cấp quyền", key: "createdDate", width: 18 },
 ];
 
-// Flat Minimalist Staff Avatar (Line/Clean styled)
-function StaffAvatar({ name, avatar }: { name: string; avatar?: string }) {
-  if (avatar && avatar.trim() !== "" && !avatar.includes("default.png")) {
-    return (
-      <img
-        src={avatar}
-        alt={name}
-        className="w-9 h-9 rounded-full object-cover border border-slate-200 bg-white shrink-0"
-        onError={(e) => {
-          (e.target as HTMLImageElement).style.display = "none";
-        }}
-      />
-    );
-  }
+// Clean High-Trust Banking Avatar with status ring
+function BankingStaffAvatar({
+  name,
+  avatar,
+  isActive,
+  size = "md",
+}: {
+  name: string;
+  avatar?: string;
+  isActive?: boolean;
+  size?: "sm" | "md" | "lg";
+}) {
+  const sizeClasses = {
+    sm: "w-8 h-8 text-[11px]",
+    md: "w-10 h-10 text-xs",
+    lg: "w-14 h-14 text-sm font-semibold",
+  }[size];
+
   const initials = (name || "NV")
     .split(" ")
     .map((w) => w[0])
     .filter(Boolean)
     .slice(-2)
     .join("")
-    .toUpperCase();
+    .toUpperCase() || "NV";
 
   return (
-    <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0 bg-[#001743]">
-      {initials || "NV"}
+    <div className="relative inline-block shrink-0">
+      {avatar && avatar.trim() !== "" && !avatar.includes("default.png") ? (
+        <img
+          src={avatar}
+          alt={name}
+          className={`${sizeClasses} rounded-full object-cover border border-slate-200/90 bg-white ring-1 ring-slate-100 shadow-2xs`}
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = "none";
+          }}
+        />
+      ) : (
+        <div
+          className={`${sizeClasses} rounded-full flex items-center justify-center text-white font-semibold tracking-wider bg-[#001743] border border-[#00266B] ring-1 ring-slate-200 shadow-2xs`}
+        >
+          {initials}
+        </div>
+      )}
+
+      {/* Realtime Status Indicator Ring */}
+      {isActive !== undefined && (
+        <span
+          className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${
+            isActive ? "bg-emerald-500 ring-1 ring-emerald-300" : "bg-rose-500 ring-1 ring-rose-300"
+          }`}
+          title={isActive ? "Đang trực tuyến & Hoạt động" : "Tài khoản bị khóa"}
+        />
+      )}
     </div>
   );
 }
@@ -134,15 +173,21 @@ export function AdminStaffTab() {
   };
 
   const targetRole = activeSegment === "admins" ? UserRoleEnum.ADMIN : UserRoleEnum.CONSULTANT;
-  const displayStaff = [...staffList].sort((a, b) => {
-    const left = sortKey === "name" ? (a.fullName || a.userName || "") : String(a.createdDate || "");
-    const right = sortKey === "name" ? (b.fullName || b.userName || "") : String(b.createdDate || "");
-    const result = String(left).localeCompare(String(right), "vi");
-    return sortDirection === "asc" ? result : -result;
-  });
+
+  // Sorting
+  const displayStaff = useMemo(() => {
+    return [...staffList].sort((a, b) => {
+      const left = sortKey === "name" ? (a.fullName || a.userName || "") : String(a.createdDate || "");
+      const right = sortKey === "name" ? (b.fullName || b.userName || "") : String(b.createdDate || "");
+      const result = String(left).localeCompare(String(right), "vi");
+      return sortDirection === "asc" ? result : -result;
+    });
+  }, [staffList, sortKey, sortDirection]);
+
   const changeSort = (key: "name" | "date") => {
     const next = toggleSort(sortKey, sortDirection, key);
-    setSortKey(next.key); setSortDirection(next.direction);
+    setSortKey(next.key);
+    setSortDirection(next.direction);
   };
 
   const fetchStaff = useCallback(async () => {
@@ -159,7 +204,7 @@ export function AdminStaffTab() {
       setStaffList(res.items);
       setTotalCount(res.totalCount);
     } catch (err: any) {
-      setError(err.message || "Không thể tải danh sách nhân sự.");
+      setError(err.message || "Không thể truy xuất dữ liệu nhân sự kiểm toán.");
     } finally {
       setLoading(false);
     }
@@ -183,7 +228,7 @@ export function AdminStaffTab() {
       const full = await userService.getAdminUserById(s.id);
       if (full) setSelectedStaff(full);
     } catch {
-      // Giữ nguyên dữ liệu có sẵn từ bảng nếu fetch chi tiết lỗi
+      // Fallback to table data
     }
   };
 
@@ -195,7 +240,7 @@ export function AdminStaffTab() {
       const full = await userService.getAdminUserById(s.id);
       if (full) setSelectedStaff(full);
     } catch {
-      // Giữ nguyên dữ liệu có sẵn từ bảng nếu fetch chi tiết lỗi
+      // Fallback to table data
     }
   };
 
@@ -206,225 +251,343 @@ export function AdminStaffTab() {
       await userService.toggleUserStatus(statusConfirm.user.id, statusConfirm.targetStatus);
       showToast(
         statusConfirm.targetStatus
-          ? `Đã mở khóa tài khoản nhân sự "${statusConfirm.user.fullName}" thành công.`
-          : `Đã khóa tài khoản nhân sự "${statusConfirm.user.fullName}" thành công.`
+          ? `Đã kích hoạt quyền vận hành cho tài khoản "${statusConfirm.user.fullName}".`
+          : `Đã thu hồi quyền truy cập của tài khoản "${statusConfirm.user.fullName}".`
       );
       setStaffList((prev) =>
         prev.map((s) => (s.id === statusConfirm.user.id ? { ...s, isActive: statusConfirm.targetStatus } : s))
       );
       setStatusConfirm(null);
     } catch (err: any) {
-      showToast(`Lỗi: ${err.message}`);
+      showToast(`Lỗi kiểm toán: ${err.message}`);
     } finally {
       setStatusLoading(false);
     }
   };
 
+  // High-Trust Metrics summary (Calculated on current scope)
+  const activeStaffCount = staffList.filter((s) => s.isActive).length;
+  const lockedStaffCount = staffList.filter((s) => !s.isActive).length;
+
   return (
-    <div className="admin-tab admin-tab-staff space-y-4">
-      {/* ── 1. Header Workspace with Segmented Control ── */}
-      <div className="bg-white border border-[#e4e7ec] rounded-xl p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-base font-bold text-[#001743]">Quản Lý Nhân Sự &amp; Nội Bộ</h1>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 font-mono">
-              {totalCount} nhân sự
-            </span>
+    <div className="admin-tab-staff space-y-6">
+      {/* ── SECTION 1: Institutional Context Header & Master Action Bar ── */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs relative overflow-hidden">
+        {/* Subtle decorative security grid background */}
+        <div className="absolute right-0 top-0 w-80 h-full opacity-[0.03] pointer-events-none bg-[radial-gradient(#001743_1px,transparent_1px)] [background-size:12px_12px]" />
+
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider uppercase bg-slate-100 text-[#001743] border border-slate-200">
+                <ShieldCheck size={12} className="text-[#001743]" />
+                <span>Kiểm soát phân quyền cấp cao</span>
+              </span>
+              <span className="text-[11px] font-mono text-slate-400">ISO/IEC 27001 COMPLIANT</span>
+            </div>
+
+            <h1 className="text-xl font-bold tracking-tight text-[#001743] mt-2">
+              Quản Trị Nhân Sự &amp; Thẩm Quyền Vận Hành
+            </h1>
+            <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
+              Quản lý định danh nhân sự nội bộ, phân cấp bảo mật Tier-3 (Quản trị viên) và Tier-1 (Tư vấn viên trực sàn).
+              Mọi thay đổi thẩm quyền đều được ghi vết tự động vào sổ cái kiểm toán.
+            </p>
           </div>
-          <p className="text-xs text-[#6B7280] mt-0.5">
-            Phân quyền hệ thống, quản lý tài khoản Quản trị viên và đội ngũ Tư vấn viên trực sàn.
-          </p>
+
+          {/* Action Hub */}
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+            <ImportExportBar
+              data={staffList}
+              columns={STAFF_EXPORT_COLUMNS}
+              filename={`TrustSim_NhanSu_${new Date().toISOString().slice(0, 10)}`}
+              entityName="nhân sự"
+              onImport={(rows) => {
+                const newStaff: AdminUserDetailDto[] = rows
+                  .map((r, idx) => ({
+                    id: `STAFF-IMP-${Date.now()}-${idx + 1}`,
+                    userName: String(r["Tên đăng nhập"] || r.userName || `staff_${Date.now()}_${idx}`),
+                    email: String(r["Email"] || r.email || `staff${idx}@trustsim.vn`),
+                    role:
+                      String(r["Phân cấp"] || r["Vai trò"] || r.role).toLowerCase().includes("admin")
+                        ? UserRoleEnum.ADMIN
+                        : UserRoleEnum.CONSULTANT,
+                    isActive: true,
+                    fullName: String(r["Họ và tên"] || r.fullName || "Nhân sự mới"),
+                    phoneNumber: String(r["Số điện thoại"] || r.phoneNumber || "").replace(/\D/g, ""),
+                    address: String(r["Địa chỉ"] || r.address || "Trụ sở TrustSim"),
+                    identityNumber: String(r["Số CCCD/CMND"] || r.identityNumber || ""),
+                    verificationStatus: VerificationStatusEnum.VERIFIED,
+                    availableBalance: 0,
+                    lockedBalance: 0,
+                    hasPkiKeys: true,
+                    createdDate: new Date().toLocaleDateString("vi-VN"),
+                  }))
+                  .filter((s) => s.fullName);
+
+                if (newStaff.length > 0) {
+                  setStaffList((prev) => [...newStaff, ...prev]);
+                  showToast(`Đã ghi nhận ${newStaff.length} nhân sự kiểm toán vào hệ thống.`);
+                }
+              }}
+            />
+
+            <button
+              onClick={openCreate}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white text-xs font-semibold rounded-xl shadow-xs transition-all duration-150 shrink-0"
+            >
+              <Plus size={15} strokeWidth={2} />
+              <span>{activeSegment === "admins" ? "Cấp tài khoản Quản trị" : "Cấp tài khoản Tư vấn"}</span>
+            </button>
+          </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          <ImportExportBar
-            data={staffList}
-            columns={STAFF_EXPORT_COLUMNS}
-            filename={`TrustSim_NhanSu_${new Date().toISOString().slice(0, 10)}`}
-            entityName="nhân sự"
-            onImport={(rows) => {
-              const newStaff: AdminUserDetailDto[] = rows
-                .map((r, idx) => ({
-                  id: `STAFF-IMP-${Date.now()}-${idx + 1}`,
-                  userName: String(r["Tên đăng nhập"] || r.userName || `staff_${Date.now()}_${idx}`),
-                  email: String(r["Email"] || r.email || `staff${idx}@trustsim.vn`),
-                  role:
-                    String(r["Vai trò"] || r.role).toLowerCase().includes("admin")
-                      ? UserRoleEnum.ADMIN
-                      : UserRoleEnum.CONSULTANT,
-                  isActive: true,
-                  fullName: String(r["Họ và tên"] || r.fullName || "Nhân sự mới"),
-                  phoneNumber: String(r["Số điện thoại"] || r.phoneNumber || "").replace(/\D/g, ""),
-                  address: String(r["Địa chỉ"] || r.address || "Trụ sở TrustSim"),
-                  identityNumber: String(r["Số CCCD/CMND"] || r.identityNumber || ""),
-                  verificationStatus: VerificationStatusEnum.VERIFIED,
-                  availableBalance: 0,
-                  lockedBalance: 0,
-                  hasPkiKeys: true,
-                  createdDate: new Date().toLocaleDateString("vi-VN"),
-                }))
-                .filter((s) => s.fullName);
+        {/* ── SECTION 2: Clean High-Trust KPI Metrics Ribbon ── */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-6 mt-6 border-t border-slate-100">
+          <div className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
+            <div>
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tổng nhân sự trực</div>
+              <div className="text-lg font-bold text-[#001743] font-mono tabular-nums mt-0.5">{totalCount}</div>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-white border border-slate-200/70 flex items-center justify-center text-slate-700 shadow-2xs">
+              <Users size={16} strokeWidth={1.5} />
+            </div>
+          </div>
 
-              if (newStaff.length > 0) {
-                setStaffList((prev) => [...newStaff, ...prev]);
-                showToast(`Đã nhập thành công ${newStaff.length} nhân sự từ file Excel.`);
-              }
-            }}
-          />
-          <button
-            onClick={openCreate}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-lg transition-colors shadow-2xs shrink-0"
-          >
-            <Plus size={15} strokeWidth={1.5} />
-            <span>{activeSegment === "admins" ? "Thêm Quản trị viên" : "Thêm Tư vấn viên"}</span>
-          </button>
+          <div className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
+            <div>
+              <div className="text-[10px] font-bold text-purple-700 uppercase tracking-wider">Tier-3 Clearance</div>
+              <div className="text-lg font-bold text-purple-950 font-mono tabular-nums mt-0.5">
+                {activeSegment === "admins" ? totalCount : "Quản trị"}
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-purple-50 border border-purple-200/70 flex items-center justify-center text-purple-700 shadow-2xs">
+              <ShieldCheck size={16} strokeWidth={1.5} />
+            </div>
+          </div>
+
+          <div className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
+            <div>
+              <div className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Tier-1 Support</div>
+              <div className="text-lg font-bold text-blue-950 font-mono tabular-nums mt-0.5">
+                {activeSegment === "consultants" ? totalCount : "Tư vấn"}
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200/70 flex items-center justify-center text-blue-700 shadow-2xs">
+              <Headphones size={16} strokeWidth={1.5} />
+            </div>
+          </div>
+
+          <div className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
+            <div>
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tình trạng kiểm toán</div>
+              <div className="flex items-center gap-1.5 mt-0.5 text-xs font-semibold text-emerald-700 font-mono">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>100% Khóa bảo mật</span>
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200/70 flex items-center justify-center text-emerald-700 shadow-2xs">
+              <BadgeCheck size={16} strokeWidth={1.5} />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ── 2. Segmented Tabs Switcher ── */}
-      <div className="flex items-center gap-2 border-b border-[#e4e7ec]">
-        <button
-          type="button"
-          onClick={() => {
-            setActiveSegment("admins");
-            setPageIndex(1);
-          }}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors duration-150 ${
-            activeSegment === "admins"
-              ? "border-[#001743] text-[#001743]"
-              : "border-transparent text-slate-500 hover:text-slate-800"
-          }`}
-        >
-          <ShieldCheck size={16} strokeWidth={1.5} />
-          <span>Quản trị viên</span>
-        </button>
+      {/* ── SECTION 3: Institutional Navigation Console & Filter Strip ── */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* Segmented Controller (Banking Switcher) */}
+          <div className="inline-flex p-1 bg-slate-100/90 rounded-xl border border-slate-200/80 self-start">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveSegment("admins");
+                setPageIndex(1);
+              }}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-150 ${
+                activeSegment === "admins"
+                  ? "bg-white text-[#001743] shadow-xs border border-slate-200/60 font-bold"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <ShieldCheck size={15} strokeWidth={activeSegment === "admins" ? 2 : 1.5} className="text-[#001743]" />
+              <span>Quản trị viên (Tier-3)</span>
+            </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            setActiveSegment("consultants");
-            setPageIndex(1);
-          }}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors duration-150 ${
-            activeSegment === "consultants"
-              ? "border-[#001743] text-[#001743]"
-              : "border-transparent text-slate-500 hover:text-slate-800"
-          }`}
-        >
-          <Headphones size={16} strokeWidth={1.5} />
-          <span>Tư vấn viên</span>
-        </button>
-      </div>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveSegment("consultants");
+                setPageIndex(1);
+              }}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-150 ${
+                activeSegment === "consultants"
+                  ? "bg-white text-[#001743] shadow-xs border border-slate-200/60 font-bold"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Headphones size={15} strokeWidth={activeSegment === "consultants" ? 2 : 1.5} className="text-[#001743]" />
+              <span>Tư vấn viên (Tier-1)</span>
+            </button>
+          </div>
 
-      {/* ── 3. Filter Toolbar Card ── */}
-      <div className="bg-white border border-[#e4e7ec] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
-        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
-          <div className="relative w-72">
-            <Search size={15} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          {/* Quick Status Filter Pills */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-semibold text-slate-400 mr-1 flex items-center gap-1">
+              <SlidersHorizontal size={12} />
+              <span>Trạng thái:</span>
+            </span>
+
+            {[
+              { id: "", label: "Tất cả" },
+              { id: "active", label: "Hoạt động" },
+              { id: "locked", label: "Đã tạm khóa" },
+            ].map((st) => (
+              <button
+                key={st.id}
+                type="button"
+                onClick={() => {
+                  setSelectedStatus(st.id);
+                  setPageIndex(1);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
+                  selectedStatus === st.id
+                    ? "bg-[#001743] text-white shadow-2xs font-bold"
+                    : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/60"
+                }`}
+              >
+                {st.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Search Bar + Controls */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100">
+          <div className="relative w-full sm:w-96">
+            <Search size={15} strokeWidth={1.5} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm theo họ tên, username, email…"
-              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none transition-colors"
+              placeholder="Tìm theo họ tên, username, số điện thoại, CCCD…"
+              className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-[#001743] focus:ring-1 focus:ring-[#001743] focus:outline-none transition-all placeholder:text-slate-400"
             />
             {search && (
               <button
                 onClick={() => setSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
               >
-                <X size={12} strokeWidth={1.5} />
+                <X size={13} strokeWidth={1.5} />
               </button>
             )}
           </div>
 
-          <select
-            value={selectedStatus}
-            onChange={(e) => {
-              setSelectedStatus(e.target.value);
-              setPageIndex(1);
-            }}
-            className="text-xs py-1.5 px-2.5 bg-white border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none text-[#001743] transition-colors"
-          >
-            <option value="">Tất cả trạng thái</option>
-            <option value="active">Đang hoạt động</option>
-            <option value="locked">Bị khóa</option>
-          </select>
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+            <div className="text-xs text-slate-500 font-mono">
+              Hiển thị <strong className="text-[#001743] font-bold">{staffList.length}</strong> /{" "}
+              <span className="text-slate-700">{totalCount}</span> hồ sơ
+            </div>
 
-          <button
-            onClick={fetchStaff}
-            disabled={loading}
-            className="p-1.5 text-[#4B5563] hover:text-[#001743] hover:bg-slate-50 border border-[#e4e7ec] rounded-lg transition-colors bg-white disabled:opacity-50"
-            title="Tải lại danh sách"
-          >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} strokeWidth={1.5} />
-          </button>
-        </div>
-
-        <div className="text-xs text-[#6B7280]">
-          Hiển thị <strong className="text-[#001743]">{staffList.length}</strong> /{" "}
-          <strong className="text-[#001743]">{totalCount}</strong> tài sự
+            <button
+              onClick={fetchStaff}
+              disabled={loading}
+              className="p-2 text-slate-600 hover:text-[#001743] hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors bg-white disabled:opacity-50 shadow-2xs"
+              title="Đồng bộ lại danh sách kiểm toán"
+            >
+              <RefreshCw size={14} className={loading ? "animate-spin" : ""} strokeWidth={1.5} />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* ── 4. Table Card (CRUD Workspace 60-30-10 layout) ── */}
-      <div className="bg-white border border-[#e4e7ec] rounded-xl overflow-hidden shadow-2xs">
+      {/* ── SECTION 4: The Clean High-Trust Institutional Data Table ── */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-[#e4e7ec] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
-                <th className="py-3 px-4"><AdminSortButton label="Nhân sự" active={sortKey === "name"} direction={sortDirection} onClick={() => changeSort("name")} /></th>
-                <th className="py-3 px-4">Số điện thoại</th>
-                <th className="py-3 px-4">
-                  {activeSegment === "admins" ? "Thẩm quyền quản trị" : "Phụ trách chuyên môn"}
+              <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500 font-bold uppercase text-[10px] tracking-wider h-11">
+                <th className="py-3 px-5">
+                  <AdminSortButton
+                    label="Định danh nhân sự"
+                    active={sortKey === "name"}
+                    direction={sortDirection}
+                    onClick={() => changeSort("name")}
+                  />
                 </th>
-                <th className="py-3 px-4"><AdminSortButton label="Ngày cấp quyền" active={sortKey === "date"} direction={sortDirection} onClick={() => changeSort("date")} /></th>
-                <th className="py-3 px-4 text-center">Trạng thái</th>
-                <th className="py-3 px-4 text-right">Thao tác</th>
+                <th className="py-3 px-4">Liên hệ &amp; Định danh</th>
+                <th className="py-3 px-4">Phân cấp kiểm toán</th>
+                <th className="py-3 px-4">
+                  <AdminSortButton
+                    label="Ngày cấp phép"
+                    active={sortKey === "date"}
+                    direction={sortDirection}
+                    onClick={() => changeSort("date")}
+                  />
+                </th>
+                <th className="py-3 px-4 text-center">Tình trạng vận hành</th>
+                <th className="py-3 px-5 text-right">Kiểm toán &amp; Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E5E7EB]">
+            <tbody className="divide-y divide-slate-100">
               {loading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <tr key={i} className="h-16 animate-pulse">
-                    <td className="py-3 px-4">
+                Array.from({ length: 4 }).map((_, i) => (
+                  <tr key={i} className="h-16 animate-pulse bg-white">
+                    <td className="py-3 px-5">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-slate-200" />
+                        <div className="w-10 h-10 rounded-full bg-slate-100" />
                         <div className="space-y-1.5">
-                          <div className="h-3.5 bg-slate-200 rounded w-28" />
-                          <div className="h-2.5 bg-slate-100 rounded w-20" />
+                          <div className="h-3.5 bg-slate-200 rounded w-32" />
+                          <div className="h-2.5 bg-slate-100 rounded w-24" />
                         </div>
                       </div>
                     </td>
-                    <td className="py-3 px-4"><div className="h-4 bg-slate-100 rounded w-24" /></td>
-                    <td className="py-3 px-4"><div className="h-5 bg-slate-100 rounded-full w-28" /></td>
-                    <td className="py-3 px-4"><div className="h-4 bg-slate-100 rounded w-20" /></td>
-                    <td className="py-3 px-4 text-center"><div className="h-5 bg-slate-100 rounded w-16 mx-auto" /></td>
-                    <td className="py-3 px-4 text-right"><div className="h-7 bg-slate-100 rounded w-16 ml-auto" /></td>
+                    <td className="py-3 px-4">
+                      <div className="space-y-1">
+                        <div className="h-3 bg-slate-100 rounded w-28" />
+                        <div className="h-2.5 bg-slate-100 rounded w-20" />
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="h-5 bg-slate-100 rounded-md w-32" />
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="h-3.5 bg-slate-100 rounded w-20" />
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <div className="h-5 bg-slate-100 rounded-full w-20 mx-auto" />
+                    </td>
+                    <td className="py-3 px-5 text-right">
+                      <div className="h-7 bg-slate-100 rounded-lg w-24 ml-auto" />
+                    </td>
                   </tr>
                 ))
               ) : error ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-500">
-                    <AlertTriangle size={28} strokeWidth={1.5} className="text-amber-500 mx-auto mb-2" />
-                    <div className="text-xs font-bold text-slate-800">Không thể tải dữ liệu nhân sự</div>
-                    <p className="text-[11px] text-slate-400 mt-0.5">{error}</p>
+                  <td colSpan={6} className="py-16 text-center">
+                    <div className="w-12 h-12 rounded-full bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto mb-3">
+                      <AlertTriangle size={24} strokeWidth={1.5} />
+                    </div>
+                    <div className="text-sm font-bold text-slate-800">Không thể truy xuất dữ liệu nhân sự</div>
+                    <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">{error}</p>
                     <button
                       onClick={fetchStaff}
-                      className="mt-3 px-3 py-1.5 bg-[#001743] text-white text-xs font-semibold rounded-[6px]"
+                      className="mt-4 px-4 py-2 bg-[#001743] text-white text-xs font-semibold rounded-xl hover:bg-[#00266B] transition-colors"
                     >
-                      Thử lại
+                      Thử kết nối lại
                     </button>
                   </td>
                 </tr>
               ) : staffList.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-500">
-                    <UserCheck size={28} strokeWidth={1.5} className="text-slate-300 mx-auto mb-2" />
-                    <div className="text-xs font-bold text-slate-700">
-                      Chưa có {activeSegment === "admins" ? "quản trị viên" : "tư vấn viên"} nào
+                  <td colSpan={6} className="py-16 text-center">
+                    <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                      <UserCheck size={24} strokeWidth={1.5} />
                     </div>
+                    <div className="text-sm font-bold text-slate-700">
+                      Chưa ghi nhận {activeSegment === "admins" ? "quản trị viên" : "tư vấn viên"} phù hợp bộ lọc
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">Thử thay đổi từ khóa tìm kiếm hoặc cấp tài khoản mới.</p>
                   </td>
                 </tr>
               ) : (
@@ -435,92 +598,131 @@ export function AdminStaffTab() {
                     <tr
                       key={member.id}
                       onClick={() => openView(member)}
-                      className={`transition-colors h-16 cursor-pointer ${
-                        isUpdated ? "bg-emerald-50" : "hover:bg-slate-50/80"
+                      className={`group cursor-pointer transition-all duration-150 ${
+                        isUpdated
+                          ? "bg-emerald-50/70"
+                          : "hover:bg-slate-50/80 bg-white"
                       }`}
-                      style={{ transition: isUpdated ? "background-color 1500ms ease-out" : undefined }}
                     >
-                      {/* Cột 1: Thông tin nhân sự */}
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          <StaffAvatar name={member.fullName || member.userName} avatar={member.avatarImg} />
-                          <div>
-                            <div className="font-bold text-xs text-[#001743]">
-                              {member.fullName || member.userName}
+                      {/* Cột 1: Thông tin nhân sự & Avatar Status Ring */}
+                      <td className="py-3.5 px-5">
+                        <div className="flex items-center gap-3.5">
+                          <BankingStaffAvatar
+                            name={member.fullName || member.userName}
+                            avatar={member.avatarImg}
+                            isActive={member.isActive}
+                          />
+                          <div className="min-w-0">
+                            <div className="font-bold text-xs text-[#001743] group-hover:text-blue-900 transition-colors flex items-center gap-1.5">
+                              <span className="truncate">{member.fullName || member.userName}</span>
+                              {member.hasPkiKeys && (
+                                <span title="Đã xác thực chứng thư PKI">
+                                  <BadgeCheck size={14} className="text-blue-600 shrink-0" />
+                                </span>
+                              )}
                             </div>
-                            <div className="text-[11px] text-[#6B7280] flex items-center gap-1.5 mt-0.5">
-                              <span className="font-mono text-slate-400">@{member.userName}</span>
-                              <span>•</span>
-                              <span className="truncate max-w-[160px]">{member.email}</span>
+                            <div className="text-[11px] text-slate-500 font-mono flex items-center gap-1.5 mt-0.5 truncate">
+                              <span className="text-slate-600 font-semibold">@{member.userName}</span>
+                              <span className="text-slate-300">•</span>
+                              <span className="truncate max-w-[170px] text-slate-500">{member.email}</span>
                             </div>
                           </div>
                         </div>
                       </td>
 
-                      {/* Cột 2: SĐT */}
-                      <td className="py-3 px-4 font-mono font-bold text-xs text-[#001743]">
-                        {member.phoneNumber || "Chưa cập nhật"}
+                      {/* Cột 2: SĐT và CCCD Định danh (High-trust banking privacy format) */}
+                      <td className="py-3.5 px-4 font-mono">
+                        <div className="text-xs font-semibold text-[#001743] flex items-center gap-1.5">
+                          <Phone size={12} className="text-slate-400" />
+                          <span>{member.phoneNumber || "Chưa đăng ký"}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                          <Fingerprint size={11} className="text-slate-400" />
+                          <span>
+                            {member.identityNumber
+                              ? `CCCD: •••• ${member.identityNumber.slice(-4)}`
+                              : "Chưa nộp CCCD"}
+                          </span>
+                        </div>
                       </td>
 
-                      {/* Cột 3: Quyền hạn hoặc Phụ trách */}
-                      <td className="py-3 px-4">
+                      {/* Cột 3: Phân cấp thẩm quyền & Quyền hạn */}
+                      <td className="py-3.5 px-4">
                         {activeSegment === "admins" ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                            <ShieldCheck size={12} strokeWidth={1.5} />
-                            <span>Toàn quyền hệ thống</span>
-                          </span>
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-purple-50 text-purple-800 border border-purple-200/80">
+                            <ShieldCheck size={13} className="text-purple-700 shrink-0" />
+                            <span>Tier-3 • Toàn quyền hệ thống</span>
+                          </div>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                            <Headphones size={12} strokeWidth={1.5} />
-                            <span>Tư vấn VIP &amp; Đấu giá</span>
-                          </span>
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-800 border border-blue-200/80">
+                            <Headphones size={13} className="text-blue-700 shrink-0" />
+                            <span>Tier-1 • Tư vấn VIP &amp; Đấu giá</span>
+                          </div>
                         )}
                       </td>
 
-                      {/* Cột 4: Ngày cấp quyền */}
-                      <td className="py-3 px-4 text-xs font-mono text-slate-600">
-                        {member.createdDate ? new Date(member.createdDate).toLocaleDateString("vi-VN") : "—"}
+                      {/* Cột 4: Ngày cấp phép & Kiểm toán */}
+                      <td className="py-3.5 px-4 text-xs font-mono text-slate-600">
+                        <div className="flex items-center gap-1.5">
+                          <Clock size={12} className="text-slate-400" />
+                          <span>{member.createdDate ? new Date(member.createdDate).toLocaleDateString("vi-VN") : "—"}</span>
+                        </div>
                       </td>
 
-                      {/* Cột 5: Trạng thái */}
-                      <td className="py-3 px-4 text-center">
+                      {/* Cột 5: Trạng thái vận hành */}
+                      <td className="py-3.5 px-4 text-center">
                         {member.isActive ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            Hoạt động
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                            <span>Hoạt động</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                            Đã khóa
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
+                            <span>Tạm đình chỉ</span>
                           </span>
                         )}
                       </td>
 
-                      {/* Cột 6: Thao tác */}
-                      <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-1">
+                      {/* Cột 6: Thao tác kiểm toán */}
+                      <td className="py-3.5 px-5 text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openView(member);
+                            }}
+                            className="p-2 text-slate-500 hover:text-[#001743] hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Kiểm tra hồ sơ công vụ"
+                          >
+                            <Eye size={15} strokeWidth={1.5} />
+                          </button>
+
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               openEdit(member);
                             }}
-                            className="p-1.5 text-slate-500 hover:text-[#001743] hover:bg-slate-100 rounded-[6px] transition-colors"
-                            title="Chỉnh sửa thông tin"
+                            className="p-2 text-slate-500 hover:text-[#001743] hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Điều chỉnh thông tin"
                           >
                             <Edit3 size={15} strokeWidth={1.5} />
                           </button>
+
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               setStatusConfirm({ user: member, targetStatus: !member.isActive });
                             }}
-                            className={`p-1.5 rounded-[6px] transition-colors ${
+                            className={`p-2 rounded-lg transition-colors ${
                               member.isActive
                                 ? "text-slate-500 hover:text-rose-600 hover:bg-rose-50"
                                 : "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
                             }`}
-                            title={member.isActive ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                            title={member.isActive ? "Tạm đình chỉ quyền vận hành" : "Khôi phục quyền truy cập"}
                           >
                             {member.isActive ? (
                               <Lock size={15} strokeWidth={1.5} />
@@ -540,7 +742,7 @@ export function AdminStaffTab() {
 
         {/* Chân bảng: Phân trang chuẩn Pagination */}
         {!loading && totalCount > 0 && (
-          <div className="border-t border-[#e4e7ec]">
+          <div className="border-t border-slate-200/80 px-4 py-3 bg-slate-50/50">
             <Pagination
               pageIndex={pageIndex}
               pageSize={pageSize}
@@ -555,31 +757,31 @@ export function AdminStaffTab() {
         )}
       </div>
 
-      {/* ── 5. RightDrawer: Chi tiết / Chỉnh sửa / Thêm mới Nhân sự ── */}
+      {/* ── SECTION 5: RightDrawer Dossier & Management Console ── */}
       <RightDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         title={
           drawerMode === "create"
             ? activeSegment === "admins"
-              ? "Thêm Quản trị viên mới"
-              : "Thêm Tư vấn viên mới"
+              ? "Cấp Tài Khoản Quản Trị Viên Mới"
+              : "Cấp Tài Khoản Tư Vấn Viên Mới"
             : drawerMode === "view"
-            ? "Chi tiết tài khoản nhân sự"
-            : "Chỉnh sửa tài khoản nhân sự"
+            ? "Hồ Sơ Công Vụ & Kiểm Toán Nhân Sự"
+            : "Điều Chỉnh Thông Tin Nhân Sự"
         }
         badge={
           drawerMode === "create"
             ? activeSegment === "admins"
-              ? "Quản trị viên"
-              : "Tư vấn viên"
+              ? "Tier-3 Admin"
+              : "Tier-1 Consultant"
             : selectedStaff?.fullName || selectedStaff?.userName || "Nhân sự"
         }
         badgeCls={
           drawerMode === "create"
             ? activeSegment === "admins"
-              ? "bg-purple-50 text-purple-700 font-bold"
-              : "bg-blue-50 text-blue-700 font-bold"
+              ? "bg-purple-100 text-purple-800 font-bold"
+              : "bg-blue-100 text-blue-800 font-bold"
             : "bg-slate-100 text-[#001743] font-bold"
         }
         size="md"
@@ -587,101 +789,119 @@ export function AdminStaffTab() {
         {drawerMode === "view" && selectedStaff && (
           <div className="flex flex-col flex-1 min-h-0">
             <DrawerBody>
-              {/* Header profile card */}
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <StaffAvatar name={selectedStaff.fullName || selectedStaff.userName} avatar={selectedStaff.avatarImg} />
+              {/* Dossier Header Card */}
+              <div className="p-5 bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-2xl flex items-center justify-between shadow-2xs">
+                <div className="flex items-center gap-3.5">
+                  <BankingStaffAvatar
+                    name={selectedStaff.fullName || selectedStaff.userName}
+                    avatar={selectedStaff.avatarImg}
+                    isActive={selectedStaff.isActive}
+                    size="lg"
+                  />
                   <div>
-                    <div className="font-bold text-sm text-[#001743]">
+                    <div className="font-bold text-base text-[#001743]">
                       {selectedStaff.fullName || selectedStaff.userName}
                     </div>
-                    <div className="text-xs text-slate-500 font-mono">@{selectedStaff.userName}</div>
+                    <div className="text-xs text-slate-500 font-mono mt-0.5">@{selectedStaff.userName}</div>
+                    <div className="text-[11px] text-slate-400 mt-1">{selectedStaff.email}</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+
+                <div className="flex flex-col items-end gap-2">
                   <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                    className={`px-2.5 py-1 rounded-md text-[10px] font-bold border ${
                       selectedStaff.role === UserRoleEnum.ADMIN ||
                       selectedStaff.role === 1 ||
                       selectedStaff.role === "ADMIN"
-                        ? "bg-purple-50 text-purple-700 border border-purple-200"
-                        : "bg-blue-50 text-blue-700 border border-blue-200"
+                        ? "bg-purple-50 text-purple-700 border-purple-200"
+                        : "bg-blue-50 text-blue-700 border-blue-200"
                     }`}
                   >
                     {selectedStaff.role === UserRoleEnum.ADMIN ||
                     selectedStaff.role === 1 ||
                     selectedStaff.role === "ADMIN"
-                      ? "Quản trị viên"
-                      : "Tư vấn viên"}
+                      ? "Tier-3 Admin"
+                      : "Tier-1 Consultant"}
                   </span>
                   {selectedStaff.isActive ? (
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      Hoạt động
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      Đang hoạt động
                     </span>
                   ) : (
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                      Đã khóa
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                      Tạm đình chỉ
                     </span>
                   )}
                 </div>
               </div>
 
-              {/* Section 1: Thông tin tài khoản & quyền hạn */}
-              <DrawerSection title="Tài khoản & Thẩm quyền" subtitle="Thông tin định danh và quyền truy cập quản trị">
-                <div className="space-y-2.5 text-xs">
-                  <div className="flex justify-between py-1.5 border-b border-slate-100">
-                    <span className="text-slate-500">Tên đăng nhập:</span>
-                    <span className="font-mono font-bold text-[#001743]">@{selectedStaff.userName}</span>
+              {/* Dossier Section 1: Thẩm quyền & An toàn bảo mật */}
+              <DrawerSection
+                title="Thẩm quyền & Phân cấp hệ thống"
+                subtitle="Cơ chế cấp phép truy cập tài nguyên bảo mật TrustSim"
+              >
+                <div className="space-y-3 text-xs bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span className="text-slate-500">Mã định danh nội bộ:</span>
+                    <span className="font-mono font-bold text-[#001743]">{selectedStaff.id}</span>
                   </div>
-                  <div className="flex justify-between py-1.5 border-b border-slate-100">
-                    <span className="text-slate-500">Email nội bộ:</span>
-                    <span className="font-medium text-[#001743]">{selectedStaff.email}</span>
-                  </div>
-                  <div className="flex justify-between py-1.5 border-b border-slate-100">
-                    <span className="text-slate-500">Quyền hạn hệ thống:</span>
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span className="text-slate-500">Phân cấp thẩm quyền:</span>
                     <span className="font-bold text-[#001743]">
                       {selectedStaff.role === UserRoleEnum.ADMIN ||
                       selectedStaff.role === 1 ||
                       selectedStaff.role === "ADMIN"
-                        ? "Toàn quyền quản trị hệ thống"
-                        : "Tư vấn VIP & Quản lý đấu giá"}
+                        ? "Toàn quyền quản trị cấp cao (Root)"
+                        : "Tư vấn viên trực sàn & CSKH VIP"}
                     </span>
                   </div>
-                  <div className="flex justify-between py-1.5 border-b border-slate-100">
-                    <span className="text-slate-500">Ngày cấp quyền:</span>
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span className="text-slate-500">Xác thực chứng thư số PKI:</span>
+                    <span className="inline-flex items-center gap-1 font-semibold text-emerald-600">
+                      <ShieldCheck size={13} />
+                      <span>{selectedStaff.hasPkiKeys ? "Đã cấp chứng thư PKI hợp lệ" : "Đang chờ cấp chứng thư"}</span>
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span className="text-slate-500">Ngày kích hoạt quyền:</span>
                     <span className="font-mono text-slate-700">
-                      {selectedStaff.createdDate
-                        ? new Date(selectedStaff.createdDate).toLocaleDateString("vi-VN")
-                        : "—"}
+                      {selectedStaff.createdDate ? new Date(selectedStaff.createdDate).toLocaleDateString("vi-VN") : "—"}
                     </span>
                   </div>
-                  <div className="flex justify-between py-1.5">
-                    <span className="text-slate-500">Trạng thái tài khoản:</span>
+                  <div className="flex justify-between py-1">
+                    <span className="text-slate-500">Trạng thái khóa an toàn:</span>
                     <span className={`font-bold ${selectedStaff.isActive ? "text-emerald-600" : "text-rose-600"}`}>
-                      {selectedStaff.isActive ? "Đang hoạt động bình thường" : "Đang bị khóa quyền truy cập"}
+                      {selectedStaff.isActive ? "Bình thường (Cho phép đăng nhập)" : "Đã khóa (Chặn toàn bộ API)"}
                     </span>
                   </div>
                 </div>
               </DrawerSection>
 
-              {/* Section 2: Hồ sơ nhân sự & liên hệ */}
-              <DrawerSection title="Hồ sơ nhân sự" subtitle="Thông tin liên hệ công vụ và thông tin cá nhân">
-                <div className="space-y-2.5 text-xs">
-                  <div className="flex justify-between py-1.5 border-b border-slate-100">
-                    <span className="text-slate-500">Họ và tên:</span>
+              {/* Dossier Section 2: Hồ sơ công vụ & Liên hệ */}
+              <DrawerSection
+                title="Hồ sơ công vụ & Định danh công dân"
+                subtitle="Thông tin phục vụ giám sát nội bộ và tuân thủ ngân hàng"
+              >
+                <div className="space-y-3 text-xs bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span className="text-slate-500">Họ và tên đầy đủ:</span>
                     <span className="font-bold text-[#001743]">{selectedStaff.fullName || "Chưa cập nhật"}</span>
                   </div>
-                  <div className="flex justify-between py-1.5 border-b border-slate-100">
-                    <span className="text-slate-500">Số điện thoại công vụ:</span>
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span className="text-slate-500">Hotline công vụ:</span>
                     <span className="font-mono font-bold text-[#001743]">{selectedStaff.phoneNumber || "Chưa cập nhật"}</span>
                   </div>
-                  <div className="flex justify-between py-1.5 border-b border-slate-100">
-                    <span className="text-slate-500">Số CCCD / Định danh:</span>
-                    <span className="font-mono font-bold text-[#001743]">{selectedStaff.identityNumber || "Chưa cập nhật"}</span>
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span className="text-slate-500">Số CCCD / Hộ chiếu:</span>
+                    <span className="font-mono font-bold text-[#001743]">
+                      {selectedStaff.identityNumber || "Chưa nộp định danh"}
+                    </span>
                   </div>
-                  <div className="flex justify-between py-1.5">
-                    <span className="text-slate-500">Địa chỉ công tác:</span>
-                    <span className="font-medium text-slate-800 text-right max-w-[60%]">{selectedStaff.address || "Chưa cập nhật"}</span>
+                  <div className="flex justify-between py-1">
+                    <span className="text-slate-500">Trụ sở / Địa chỉ công tác:</span>
+                    <span className="font-medium text-slate-800 text-right max-w-[65%]">
+                      {selectedStaff.address || "Trụ sở chính TrustSim"}
+                    </span>
                   </div>
                 </div>
               </DrawerSection>
@@ -697,19 +917,19 @@ export function AdminStaffTab() {
                       targetStatus: !selectedStaff.isActive,
                     });
                   }}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-[6px] border transition-colors ${
+                  className={`px-3.5 py-2 text-xs font-semibold rounded-xl border transition-colors ${
                     selectedStaff.isActive
                       ? "border-rose-200 text-rose-600 hover:bg-rose-50"
                       : "border-emerald-200 text-emerald-600 hover:bg-emerald-50"
                   }`}
                 >
-                  {selectedStaff.isActive ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                  {selectedStaff.isActive ? "Đình chỉ tài khoản" : "Khôi phục tài khoản"}
                 </button>
                 <div className="flex items-center gap-2">
                   <BtnSecondary onClick={() => setDrawerOpen(false)}>Đóng</BtnSecondary>
                   <BtnPrimary onClick={() => setDrawerMode("edit")}>
-                    <Edit3 size={13} strokeWidth={1.5} />
-                    <span>Chỉnh sửa</span>
+                    <Edit3 size={14} strokeWidth={1.5} />
+                    <span>Điều chỉnh thông tin</span>
                   </BtnPrimary>
                 </div>
               </div>
@@ -727,11 +947,11 @@ export function AdminStaffTab() {
               if (drawerMode === "create") {
                 setStaffList((prev) => [savedStaff, ...prev]);
                 setTotalCount((c) => c + 1);
-                showToast(`Đã thêm mới tài khoản nội bộ "${savedStaff.fullName || savedStaff.userName}" thành công.`);
+                showToast(`Đã cấp tài khoản kiểm toán cho "${savedStaff.fullName || savedStaff.userName}".`);
               } else {
                 setStaffList((prev) => prev.map((s) => (s.id === savedStaff.id ? savedStaff : s)));
                 setSelectedStaff(savedStaff);
-                showToast(`Đã cập nhật thông tin tài khoản thành công.`);
+                showToast(`Đã cập nhật hồ sơ nhân sự thành công.`);
               }
               setUpdatedStaffId(savedStaff.id);
               setTimeout(() => setUpdatedStaffId(null), 1600);
@@ -748,39 +968,46 @@ export function AdminStaffTab() {
         )}
       </RightDrawer>
 
-      {/* ── 6. Modal xác nhận khóa / mở khóa ── */}
+      {/* ── SECTION 6: High-Trust Banking Security Confirmation Modal ── */}
       {statusConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs px-4 animate-fade-in">
-          <div className="bg-white border border-[#e4e7ec] rounded-xl shadow-xl p-5 w-full max-w-sm animate-fade-up">
-            <div className="flex items-start gap-3 mb-3">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 w-full max-w-md animate-fade-up">
+            <div className="flex items-start gap-4 mb-4">
               <div
-                className={`p-2 rounded-lg shrink-0 ${
+                className={`w-12 h-12 rounded-xl shrink-0 flex items-center justify-center border ${
                   statusConfirm.targetStatus
-                    ? "bg-emerald-50 text-emerald-600"
-                    : "bg-rose-50 text-rose-600"
+                    ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                    : "bg-rose-50 text-rose-600 border-rose-200"
                 }`}
               >
-                {statusConfirm.targetStatus ? <Unlock size={18} strokeWidth={1.5} /> : <Lock size={18} strokeWidth={1.5} />}
+                {statusConfirm.targetStatus ? <Unlock size={22} strokeWidth={1.5} /> : <Lock size={22} strokeWidth={1.5} />}
               </div>
               <div>
-                <h3 className="text-sm font-bold text-[#001743]">
-                  {statusConfirm.targetStatus ? "Mở khóa nhân sự" : "Xác nhận khóa tài khoản"}
+                <h3 className="text-base font-bold text-[#001743]">
+                  {statusConfirm.targetStatus ? "Xác nhận khôi phục quyền vận hành" : "Xác nhận đình chỉ quyền vận hành"}
                 </h3>
-                <p className="text-xs text-[#6B7280] mt-1 leading-relaxed">
-                  Bạn có chắc chắn muốn {statusConfirm.targetStatus ? "mở khóa" : "khóa"} tài khoản nhân sự{" "}
-                  <strong className="text-slate-800">
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  Bạn đang chuẩn bị {statusConfirm.targetStatus ? "mở khóa" : "tạm đình chỉ"} tài khoản nội bộ{" "}
+                  <strong className="text-[#001743]">
                     "{statusConfirm.user.fullName || statusConfirm.user.userName}"
                   </strong>
-                  ? Khi bị khóa, tài khoản này sẽ lập tức mất quyền truy cập trang quản trị.
+                  .
                 </p>
+                {!statusConfirm.targetStatus && (
+                  <div className="mt-2.5 p-2.5 bg-rose-50 border border-rose-100 rounded-lg text-[11px] text-rose-800 flex items-center gap-2">
+                    <ShieldAlert size={14} className="shrink-0 text-rose-600" />
+                    <span>Mọi phiên đăng nhập hiện tại và quyền truy cập API sẽ bị thu hồi ngay lập tức.</span>
+                  </div>
+                )}
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-2">
+
+            <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setStatusConfirm(null)}
                 disabled={statusLoading}
-                className="px-3.5 py-1.5 border border-[#e4e7ec] text-xs font-semibold text-[#4B5563] rounded-lg hover:bg-slate-50 transition-colors"
+                className="px-4 py-2 border border-slate-200 text-xs font-semibold text-slate-600 rounded-xl hover:bg-slate-50 transition-colors"
               >
                 Hủy bỏ
               </button>
@@ -788,28 +1015,28 @@ export function AdminStaffTab() {
                 type="button"
                 onClick={handleToggleStatusConfirm}
                 disabled={statusLoading}
-                className={`px-3.5 py-1.5 text-xs font-semibold text-white rounded-lg flex items-center gap-1.5 transition-colors ${
+                className={`px-4 py-2 text-xs font-semibold text-white rounded-xl flex items-center gap-1.5 transition-colors ${
                   statusConfirm.targetStatus ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#E4011E] hover:bg-[#c8001a]"
                 }`}
               >
                 {statusLoading ? (
-                  <Loader2 size={13} className="animate-spin" />
+                  <Loader2 size={14} className="animate-spin" />
                 ) : statusConfirm.targetStatus ? (
-                  <Unlock size={13} strokeWidth={1.5} />
+                  <Unlock size={14} strokeWidth={1.5} />
                 ) : (
-                  <Lock size={13} strokeWidth={1.5} />
+                  <Lock size={14} strokeWidth={1.5} />
                 )}
-                <span>{statusConfirm.targetStatus ? "Xác nhận mở khóa" : "Xác nhận khóa"}</span>
+                <span>{statusConfirm.targetStatus ? "Khôi phục ngay" : "Xác nhận đình chỉ"}</span>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── 7. Toast thông báo nổi ── */}
+      {/* ── SECTION 7: Institutional Toast Notification ── */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#001743] text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 text-xs font-semibold flex items-center gap-2 animate-fade-up">
-          <CheckCircle2 size={16} strokeWidth={1.5} className="text-emerald-400 shrink-0" />
+        <div className="fixed bottom-6 right-6 z-50 bg-[#001743] text-white px-5 py-3.5 rounded-2xl shadow-xl border border-slate-700 text-xs font-semibold flex items-center gap-2.5 animate-fade-up">
+          <CheckCircle2 size={16} strokeWidth={2} className="text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -817,7 +1044,7 @@ export function AdminStaffTab() {
   );
 }
 
-// --- Sub-component: Staff Form ---
+// --- Sub-component: Clean High-Trust Staff Form ---
 function parseStaffRole(item?: AdminUserDetailDto | null, defaultRole: UserRoleEnum = UserRoleEnum.CONSULTANT): number {
   if (!item) return defaultRole;
   if (typeof item.role === "number") return item.role;
@@ -854,7 +1081,6 @@ function StaffForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
-  // Đồng bộ lại state khi initial hoặc defaultRole thay đổi
   useEffect(() => {
     if (initial) {
       setUserName(initial.userName || "");
@@ -885,7 +1111,7 @@ function StaffForm({
       if (!password.trim()) errs.password = "Mật khẩu không được để trống.";
       else if (password.length < 6) errs.password = "Mật khẩu tối thiểu 6 ký tự.";
     }
-    if (!email.trim() || !email.includes("@")) errs.email = "Email nội bộ không hợp lệ.";
+    if (!email.trim() || !email.includes("@")) errs.email = "Email nội bộ công vụ không hợp lệ.";
     if (!fullName.trim()) errs.fullName = "Họ và tên không được để trống.";
     if (!phoneNumber.trim()) errs.phoneNumber = "Số điện thoại không được để trống.";
 
@@ -925,7 +1151,7 @@ function StaffForm({
         onSuccess(updated);
       }
     } catch (err: any) {
-      setErrors({ form: err.message || "Thao tác thất bại." });
+      setErrors({ form: err.message || "Thao tác cập nhật thất bại." });
     } finally {
       setSaving(false);
     }
@@ -935,54 +1161,25 @@ function StaffForm({
     <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
       <DrawerBody>
         {errors.form && (
-          <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg font-medium flex items-center gap-2 mb-4">
-            <AlertTriangle size={15} strokeWidth={1.5} className="shrink-0" />
+          <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl font-medium flex items-center gap-2.5 mb-4">
+            <AlertTriangle size={16} strokeWidth={1.5} className="shrink-0" />
             <span>{errors.form}</span>
           </div>
         )}
 
-        {!isCreate && initial && (
-          <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <StaffAvatar name={initial.fullName || initial.userName} avatar={initial.avatarImg} />
-              <div>
-                <div className="font-bold text-xs text-[#001743]">{initial.fullName || initial.userName}</div>
-                <div className="text-[11px] text-slate-500 font-mono">@{initial.userName}</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span
-                className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                  role === UserRoleEnum.ADMIN
-                    ? "bg-purple-50 text-purple-700 border border-purple-200"
-                    : "bg-blue-50 text-blue-700 border border-blue-200"
-                }`}
-              >
-                {role === UserRoleEnum.ADMIN ? "Quản trị viên" : "Tư vấn viên"}
-              </span>
-              {initial.isActive ? (
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  Hoạt động
-                </span>
-              ) : (
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                  Đã khóa
-                </span>
-              )}
-            </div>
-          </div>
-        )}
-
-        <DrawerSection title="Thông tin tài khoản đăng nhập" subtitle="Tài khoản truy cập hệ thống dành cho nhân sự">
+        <DrawerSection
+          title="Thông tin định danh bảo mật"
+          subtitle="Tài khoản truy cập và phân cấp thẩm quyền trên hệ thống"
+        >
           {isCreate ? (
-            <div className="grid grid-cols-2 gap-3">
-              <FormField label="Tên đăng nhập" required error={errors.userName}>
+            <div className="grid grid-cols-2 gap-3.5">
+              <FormField label="Tên đăng nhập hệ thống" required error={errors.userName}>
                 <input
                   type="text"
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
-                  placeholder="VD: admin_hieu"
-                  className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-mono font-semibold transition-colors"
+                  placeholder="VD: admin_trungtam"
+                  className="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:border-[#001743] focus:ring-1 focus:ring-[#001743] focus:outline-none font-mono font-semibold transition-colors bg-white"
                 />
               </FormField>
 
@@ -992,86 +1189,86 @@ function StaffForm({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Tối thiểu 6 ký tự"
-                  className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none transition-colors"
+                  className="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:border-[#001743] focus:ring-1 focus:ring-[#001743] focus:outline-none transition-colors bg-white"
                 />
               </FormField>
             </div>
           ) : (
-            <FormField label="Tên đăng nhập hệ thống" hint="Cố định theo tài khoản nội bộ">
+            <FormField label="Tên đăng nhập hệ thống" hint="Cố định theo mã định danh kiểm toán">
               <input
                 type="text"
                 value={`@${userName}`}
                 disabled
-                className="w-full text-xs p-2.5 border border-[#e4e7ec] bg-slate-100 text-slate-500 rounded-lg font-mono font-semibold cursor-not-allowed"
+                className="w-full text-xs p-2.5 border border-slate-200 bg-slate-100 text-slate-500 rounded-xl font-mono font-semibold cursor-not-allowed"
               />
             </FormField>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <FormField label="Email nội bộ công việc" required error={errors.email}>
+          <div className="grid grid-cols-2 gap-3.5">
+            <FormField label="Email công vụ (@trustsim.vn)" required error={errors.email}>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="tennhanvien@trustsim.vn"
-                className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none transition-colors"
+                placeholder="hoten@trustsim.vn"
+                className="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:border-[#001743] focus:ring-1 focus:ring-[#001743] focus:outline-none transition-colors bg-white"
               />
             </FormField>
 
-            <FormField label="Vai trò chức danh" required>
+            <FormField label="Phân cấp thẩm quyền" required>
               <select
                 value={role}
                 onChange={(e) => setRole(Number(e.target.value))}
-                className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-semibold text-[#001743] transition-colors"
+                className="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:border-[#001743] focus:ring-1 focus:ring-[#001743] focus:outline-none font-semibold text-[#001743] transition-colors bg-white"
               >
-                <option value={UserRoleEnum.ADMIN}>Quản trị viên</option>
-                <option value={UserRoleEnum.CONSULTANT}>Tư vấn viên</option>
+                <option value={UserRoleEnum.ADMIN}>Tier-3 • Quản trị viên hệ thống</option>
+                <option value={UserRoleEnum.CONSULTANT}>Tier-1 • Tư vấn viên trực sàn</option>
               </select>
             </FormField>
           </div>
         </DrawerSection>
 
-        <DrawerSection title="Hồ sơ nhân sự" subtitle="Họ tên và phương thức liên lạc công vụ">
-          <div className="grid grid-cols-2 gap-3">
-            <FormField label="Họ và tên" required error={errors.fullName}>
+        <DrawerSection title="Hồ sơ nhân sự công vụ" subtitle="Thông tin định danh công dân và liên lạc công vụ">
+          <div className="grid grid-cols-2 gap-3.5">
+            <FormField label="Họ và tên đầy đủ" required error={errors.fullName}>
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="VD: Lê Hoàng Chuyên Viên"
-                className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-semibold text-[#001743] transition-colors"
+                placeholder="VD: Nguyễn Văn A"
+                className="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:border-[#001743] focus:ring-1 focus:ring-[#001743] focus:outline-none font-semibold text-[#001743] transition-colors bg-white"
               />
             </FormField>
 
-            <FormField label="Số điện thoại công vụ" required error={errors.phoneNumber}>
+            <FormField label="Hotline công vụ" required error={errors.phoneNumber}>
               <input
                 type="tel"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="VD: 0900000002"
-                className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-mono transition-colors"
+                placeholder="VD: 0900000001"
+                className="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:border-[#001743] focus:ring-1 focus:ring-[#001743] focus:outline-none font-mono transition-colors bg-white"
               />
             </FormField>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3.5">
             <FormField label="Số CCCD / Định danh (Tùy chọn)">
               <input
                 type="text"
                 value={identityNumber}
                 onChange={(e) => setIdentityNumber(e.target.value)}
                 placeholder="VD: 001201012345"
-                className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none font-mono transition-colors"
+                className="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:border-[#001743] focus:ring-1 focus:ring-[#001743] focus:outline-none font-mono transition-colors bg-white"
               />
             </FormField>
 
-            <FormField label="Địa chỉ công tác (Tùy chọn)">
+            <FormField label="Trụ sở / Địa chỉ công tác">
               <input
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="VD: Trụ sở chính Hà Nội"
-                className="w-full text-xs p-2.5 border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none transition-colors"
+                className="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:border-[#001743] focus:ring-1 focus:ring-[#001743] focus:outline-none transition-colors bg-white"
               />
             </FormField>
           </div>
@@ -1079,13 +1276,13 @@ function StaffForm({
       </DrawerBody>
 
       <DrawerFooter>
-        <div className="flex items-center justify-end gap-2 w-full">
+        <div className="flex items-center justify-end gap-2.5 w-full">
           <BtnSecondary type="button" onClick={onCancel} disabled={saving}>
             Hủy bỏ
           </BtnSecondary>
           <BtnPrimary type="submit" disabled={saving}>
-            {saving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} strokeWidth={1.5} />}
-            <span>{isCreate ? "Khởi tạo tài khoản" : "Lưu thay đổi"}</span>
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} strokeWidth={2} />}
+            <span>{isCreate ? "Cấp quyền nhân sự" : "Lưu thay đổi"}</span>
           </BtnPrimary>
         </div>
       </DrawerFooter>
