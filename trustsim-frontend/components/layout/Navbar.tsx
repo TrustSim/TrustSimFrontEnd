@@ -34,6 +34,7 @@ import {
   Plus,
   Bot,
   HelpCircle,
+  Scale,
   X,
 } from "lucide-react";
 import QuickAiValuationModal from "@/components/ai/QuickAiValuationModal";
@@ -226,17 +227,17 @@ export const Navbar: React.FC<NavbarProps> = () => {
               </span>
             </Link>
 
-            {/* Định Giá SIM AI (Mở Modal Thẩm Định Nhanh Độc Quyền) */}
+            {/* Định Giá SIM (Mở Cửa Sổ Thẩm Định Tự Động) */}
             <button
               type="button"
               onClick={() => setQuickValuationOpen(true)}
               className="px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 hover:text-purple-700 hover:bg-purple-50/70 transition-all duration-150 flex items-center gap-1.5 cursor-pointer"
-              title="Thẩm định giá thị trường bất kỳ số SIM nào bằng AI"
+              title="Thẩm định giá trị thị trường của số SIM"
             >
               <SparklesIcon size={14} className="text-purple-600" />
-              <span>Định Giá AI</span>
-              <span className="text-[9.5px] font-extrabold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 tracking-wider">
-                TRA CỨU
+              <span>Định Giá SIM</span>
+              <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-800 tracking-wider">
+                TỰ ĐỘNG
               </span>
             </button>
 
@@ -269,8 +270,8 @@ export const Navbar: React.FC<NavbarProps> = () => {
               </button>
 
               {supportOpen && (
-                <div className="absolute top-[calc(100%+8px)] left-0 w-72 bg-white border border-slate-200 rounded-2xl p-2 shadow-xl z-[1001] animate-in fade-in zoom-in-95 duration-150 space-y-1">
-                  {/* Shortcut kích hoạt Chatbot AI */}
+                <div className="absolute top-[calc(100%+8px)] left-0 w-80 bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xl z-[1001] animate-in fade-in zoom-in-95 duration-150 space-y-1">
+                  {/* Shortcut Cố Vấn Trực Tuyến */}
                   <button
                     type="button"
                     onClick={() => {
@@ -279,38 +280,131 @@ export const Navbar: React.FC<NavbarProps> = () => {
                         window.dispatchEvent(new CustomEvent("open_ai_chat"));
                       }
                     }}
-                    className="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-rose-50/70 to-purple-50/50 hover:from-rose-100/70 hover:to-purple-100/60 border border-rose-100/80 flex items-center justify-between group transition-colors cursor-pointer"
+                    className="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-rose-50/70 via-purple-50/50 to-blue-50/40 hover:from-rose-100/80 hover:to-purple-100/70 border border-rose-100/80 flex items-center justify-between group transition-colors cursor-pointer"
                   >
                     <div>
                       <div className="text-xs font-bold text-[#001743] flex items-center gap-1.5">
                         <SparklesIcon size={13} className="text-[#E4011E]" />
-                        <span>Trợ Lý Cố Vấn AI</span>
+                        <span>Cố Vấn SIM &amp; Phong Thủy</span>
                       </div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">Tư vấn phong thủy &amp; tìm SIM 24/7</div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">Tư vấn chọn số hợp tuổi &amp; phát tài 24/7</div>
                     </div>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#E4011E] text-white">
-                      CHAT
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#E4011E] text-white">
+                      TƯ VẤN
                     </span>
                   </button>
 
                   <div className="h-px bg-slate-100 my-1" />
 
-                  {[
-                    { label: "Quy trình 5 bước", desc: "Đấu giá & chuyển nhượng SIM", href: "/#how-it-works" },
-                    { label: "Bảo đảm Ký quỹ", desc: "Cơ chế bảo vệ thanh toán an toàn", href: "/#security" },
-                    { label: "Giải đáp thắc mắc", desc: "Câu hỏi thường gặp (FAQ)", href: "/#faq" },
-                    { label: "Tổng đài liên hệ", desc: "Tư vấn viên & hỗ trợ kỹ thuật", href: "/#contact" },
-                  ].map((item) => (
+                  {/* Danh sách liên kết Pháp Lý & Hỗ Trợ */}
+                  <div className="space-y-0.5">
                     <Link
-                      key={item.href}
-                      href={item.href}
+                      href="/regulations"
                       onClick={() => setSupportOpen(false)}
-                      className="block p-2.5 rounded-xl hover:bg-slate-50 transition-colors"
+                      className="flex items-start gap-2.5 p-2 rounded-xl hover:bg-slate-50 transition-colors group"
                     >
-                      <div className="text-xs font-bold text-[#001743]">{item.label}</div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">{item.desc}</div>
+                      <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-blue-100 transition-colors">
+                        <FileText size={14} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-bold text-[#001743] group-hover:text-blue-700 transition-colors flex items-center justify-between">
+                          <span>Quy Chế Sàn Đấu Giá</span>
+                          <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-blue-100 text-blue-800">
+                            NĂM 2026
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-0.5 truncate">
+                          Văn bản pháp lý &amp; quy định vận hành sàn
+                        </div>
+                      </div>
                     </Link>
-                  ))}
+
+                    <Link
+                      href="/regulations#escrow"
+                      onClick={() => setSupportOpen(false)}
+                      className="flex items-start gap-2.5 p-2 rounded-xl hover:bg-slate-50 transition-colors group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-emerald-100 transition-colors">
+                        <ShieldCheck size={14} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-bold text-[#001743] group-hover:text-emerald-700 transition-colors flex items-center justify-between">
+                          <span>Bảo Đảm Ký Quỹ 100%</span>
+                          <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">
+                            AN TOÀN
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-0.5 truncate">
+                          Tài khoản phong tỏa độc lập &amp; hoàn cọc tức thì
+                        </div>
+                      </div>
+                    </Link>
+
+                    <Link
+                      href="/regulations#auction-rules"
+                      onClick={() => setSupportOpen(false)}
+                      className="flex items-start gap-2.5 p-2 rounded-xl hover:bg-slate-50 transition-colors group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-amber-100 transition-colors">
+                        <Gavel size={14} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-bold text-[#001743] group-hover:text-amber-700 transition-colors">
+                          Luật Đấu Giá &amp; Bù Giờ Phút Chót
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-0.5 truncate">
+                          Đấu giá tăng, giảm dần &amp; bù giờ tự động
+                        </div>
+                      </div>
+                    </Link>
+
+                    <Link
+                      href="/regulations#runner-up"
+                      onClick={() => setSupportOpen(false)}
+                      className="flex items-start gap-2.5 p-2 rounded-xl hover:bg-slate-50 transition-colors group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-rose-50 text-rose-700 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-rose-100 transition-colors">
+                        <Scale size={14} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-bold text-[#001743] group-hover:text-rose-700 transition-colors">
+                          Chế Tài Phạt Cọc &amp; Quyền Á Quân
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-0.5 truncate">
+                          Phạt bùng cọc 50/50 &amp; quyền nhận mua người về nhì
+                        </div>
+                      </div>
+                    </Link>
+
+                    <Link
+                      href="/regulations#faq"
+                      onClick={() => setSupportOpen(false)}
+                      className="flex items-start gap-2.5 p-2 rounded-xl hover:bg-slate-50 transition-colors group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-slate-200 transition-colors">
+                        <HelpCircle size={14} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-bold text-[#001743] group-hover:text-slate-900 transition-colors">
+                          Giải Đáp Thắc Mắc &amp; Trợ Giúp
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-0.5 truncate">
+                          10 tình huống thực tế &amp; giải quyết tranh chấp
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+
+                  {/* Hotline hỗ trợ nhanh */}
+                  <div className="pt-2 mt-1 border-t border-slate-100 flex items-center justify-between px-2 text-[11px] text-slate-500">
+                    <span>Tổng đài pháp lý:</span>
+                    <a
+                      href="tel:19006868"
+                      className="font-mono font-bold text-[#001743] hover:text-[#E4011E] transition-colors"
+                    >
+                      1900 6868
+                    </a>
+                  </div>
                 </div>
               )}
             </div>
@@ -388,9 +482,9 @@ export const Navbar: React.FC<NavbarProps> = () => {
           >
             <span className="flex items-center gap-2">
               <SparklesIcon size={16} className="text-purple-600" />
-              <span>Định Giá SIM bằng AI</span>
+              <span>Thẩm Định Giá SIM Tự Động</span>
             </span>
-            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-purple-200 text-purple-900">TRA CỨU</span>
+            <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-purple-200 text-purple-900">MIỄN PHÍ</span>
           </button>
 
           <button
@@ -405,18 +499,67 @@ export const Navbar: React.FC<NavbarProps> = () => {
           >
             <span className="flex items-center gap-2">
               <Bot size={16} className="text-[#E4011E]" />
-              <span>Cố Vấn AI Phong Thủy &amp; SIM</span>
+              <span>Cố Vấn SIM &amp; Phong Thủy</span>
             </span>
-            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-100 text-[#E4011E]">CHAT</span>
+            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-100 text-[#E4011E]">TƯ VẤN</span>
           </button>
 
-          <Link
-            href="/#how-it-works"
-            onClick={() => setMobileOpen(false)}
-            className="p-3.5 rounded-xl text-slate-700 font-semibold text-sm hover:bg-slate-50 transition-colors"
-          >
-            Quy trình &amp; Hướng dẫn 5 bước
-          </Link>
+          <div className="pt-2">
+            <div className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider px-2 mb-1.5">
+              Pháp Lý &amp; Quy Chế Sàn
+            </div>
+            <div className="space-y-1">
+              <Link
+                href="/regulations"
+                onClick={() => setMobileOpen(false)}
+                className="p-3 rounded-xl bg-slate-50 hover:bg-blue-50 text-slate-800 font-semibold text-xs flex items-center justify-between border border-slate-200/70"
+              >
+                <span className="flex items-center gap-2 font-bold text-[#001743]">
+                  <FileText size={15} className="text-blue-700" />
+                  <span>Quy Chế Sàn Đấu Giá</span>
+                </span>
+                <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
+                  NĂM 2026
+                </span>
+              </Link>
+
+              <Link
+                href="/regulations#escrow"
+                onClick={() => setMobileOpen(false)}
+                className="p-2.5 rounded-xl text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center gap-2"
+              >
+                <ShieldCheck size={15} className="text-emerald-600" />
+                <span>Bảo Đảm Ký Quỹ 100%</span>
+              </Link>
+
+              <Link
+                href="/regulations#auction-rules"
+                onClick={() => setMobileOpen(false)}
+                className="p-2.5 rounded-xl text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center gap-2"
+              >
+                <Gavel size={15} className="text-amber-600" />
+                <span>Luật Đấu Giá &amp; Bù Giờ Phút Chót</span>
+              </Link>
+
+              <Link
+                href="/regulations#runner-up"
+                onClick={() => setMobileOpen(false)}
+                className="p-2.5 rounded-xl text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center gap-2"
+              >
+                <Scale size={15} className="text-rose-600" />
+                <span>Chế Tài Phạt Cọc &amp; Quyền Á Quân</span>
+              </Link>
+
+              <Link
+                href="/regulations#faq"
+                onClick={() => setMobileOpen(false)}
+                className="p-2.5 rounded-xl text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center gap-2"
+              >
+                <HelpCircle size={15} className="text-slate-600" />
+                <span>Giải Đáp Thắc Mắc &amp; Trợ Giúp</span>
+              </Link>
+            </div>
+          </div>
 
           {isAdmin && (
             <Link
@@ -425,7 +568,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
               className="p-3.5 rounded-xl bg-[#001743] text-white font-bold text-sm flex items-center justify-between shadow-xs"
             >
               <span>Trang Quản Trị Hệ Thống</span>
-              <span className="text-[10px] font-mono bg-white/20 px-2 py-0.5 rounded">ADMIN</span>
+              <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded">QUẢN TRỊ VIÊN</span>
             </Link>
           )}
 
@@ -802,7 +945,7 @@ function UserMenuDropdown({ user, isAdmin }: { user: AuthResponseDto; isAdmin: b
   const [wallet, setWallet] = useState<WalletDto | null>(null);
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const displayName = user.fullName || user.userName || "User";
+  const displayName = user.fullName || user.userName || "Thành viên";
   const initialChar = displayName.charAt(0).toUpperCase();
 
   const fetchWallet = () => {
@@ -952,7 +1095,7 @@ function UserMenuDropdown({ user, isAdmin }: { user: AuthResponseDto; isAdmin: b
                 </div>
                 {isAdmin ? (
                   <span style={{ fontSize: 9, background: "#001743", color: "#FFFFFF", padding: "1px 5px", borderRadius: 3, fontWeight: 800, marginTop: 3, display: "inline-block" }}>
-                    ADMINISTRATOR
+                    QUẢN TRỊ VIÊN HỆ THỐNG
                   </span>
                 ) : (
                   <span style={{ fontSize: 9, background: "#EFF6FF", color: "#2563EB", padding: "1px 5px", borderRadius: 3, fontWeight: 700, marginTop: 3, display: "inline-block" }}>
@@ -987,7 +1130,7 @@ function UserMenuDropdown({ user, isAdmin }: { user: AuthResponseDto; isAdmin: b
                   cursor: "pointer",
                 }}
               >
-                + Nạp
+                + Nạp tiền
               </button>
             </div>
 
@@ -1000,7 +1143,7 @@ function UserMenuDropdown({ user, isAdmin }: { user: AuthResponseDto; isAdmin: b
               { icon: <Icons.Wallet />, label: "Lịch sử biến động ví", href: "/profile?tab=transactions" },
               { icon: <Icons.FileText />, label: "Hợp đồng điện tử", href: "/profile?tab=contracts" },
               { icon: <Icons.Settings />, label: "Cài đặt & Bảo mật", href: "/profile?tab=settings" },
-              ...(isAdmin ? [{ icon: <Icons.Shield />, label: "Trang Quản trị (Admin)", href: "/admin" }] : []),
+              ...(isAdmin ? [{ icon: <Icons.Shield />, label: "Bảng Điều Khiển Quản Trị", href: "/admin" }] : []),
             ].map((item) => (
               <Link
                 key={item.href}

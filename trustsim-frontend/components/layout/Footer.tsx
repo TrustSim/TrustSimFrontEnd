@@ -103,10 +103,10 @@ export const Footer: React.FC = () => {
             </h4>
             <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
               {[
-                { label: "5 bước đấu giá SIM", href: "/#how-it-works" },
-                { label: "Cơ chế bảo vệ ký quỹ", href: "/#how-it-works" },
-                { label: "Hợp đồng điện tử", href: "#" },
-                { label: "Quy chế hoạt động sàn", href: "#" },
+                { label: "Quy chế hoạt động sàn", href: "/regulations" },
+                { label: "Bảo đảm ký quỹ 100%", href: "/regulations#escrow" },
+                { label: "Luật đấu giá & Anti-sniping", href: "/regulations#auction-rules" },
+                { label: "Chế tài & Xử lý Á quân", href: "/regulations#runner-up" },
               ].map((item) => (
                 <li key={item.label}>
                   <Link
@@ -138,10 +138,10 @@ export const Footer: React.FC = () => {
             </h4>
             <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
               {[
-                { label: "Trung tâm trợ giúp", href: "#" },
-                { label: "Chính sách bảo mật", href: "#" },
-                { label: "Điều khoản dịch vụ", href: "#" },
-                { label: "Liên hệ & Khiếu nại", href: "#" },
+                { label: "Giải đáp thắc mắc (FAQ)", href: "/regulations#faq" },
+                { label: "Quy trình sang tên 5 bước", href: "/regulations#handover" },
+                { label: "Điều khoản dịch vụ", href: "/regulations" },
+                { label: "Giải quyết tranh chấp", href: "/regulations#faq" },
               ].map((item) => (
                 <li key={item.label}>
                   <Link
