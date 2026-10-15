@@ -11,10 +11,26 @@ import { DepositModal } from "@/components/wallet/DepositModal";
 import type { WalletDto } from "@/types/wallet";
 import {
   getMyNotifications,
+  getUnreadNotificationCount,
   markNotificationAsRead,
+  getNotificationVisualMeta,
   type NotificationItemDto,
 } from "@/services/notificationService";
 import { notificationHubService } from "@/services/notificationHubService";
+import {
+  Bell,
+  CheckCheck,
+  Check,
+  ExternalLink,
+  Clock,
+  Sparkles as SparklesIcon,
+  Gavel,
+  Wallet as WalletIcon,
+  FileText,
+  ShieldCheck,
+  ArrowRight,
+  Inbox,
+} from "lucide-react";
 
 /* ─── 100% Crisp Line SVG Icons ──────────────────────────── */
 const Icons = {
@@ -619,6 +635,7 @@ function NotificationDropdown() {
   const [notifications, setNotifications] = useState<NotificationItemDto[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"all" | "unread">("all");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Load real notifications from backend DB
@@ -626,10 +643,13 @@ function NotificationDropdown() {
     if (!authService.isAuthenticated()) return;
     try {
       setLoading(true);
-      const res = await getMyNotifications({ pageIndex: 1, pageSize: 20 });
-      setNotifications(res.items);
-      const unread = res.items.filter((n) => !n.isRead).length;
-      setUnreadCount(unread);
+      const [res, count] = await Promise.all([
+        getMyNotifications({ pageIndex: 1, pageSize: 20 }),
+        getUnreadNotificationCount().catch(() => 0),
+      ]);
+      setNotifications(res.items || []);
+      const computedUnread = (res.items || []).filter((n) => !n.isRead).length;
+      setUnreadCount(typeof count === "number" && count > 0 ? count : computedUnread);
     } catch (err) {
       console.error("[NotificationDropdown] Lỗi tải thông báo:", err);
     } finally {
@@ -646,7 +666,7 @@ function NotificationDropdown() {
     if (!authService.isAuthenticated()) return;
 
     const unsubNotif = notificationHubService.subscribeNotification((newNotif) => {
-      setNotifications((prev) => [newNotif, ...prev]);
+      setNotifications((prev) => [newNotif, ...prev.filter((n) => n.id !== newNotif.id)]);
       setUnreadCount((prev) => prev + 1);
     });
 
@@ -694,172 +714,161 @@ function NotificationDropdown() {
     setOpen(false);
   };
 
+  const filteredNotifications =
+    activeTab === "unread"
+      ? notifications.filter((n) => !n.isRead)
+      : notifications;
+
   return (
-    <div ref={dropdownRef} style={{ position: "relative" }}>
+    <div ref={dropdownRef} className="relative">
       <button
         onClick={() => setOpen(!open)}
         aria-label="Thông báo"
-        style={{
-          width: 34,
-          height: 34,
-          borderRadius: "50%",
-          background: open ? "#F3F4F6" : "transparent",
-          border: "none",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#374151",
-          cursor: "pointer",
-          position: "relative",
-          transition: "background 0.15s",
-        }}
-        onMouseEnter={(e) => { if (!open) e.currentTarget.style.background = "#F3F4F6"; }}
-        onMouseLeave={(e) => { if (!open) e.currentTarget.style.background = "transparent"; }}
+        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-150 relative cursor-pointer ${
+          open
+            ? "bg-[#001743] text-white shadow-xs"
+            : "text-slate-700 hover:text-[#001743] hover:bg-slate-100"
+        }`}
       >
-        <Icons.Bell />
+        <Bell size={18} />
         {/* Realtime Unread Badge */}
         {unreadCount > 0 && (
-          <span
-            style={{
-              position: "absolute",
-              top: 2,
-              right: 2,
-              minWidth: 16,
-              height: 16,
-              padding: "0 4px",
-              borderRadius: "10px",
-              background: "#E4011E",
-              border: "1.5px solid #FFFFFF",
-              color: "#FFFFFF",
-              fontSize: 9,
-              fontWeight: 800,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              lineHeight: 1,
-              fontFamily: "monospace",
-            }}
-          >
-            {unreadCount > 9 ? "9+" : unreadCount}
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#E4011E] border-2 border-white text-white text-[10px] font-black font-mono flex items-center justify-center shadow-xs animate-in zoom-in-75 duration-200">
+            {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div
-          style={{
-            position: "absolute",
-            top: "calc(100% + 8px)",
-            right: 0,
-            width: 320,
-            background: "#FFFFFF",
-            border: "1px solid #E5E7EB",
-            borderRadius: 8,
-            boxShadow: "0 10px 30px rgba(0, 23, 67, 0.12)",
-            zIndex: 1002,
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              padding: "12px 16px",
-              borderBottom: "1px solid #F3F4F6",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 13, fontWeight: 800, color: "#001743" }}>Thông báo</span>
+        <div className="absolute top-[calc(100%+8px)] right-0 w-[360px] sm:w-[400px] bg-white border border-slate-200/90 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+          {/* Header */}
+          <div className="p-4 border-b border-slate-100 bg-white">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-[#001743]/5 text-[#001743] flex items-center justify-center shrink-0">
+                  <Bell size={15} />
+                </div>
+                <h3 className="font-bold text-sm text-[#001743]">Thông báo</h3>
+                {unreadCount > 0 && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200/80 font-mono">
+                    {unreadCount} mới
+                  </span>
+                )}
+              </div>
               {unreadCount > 0 && (
-                <span
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    padding: "1px 6px",
-                    borderRadius: 10,
-                    background: "rgba(228, 1, 30, 0.1)",
-                    color: "#E4011E",
-                  }}
+                <button
+                  type="button"
+                  onClick={handleMarkAllAsRead}
+                  className="text-[11px] font-semibold text-[#001743] hover:text-[#E4011E] flex items-center gap-1 cursor-pointer transition-colors"
                 >
-                  {unreadCount} mới
-                </span>
+                  <CheckCheck size={13} />
+                  <span>Đọc tất cả</span>
+                </button>
               )}
             </div>
-            {unreadCount > 0 && (
+
+            {/* Quick Filter Tabs */}
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl text-xs font-semibold">
               <button
                 type="button"
-                onClick={handleMarkAllAsRead}
-                style={{
-                  background: "none",
-                  border: "none",
-                  fontSize: 11,
-                  color: "#E4011E",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  padding: 0,
-                }}
+                onClick={() => setActiveTab("all")}
+                className={`flex-1 py-1 px-3 rounded-lg text-center transition-all cursor-pointer ${
+                  activeTab === "all"
+                    ? "bg-white text-[#001743] font-bold shadow-2xs"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
               >
-                Đánh dấu đã đọc
+                Tất cả ({notifications.length})
               </button>
-            )}
+              <button
+                type="button"
+                onClick={() => setActiveTab("unread")}
+                className={`flex-1 py-1 px-3 rounded-lg text-center transition-all cursor-pointer ${
+                  activeTab === "unread"
+                    ? "bg-white text-[#001743] font-bold shadow-2xs"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Chưa đọc ({unreadCount})
+              </button>
+            </div>
           </div>
 
-          <div style={{ maxHeight: 320, overflowY: "auto" }}>
+          {/* List Content */}
+          <div className="max-h-[350px] overflow-y-auto divide-y divide-slate-100">
             {loading ? (
-              <div style={{ padding: "24px 16px", textAlign: "center", color: "#9CA3AF", fontSize: 12 }}>
-                Đang tải thông báo...
+              <div className="py-12 text-center text-slate-400 space-y-2">
+                <div className="w-6 h-6 border-2 border-slate-300 border-t-[#001743] rounded-full animate-spin mx-auto" />
+                <p className="text-xs font-medium">Đang đồng bộ thông báo...</p>
               </div>
-            ) : notifications.length === 0 ? (
-              <div style={{ padding: "32px 16px", textAlign: "center", color: "#9CA3AF" }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#6B7280" }}>Không có thông báo mới</div>
-                <div style={{ fontSize: 11, marginTop: 4 }}>Các cập nhật đấu giá và ví sẽ xuất hiện ở đây.</div>
+            ) : filteredNotifications.length === 0 ? (
+              <div className="py-14 px-6 text-center text-slate-400 space-y-2">
+                <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2">
+                  <Inbox size={20} />
+                </div>
+                <h4 className="text-xs font-bold text-slate-700">
+                  {activeTab === "unread" ? "Không có tin chưa đọc" : "Chưa có thông báo"}
+                </h4>
+                <p className="text-[11px] text-slate-500 max-w-xs mx-auto leading-relaxed">
+                  {activeTab === "unread"
+                    ? "Bạn đã đọc hết tất cả các thông báo trong hòm thư."
+                    : "Các cập nhật về phiên đấu giá, hoàn cọc và ví điện tử sẽ hiển thị tại đây."}
+                </p>
               </div>
             ) : (
-              notifications.map((n) => {
-                const content = (
+              filteredNotifications.map((n) => {
+                const meta = getNotificationVisualMeta(n.notificationType);
+                const ItemContent = (
                   <div
                     key={n.id}
                     onClick={() => handleItemClick(n)}
-                    style={{
-                      padding: "10px 14px",
-                      borderBottom: "1px solid #F9FAFB",
-                      background: !n.isRead ? "rgba(228, 1, 30, 0.03)" : "transparent",
-                      cursor: "pointer",
-                      transition: "background 0.15s",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = !n.isRead ? "rgba(228, 1, 30, 0.06)" : "#F9FAFB";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = !n.isRead ? "rgba(228, 1, 30, 0.03)" : "transparent";
-                    }}
+                    className={`p-3.5 flex items-start gap-3 transition-colors cursor-pointer group ${
+                      !n.isRead
+                        ? "bg-rose-50/20 hover:bg-rose-50/40"
+                        : "hover:bg-slate-50/80"
+                    }`}
                   >
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-                      {!n.isRead && (
-                        <span
-                          style={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: "50%",
-                            background: "#E4011E",
-                            marginTop: 5,
-                            flexShrink: 0,
-                          }}
-                        />
+                    {/* Category Icon */}
+                    <div
+                      className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border mt-0.5 ${meta.iconBg}`}
+                    >
+                      {meta.category === "auction" ? (
+                        <Gavel size={14} />
+                      ) : meta.category === "wallet" ? (
+                        <WalletIcon size={14} />
+                      ) : meta.category === "contract" ? (
+                        <FileText size={14} />
+                      ) : (
+                        <SparklesIcon size={14} />
                       )}
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 12.5, fontWeight: !n.isRead ? 700 : 500, color: "#001743", lineHeight: 1.35 }}>
+                    </div>
+
+                    {/* Text Body */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-0.5">
+                        <span
+                          className={`text-xs leading-snug line-clamp-1 ${
+                            !n.isRead
+                              ? "font-bold text-[#001743]"
+                              : "font-semibold text-slate-800"
+                          }`}
+                        >
                           {n.title}
-                        </div>
-                        {n.content && (
-                          <div style={{ fontSize: 11.5, color: "#4B5563", marginTop: 2, lineHeight: 1.3 }}>
-                            {n.content}
-                          </div>
+                        </span>
+                        {!n.isRead && (
+                          <span className="w-2 h-2 rounded-full bg-[#E4011E] ring-2 ring-rose-100 shrink-0 mt-1" />
                         )}
-                        <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 4 }}>
-                          {formatRelativeTime(n.createdDate)}
-                        </div>
+                      </div>
+
+                      {n.content && (
+                        <p className="text-[11.5px] text-slate-600 line-clamp-2 leading-relaxed">
+                          {n.content}
+                        </p>
+                      )}
+
+                      <div className="flex items-center gap-1.5 mt-2 text-[10px] text-slate-400 font-mono">
+                        <Clock size={11} className="text-slate-400 shrink-0" />
+                        <span>{formatRelativeTime(n.createdDate)}</span>
                       </div>
                     </div>
                   </div>
@@ -871,34 +880,26 @@ function NotificationDropdown() {
                       key={n.id}
                       href={n.actionUrl}
                       onClick={() => handleItemClick(n)}
-                      style={{ textDecoration: "none", color: "inherit", display: "block" }}
+                      className="block text-inherit no-underline"
                     >
-                      {content}
+                      {ItemContent}
                     </Link>
                   );
                 }
 
-                return content;
+                return ItemContent;
               })
             )}
           </div>
 
+          {/* Footer View All */}
           <Link
-            href="/profile?tab=bids"
+            href="/notifications"
             onClick={() => setOpen(false)}
-            style={{
-              display: "block",
-              padding: "10px",
-              textAlign: "center",
-              fontSize: 12,
-              fontWeight: 700,
-              color: "#001743",
-              background: "#F8F9FA",
-              textDecoration: "none",
-              borderTop: "1px solid #E5E7EB",
-            }}
+            className="w-full py-3 px-4 bg-slate-50 hover:bg-slate-100/90 text-center font-bold text-xs text-[#001743] border-t border-slate-100 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
           >
-            Quản lý tài khoản &amp; Hoạt động →
+            <span>Xem tất cả thông báo ({notifications.length})</span>
+            <ArrowRight size={13} className="text-[#001743]" />
           </Link>
         </div>
       )}
