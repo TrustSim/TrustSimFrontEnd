@@ -178,6 +178,19 @@ export interface GetAuctionsParams {
   pageSize?: number;
 }
 
+export interface CalculateSellerDepositResultDto {
+  startingPrice: number;
+  depositRate: number;
+  rawDeposit: number;
+  sellerDepositAmount: number;
+  minDepositAmount: number;
+  maxDepositAmount: number;
+  isMinClamped: boolean;
+  isMaxClamped: boolean;
+  formulaText: string;
+  breakdownText: string;
+}
+
 export interface CreateAuctionPayload {
   simNumberId: string;
   auctionType: number;
@@ -494,6 +507,17 @@ export const auctionService = {
       method: "POST",
     });
     if (!res.success) throw new Error(res.message || "Chấp nhận mua SIM không thành công.");
+    return res.data;
+  },
+
+  /**
+   * Tính toán tiền cọc Người Bán (Seller Deposit) từ server dựa trên Giá khởi điểm
+   */
+  async calculateSellerDeposit(startingPrice: number): Promise<CalculateSellerDepositResultDto> {
+    const res = await apiFetch<CalculateSellerDepositResultDto>(
+      `/Auctions/calculate-seller-deposit?startingPrice=${startingPrice}`
+    );
+    if (!res.data) throw new Error(res.message || "Không thể tính toán tiền cọc người bán.");
     return res.data;
   },
 };
