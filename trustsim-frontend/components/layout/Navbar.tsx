@@ -30,7 +30,13 @@ import {
   ShieldCheck,
   ArrowRight,
   Inbox,
+  ChevronDown,
+  Plus,
+  Bot,
+  HelpCircle,
+  X,
 } from "lucide-react";
+import QuickAiValuationModal from "@/components/ai/QuickAiValuationModal";
 
 /* ─── 100% Crisp Line SVG Icons ──────────────────────────── */
 const Icons = {
@@ -121,6 +127,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
+  const [quickValuationOpen, setQuickValuationOpen] = useState(false);
   const [user, setUser] = useState<AuthResponseDto | null>(null);
   const pathname = usePathname();
   const supportRef = useRef<HTMLDivElement>(null);
@@ -176,214 +183,132 @@ export const Navbar: React.FC<NavbarProps> = () => {
 
   return (
     <>
-      <header
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1000,
-          height: 64,
-          transition: "all 0.25s ease",
-          background: scrolled ? "rgba(255, 255, 255, 0.98)" : "#FFFFFF",
-          backdropFilter: scrolled ? "blur(12px)" : "none",
-          borderBottom: "1px solid #E5E7EB",
-          boxShadow: scrolled ? "0 2px 12px rgba(0, 23, 67, 0.05)" : "none",
-        }}
-      >
-        {/* 3-column layout: Left | Center (absolute) | Right */}
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", height: "100%", width: "100%", position: "relative" }}>
+      <QuickAiValuationModal
+        isOpen={quickValuationOpen}
+        onClose={() => setQuickValuationOpen(false)}
+      />
 
+      <header
+        className={`fixed top-0 left-0 right-0 z-[1000] h-16 transition-all duration-200 border-b ${
+          scrolled
+            ? "bg-white/95 backdrop-blur-md border-slate-200 shadow-xs"
+            : "bg-white border-slate-100"
+        }`}
+      >
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 h-full flex items-center justify-between gap-4">
           {/* ═══ 1. BÊN TRÁI: LOGO ═══ */}
-          <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", flexShrink: 0 }}>
+          <Link href="/" className="flex items-center gap-2.5 shrink-0 select-none">
             <Image
               src="/logo/TrustSim-Logo.png"
               alt="TrustSim Logo"
               width={130}
               height={34}
               priority
-              style={{ height: 32, width: "auto", objectFit: "contain" }}
+              className="h-8 w-auto object-contain"
             />
           </Link>
 
-          {/* ═══ 2. CENTER (ABSOLUTE): NAV LINKS ═══ */}
-          <nav className="desktop-nav" style={{
-            position: "absolute",
-            left: "50%",
-            transform: "translateX(-50%)",
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-          }}>
+          {/* ═══ 2. CENTER: NAV LINKS (FLEXIBLE, NO OVERLAP) ═══ */}
+          <nav className="hidden md:flex items-center gap-1 lg:gap-1.5">
             {/* Sàn Đấu Giá */}
             <Link
               href="/auctions"
-              style={{
-                padding: "8px 18px",
-                borderRadius: 6,
-                color: pathname?.startsWith("/auctions") ? "#E4011E" : "#4B5563",
-                background: pathname?.startsWith("/auctions") ? "rgba(228,1,30,0.06)" : "transparent",
-                fontSize: 14,
-                fontWeight: pathname?.startsWith("/auctions") ? 700 : 500,
-                textDecoration: "none",
-                display: "flex",
-                alignItems: "center",
-                gap: 7,
-                transition: "color 0.15s, background 0.15s",
-                whiteSpace: "nowrap",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "#001743"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = pathname?.startsWith("/auctions") ? "#E4011E" : "#4B5563"; }}
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 flex items-center gap-2 ${
+                pathname?.startsWith("/auctions")
+                  ? "bg-rose-50 text-[#E4011E] font-bold"
+                  : "text-slate-600 hover:text-[#001743] hover:bg-slate-50"
+              }`}
             >
-              Sàn Đấu Giá
-              {/* Solid live dot */}
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#E4011E", flexShrink: 0, display: "inline-block" }} />
+              <span>Sàn Đấu Giá</span>
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#E4011E]" />
+              </span>
             </Link>
 
-            {/* Định Giá AI */}
-            <Link
-              href="/#ai-valuation"
-              style={{
-                padding: "8px 16px",
-                borderRadius: 6,
-                color: "#4B5563",
-                fontSize: 14,
-                fontWeight: 500,
-                textDecoration: "none",
-                display: "flex",
-                alignItems: "center",
-                gap: 5,
-                transition: "color 0.15s",
-                whiteSpace: "nowrap",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "#001743"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = "#4B5563"; }}
-            >
-              <span style={{ color: "#8B5CF6", display: "flex" }}><Icons.Sparkles /></span>
-              Định Giá AI
-              {/* Tighter pill badge */}
-              <span style={{
-                fontSize: 9,
-                fontWeight: 800,
-                color: "#7C3AED",
-                background: "#EDE9FE",
-                padding: "1px 4px",
-                borderRadius: 99,
-                textTransform: "uppercase",
-                letterSpacing: "0.02em",
-                lineHeight: 1.4,
-              }}>MỚI</span>
-            </Link>
-
-            {/* Trợ Lý AI Chatbot */}
+            {/* Định Giá SIM AI (Mở Modal Thẩm Định Nhanh Độc Quyền) */}
             <button
               type="button"
-              onClick={() => {
-                if (typeof window !== "undefined") {
-                  window.dispatchEvent(new CustomEvent("open_ai_chat"));
-                }
-              }}
-              style={{
-                padding: "8px 16px",
-                borderRadius: 6,
-                color: "#001743",
-                background: "transparent",
-                fontSize: 14,
-                fontWeight: 600,
-                border: "none",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 5,
-                transition: "color 0.15s, background 0.15s",
-                whiteSpace: "nowrap",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#E4011E";
-                e.currentTarget.style.background = "rgba(228,1,30,0.05)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "#001743";
-                e.currentTarget.style.background = "transparent";
-              }}
+              onClick={() => setQuickValuationOpen(true)}
+              className="px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 hover:text-purple-700 hover:bg-purple-50/70 transition-all duration-150 flex items-center gap-1.5 cursor-pointer"
+              title="Thẩm định giá thị trường bất kỳ số SIM nào bằng AI"
             >
-              <span style={{ color: "#E4011E", display: "flex" }}>
-                <Icons.Sparkles />
-              </span>
-              <span>Trợ Lý AI</span>
-              <span
-                style={{
-                  fontSize: 9,
-                  fontWeight: 800,
-                  color: "#E4011E",
-                  background: "#FEE2E2",
-                  padding: "1px 5px",
-                  borderRadius: 99,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.02em",
-                  lineHeight: 1.4,
-                }}
-              >
-                CHAT
+              <SparklesIcon size={14} className="text-purple-600" />
+              <span>Định Giá AI</span>
+              <span className="text-[9.5px] font-extrabold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 tracking-wider">
+                TRA CỨU
               </span>
             </button>
 
-            {/* Hỗ Trợ dropdown */}
-            <div ref={supportRef} style={{ position: "relative" }}>
+            {/* Quy Trình 5 Bước */}
+            <Link
+              href="/#how-it-works"
+              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 hover:text-[#001743] hover:bg-slate-50 transition-all duration-150 flex items-center gap-1.5"
+            >
+              <span>Quy Trình 5 Bước</span>
+            </Link>
+
+            {/* Hỗ Trợ & Cố Vấn Dropdown */}
+            <div ref={supportRef} className="relative">
               <button
+                type="button"
                 onClick={() => setSupportOpen(!supportOpen)}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: 6,
-                  color: supportOpen ? "#001743" : "#4B5563",
-                  background: "transparent",
-                  fontSize: 14,
-                  fontWeight: 500,
-                  border: "none",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 5,
-                  transition: "color 0.15s",
-                  whiteSpace: "nowrap",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = "#001743"; }}
-                onMouseLeave={(e) => { if (!supportOpen) e.currentTarget.style.color = "#4B5563"; }}
+                className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer ${
+                  supportOpen
+                    ? "bg-slate-100 text-[#001743]"
+                    : "text-slate-600 hover:text-[#001743] hover:bg-slate-50"
+                }`}
               >
-                Hỗ Trợ
-                <span style={{ transform: supportOpen ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s", display: "flex" }}>
-                  <Icons.ChevronDown />
-                </span>
+                <span>Hỗ Trợ</span>
+                <ChevronDown
+                  size={13}
+                  className={`transition-transform duration-200 text-slate-400 ${
+                    supportOpen ? "rotate-180 text-[#001743]" : ""
+                  }`}
+                />
               </button>
+
               {supportOpen && (
-                <div style={{
-                  position: "absolute",
-                  top: "calc(100% + 6px)",
-                  left: 0,
-                  width: 220,
-                  background: "#FFFFFF",
-                  border: "1px solid #E5E7EB",
-                  borderRadius: 8,
-                  padding: 6,
-                  boxShadow: "0 10px 28px rgba(0,23,67,0.08)",
-                  zIndex: 1001,
-                }}>
+                <div className="absolute top-[calc(100%+8px)] left-0 w-72 bg-white border border-slate-200 rounded-2xl p-2 shadow-xl z-[1001] animate-in fade-in zoom-in-95 duration-150 space-y-1">
+                  {/* Shortcut kích hoạt Chatbot AI */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSupportOpen(false);
+                      if (typeof window !== "undefined") {
+                        window.dispatchEvent(new CustomEvent("open_ai_chat"));
+                      }
+                    }}
+                    className="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-rose-50/70 to-purple-50/50 hover:from-rose-100/70 hover:to-purple-100/60 border border-rose-100/80 flex items-center justify-between group transition-colors cursor-pointer"
+                  >
+                    <div>
+                      <div className="text-xs font-bold text-[#001743] flex items-center gap-1.5">
+                        <SparklesIcon size={13} className="text-[#E4011E]" />
+                        <span>Trợ Lý Cố Vấn AI</span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">Tư vấn phong thủy &amp; tìm SIM 24/7</div>
+                    </div>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#E4011E] text-white">
+                      CHAT
+                    </span>
+                  </button>
+
+                  <div className="h-px bg-slate-100 my-1" />
+
                   {[
-                    { label: "Quy trình 5 bước", desc: "Đấu giá & chuyển nhượng", href: "/#how-it-works" },
-                    { label: "Quy chế & Bảo mật", desc: "Cơ chế ký quỹ bảo đảm", href: "/#security" },
-                    { label: "Câu hỏi thường gặp", desc: "Giải đáp thắc mắc (FAQ)", href: "/#faq" },
-                    { label: "Liên hệ hỗ trợ", desc: "Tổng đài & Tư vấn viên", href: "/#contact" },
+                    { label: "Quy trình 5 bước", desc: "Đấu giá & chuyển nhượng SIM", href: "/#how-it-works" },
+                    { label: "Bảo đảm Ký quỹ", desc: "Cơ chế bảo vệ thanh toán an toàn", href: "/#security" },
+                    { label: "Giải đáp thắc mắc", desc: "Câu hỏi thường gặp (FAQ)", href: "/#faq" },
+                    { label: "Tổng đài liên hệ", desc: "Tư vấn viên & hỗ trợ kỹ thuật", href: "/#contact" },
                   ].map((item) => (
                     <Link
                       key={item.href}
                       href={item.href}
                       onClick={() => setSupportOpen(false)}
-                      style={{ display: "block", padding: "8px 12px", borderRadius: 6, textDecoration: "none", transition: "background 0.15s" }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = "#F8F9FA"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                      className="block p-2.5 rounded-xl hover:bg-slate-50 transition-colors"
                     >
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "#001743" }}>{item.label}</div>
-                      <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{item.desc}</div>
+                      <div className="text-xs font-bold text-[#001743]">{item.label}</div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">{item.desc}</div>
                     </Link>
                   ))}
                 </div>
@@ -392,57 +317,32 @@ export const Navbar: React.FC<NavbarProps> = () => {
           </nav>
 
           {/* ═══ 3. BÊN PHẢI: ACTIONS & ACCOUNT MENU ═══ */}
-          <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
+          <div className="hidden md:flex items-center gap-2.5">
             {!user ? (
-              <>
+              <div className="flex items-center gap-2">
                 <Link
                   href="/login"
-                  style={{
-                    padding: "7px 14px",
-                    borderRadius: 6,
-                    color: "#374151",
-                    fontSize: 14,
-                    fontWeight: 500,
-                    textDecoration: "none",
-                    transition: "background 0.15s",
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#F3F4F6"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                  className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-[#001743] hover:bg-slate-100 transition-colors"
                 >
                   Đăng nhập
                 </Link>
                 <Link
                   href="/register"
-                  className="btn-red"
-                  style={{ padding: "7px 16px", fontSize: 14, fontWeight: 700, borderRadius: 6 }}
+                  className="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[#E4011E] hover:bg-[#C00119] active:scale-[0.99] text-white transition-all shadow-xs"
                 >
                   Đăng ký
                 </Link>
-              </>
+              </div>
             ) : (
-              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                {/* Compact icon-only: Đăng bán SIM */}
+              <div className="flex items-center gap-2">
+                {/* Nút Đăng SIM nổi bật */}
                 <Link
                   href="/profile?tab=auctions"
-                  title="Đăng bán SIM"
-                  aria-label="Đăng bán SIM"
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: "50%",
-                    background: "#001743",
-                    color: "#FFFFFF",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    textDecoration: "none",
-                    flexShrink: 0,
-                    transition: "background 0.15s",
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#002a6b"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "#001743"; }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white text-xs font-bold transition-all shadow-2xs"
+                  title="Đăng bán SIM lên sàn đấu giá"
                 >
-                  <Icons.Plus />
+                  <Plus size={13} strokeWidth={2.5} />
+                  <span>Đăng SIM</span>
                 </Link>
 
                 {/* Bell notification */}
@@ -454,19 +354,12 @@ export const Navbar: React.FC<NavbarProps> = () => {
             )}
           </div>
 
-          {/* Mobile Menu Toggle Button */}
+          {/* ═══ 4. MOBILE HAMBURGER BUTTON ═══ */}
           <button
-            className="mobile-toggle-btn"
+            type="button"
+            className="md:hidden flex items-center justify-center p-2 text-[#001743] hover:bg-slate-100 rounded-xl transition-colors"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
-            style={{
-              display: "none",
-              background: "none",
-              border: "none",
-              color: "#001743",
-              cursor: "pointer",
-              padding: 6,
-            }}
           >
             <MenuIcon />
           </button>
@@ -475,32 +368,31 @@ export const Navbar: React.FC<NavbarProps> = () => {
 
       {/* ═══ MOBILE DRAWER ═══ */}
       {mobileOpen && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 999,
-            background: "#FFFFFF",
-            display: "flex",
-            flexDirection: "column",
-            padding: "84px 24px 32px",
-            gap: 10,
-          }}
-        >
+        <div className="fixed inset-0 z-[1050] bg-white flex flex-col p-6 pt-20 gap-3 md:hidden overflow-y-auto animate-in slide-in-from-right duration-200">
           <Link
             href="/auctions"
             onClick={() => setMobileOpen(false)}
-            style={{ padding: "12px 16px", borderRadius: 6, color: "#E4011E", fontSize: 15, fontWeight: 700, textDecoration: "none", background: "rgba(228, 1, 30, 0.06)" }}
+            className="p-3.5 rounded-xl bg-rose-50 text-[#E4011E] font-bold text-sm flex items-center justify-between"
           >
-            Sàn Đấu Giá Trực Tuyến
+            <span>Sàn Đấu Giá Trực Tuyến</span>
+            <span className="w-2 h-2 rounded-full bg-[#E4011E] animate-pulse" />
           </Link>
-          <Link
-            href="/#ai-valuation"
-            onClick={() => setMobileOpen(false)}
-            style={{ padding: "12px 16px", borderRadius: 6, color: "#8B5CF6", fontSize: 15, fontWeight: 700, textDecoration: "none", background: "#F5F3FF" }}
+
+          <button
+            type="button"
+            onClick={() => {
+              setMobileOpen(false);
+              setQuickValuationOpen(true);
+            }}
+            className="p-3.5 rounded-xl bg-purple-50 text-purple-800 font-bold text-sm text-left flex items-center justify-between cursor-pointer border border-purple-200/60"
           >
-            Định Giá SIM bằng AI
-          </Link>
+            <span className="flex items-center gap-2">
+              <SparklesIcon size={16} className="text-purple-600" />
+              <span>Định Giá SIM bằng AI</span>
+            </span>
+            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-purple-200 text-purple-900">TRA CỨU</span>
+          </button>
+
           <button
             type="button"
             onClick={() => {
@@ -509,77 +401,80 @@ export const Navbar: React.FC<NavbarProps> = () => {
                 window.dispatchEvent(new CustomEvent("open_ai_chat"));
               }
             }}
-            style={{
-              padding: "12px 16px",
-              borderRadius: 6,
-              color: "#E4011E",
-              fontSize: 15,
-              fontWeight: 700,
-              textAlign: "left",
-              background: "#FEF2F2",
-              border: "none",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
+            className="p-3.5 rounded-xl bg-slate-50 hover:bg-rose-50 text-slate-800 font-bold text-sm text-left flex items-center justify-between cursor-pointer border border-slate-200"
           >
-            <span>Trợ Lý AI (Tư Vấn SIM & Phong Thủy)</span>
-            <span style={{ fontSize: 10, padding: "2px 6px", background: "#FEE2E2", borderRadius: 99, color: "#E4011E", fontWeight: 800 }}>CHAT</span>
+            <span className="flex items-center gap-2">
+              <Bot size={16} className="text-[#E4011E]" />
+              <span>Cố Vấn AI Phong Thủy &amp; SIM</span>
+            </span>
+            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-100 text-[#E4011E]">CHAT</span>
           </button>
+
           <Link
             href="/#how-it-works"
             onClick={() => setMobileOpen(false)}
-            style={{ padding: "12px 16px", borderRadius: 6, color: "#4B5563", fontSize: 15, fontWeight: 600, textDecoration: "none" }}
+            className="p-3.5 rounded-xl text-slate-700 font-semibold text-sm hover:bg-slate-50 transition-colors"
           >
-            Quy trình & Hướng dẫn
+            Quy trình &amp; Hướng dẫn 5 bước
           </Link>
 
           {isAdmin && (
             <Link
               href="/admin"
               onClick={() => setMobileOpen(false)}
-              style={{ padding: "12px 16px", borderRadius: 6, color: "#001743", fontSize: 15, fontWeight: 700, textDecoration: "none", background: "#F3F4F6" }}
+              className="p-3.5 rounded-xl bg-[#001743] text-white font-bold text-sm flex items-center justify-between shadow-xs"
             >
-              Trang Quản Trị Hệ Thống
+              <span>Trang Quản Trị Hệ Thống</span>
+              <span className="text-[10px] font-mono bg-white/20 px-2 py-0.5 rounded">ADMIN</span>
             </Link>
           )}
 
-          <div style={{ height: 1, background: "#E5E7EB", margin: "8px 0" }} />
+          <div className="h-px bg-slate-100 my-2" />
 
           {!user ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div className="flex flex-col gap-2.5 pt-2">
               <Link
                 href="/login"
                 onClick={() => setMobileOpen(false)}
-                style={{ padding: "12px 16px", borderRadius: 6, color: "#001743", fontSize: 15, fontWeight: 700, textAlign: "center", textDecoration: "none", background: "#F3F4F6" }}
+                className="py-3 px-4 rounded-xl text-center text-sm font-bold text-[#001743] bg-slate-100 hover:bg-slate-200 transition-colors"
               >
                 Đăng nhập
               </Link>
               <Link
                 href="/register"
                 onClick={() => setMobileOpen(false)}
-                className="btn-red"
-                style={{ padding: "12px 16px", borderRadius: 6, fontSize: 15, fontWeight: 700, textAlign: "center", justifyContent: "center" }}
+                className="py-3 px-4 rounded-xl text-center text-sm font-bold text-white bg-[#E4011E] hover:bg-[#C00119] shadow-xs transition-colors"
               >
                 Đăng ký tài khoản
               </Link>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <div style={{ padding: "10px 14px", background: "#F8F9FA", borderRadius: 6, fontSize: 13, color: "#001743", fontWeight: 700 }}>
-                Xin chào, {user.fullName || user.userName}
+            <div className="space-y-2 pt-2">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-600">
+                Đăng nhập với tư cách: <strong className="text-[#001743] block mt-0.5">{user.fullName || user.userName}</strong>
               </div>
-              <Link href="/profile" onClick={() => setMobileOpen(false)} style={{ padding: "10px 14px", color: "#001743", textDecoration: "none", fontSize: 14 }}>
-                Hồ sơ cá nhân & Quản lý ví
+              <Link
+                href="/profile?tab=auctions"
+                onClick={() => setMobileOpen(false)}
+                className="p-3 rounded-xl bg-[#001743] text-white text-xs font-bold text-center block"
+              >
+                + Đăng bán SIM của bạn
+              </Link>
+              <Link
+                href="/profile"
+                onClick={() => setMobileOpen(false)}
+                className="p-3 rounded-xl text-slate-700 text-xs font-semibold block hover:bg-slate-50"
+              >
+                Hồ sơ cá nhân &amp; Quản lý ví
               </Link>
               <button
+                type="button"
                 onClick={async () => {
                   await authService.logout();
                   setMobileOpen(false);
                   window.location.href = "/login";
                 }}
-                style={{ padding: "10px 14px", color: "#E4011E", background: "none", border: "none", textAlign: "left", fontSize: 14, fontWeight: 600, cursor: "pointer" }}
+                className="w-full p-3 rounded-xl text-rose-600 text-xs font-bold text-left hover:bg-rose-50 transition-colors"
               >
                 Đăng xuất
               </button>
@@ -587,23 +482,15 @@ export const Navbar: React.FC<NavbarProps> = () => {
           )}
 
           <button
+            type="button"
             onClick={() => setMobileOpen(false)}
             aria-label="Close menu"
-            style={{ position: "absolute", top: 18, right: 18, background: "none", border: "none", color: "#001743", cursor: "pointer", fontSize: 26, padding: 4 }}
+            className="absolute top-5 right-5 p-2 text-slate-400 hover:text-[#001743] rounded-xl hover:bg-slate-100 transition-colors"
           >
-            ✕
+            <X size={20} />
           </button>
         </div>
       )}
-
-      <style>{`
-        .desktop-nav { display: flex !important; }
-        .mobile-toggle-btn { display: none !important; }
-        @media (max-width: 860px) {
-          .desktop-nav { display: none !important; }
-          .mobile-toggle-btn { display: flex !important; }
-        }
-      `}</style>
     </>
   );
 };
