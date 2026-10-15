@@ -3,10 +3,10 @@ import { authService } from "./authService";
 import { NotificationItemDto } from "./notificationService";
 
 const HUB_URL =
-  process.env.NEXT_PUBLIC_NOTIFICATION_HUB_URL ||
+  process.env.NEXT_PUBLIC_HUB_URL ||
   (process.env.NEXT_PUBLIC_API_URL
-    ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api\/?$/, "") + "/hubs/notifications"
-    : "http://localhost:5130/hubs/notifications");
+    ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api\/?$/, "") + "/hubs/auction"
+    : "http://localhost:5130/hubs/auction");
 
 type NotificationCallback = (notification: NotificationItemDto) => void;
 type UnreadCountCallback = (unreadCount: number) => void;
@@ -16,9 +16,28 @@ class NotificationHubService {
   private connectionPromise: Promise<signalR.HubConnection> | null = null;
   private notificationListeners: Set<NotificationCallback> = new Set();
   private unreadCountListeners: Set<UnreadCountCallback> = new Set();
+  private currentSubscribedUserId: string | null = null;
+
+  constructor() {
+    if (typeof window !== "undefined") {
+      const handleAuthChange = () => {
+        const user = authService.getUser();
+        const newUserId = user?.userId;
+        if (newUserId && newUserId !== this.currentSubscribedUserId) {
+          this.joinPersonalFeed(newUserId).catch(() => {});
+        } else if (!newUserId && this.currentSubscribedUserId) {
+          this.leavePersonalFeed(this.currentSubscribedUserId).catch(() => {});
+          this.currentSubscribedUserId = null;
+        }
+      };
+
+      window.addEventListener("trustsim_auth_change", handleAuthChange);
+      window.addEventListener("storage", handleAuthChange);
+    }
+  }
 
   /**
-   * Khởi tạo kết nối WebSocket thời gian thực tới NotificationHub
+   * Khởi tạo kết nối WebSocket thời gian thực tới AuctionHub (/hubs/auction)
    */
   public async startConnection(): Promise<signalR.HubConnection> {
     if (this.connection && this.connection.state === signalR.HubConnectionState.Connected) {
@@ -48,15 +67,39 @@ class NotificationHubService {
             console.warn("[NotificationHub] Mất kết nối, đang tự động kết nối lại...", error);
           });
 
-          this.connection.onreconnected((connectionId) => {
+          this.connection.onreconnected(async (connectionId) => {
             console.log("[NotificationHub] Đã kết nối lại thành công:", connectionId);
+            const user = authService.getUser();
+            if (user?.userId) {
+              await this.joinPersonalFeed(user.userId);
+            }
           });
 
           this.connection.onclose((error) => {
             console.warn("[NotificationHub] Kết nối đã đóng:", error);
           });
 
-          // Lắng nghe sự kiện thông báo mới từ server
+          // Lắng nghe sự kiện thông báo cá nhân chính thức từ Backend AuctionRealtimeNotifier
+          this.connection.on("ReceivePersonalNotification", (raw: any) => {
+            const notif: NotificationItemDto = {
+              id: String(raw.id || raw.Id || Date.now()),
+              userId: String(raw.userId || raw.UserId || ""),
+              title: raw.title || raw.Title || "Thông báo mới",
+              content: raw.content || raw.Content || "",
+              actionUrl: raw.actionUrl || raw.ActionUrl || null,
+              isRead: Boolean(raw.isRead ?? raw.IsRead ?? false),
+              createdDate: raw.createdDate || raw.CreatedDate || new Date().toISOString(),
+            };
+            this.notificationListeners.forEach((cb) => {
+              try {
+                cb(notif);
+              } catch (e) {
+                console.error("[NotificationHub] Lỗi thực thi callback ReceivePersonalNotification:", e);
+              }
+            });
+          });
+
+          // Lắng nghe sự kiện thông báo ReceiveNotification (dành cho backward compat)
           this.connection.on("ReceiveNotification", (notification: NotificationItemDto) => {
             this.notificationListeners.forEach((cb) => {
               try {
@@ -81,7 +124,13 @@ class NotificationHubService {
 
         if (this.connection.state === signalR.HubConnectionState.Disconnected) {
           await this.connection.start();
-          console.log("[NotificationHub] Kết nối WebSocket tới NotificationHub thành công!");
+          console.log("[NotificationHub] Kết nối WebSocket tới /hubs/auction thành công!");
+        }
+
+        // Tự động tham gia hòm thư cá nhân nếu người dùng đã đăng nhập
+        const currentUser = authService.getUser();
+        if (currentUser?.userId) {
+          await this.joinPersonalFeed(currentUser.userId);
         }
 
         return this.connection;
@@ -94,6 +143,38 @@ class NotificationHubService {
     })();
 
     return this.connectionPromise;
+  }
+
+  /**
+   * Tham gia phòng nhận thông báo cá nhân theo userId
+   */
+  public async joinPersonalFeed(userId: string): Promise<void> {
+    if (!userId) return;
+    try {
+      const conn = await this.startConnection();
+      if (conn.state === signalR.HubConnectionState.Connected) {
+        await conn.invoke("JoinPersonalNotificationFeed", userId);
+        this.currentSubscribedUserId = userId;
+        console.log(`[NotificationHub] Đã tham gia hòm thư cá nhân: user_${userId}`);
+      }
+    } catch (err) {
+      console.warn(`[NotificationHub] Lỗi khi tham gia feed user_${userId}:`, err);
+    }
+  }
+
+  /**
+   * Rời phòng nhận thông báo cá nhân
+   */
+  public async leavePersonalFeed(userId: string): Promise<void> {
+    if (!userId || !this.connection) return;
+    try {
+      if (this.connection.state === signalR.HubConnectionState.Connected) {
+        await this.connection.invoke("LeavePersonalNotificationFeed", userId);
+        console.log(`[NotificationHub] Đã rời hòm thư cá nhân: user_${userId}`);
+      }
+    } catch (err) {
+      console.warn(`[NotificationHub] Lỗi khi rời feed user_${userId}:`, err);
+    }
   }
 
   /**
@@ -125,6 +206,7 @@ class NotificationHubService {
     if (this.connection) {
       await this.connection.stop();
       this.connection = null;
+      this.currentSubscribedUserId = null;
     }
   }
 }

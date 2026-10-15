@@ -6,6 +6,12 @@
       "sourceType": "github",
       "skillPath": "skills/hallmark/SKILL.md",
       "computedHash": "6d53b2b609e05849c1dd0fc53e37daa7515089d5880c15e7e885c86e8b814e9c"
+    },
+    "ui-ux": {
+      "source": "evondev/evondevKit",
+      "sourceType": "github",
+      "skillPath": "skills/ui-ux/SKILL.md",
+      "computedHash": "ebac5d8ef9ad588317a3bb6c137129fb286ef5d2a7b018e1b94f82764b433690"
     }
   }
 }

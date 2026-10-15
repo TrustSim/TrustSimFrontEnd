@@ -7,98 +7,17 @@ import Footer from "@/components/layout/Footer";
 import SimAuctionCard, { SimAuctionCardData } from "@/components/ui/SimAuctionCard";
 import { auctionService, AuctionDto } from "@/services/auctionService";
 import { auctionHubService } from "@/services/auctionHubService";
+import {
+  Search, X, Gavel, Eye, Clock, ChevronLeft, ChevronRight,
+  Tag, SlidersHorizontal, ArrowUpDown, RotateCcw, ChevronDown,
+  Check, Flame, Shield, Zap, TrendingUp, TrendingDown, Users, Filter
+} from "lucide-react";
 
-/* ─── Line SVG Icons ──────────────────────────────────────── */
-const Icons = {
-  Search: () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  ),
-  X: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  ),
-  Gavel: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m14 13-7.5 7.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0a2.12 2.12 0 0 1 0-3L11 10" />
-      <path d="m16 16 6-6" />
-      <path d="m8 8 6-6" />
-      <path d="m9 7 8 8" />
-      <path d="m21 11-8-8" />
-    </svg>
-  ),
-  Eye: () => (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  ),
-  Clock: () => (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  ),
-  ChevronLeft: () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="15 18 9 12 15 6" />
-    </svg>
-  ),
-  ChevronRight: () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="9 18 15 12 9 6" />
-    </svg>
-  ),
-  Tag: () => (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z" />
-      <path d="M7 7h.01" />
-    </svg>
-  ),
-  Filter: () => (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-    </svg>
-  ),
-  Refresh: () => (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-    </svg>
-  ),
-  ChevronDown: ({ size = 14 }: { size?: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
-  ),
-  Check: ({ size = 14 }: { size?: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  ),
-  Sliders: ({ size = 14 }: { size?: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" />
-      <line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" />
-      <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
-      <line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" />
-    </svg>
-  ),
-  ArrowUpDown: ({ size = 14 }: { size?: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m7 15 5 5 5-5" />
-      <path d="m7 9 5-5 5 5" />
-    </svg>
-  ),
-};
-
+/* ─── Types ──────────────────────────────────────────────── */
 type StatusTab = "all" | "live" | "upcoming" | "ended";
 type TypeFilter = "all" | "english" | "dutch";
 
-// Helpers
+/* ─── Helpers ────────────────────────────────────────────── */
 function formatCarrier(rawCarrier?: string): string {
   if (!rawCarrier) return "Viettel";
   const lower = rawCarrier.toLowerCase();
@@ -139,31 +58,20 @@ function toCardData(item: AuctionDto): SimAuctionCardData {
   };
 }
 
-interface CarrierOption {
-  key: string;
-  name: string;
-  code: string;
-  color: string;
-  bg: string;
-}
+/* ─── Filter Options ─────────────────────────────────────── */
+interface CarrierOption { key: string; name: string; code: string; color: string; }
 
 const CARRIER_OPTIONS: CarrierOption[] = [
-  { key: "all", name: "Tất cả nhà mạng", code: "ALL", color: "#001743", bg: "#F3F4F6" },
-  { key: "viettel", name: "Viettel", code: "VTL", color: "#E4011E", bg: "#FEF2F2" },
-  { key: "mobifone", name: "MobiFone", code: "MBF", color: "#005BAA", bg: "#EFF6FF" },
-  { key: "vinaphone", name: "VinaPhone", code: "VNP", color: "#00A3E0", bg: "#F0F9FF" },
-  { key: "vietnamobile", name: "Vietnamobile", code: "VNM", color: "#FF6600", bg: "#FFF7ED" },
-  { key: "wintel", name: "Wintel", code: "WTL", color: "#7C3AED", bg: "#F5F3FF" },
-  { key: "itelecom", name: "Itelecom", code: "ITL", color: "#DC2626", bg: "#FEF2F2" },
+  { key: "all", name: "Tất cả nhà mạng", code: "ALL", color: "#64748B" },
+  { key: "viettel", name: "Viettel", code: "VTL", color: "#E4011E" },
+  { key: "mobifone", name: "MobiFone", code: "MBF", color: "#005BAA" },
+  { key: "vinaphone", name: "VinaPhone", code: "VNP", color: "#00A3E0" },
+  { key: "vietnamobile", name: "Vietnamobile", code: "VNM", color: "#FF6600" },
+  { key: "wintel", name: "Wintel", code: "WTL", color: "#7C3AED" },
+  { key: "itelecom", name: "Itelecom", code: "ITL", color: "#DC2626" },
 ];
 
-interface PriceOption {
-  key: string;
-  label: string;
-  desc?: string;
-  min?: number;
-  max?: number;
-}
+interface PriceOption { key: string; label: string; desc?: string; min?: number; max?: number; }
 
 const PRICE_OPTIONS: PriceOption[] = [
   { key: "all", label: "Tất cả mức giá" },
@@ -173,11 +81,7 @@ const PRICE_OPTIONS: PriceOption[] = [
   { key: "above-100m", label: "Trên 100 triệu (VIP)", desc: "> 100.000.000 ₫", min: 100_000_000 },
 ];
 
-interface CategoryOption {
-  key: string;
-  label: string;
-  tag?: string;
-}
+interface CategoryOption { key: string; label: string; tag?: string; }
 
 const CATEGORY_OPTIONS: CategoryOption[] = [
   { key: "all", label: "Tất cả danh mục" },
@@ -192,33 +96,26 @@ const CATEGORY_OPTIONS: CategoryOption[] = [
   { key: "phong-thuy", label: "SIM Phong thủy", tag: "Hợp mệnh, đại cát" },
 ];
 
-interface SortOption {
-  key: string;
-  label: string;
-}
+interface SortOption { key: string; label: string; icon?: string; }
 
 const SORT_OPTIONS: SortOption[] = [
   { key: "default", label: "Mới nhất (Mặc định)" },
   { key: "price-asc", label: "Giá thấp → cao" },
   { key: "price-desc", label: "Giá cao → thấp" },
-  { key: "ending-soon", label: "Sắp kết thúc (Phút chót)" },
-  { key: "bids-desc", label: "Nhiều lượt trả giá nhất (Hot)" },
+  { key: "ending-soon", label: "Sắp kết thúc" },
+  { key: "bids-desc", label: "Nhiều lượt trả giá nhất" },
 ];
 
+/* ─── Client-side filter/sort functions ──────────────────── */
 function matchPrice(sim: AuctionDto, priceKey: string): boolean {
   if (priceKey === "all") return true;
   const price = sim.currentPrice ?? sim.startingPrice ?? 0;
   switch (priceKey) {
-    case "under-10m":
-      return price < 10_000_000;
-    case "10m-50m":
-      return price >= 10_000_000 && price <= 50_000_000;
-    case "50m-100m":
-      return price >= 50_000_000 && price <= 100_000_000;
-    case "above-100m":
-      return price > 100_000_000;
-    default:
-      return true;
+    case "under-10m": return price < 10_000_000;
+    case "10m-50m": return price >= 10_000_000 && price <= 50_000_000;
+    case "50m-100m": return price >= 50_000_000 && price <= 100_000_000;
+    case "above-100m": return price > 100_000_000;
+    default: return true;
   }
 }
 
@@ -227,53 +124,112 @@ function matchCategory(sim: AuctionDto, catKey: string): boolean {
   const rawNum = (sim.simPhoneNumber || "").replace(/\D/g, "");
   const rhythm = (sim.formatRhythmName || "").toLowerCase();
   const cats = (sim.categories || []).map((c) => c.toLowerCase());
-
   const hasInMeta = (kw: string) => rhythm.includes(kw) || cats.some((c) => c.includes(kw));
 
   switch (catKey) {
-    case "tu-quy":
-      return /(.)\1{3}/.test(rawNum) || hasInMeta("tứ quý") || hasInMeta("ngũ quý") || hasInMeta("lục quý");
-    case "tam-hoa":
-      return /(.)\1{2}/.test(rawNum) || hasInMeta("tam hoa");
-    case "loc-phat":
-      return /68|86/.test(rawNum) || hasInMeta("lộc phát");
-    case "than-tai":
-      return /39|79/.test(rawNum) || hasInMeta("thần tài");
-    case "ong-dia":
-      return /38|78/.test(rawNum) || hasInMeta("ông địa");
+    case "tu-quy": return /(.)\1{3}/.test(rawNum) || hasInMeta("tứ quý") || hasInMeta("ngũ quý") || hasInMeta("lục quý");
+    case "tam-hoa": return /(.)\1{2}/.test(rawNum) || hasInMeta("tam hoa");
+    case "loc-phat": return /68|86/.test(rawNum) || hasInMeta("lộc phát");
+    case "than-tai": return /39|79/.test(rawNum) || hasInMeta("thần tài");
+    case "ong-dia": return /38|78/.test(rawNum) || hasInMeta("ông địa");
     case "so-tien": {
       const isSequential = /(?:0123|1234|2345|3456|4567|5678|6789|123|234|345|456|567|678|789)/.test(rawNum);
       return isSequential || hasInMeta("tiến") || hasInMeta("sảnh");
     }
-    case "taxi":
-      return /(\d{2})\1$/.test(rawNum) || /(\d{3})\1$/.test(rawNum) || hasInMeta("taxi") || hasInMeta("cặp");
-    case "nam-sinh":
-      return /(?:19[6-9]\d|20[0-2]\d)$/.test(rawNum) || hasInMeta("năm sinh");
-    case "phong-thuy":
-      return hasInMeta("phong thủy") || hasInMeta("đại cát") || /(?:68|86|39|79|88|99)$/.test(rawNum);
-    default:
-      return true;
+    case "taxi": return /(\d{2})\1$/.test(rawNum) || /(\d{3})\1$/.test(rawNum) || hasInMeta("taxi") || hasInMeta("cặp");
+    case "nam-sinh": return /(?:19[6-9]\d|20[0-2]\d)$/.test(rawNum) || hasInMeta("năm sinh");
+    case "phong-thuy": return hasInMeta("phong thủy") || hasInMeta("đại cát") || /(?:68|86|39|79|88|99)$/.test(rawNum);
+    default: return true;
   }
 }
 
 function sortAuctions(list: AuctionDto[], sortKey: string): AuctionDto[] {
   const arr = [...list];
   switch (sortKey) {
-    case "price-asc":
-      return arr.sort((a, b) => (a.currentPrice ?? a.startingPrice) - (b.currentPrice ?? b.startingPrice));
-    case "price-desc":
-      return arr.sort((a, b) => (b.currentPrice ?? b.startingPrice) - (a.currentPrice ?? a.startingPrice));
-    case "ending-soon":
-      return arr.sort((a, b) => new Date(a.endAt).getTime() - new Date(b.endAt).getTime());
-    case "bids-desc":
-      return arr.sort((a, b) => (b.totalBids || 0) - (a.totalBids || 0));
-    default:
-      return arr;
+    case "price-asc": return arr.sort((a, b) => (a.currentPrice ?? a.startingPrice) - (b.currentPrice ?? b.startingPrice));
+    case "price-desc": return arr.sort((a, b) => (b.currentPrice ?? b.startingPrice) - (a.currentPrice ?? a.startingPrice));
+    case "ending-soon": return arr.sort((a, b) => new Date(a.endAt).getTime() - new Date(b.endAt).getTime());
+    case "bids-desc": return arr.sort((a, b) => (b.totalBids || 0) - (a.totalBids || 0));
+    default: return arr;
   }
 }
 
+/* ─── Custom Dropdown Component ──────────────────────────── */
+function FilterDropdown<T extends { key: string }>({
+  label,
+  icon,
+  options,
+  value,
+  onChange,
+  isOpen,
+  onToggle,
+  renderOption,
+  accentColor = "#E4011E",
+  width = 240,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  options: T[];
+  value: string;
+  onChange: (key: string) => void;
+  isOpen: boolean;
+  onToggle: () => void;
+  renderOption: (item: T, isSelected: boolean) => React.ReactNode;
+  accentColor?: string;
+  width?: number;
+}) {
+  const isActive = value !== "all" && value !== "default";
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`h-9 px-3 rounded-lg text-[13px] font-semibold cursor-pointer inline-flex items-center gap-2 transition-all duration-150 whitespace-nowrap border ${
+          isActive
+            ? "bg-[#001743] text-white border-[#001743] shadow-sm"
+            : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+        }`}
+      >
+        <span className={`flex items-center ${isActive ? "text-white" : "text-slate-400"}`}>{icon}</span>
+        <span>{label}</span>
+        <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""} ${isActive ? "text-white/70" : "text-slate-400"}`} />
+      </button>
+
+      {isOpen && (
+        <div
+          className="absolute top-[calc(100%+6px)] left-0 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1.5 animate-in fade-in slide-in-from-top-2 duration-150"
+          style={{ width }}
+        >
+          {options.map((item) => {
+            const isSelected = value === item.key;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => onChange(item.key)}
+                className={`w-full flex items-center justify-between px-3 py-2 text-left transition-colors duration-100 cursor-pointer ${
+                  isSelected ? "bg-slate-50" : "hover:bg-slate-50"
+                }`}
+              >
+                {renderOption(item, isSelected)}
+                {isSelected && (
+                  <Check size={15} className="text-[#E4011E] shrink-0 ml-2" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MAIN PAGE COMPONENT
+   ═══════════════════════════════════════════════════════════ */
 export default function AuctionsPage() {
-  // Filter & Search states
+  /* ─── State ──────────────────────────────────────────────── */
   const [searchInput, setSearchInput] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState("");
   const [statusTab, setStatusTab] = useState<StatusTab>("live");
@@ -285,31 +241,22 @@ export default function AuctionsPage() {
   const [openDropdown, setOpenDropdown] = useState<"carrier" | "price" | "category" | "sort" | null>(null);
   const filterToolbarRef = useRef<HTMLDivElement>(null);
 
-  // Pagination states
   const [pageIndex, setPageIndex] = useState(1);
   const pageSize = 12;
 
-  // Data states
   const [auctions, setAuctions] = useState<AuctionDto[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Hero Spotlight states
   const [heroAuctions, setHeroAuctions] = useState<AuctionDto[]>([]);
   const [heroIndex, setHeroIndex] = useState(0);
   const [heroCountdown, setHeroCountdown] = useState("00:00:00");
 
-  // Tab counts
-  const [counts, setCounts] = useState({
-    all: 0,
-    live: 0,
-    upcoming: 0,
-    ended: 0,
-  });
+  const [counts, setCounts] = useState({ all: 0, live: 0, upcoming: 0, ended: 0 });
 
-  // Debounce search input (350ms)
+  /* ─── Debounce ───────────────────────────────────────────── */
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedKeyword(searchInput);
@@ -318,18 +265,13 @@ export default function AuctionsPage() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // Fetch Hero Spotlight Auctions (Active ones with highest current price)
+  /* ─── Hero Spotlight ─────────────────────────────────────── */
   useEffect(() => {
     let isMounted = true;
     async function loadHeroAuctions() {
       try {
-        const res = await auctionService.getAuctions({
-          status: "ACTIVE",
-          pageSize: 5,
-          pageIndex: 1,
-        });
+        const res = await auctionService.getAuctions({ status: "ACTIVE", pageSize: 5, pageIndex: 1 });
         if (isMounted && res.items && res.items.length > 0) {
-          // Sort by currentPrice descending
           const sorted = [...res.items].sort((a, b) => b.currentPrice - a.currentPrice);
           setHeroAuctions(sorted);
         }
@@ -338,22 +280,18 @@ export default function AuctionsPage() {
       }
     }
     loadHeroAuctions();
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, []);
 
-  // ─── Real-time SignalR Connection for Listing Feed ─────────────────────────
+  /* ─── SignalR Listing Feed ───────────────────────────────── */
   useEffect(() => {
     let isMounted = true;
     const setupListingFeed = async () => {
       try {
         await auctionHubService.joinListingFeed();
         if (!isMounted) return;
-
         auctionHubService.onNewAuctionCreated((newAuction) => {
           if (!isMounted) return;
-          // Prepend phiên đấu giá mới vào đầu danh sách
           setAuctions((prev) => [newAuction, ...prev.filter((a) => a.id !== newAuction.id)]);
           setTotalCount((prev) => prev + 1);
           setCounts((prev) => ({
@@ -367,9 +305,7 @@ export default function AuctionsPage() {
         console.warn("[SignalR] Lỗi kết nối listing feed:", err);
       }
     };
-
     setupListingFeed();
-
     return () => {
       isMounted = false;
       auctionHubService.leaveListingFeed();
@@ -377,32 +313,30 @@ export default function AuctionsPage() {
     };
   }, []);
 
-  // Fetch status tab counts on initial load
+  /* ─── Tab Counts ─────────────────────────────────────────── */
   const fetchCounts = useCallback(async () => {
     try {
-      const [allRes, liveRes, upRes, endRes] = await Promise.allSettled([
-        auctionService.getAuctions({ pageSize: 1, pageIndex: 1 }),
+      const [liveRes, upRes, endRes] = await Promise.allSettled([
         auctionService.getAuctions({ status: "ACTIVE", pageSize: 1, pageIndex: 1 }),
         auctionService.getAuctions({ status: "SCHEDULE", pageSize: 1, pageIndex: 1 }),
         auctionService.getAuctions({ status: "END", pageSize: 1, pageIndex: 1 }),
       ]);
+      const live = liveRes.status === "fulfilled" ? liveRes.value.totalCount : 0;
+      const upcoming = upRes.status === "fulfilled" ? upRes.value.totalCount : 0;
+      const ended = endRes.status === "fulfilled" ? endRes.value.totalCount : 0;
 
       setCounts({
-        all: allRes.status === "fulfilled" ? allRes.value.totalCount : 0,
-        live: liveRes.status === "fulfilled" ? liveRes.value.totalCount : 0,
-        upcoming: upRes.status === "fulfilled" ? upRes.value.totalCount : 0,
-        ended: endRes.status === "fulfilled" ? endRes.value.totalCount : 0,
+        all: live + upcoming + ended,
+        live,
+        upcoming,
+        ended,
       });
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
   }, []);
 
-  useEffect(() => {
-    fetchCounts();
-  }, [fetchCounts]);
+  useEffect(() => { fetchCounts(); }, [fetchCounts]);
 
-  // Main Data Fetcher
+  /* ─── Main Data Fetch ────────────────────────────────────── */
   const loadAuctions = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -424,8 +358,13 @@ export default function AuctionsPage() {
         pageSize,
       });
 
-      setAuctions(res.items || []);
-      setTotalCount(res.totalCount || 0);
+      // Lọc bỏ tuyệt đối các phiên trạng thái Nháp (DRAFT) trên sàn công khai của khách
+      const publicItems = (res.items || []).filter(
+        (a) => a.auctionStatus !== "DRAFT" && String(a.auctionStatus) !== "0"
+      );
+
+      setAuctions(publicItems);
+      setTotalCount(statusTab === "all" ? publicItems.length : res.totalCount || 0);
       setTotalPages(res.totalPages || 1);
     } catch (err: any) {
       console.error("Lỗi khi tải danh sách đấu giá:", err);
@@ -438,11 +377,9 @@ export default function AuctionsPage() {
     }
   }, [debouncedKeyword, statusTab, typeFilter, pageIndex, pageSize]);
 
-  useEffect(() => {
-    loadAuctions();
-  }, [loadAuctions]);
+  useEffect(() => { loadAuctions(); }, [loadAuctions]);
 
-  // Handle click outside to close dropdowns
+  /* ─── Click Outside ──────────────────────────────────────── */
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (filterToolbarRef.current && !filterToolbarRef.current.contains(e.target as Node)) {
@@ -453,39 +390,32 @@ export default function AuctionsPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Multi-criteria client filtering & sorting
+  /* ─── Client-side Filtering & Sorting ────────────────────── */
   const displayAuctions = useMemo(() => {
     let list = auctions;
-
-    // 1. Carrier filter
     if (carrierFilter !== "all") {
       list = list.filter((a) => formatCarrier(a.carrierName).toLowerCase() === carrierFilter.toLowerCase());
     }
-
-    // 2. Price filter
     if (priceFilter !== "all") {
       list = list.filter((a) => matchPrice(a, priceFilter));
     }
-
-    // 3. Category filter
     if (categoryFilter !== "all") {
       list = list.filter((a) => matchCategory(a, categoryFilter));
     }
-
-    // 4. Sort
     return sortAuctions(list, sortBy);
   }, [auctions, carrierFilter, priceFilter, categoryFilter, sortBy]);
 
-  // Active filter indicator
+  /* ─── Derived State ──────────────────────────────────────── */
+  const activeFilterCount = [
+    carrierFilter !== "all",
+    categoryFilter !== "all",
+    priceFilter !== "all",
+    sortBy !== "default",
+    typeFilter !== "all",
+  ].filter(Boolean).length;
+
   const hasActiveFilters = Boolean(
-    searchInput.trim() ||
-    debouncedKeyword.trim() ||
-    carrierFilter !== "all" ||
-    categoryFilter !== "all" ||
-    priceFilter !== "all" ||
-    sortBy !== "default" ||
-    typeFilter !== "all" ||
-    statusTab !== "live"
+    searchInput.trim() || debouncedKeyword.trim() || activeFilterCount > 0 || statusTab !== "live"
   );
 
   const selectedCarrier = CARRIER_OPTIONS.find((c) => c.key === carrierFilter) || CARRIER_OPTIONS[0];
@@ -493,30 +423,25 @@ export default function AuctionsPage() {
   const selectedPrice = PRICE_OPTIONS.find((p) => p.key === priceFilter) || PRICE_OPTIONS[0];
   const selectedSort = SORT_OPTIONS.find((s) => s.key === sortBy) || SORT_OPTIONS[0];
 
-  // Hero Countdown Timer
+  /* ─── Hero Countdown ─────────────────────────────────────── */
   const currentHero = heroAuctions[heroIndex];
   useEffect(() => {
     if (!currentHero?.endAt) return;
     const end = new Date(currentHero.endAt).getTime();
-
     const updateTimer = () => {
       const diff = end - Date.now();
-      if (diff <= 0) {
-        setHeroCountdown("00:00:00");
-        return;
-      }
+      if (diff <= 0) { setHeroCountdown("00:00:00"); return; }
       const h = Math.floor(diff / 3_600_000).toString().padStart(2, "0");
       const m = Math.floor((diff % 3_600_000) / 60_000).toString().padStart(2, "0");
       const s = Math.floor((diff % 60_000) / 1_000).toString().padStart(2, "0");
       setHeroCountdown(`${h}:${m}:${s}`);
     };
-
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
   }, [currentHero]);
 
-  // Clear all filters & search
+  /* ─── Reset Filters ──────────────────────────────────────── */
   const handleResetFilters = () => {
     setSearchInput("");
     setDebouncedKeyword("");
@@ -530,885 +455,320 @@ export default function AuctionsPage() {
     setPageIndex(1);
   };
 
+  const formatPrice = (n: number) => n.toLocaleString("vi-VN");
+
+  /* ═══════════════════════════════════════════════════════════
+     RENDER
+     ═══════════════════════════════════════════════════════════ */
   return (
-    <div style={{ minHeight: "100vh", background: "#F8F9FA", display: "flex", flexDirection: "column" }}>
-      {/* ─── Global Navbar ────────────────────────────────────────── */}
+    <div className="min-h-screen bg-[#F1F5F9] flex flex-col">
       <Navbar />
 
-      <div style={{ flex: 1, paddingTop: 64 }}>
-        {/* ═══════════════════════════════════════════════════════════
-            1. FEATURED HERO BANNER: DYNAMIC REAL-TIME SPOTLIGHT
-        ═══════════════════════════════════════════════════════════ */}
+      <div className="flex-1 pt-16">
+        {/* ═══ 1. HERO SPOTLIGHT ═══════════════════════════════ */}
         {currentHero ? (
-          <section
-            style={{
-              background: "linear-gradient(135deg, #001743 0%, #002B7A 55%, #061938 100%)",
-              color: "#FFFFFF",
-              padding: "36px 0 32px",
-              position: "relative",
-              overflow: "hidden",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
-            }}
-          >
-            {/* Glowing Amber / Red Spotlight */}
-            <div
-              style={{
-                position: "absolute",
-                right: "8%",
-                top: "50%",
-                transform: "translateY(-50%)",
-                width: 450,
-                height: 450,
-                background: "radial-gradient(circle, rgba(228, 1, 30, 0.22) 0%, transparent 70%)",
-                filter: "blur(60px)",
-                pointerEvents: "none",
-              }}
-            />
+          <section className="relative overflow-hidden" style={{ background: "linear-gradient(160deg, #0A1628 0%, #001743 40%, #0D2847 100%)" }}>
+            {/* Decorative Elements */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute -right-20 -top-20 w-[500px] h-[500px] rounded-full opacity-[0.07]" style={{ background: "radial-gradient(circle, #E4011E, transparent 70%)" }} />
+              <div className="absolute left-1/4 bottom-0 w-[600px] h-[300px] opacity-[0.04]" style={{ background: "radial-gradient(ellipse, #3B82F6, transparent 70%)" }} />
+              {/* Grid pattern */}
+              <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] [background-size:48px_48px]" />
+            </div>
 
-            <div className="container" style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px", position: "relative", zIndex: 2 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1.25fr 0.75fr", gap: 36, alignItems: "center" }}>
-                {/* Left Column: SIM Information & Countdown */}
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                        padding: "4px 10px",
-                        borderRadius: 4,
-                        background: "rgba(228, 1, 30, 0.25)",
-                        border: "1px solid rgba(228, 1, 30, 0.5)",
-                        color: "#FF4D6D",
-                        fontSize: 11,
-                        fontWeight: 800,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: 7,
-                          height: 7,
-                          borderRadius: "50%",
-                          background: "#FF4D6D",
-                          boxShadow: "0 0 8px #FF4D6D",
-                          animation: "pulse-hero 1.5s infinite",
-                        }}
-                      />
-                      Tâm Điểm Đấu Giá Realtime
+            <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-10 sm:py-14 relative z-10">
+              <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_0.7fr] gap-8 items-center">
+                {/* Left: SIM Info */}
+                <div className="space-y-5">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider text-rose-300 bg-rose-500/15 border border-rose-500/25">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+                      Tâm Điểm Đấu Giá
                     </span>
-
-                    {/* Auction Code Badge */}
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 5,
-                        padding: "3px 8px",
-                        borderRadius: 4,
-                        background: "rgba(255, 255, 255, 0.12)",
-                        border: "1px solid rgba(255, 255, 255, 0.2)",
-                        color: "#FFFFFF",
-                        fontSize: 11.5,
-                        fontWeight: 700,
-                        fontFamily: "monospace",
-                      }}
-                    >
-                      <Icons.Tag /> {currentHero.auctionCode}
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold text-white/70 bg-white/8 border border-white/10">
+                      <Tag size={11} />
+                      {currentHero.auctionCode}
                     </span>
-
-                    <span style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.7)", display: "flex", alignItems: "center", gap: 4 }}>
-                      <Icons.Eye /> {currentHero.totalParticipants || 1} người tham gia
+                    <span className="text-[12px] text-white/50 flex items-center gap-1.5">
+                      <Users size={12} />
+                      {currentHero.totalParticipants || 1} người tham gia
                     </span>
                   </div>
 
-                  {/* SIM Number */}
-                  <h1
-                    style={{
-                      fontSize: "clamp(2rem, 3.5vw, 2.8rem)",
-                      fontWeight: 900,
-                      color: "#FFFFFF",
-                      margin: "0 0 8px",
-                      letterSpacing: "0.05em",
-                      lineHeight: 1.2,
-                    }}
-                  >
+                  {/* SIM Number Display */}
+                  <h1 className="text-[clamp(2rem,4vw,3.2rem)] font-black text-white tracking-wide leading-tight font-mono">
                     {currentHero.simPhoneNumber.replace(/(\d{4})(\d{3})(\d{3})/, "$1 $2 $3")}
                   </h1>
 
-                  <p style={{ fontSize: 14, color: "rgba(255, 255, 255, 0.8)", margin: "0 0 20px", lineHeight: 1.5 }}>
-                    {currentHero.formatRhythmName || "SIM Đấu Giá Số Đẹp"} · Nhà mạng:{" "}
-                    <strong style={{ color: "#FDE047" }}>{formatCarrier(currentHero.carrierName)}</strong> · Hình thức:{" "}
-                    <strong style={{ color: "#93C5FD" }}>
-                      {currentHero.auctionType === "DUTCH" ? "Đấu giá Hà Lan" : "Đấu giá Kiểu Anh"}
-                    </strong>
-                  </p>
+                  <div className="flex items-center gap-3 flex-wrap text-[13px] text-white/70">
+                    <span>{currentHero.formatRhythmName || "SIM Số Đẹp"}</span>
+                    <span className="text-white/25">·</span>
+                    <span>Nhà mạng: <strong className="text-amber-300">{formatCarrier(currentHero.carrierName)}</strong></span>
+                    <span className="text-white/25">·</span>
+                    <span className="flex items-center gap-1">
+                      {currentHero.auctionType === "DUTCH" ? <TrendingDown size={13} className="text-blue-400" /> : <TrendingUp size={13} className="text-emerald-400" />}
+                      <strong className="text-blue-300">
+                        {currentHero.auctionType === "DUTCH" ? "Đấu giá Hà Lan" : "Đấu giá Kiểu Anh"}
+                      </strong>
+                    </span>
+                  </div>
 
-                  {/* Countdown Bar */}
-                  <div
-                    style={{
-                      background: "rgba(255, 255, 255, 0.08)",
-                      backdropFilter: "blur(12px)",
-                      border: "1px solid rgba(255, 255, 255, 0.15)",
-                      borderRadius: 10,
-                      padding: "14px 18px",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      maxWidth: 520,
-                      marginBottom: 20,
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: 11, color: "rgba(255, 255, 255, 0.65)", fontWeight: 700, textTransform: "uppercase" }}>
-                        Thời gian còn lại
-                      </div>
-                      <div style={{ fontSize: 22, fontWeight: 900, color: "#FDE047", fontVariantNumeric: "tabular-nums", letterSpacing: "0.05em" }}>
+                  {/* Price & Countdown Bar */}
+                  <div className="flex flex-wrap gap-4 items-stretch">
+                    <div className="bg-white/[0.06] backdrop-blur-sm border border-white/10 rounded-xl px-5 py-3 min-w-[180px]">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-1">Thời gian còn lại</div>
+                      <div className="text-2xl font-black text-amber-300 font-mono tabular-nums tracking-wider">
                         {heroCountdown}
                       </div>
                     </div>
-
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 11, color: "rgba(255, 255, 255, 0.65)", fontWeight: 700, textTransform: "uppercase" }}>
-                        Giá trả hiện tại
-                      </div>
-                      <div style={{ fontSize: 24, fontWeight: 900, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
-                        {currentHero.currentPrice.toLocaleString("vi-VN")} <span style={{ fontSize: 15, fontWeight: 700 }}>₫</span>
+                    <div className="bg-white/[0.06] backdrop-blur-sm border border-white/10 rounded-xl px-5 py-3 min-w-[180px]">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-1">Giá hiện tại</div>
+                      <div className="text-2xl font-black text-white font-mono tabular-nums">
+                        {formatPrice(currentHero.currentPrice)} <span className="text-sm font-bold text-white/60">₫</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Hero Actions */}
-                  <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                  {/* CTA + Navigation */}
+                  <div className="flex items-center gap-3 pt-1">
                     <Link
                       href={`/auctions/${currentHero.id}`}
-                      style={{
-                        padding: "12px 26px",
-                        fontSize: 14,
-                        fontWeight: 800,
-                        borderRadius: 6,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 8,
-                        background: "#E4011E",
-                        color: "#FFFFFF",
-                        textDecoration: "none",
-                        boxShadow: "0 8px 24px rgba(228, 1, 30, 0.45)",
-                        transition: "all 0.2s ease",
-                      }}
+                      className="inline-flex items-center gap-2.5 px-6 py-3 bg-[#E4011E] hover:bg-[#C00119] text-white text-sm font-bold rounded-xl shadow-lg shadow-rose-500/25 transition-all duration-200 active:scale-[0.98]"
                     >
-                      <Icons.Gavel /> Vào Phòng Trả Giá Ngay →
+                      <Gavel size={16} />
+                      Vào Phòng Trả Giá
                     </Link>
 
-                    {/* Carousel Arrows if multiple heroes */}
                     {heroAuctions.length > 1 && (
-                      <div style={{ display: "flex", gap: 6 }}>
+                      <div className="flex gap-1.5">
                         <button
                           onClick={() => setHeroIndex((prev) => (prev === 0 ? heroAuctions.length - 1 : prev - 1))}
-                          aria-label="Phiên trước"
-                          style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 6,
-                            background: "rgba(255, 255, 255, 0.12)",
-                            border: "1px solid rgba(255, 255, 255, 0.2)",
-                            color: "#FFFFFF",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                          }}
+                          className="w-9 h-9 rounded-lg bg-white/8 hover:bg-white/15 border border-white/10 text-white flex items-center justify-center cursor-pointer transition-colors"
                         >
-                          <Icons.ChevronLeft />
+                          <ChevronLeft size={16} />
                         </button>
                         <button
                           onClick={() => setHeroIndex((prev) => (prev === heroAuctions.length - 1 ? 0 : prev + 1))}
-                          aria-label="Phiên sau"
-                          style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 6,
-                            background: "rgba(255, 255, 255, 0.12)",
-                            border: "1px solid rgba(255, 255, 255, 0.2)",
-                            color: "#FFFFFF",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                          }}
+                          className="w-9 h-9 rounded-lg bg-white/8 hover:bg-white/15 border border-white/10 text-white flex items-center justify-center cursor-pointer transition-colors"
                         >
-                          <Icons.ChevronRight />
+                          <ChevronRight size={16} />
                         </button>
+                        <div className="flex items-center gap-1 ml-2">
+                          {heroAuctions.map((_, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setHeroIndex(i)}
+                              className={`w-1.5 h-1.5 rounded-full transition-all duration-200 cursor-pointer ${i === heroIndex ? "bg-white w-4" : "bg-white/30 hover:bg-white/50"}`}
+                            />
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Right Column: Room Metadata Box */}
-                <div
-                  style={{
-                    background: "rgba(0, 0, 0, 0.35)",
-                    backdropFilter: "blur(16px)",
-                    border: "1px solid rgba(255, 255, 255, 0.14)",
-                    borderRadius: 12,
-                    padding: "22px",
-                  }}
-                >
-                  <div style={{ fontSize: 13, fontWeight: 800, color: "#FFFFFF", borderBottom: "1px solid rgba(255, 255, 255, 0.1)", paddingBottom: 10, marginBottom: 14, display: "flex", justifyContent: "space-between" }}>
-                    <span>⚖️ Quy chế phòng đấu giá</span>
-                    <span style={{ color: "#86EFAC", fontSize: 11, fontWeight: 700 }}>● Đang mở cửa</span>
+                {/* Right: Room Metadata */}
+                <div className="bg-white/[0.05] backdrop-blur-md border border-white/10 rounded-2xl p-5 space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                    <span className="text-[13px] font-bold text-white flex items-center gap-2">
+                      <Shield size={14} className="text-blue-400" />
+                      Quy chế phòng đấu giá
+                    </span>
+                    <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      Đang mở
+                    </span>
                   </div>
 
-                  <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "rgba(255, 255, 255, 0.8)" }}>
-                      <span>Mã phiên đấu giá:</span>
-                      <strong style={{ color: "#FFFFFF", fontFamily: "monospace" }}>{currentHero.auctionCode}</strong>
-                    </div>
+                  <div className="space-y-3">
+                    {[
+                      { label: "Mã phiên", value: currentHero.auctionCode, mono: true },
+                      { label: "Giá khởi điểm", value: `${formatPrice(currentHero.startingPrice)} ₫` },
+                      { label: "Tổng lượt trả giá", value: `${currentHero.totalBids || 0} lượt`, highlight: true },
+                      { label: "Người mở phiên", value: currentHero.authorName || "Hệ thống TrustSim" },
+                    ].map((row, i) => (
+                      <div key={i} className="flex justify-between items-center text-[13px]">
+                        <span className="text-white/60">{row.label}</span>
+                        <span className={`font-semibold ${row.mono ? "font-mono" : ""} ${row.highlight ? "text-amber-300" : "text-white"}`}>
+                          {row.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
 
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "rgba(255, 255, 255, 0.8)" }}>
-                      <span>Giá khởi điểm:</span>
-                      <strong style={{ color: "#FFFFFF" }}>{currentHero.startingPrice.toLocaleString("vi-VN")} ₫</strong>
-                    </div>
-
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "rgba(255, 255, 255, 0.8)" }}>
-                      <span>Tổng lượt trả giá:</span>
-                      <strong style={{ color: "#FDE047" }}>{currentHero.totalBids || 0} lượt</strong>
-                    </div>
-
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "rgba(255, 255, 255, 0.8)" }}>
-                      <span>Người mở phiên:</span>
-                      <strong style={{ color: "#FFFFFF" }}>{currentHero.authorName || "Hệ thống TrustSim"}</strong>
-                    </div>
-
-                    <div style={{ marginTop: 6, paddingTop: 10, borderTop: "1px dashed rgba(255, 255, 255, 0.12)", fontSize: 12, color: "rgba(255, 255, 255, 0.65)", display: "flex", alignItems: "center", gap: 6 }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="16" x2="12" y2="12" />
-                        <line x1="12" y1="8" x2="12.01" y2="8" />
-                      </svg>
-                      Tiền đặt cọc được hoàn lại 100% nếu không trúng đấu giá theo quy định của sàn.
-                    </div>
+                  <div className="pt-3 border-t border-white/10 flex items-start gap-2 text-[11px] text-white/40">
+                    <Shield size={13} className="shrink-0 mt-0.5 text-white/30" />
+                    <span>Tiền đặt cọc được hoàn lại 100% nếu không trúng đấu giá theo quy định của sàn.</span>
                   </div>
                 </div>
               </div>
             </div>
           </section>
         ) : (
-          /* Fallback Welcome Banner when no active hero auction exists */
-          <section
-            style={{
-              background: "linear-gradient(135deg, #001743 0%, #00266B 100%)",
-              color: "#FFFFFF",
-              padding: "40px 0 36px",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-            }}
-          >
-            <div className="container" style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px" }}>
-              <div style={{ maxWidth: 700 }}>
-                <span
-                  style={{
-                    display: "inline-block",
-                    padding: "4px 10px",
-                    borderRadius: 4,
-                    background: "rgba(228, 1, 30, 0.25)",
-                    border: "1px solid rgba(228, 1, 30, 0.5)",
-                    color: "#FF4D6D",
-                    fontSize: 11,
-                    fontWeight: 800,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                    marginBottom: 10,
-                  }}
-                >
-                  Sàn Đấu Giá Số Đẹp Minh Bạch
-                </span>
-                <h1 style={{ fontSize: "clamp(1.8rem, 3vw, 2.4rem)", fontWeight: 900, margin: "0 0 10px" }}>
-                  Sàn Đấu Giá SIM Số Đẹp Quốc Gia
-                </h1>
-                <p style={{ fontSize: 14, color: "rgba(255, 255, 255, 0.8)", margin: 0, lineHeight: 1.6 }}>
-                  Hệ thống đấu giá SIM số minh bạch theo tiêu chuẩn quốc tế. Tìm kiếm phiên đấu giá nhanh theo mã định danh (Auction Code) hoặc thuê bao quan tâm bên dưới.
-                </p>
-              </div>
+          /* Fallback Banner */
+          <section style={{ background: "linear-gradient(160deg, #0A1628 0%, #001743 40%, #0D2847 100%)" }}>
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] [background-size:48px_48px]" />
+            </div>
+            <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-10 sm:py-14 relative z-10">
+              <span className="inline-block px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider text-rose-300 bg-rose-500/15 border border-rose-500/25 mb-4">
+                Sàn Đấu Giá Số Đẹp Minh Bạch
+              </span>
+              <h1 className="text-[clamp(1.6rem,3vw,2.4rem)] font-black text-white mb-3 leading-tight">
+                Sàn Đấu Giá SIM Số Đẹp Quốc Gia
+              </h1>
+              <p className="text-[14px] text-white/60 max-w-xl leading-relaxed">
+                Hệ thống đấu giá SIM số minh bạch theo tiêu chuẩn quốc tế. Tìm kiếm phiên đấu giá nhanh theo mã định danh hoặc thuê bao quan tâm.
+              </p>
             </div>
           </section>
         )}
 
-        {/* ═══════════════════════════════════════════════════════════
-            2. SEARCH & CONTROL BAR (AUCTION CODE / PHONE NUMBER SEARCH)
-        ═══════════════════════════════════════════════════════════ */}
-        <section
-          style={{
-            background: "#FFFFFF",
-            borderBottom: "1px solid #E5E7EB",
-            position: "sticky",
-            top: 64,
-            zIndex: 30,
-            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.03)",
-          }}
-        >
-          <div ref={filterToolbarRef} className="container" style={{ maxWidth: 1200, margin: "0 auto", padding: "12px 20px" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {/* ═══ 2. FILTER & SEARCH TOOLBAR ═════════════════════ */}
+        <section className="bg-white border-b border-slate-200 sticky top-16 z-30 shadow-sm">
+          <div ref={filterToolbarRef} className="max-w-[1280px] mx-auto px-4 sm:px-6 py-3">
+            <div className="flex flex-col gap-3">
 
-              {/* Row 1: Search Input & Custom Filter Dropdowns */}
-              <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                {/* Search Input Box */}
-                <div style={{ flex: "1 1 260px", position: "relative" }}>
-                  <div
-                    style={{
-                      position: "absolute",
-                      left: 14,
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      color: "#6B7280",
-                      display: "flex",
-                      alignItems: "center",
-                      pointerEvents: "none",
-                    }}
-                  >
-                    <Icons.Search />
-                  </div>
-
+              {/* Row 1: Search + Filter Dropdowns */}
+              <div className="flex gap-2.5 items-center flex-wrap">
+                {/* Search Input */}
+                <div className="flex-1 min-w-[240px] max-w-[400px] relative">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   <input
                     type="text"
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                     placeholder="Tìm theo mã phiên (AUC-...) hoặc số SIM..."
-                    style={{
-                      width: "100%",
-                      height: 40,
-                      padding: "0 38px 0 42px",
-                      borderRadius: 6,
-                      border: "1px solid #D1D5DB",
-                      fontSize: 13.5,
-                      color: "#001743",
-                      background: "#FFFFFF",
-                      outline: "none",
-                      transition: "border-color 0.15s, box-shadow 0.15s",
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = "#E4011E";
-                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(228, 1, 30, 0.1)";
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = "#D1D5DB";
-                      e.currentTarget.style.boxShadow = "none";
-                    }}
+                    className="w-full h-9 pl-9 pr-9 rounded-lg border border-slate-200 text-[13px] text-slate-800 bg-white outline-none transition-all duration-150 focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 placeholder:text-slate-400"
                   />
-
-                  {/* Clear Button (X) */}
                   {searchInput && (
                     <button
                       onClick={() => setSearchInput("")}
-                      aria-label="Xóa tìm kiếm"
-                      style={{
-                        position: "absolute",
-                        right: 12,
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        background: "none",
-                        border: "none",
-                        color: "#9CA3AF",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        padding: 4,
-                      }}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-0.5"
                     >
-                      <Icons.X />
+                      <X size={14} />
                     </button>
                   )}
                 </div>
 
-                {/* ── 1. Custom Carrier Dropdown (Logo Badge) ── */}
-                <div style={{ position: "relative" }}>
-                  <button
-                    type="button"
-                    onClick={() => setOpenDropdown(openDropdown === "carrier" ? null : "carrier")}
-                    style={{
-                      height: 40,
-                      padding: "0 12px",
-                      borderRadius: 6,
-                      border: carrierFilter !== "all" ? "1.5px solid #001743" : "1px solid #D1D5DB",
-                      background: carrierFilter !== "all" ? "#F8FAFC" : "#FFFFFF",
-                      color: "#001743",
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 8,
-                      transition: "all 0.15s ease",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: 20,
-                        height: 20,
-                        borderRadius: "50%",
-                        background: selectedCarrier.color,
-                        color: "#FFFFFF",
-                        fontSize: 9,
-                        fontWeight: 900,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                        letterSpacing: "-0.5px",
-                      }}
-                    >
-                      {selectedCarrier.code}
-                    </span>
-                    <span>{selectedCarrier.name}</span>
-                    <span style={{ transform: openDropdown === "carrier" ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s", display: "flex", color: "#6B7280" }}>
-                      <Icons.ChevronDown size={14} />
-                    </span>
-                  </button>
-
-                  {openDropdown === "carrier" && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "calc(100% + 6px)",
-                        left: 0,
-                        width: 210,
-                        background: "#FFFFFF",
-                        border: "1px solid #E5E7EB",
-                        borderRadius: 8,
-                        boxShadow: "0 10px 25px rgba(0, 23, 67, 0.12)",
-                        zIndex: 50,
-                        padding: 6,
-                      }}
-                    >
-                      <div style={{ padding: "6px 8px 4px", fontSize: 10.5, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                        Chọn nhà mạng
-                      </div>
-                      {CARRIER_OPTIONS.map((item) => {
-                        const isSelected = carrierFilter === item.key;
-                        return (
-                          <button
-                            key={item.key}
-                            type="button"
-                            onClick={() => {
-                              setCarrierFilter(item.key);
-                              setOpenDropdown(null);
-                            }}
-                            style={{
-                              width: "100%",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              padding: "7px 10px",
-                              borderRadius: 6,
-                              background: isSelected ? "rgba(0, 23, 67, 0.05)" : "transparent",
-                              border: "none",
-                              cursor: "pointer",
-                              textAlign: "left",
-                              transition: "background 0.15s",
-                            }}
-                            onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#F9FAFB"; }}
-                            onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
-                          >
-                            <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                              <span
-                                style={{
-                                  width: 20,
-                                  height: 20,
-                                  borderRadius: "50%",
-                                  background: item.color,
-                                  color: "#FFFFFF",
-                                  fontSize: 9,
-                                  fontWeight: 900,
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  flexShrink: 0,
-                                  letterSpacing: "-0.5px",
-                                }}
-                              >
-                                {item.code}
-                              </span>
-                              <span style={{ fontSize: 13, fontWeight: isSelected ? 700 : 500, color: isSelected ? "#001743" : "#374151" }}>
-                                {item.name}
-                              </span>
-                            </div>
-                            {isSelected && (
-                              <span style={{ color: "#E4011E", display: "flex" }}>
-                                <Icons.Check size={14} />
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
+                {/* Carrier Dropdown */}
+                <FilterDropdown
+                  label={carrierFilter === "all" ? "Nhà mạng" : selectedCarrier.name}
+                  icon={<span className="w-3 h-3 rounded-full shrink-0" style={{ background: selectedCarrier.color }} />}
+                  options={CARRIER_OPTIONS}
+                  value={carrierFilter}
+                  onChange={(key) => { setCarrierFilter(key); setOpenDropdown(null); }}
+                  isOpen={openDropdown === "carrier"}
+                  onToggle={() => setOpenDropdown(openDropdown === "carrier" ? null : "carrier")}
+                  width={220}
+                  renderOption={(item, isSelected) => (
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-3 h-3 rounded-full shrink-0" style={{ background: item.color }} />
+                      <span className={`text-[13px] ${isSelected ? "font-bold text-[#001743]" : "text-slate-700"}`}>
+                        {item.name}
+                      </span>
                     </div>
                   )}
-                </div>
+                />
 
-                {/* ── 2. Custom Category Dropdown (Danh mục SIM) ── */}
-                <div style={{ position: "relative" }}>
-                  <button
-                    type="button"
-                    onClick={() => setOpenDropdown(openDropdown === "category" ? null : "category")}
-                    style={{
-                      height: 40,
-                      padding: "0 12px",
-                      borderRadius: 6,
-                      border: categoryFilter !== "all" ? "1.5px solid #001743" : "1px solid #D1D5DB",
-                      background: categoryFilter !== "all" ? "#F8FAFC" : "#FFFFFF",
-                      color: "#001743",
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 7,
-                      transition: "all 0.15s ease",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    <span style={{ color: categoryFilter !== "all" ? "#E4011E" : "#6B7280", display: "flex" }}>
-                      <Icons.Sliders size={14} />
-                    </span>
-                    <span>{categoryFilter === "all" ? "Danh mục SIM" : selectedCategory.label}</span>
-                    <span style={{ transform: openDropdown === "category" ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s", display: "flex", color: "#6B7280" }}>
-                      <Icons.ChevronDown size={14} />
-                    </span>
-                  </button>
-
-                  {openDropdown === "category" && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "calc(100% + 6px)",
-                        left: 0,
-                        width: 250,
-                        maxHeight: 320,
-                        overflowY: "auto",
-                        background: "#FFFFFF",
-                        border: "1px solid #E5E7EB",
-                        borderRadius: 8,
-                        boxShadow: "0 10px 25px rgba(0, 23, 67, 0.12)",
-                        zIndex: 50,
-                        padding: 6,
-                      }}
-                    >
-                      <div style={{ padding: "6px 8px 4px", fontSize: 10.5, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                        Loại số & Dòng SIM
+                {/* Category Dropdown */}
+                <FilterDropdown
+                  label={categoryFilter === "all" ? "Danh mục" : selectedCategory.label}
+                  icon={<SlidersHorizontal size={14} />}
+                  options={CATEGORY_OPTIONS}
+                  value={categoryFilter}
+                  onChange={(key) => { setCategoryFilter(key); setOpenDropdown(null); }}
+                  isOpen={openDropdown === "category"}
+                  onToggle={() => setOpenDropdown(openDropdown === "category" ? null : "category")}
+                  width={260}
+                  renderOption={(item, isSelected) => (
+                    <div>
+                      <div className={`text-[13px] ${isSelected ? "font-bold text-[#001743]" : "text-slate-700"}`}>
+                        {item.label}
                       </div>
-                      {CATEGORY_OPTIONS.map((item) => {
-                        const isSelected = categoryFilter === item.key;
-                        return (
-                          <button
-                            key={item.key}
-                            type="button"
-                            onClick={() => {
-                              setCategoryFilter(item.key);
-                              setOpenDropdown(null);
-                            }}
-                            style={{
-                              width: "100%",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              padding: "7px 10px",
-                              borderRadius: 6,
-                              background: isSelected ? "rgba(0, 23, 67, 0.05)" : "transparent",
-                              border: "none",
-                              cursor: "pointer",
-                              textAlign: "left",
-                              transition: "background 0.15s",
-                            }}
-                            onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#F9FAFB"; }}
-                            onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
-                          >
-                            <div>
-                              <div style={{ fontSize: 13, fontWeight: isSelected ? 700 : 500, color: isSelected ? "#001743" : "#374151" }}>
-                                {item.label}
-                              </div>
-                              {item.tag && (
-                                <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{item.tag}</div>
-                              )}
-                            </div>
-                            {isSelected && (
-                              <span style={{ color: "#E4011E", display: "flex" }}>
-                                <Icons.Check size={14} />
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
+                      {item.tag && <div className="text-[11px] text-slate-400 mt-0.5">{item.tag}</div>}
                     </div>
                   )}
-                </div>
+                />
 
-                {/* ── 3. Custom Price Range Dropdown (Khoảng giá) ── */}
-                <div style={{ position: "relative" }}>
-                  <button
-                    type="button"
-                    onClick={() => setOpenDropdown(openDropdown === "price" ? null : "price")}
-                    style={{
-                      height: 40,
-                      padding: "0 12px",
-                      borderRadius: 6,
-                      border: priceFilter !== "all" ? "1.5px solid #001743" : "1px solid #D1D5DB",
-                      background: priceFilter !== "all" ? "#F8FAFC" : "#FFFFFF",
-                      color: "#001743",
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 7,
-                      transition: "all 0.15s ease",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    <span style={{ fontSize: 13, color: priceFilter !== "all" ? "#E4011E" : "#6B7280", fontWeight: 700 }}>₫</span>
-                    <span>{priceFilter === "all" ? "Khoảng giá" : selectedPrice.label}</span>
-                    <span style={{ transform: openDropdown === "price" ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s", display: "flex", color: "#6B7280" }}>
-                      <Icons.ChevronDown size={14} />
-                    </span>
-                  </button>
-
-                  {openDropdown === "price" && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "calc(100% + 6px)",
-                        left: 0,
-                        width: 220,
-                        background: "#FFFFFF",
-                        border: "1px solid #E5E7EB",
-                        borderRadius: 8,
-                        boxShadow: "0 10px 25px rgba(0, 23, 67, 0.12)",
-                        zIndex: 50,
-                        padding: 6,
-                      }}
-                    >
-                      <div style={{ padding: "6px 8px 4px", fontSize: 10.5, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                        Mức ngân sách
+                {/* Price Dropdown */}
+                <FilterDropdown
+                  label={priceFilter === "all" ? "Khoảng giá" : selectedPrice.label}
+                  icon={<span className="text-[13px] font-bold">₫</span>}
+                  options={PRICE_OPTIONS}
+                  value={priceFilter}
+                  onChange={(key) => { setPriceFilter(key); setOpenDropdown(null); }}
+                  isOpen={openDropdown === "price"}
+                  onToggle={() => setOpenDropdown(openDropdown === "price" ? null : "price")}
+                  width={240}
+                  renderOption={(item, isSelected) => (
+                    <div>
+                      <div className={`text-[13px] ${isSelected ? "font-bold text-[#001743]" : "text-slate-700"}`}>
+                        {item.label}
                       </div>
-                      {PRICE_OPTIONS.map((item) => {
-                        const isSelected = priceFilter === item.key;
-                        return (
-                          <button
-                            key={item.key}
-                            type="button"
-                            onClick={() => {
-                              setPriceFilter(item.key);
-                              setOpenDropdown(null);
-                            }}
-                            style={{
-                              width: "100%",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              padding: "7px 10px",
-                              borderRadius: 6,
-                              background: isSelected ? "rgba(0, 23, 67, 0.05)" : "transparent",
-                              border: "none",
-                              cursor: "pointer",
-                              textAlign: "left",
-                              transition: "background 0.15s",
-                            }}
-                            onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#F9FAFB"; }}
-                            onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
-                          >
-                            <div>
-                              <div style={{ fontSize: 13, fontWeight: isSelected ? 700 : 500, color: isSelected ? "#001743" : "#374151" }}>
-                                {item.label}
-                              </div>
-                              {item.desc && (
-                                <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{item.desc}</div>
-                              )}
-                            </div>
-                            {isSelected && (
-                              <span style={{ color: "#E4011E", display: "flex" }}>
-                                <Icons.Check size={14} />
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
+                      {item.desc && <div className="text-[11px] text-slate-400 mt-0.5">{item.desc}</div>}
                     </div>
                   )}
-                </div>
+                />
 
-                {/* ── 4. Custom Sort Dropdown (Sắp xếp) ── */}
-                <div style={{ position: "relative" }}>
-                  <button
-                    type="button"
-                    onClick={() => setOpenDropdown(openDropdown === "sort" ? null : "sort")}
-                    style={{
-                      height: 40,
-                      padding: "0 12px",
-                      borderRadius: 6,
-                      border: sortBy !== "default" ? "1.5px solid #001743" : "1px solid #D1D5DB",
-                      background: sortBy !== "default" ? "#F8FAFC" : "#FFFFFF",
-                      color: "#001743",
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 7,
-                      transition: "all 0.15s ease",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    <span style={{ color: sortBy !== "default" ? "#E4011E" : "#6B7280", display: "flex" }}>
-                      <Icons.ArrowUpDown size={14} />
+                {/* Sort Dropdown */}
+                <FilterDropdown
+                  label={sortBy === "default" ? "Sắp xếp" : selectedSort.label}
+                  icon={<ArrowUpDown size={14} />}
+                  options={SORT_OPTIONS}
+                  value={sortBy}
+                  onChange={(key) => { setSortBy(key); setOpenDropdown(null); }}
+                  isOpen={openDropdown === "sort"}
+                  onToggle={() => setOpenDropdown(openDropdown === "sort" ? null : "sort")}
+                  width={250}
+                  renderOption={(item, isSelected) => (
+                    <span className={`text-[13px] ${isSelected ? "font-bold text-[#001743]" : "text-slate-700"}`}>
+                      {item.label}
                     </span>
-                    <span>{sortBy === "default" ? "Sắp xếp" : selectedSort.label}</span>
-                    <span style={{ transform: openDropdown === "sort" ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s", display: "flex", color: "#6B7280" }}>
-                      <Icons.ChevronDown size={14} />
-                    </span>
-                  </button>
-
-                  {openDropdown === "sort" && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "calc(100% + 6px)",
-                        right: 0,
-                        width: 230,
-                        background: "#FFFFFF",
-                        border: "1px solid #E5E7EB",
-                        borderRadius: 8,
-                        boxShadow: "0 10px 25px rgba(0, 23, 67, 0.12)",
-                        zIndex: 50,
-                        padding: 6,
-                      }}
-                    >
-                      <div style={{ padding: "6px 8px 4px", fontSize: 10.5, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                        Thứ tự hiển thị
-                      </div>
-                      {SORT_OPTIONS.map((item) => {
-                        const isSelected = sortBy === item.key;
-                        return (
-                          <button
-                            key={item.key}
-                            type="button"
-                            onClick={() => {
-                              setSortBy(item.key);
-                              setOpenDropdown(null);
-                            }}
-                            style={{
-                              width: "100%",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              padding: "7px 10px",
-                              borderRadius: 6,
-                              background: isSelected ? "rgba(0, 23, 67, 0.05)" : "transparent",
-                              border: "none",
-                              cursor: "pointer",
-                              textAlign: "left",
-                              transition: "background 0.15s",
-                            }}
-                            onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#F9FAFB"; }}
-                            onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
-                          >
-                            <span style={{ fontSize: 13, fontWeight: isSelected ? 700 : 500, color: isSelected ? "#001743" : "#374151" }}>
-                              {item.label}
-                            </span>
-                            {isSelected && (
-                              <span style={{ color: "#E4011E", display: "flex" }}>
-                                <Icons.Check size={14} />
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
                   )}
-                </div>
+                />
 
-                {/* ── 5. Clear Filters Button ── */}
-                {hasActiveFilters && (
+                {/* Clear Filters */}
+                {activeFilterCount > 0 && (
                   <button
                     type="button"
                     onClick={handleResetFilters}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      padding: "0 14px",
-                      height: 40,
-                      borderRadius: 6,
-                      background: "#FEF2F2",
-                      border: "1px solid #FECACA",
-                      color: "#DC2626",
-                      fontSize: 12.5,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      transition: "all 0.15s",
-                      whiteSpace: "nowrap",
-                    }}
+                    className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-[12px] font-bold text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 cursor-pointer transition-colors"
                   >
-                    <Icons.Refresh /> Xóa lọc
+                    <RotateCcw size={13} />
+                    Xóa lọc ({activeFilterCount})
                   </button>
                 )}
               </div>
 
-              {/* Row 2: Status Tabs & Mechanism Sub-Filters */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, borderTop: "1px solid #F3F4F6", paddingTop: 8 }}>
-
+              {/* Row 2: Status Tabs + Auction Type */}
+              <div className="flex justify-between items-center flex-wrap gap-3 border-t border-slate-100 pt-2.5">
                 {/* Status Tabs */}
-                <div style={{ display: "flex", gap: 4, overflowX: "auto" }}>
+                <div className="flex gap-1">
                   {[
-                    { key: "live" as StatusTab, label: "Đang Diễn Ra", count: counts.live, color: "#E4011E", pulse: true },
-                    { key: "upcoming" as StatusTab, label: "Sắp Bắt Đầu", count: counts.upcoming, color: "#D97706", pulse: false },
-                    { key: "ended" as StatusTab, label: "Đã Kết Thúc", count: counts.ended, color: "#4B5563", pulse: false },
-                    { key: "all" as StatusTab, label: "Tất Cả Phiên", count: counts.all, color: "#001743", pulse: false },
+                    { key: "live" as StatusTab, label: "Đang Diễn Ra", count: counts.live, color: "#E4011E", dot: true },
+                    { key: "upcoming" as StatusTab, label: "Sắp Bắt Đầu", count: counts.upcoming, color: "#D97706" },
+                    { key: "ended" as StatusTab, label: "Đã Kết Thúc", count: counts.ended, color: "#64748B" },
+                    { key: "all" as StatusTab, label: "Tất Cả", count: counts.all, color: "#001743" },
                   ].map((tab) => {
                     const isActive = statusTab === tab.key;
                     return (
                       <button
                         key={tab.key}
-                        onClick={() => {
-                          setStatusTab(tab.key);
-                          setPageIndex(1);
-                        }}
-                        style={{
-                          padding: "10px 14px",
-                          background: "none",
-                          border: "none",
-                          borderBottom: `3px solid ${isActive ? tab.color : "transparent"}`,
-                          color: isActive ? "#001743" : "#6B7280",
-                          fontSize: 13,
-                          fontWeight: isActive ? 800 : 500,
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                          whiteSpace: "nowrap",
-                        }}
+                        onClick={() => { setStatusTab(tab.key); setPageIndex(1); }}
+                        className={`relative px-3.5 py-2 text-[13px] font-semibold cursor-pointer transition-all duration-200 rounded-lg flex items-center gap-1.5 ${
+                          isActive
+                            ? "text-[#001743] bg-slate-100"
+                            : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                        }`}
                       >
-                        {tab.pulse && (
-                          <span
-                            style={{
-                              width: 6,
-                              height: 6,
-                              borderRadius: "50%",
-                              background: "#E4011E",
-                              boxShadow: "0 0 6px #E4011E",
-                              display: "inline-block",
-                            }}
-                          />
+                        {tab.dot && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" style={{ boxShadow: isActive ? "0 0 6px #E4011E" : "none", animation: isActive ? "pulse 2s infinite" : "none" }} />
                         )}
                         <span>{tab.label}</span>
-                        <span
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 700,
-                            padding: "1px 6px",
-                            borderRadius: 999,
-                            background: isActive ? `${tab.color}15` : "#F3F4F6",
-                            color: isActive ? tab.color : "#6B7280",
-                          }}
-                        >
+                        <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-md tabular-nums ${
+                          isActive ? "bg-white text-slate-700 shadow-sm" : "bg-slate-100 text-slate-400"
+                        }`}>
                           {tab.count}
                         </span>
                       </button>
@@ -1416,102 +776,65 @@ export default function AuctionsPage() {
                   })}
                 </div>
 
-                {/* Mechanism Filter: English / Dutch */}
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 12, color: "#6B7280", fontWeight: 600 }}>Hình thức:</span>
+                {/* Auction Type Toggle */}
+                <div className="flex items-center gap-1.5 bg-slate-100 p-0.5 rounded-lg">
                   {[
                     { key: "all" as TypeFilter, label: "Tất cả" },
-                    { key: "english" as TypeFilter, label: "Kiểu Anh (Tăng)" },
-                    { key: "dutch" as TypeFilter, label: "Kiểu Hà Lan (Giảm)" },
+                    { key: "english" as TypeFilter, label: "Kiểu Anh ↑" },
+                    { key: "dutch" as TypeFilter, label: "Kiểu Hà Lan ↓" },
                   ].map((m) => (
                     <button
                       key={m.key}
-                      onClick={() => {
-                        setTypeFilter(m.key);
-                        setPageIndex(1);
-                      }}
-                      style={{
-                        padding: "4px 10px",
-                        borderRadius: 4,
-                        fontSize: 12,
-                        fontWeight: typeFilter === m.key ? 700 : 500,
-                        background: typeFilter === m.key ? "#001743" : "#F3F4F6",
-                        color: typeFilter === m.key ? "#FFFFFF" : "#4B5563",
-                        border: "none",
-                        cursor: "pointer",
-                        transition: "all 0.15s ease",
-                      }}
+                      onClick={() => { setTypeFilter(m.key); setPageIndex(1); }}
+                      className={`px-3 py-1.5 rounded-md text-[12px] font-semibold cursor-pointer transition-all duration-150 ${
+                        typeFilter === m.key
+                          ? "bg-white text-[#001743] shadow-sm"
+                          : "text-slate-500 hover:text-slate-700"
+                      }`}
                     >
                       {m.label}
                     </button>
                   ))}
                 </div>
-
               </div>
             </div>
           </div>
         </section>
 
-        {/* ═══════════════════════════════════════════════════════════
-            3. ACTIVE SEARCH RESULTS / STATUS HEADER
-        ═══════════════════════════════════════════════════════════ */}
-        <div className="container" style={{ maxWidth: 1200, margin: "0 auto", padding: "20px 20px 0" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-            <div style={{ fontSize: 13, color: "#4B5563" }}>
+        {/* ═══ 3. RESULTS HEADER ══════════════════════════════ */}
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 pt-5">
+          <div className="flex justify-between items-center flex-wrap gap-2">
+            <div className="text-[13px] text-slate-600">
               {debouncedKeyword ? (
                 <span>
-                  Kết quả tìm kiếm cho mã/số: <strong style={{ color: "#E4011E", fontFamily: "monospace" }}>"{debouncedKeyword}"</strong>{" "}
-                  ({totalCount} phiên đấu giá)
+                  Kết quả cho: <strong className="text-[#E4011E] font-mono">"{debouncedKeyword}"</strong>{" "}
+                  ({totalCount} phiên)
                 </span>
               ) : (
                 <span>
-                  Đang hiển thị <strong>{displayAuctions.length}</strong> / <strong>{totalCount}</strong> phiên đấu giá
+                  Hiển thị <strong className="text-[#001743]">{displayAuctions.length}</strong> / <strong className="text-[#001743]">{totalCount}</strong> phiên đấu giá
                 </span>
               )}
             </div>
-
             {loading && (
-              <span style={{ fontSize: 12, color: "#6B7280", display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <span className="inline-block animate-spin">⏳</span> Đang đồng bộ dữ liệu từ sàn...
+              <span className="text-[12px] text-slate-400 flex items-center gap-1.5">
+                <RotateCcw size={12} className="animate-spin" />
+                Đang đồng bộ...
               </span>
             )}
           </div>
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════
-            4. MAIN GRID OF REAL AUCTIONS (CHAMFERED CARDS)
-        ═══════════════════════════════════════════════════════════ */}
-        <main className="container" style={{ maxWidth: 1200, margin: "0 auto", padding: "16px 20px 60px" }}>
+        {/* ═══ 4. AUCTION GRID ════════════════════════════════ */}
+        <main className="max-w-[1280px] mx-auto px-4 sm:px-6 pt-4 pb-16">
           {error && (
-            <div
-              style={{
-                background: "#FEF2F2",
-                border: "1px solid #FECACA",
-                borderRadius: 8,
-                padding: "16px 20px",
-                color: "#991B1B",
-                fontSize: 13.5,
-                marginBottom: 24,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <div>
+            <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 mb-6 flex items-center justify-between">
+              <div className="text-[13px] text-rose-800">
                 <strong>Lỗi kết nối:</strong> {error}
               </div>
               <button
                 onClick={loadAuctions}
-                style={{
-                  padding: "6px 14px",
-                  borderRadius: 4,
-                  background: "#DC2626",
-                  color: "#FFFFFF",
-                  border: "none",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
+                className="px-4 py-1.5 rounded-lg bg-rose-600 text-white text-[12px] font-bold cursor-pointer hover:bg-rose-700 transition-colors"
               >
                 Thử lại
               </button>
@@ -1519,147 +842,118 @@ export default function AuctionsPage() {
           )}
 
           {loading ? (
-            /* Skeleton Loading State */
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
-              {[1, 2, 3, 4, 5, 6].map((n) => (
-                <div
-                  key={n}
-                  style={{
-                    background: "#FFFFFF",
-                    border: "1px solid #E5E7EB",
-                    borderRadius: "8px 0 8px 8px",
-                    padding: "20px",
-                    minHeight: 210,
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    animation: "pulse 1.5s infinite",
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <div style={{ width: 70, height: 22, background: "#E5E7EB", borderRadius: 4 }} />
-                    <div style={{ width: 80, height: 22, background: "#E5E7EB", borderRadius: 4 }} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                <div key={n} className="bg-white border border-slate-200 rounded-xl p-5 min-h-[200px] animate-pulse">
+                  <div className="flex justify-between mb-4">
+                    <div className="w-16 h-6 bg-slate-200 rounded-md" />
+                    <div className="w-20 h-6 bg-slate-200 rounded-md" />
                   </div>
-                  <div style={{ margin: "14px 0" }}>
-                    <div style={{ width: 180, height: 30, background: "#E5E7EB", borderRadius: 4, marginBottom: 8 }} />
-                    <div style={{ width: 120, height: 16, background: "#F3F4F6", borderRadius: 4 }} />
-                  </div>
-                  <div style={{ borderTop: "1px solid #F3F4F6", paddingTop: 12, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                  <div className="w-40 h-8 bg-slate-200 rounded-md mb-3" />
+                  <div className="w-24 h-4 bg-slate-100 rounded-md mb-6" />
+                  <div className="border-t border-slate-100 pt-4 flex justify-between">
                     <div>
-                      <div style={{ width: 60, height: 12, background: "#F3F4F6", borderRadius: 4, marginBottom: 4 }} />
-                      <div style={{ width: 110, height: 22, background: "#E5E7EB", borderRadius: 4 }} />
+                      <div className="w-16 h-3 bg-slate-100 rounded-md mb-2" />
+                      <div className="w-28 h-6 bg-slate-200 rounded-md" />
                     </div>
-                    <div style={{ width: 90, height: 28, background: "#E5E7EB", borderRadius: 4 }} />
+                    <div className="w-24 h-8 bg-slate-200 rounded-md" />
                   </div>
                 </div>
               ))}
             </div>
           ) : displayAuctions.length === 0 ? (
-            /* Empty State */
-            <div
-              style={{
-                background: "#FFFFFF",
-                border: "1px solid #E5E7EB",
-                borderRadius: 8,
-                padding: "60px 24px",
-                textAlign: "center",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: 16, color: "#9CA3AF" }}>
-                <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
+            <div className="bg-white border border-slate-200 rounded-2xl p-16 text-center max-w-lg mx-auto">
+              <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-5 text-slate-400">
+                <Search size={28} />
               </div>
-              <div style={{ fontSize: 17, fontWeight: 800, color: "#001743", marginBottom: 8 }}>
+              <h3 className="text-lg font-bold text-[#001743] mb-2">
                 {debouncedKeyword
-                  ? `Không tìm thấy phiên đấu giá nào phù hợp với mã "${debouncedKeyword}"`
-                  : "Không có phiên đấu giá nào trong danh mục này"}
-              </div>
-              <p style={{ fontSize: 13.5, color: "#6B7280", margin: "0 auto 20px", maxWidth: 460, lineHeight: 1.6 }}>
+                  ? `Không tìm thấy phiên đấu giá nào cho "${debouncedKeyword}"`
+                  : "Không có phiên đấu giá nào"}
+              </h3>
+              <p className="text-[13px] text-slate-500 mb-6 leading-relaxed max-w-sm mx-auto">
                 {debouncedKeyword
-                  ? "Bạn hãy kiểm tra lại định dạng mã phiên (VD: AUC-20260901-001) hoặc số thuê bao SIM cần tìm."
-                  : "Hiện chưa có phiên đấu giá phù hợp với trạng thái hoặc nhà mạng đã chọn."}
+                  ? "Kiểm tra lại mã phiên (VD: AUC-20260901-001) hoặc số thuê bao SIM."
+                  : "Hiện chưa có phiên đấu giá phù hợp với bộ lọc đã chọn."}
               </p>
               <button
                 onClick={handleResetFilters}
-                style={{
-                  padding: "10px 20px",
-                  borderRadius: 6,
-                  background: "#001743",
-                  color: "#FFFFFF",
-                  border: "none",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#001743] hover:bg-[#00266B] text-white text-[13px] font-bold rounded-xl cursor-pointer transition-colors"
               >
-                Xem tất cả các phiên đấu giá
+                <RotateCcw size={14} />
+                Xem tất cả phiên đấu giá
               </button>
             </div>
           ) : (
-            /* Real Auctions Cards Grid */
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {displayAuctions.map((item) => (
                 <SimAuctionCard key={item.id} data={toCardData(item)} />
               ))}
             </div>
           )}
 
-          {/* ═══════════════════════════════════════════════════════════
-              5. PAGINATION CONTROLS
-          ═══════════════════════════════════════════════════════════ */}
+          {/* ═══ 5. PAGINATION ═══════════════════════════════ */}
           {!loading && totalPages > 1 && (
-            <div style={{ marginTop: 40, display: "flex", justifyContent: "center", alignItems: "center", gap: 8 }}>
+            <div className="mt-10 flex justify-center items-center gap-2">
               <button
                 onClick={() => setPageIndex((p) => Math.max(1, p - 1))}
                 disabled={pageIndex <= 1}
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: 6,
-                  border: "1px solid #D1D5DB",
-                  background: pageIndex <= 1 ? "#F3F4F6" : "#FFFFFF",
-                  color: pageIndex <= 1 ? "#9CA3AF" : "#001743",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: pageIndex <= 1 ? "not-allowed" : "pointer",
-                }}
+                className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-colors cursor-pointer border ${
+                  pageIndex <= 1
+                    ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                    : "bg-white text-[#001743] border-slate-200 hover:bg-slate-50 shadow-sm"
+                }`}
               >
-                ← Trang trước
+                <ChevronLeft size={15} />
+                Trước
               </button>
 
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#001743", padding: "0 10px" }}>
-                Trang {pageIndex} / {totalPages}
-              </span>
+              <div className="flex gap-1">
+                {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 7) {
+                    pageNum = i + 1;
+                  } else if (pageIndex <= 4) {
+                    pageNum = i + 1;
+                  } else if (pageIndex >= totalPages - 3) {
+                    pageNum = totalPages - 6 + i;
+                  } else {
+                    pageNum = pageIndex - 3 + i;
+                  }
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setPageIndex(pageNum)}
+                      className={`w-9 h-9 rounded-lg text-[13px] font-bold transition-all cursor-pointer ${
+                        pageIndex === pageNum
+                          ? "bg-[#001743] text-white shadow-sm"
+                          : "text-slate-600 hover:bg-slate-100"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
 
               <button
                 onClick={() => setPageIndex((p) => Math.min(totalPages, p + 1))}
                 disabled={pageIndex >= totalPages}
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: 6,
-                  border: "1px solid #D1D5DB",
-                  background: pageIndex >= totalPages ? "#F3F4F6" : "#FFFFFF",
-                  color: pageIndex >= totalPages ? "#9CA3AF" : "#001743",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: pageIndex >= totalPages ? "not-allowed" : "pointer",
-                }}
+                className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-colors cursor-pointer border ${
+                  pageIndex >= totalPages
+                    ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                    : "bg-white text-[#001743] border-slate-200 hover:bg-slate-50 shadow-sm"
+                }`}
               >
-                Trang sau →
+                Sau
+                <ChevronRight size={15} />
               </button>
             </div>
           )}
         </main>
       </div>
 
-
-      <style>{`
-        @keyframes pulse-hero {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.4; transform: scale(1.3); }
-        }
-      `}</style>
+      <Footer />
     </div>
   );
 }

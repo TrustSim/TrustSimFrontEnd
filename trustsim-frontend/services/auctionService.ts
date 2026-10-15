@@ -43,6 +43,9 @@ export interface AuctionDto {
   totalParticipants: number;
   totalBids: number;
   minBidStep: number;
+  maxStepMultiplier?: number;
+  maxSnipeExtensionsPerParticipant?: number;
+  paymentGracePeriodHours?: number;
   depositAmount: number;
   extensionDurationSeconds: number;
   dutchDecreaseAmount?: number;
@@ -228,22 +231,69 @@ export const auctionService = {
     if (params.pageIndex) query.append("pageIndex", params.pageIndex.toString());
     if (params.pageSize) query.append("pageSize", params.pageSize.toString());
     if (params.auctionType !== undefined && params.auctionType !== null) {
-      query.append("auctionType", params.auctionType.toString());
+      query.append("type", params.auctionType.toString());
     }
     if (params.status !== undefined && params.status !== null) {
       query.append("status", params.status.toString());
     }
-    if (params.search) query.append("search", params.search);
+    if (params.search) query.append("keyword", params.search);
     if (params.authorId) query.append("authorId", params.authorId);
-    if (params.startFrom) query.append("startFrom", params.startFrom);
-    if (params.startTo) query.append("startTo", params.startTo);
 
-    const queryString = query.toString();
-    const endpoint = `/admin/auctions${queryString ? `?${queryString}` : ""}`;
-    const res = await apiFetch<PagedResult<AuctionListItemDto>>(endpoint);
-
-    if (res.data) {
-      return res.data;
+    try {
+      const endpoint = `/admin/auctions?${query.toString()}`;
+      const res = await apiFetch<PagedResult<AuctionListItemDto>>(endpoint);
+      if (res.data) {
+        return res.data;
+      }
+    } catch {
+      // Backend chưa có route /admin/auctions riêng -> truy vấn endpoint /Auctions chính thức
+      try {
+        const res = await apiFetch<PagedResult<AuctionDto>>(`/Auctions?${query.toString()}`);
+        if (res.data) {
+          return {
+            pageIndex: res.data.pageIndex,
+            pageSize: res.data.pageSize,
+            totalCount: res.data.totalCount,
+            totalPages: res.data.totalPages,
+            hasPreviousPage: res.data.hasPreviousPage,
+            hasNextPage: res.data.hasNextPage,
+            items: (res.data.items || []).map((item) => ({
+              auctionId: item.id,
+              auctionCode: item.auctionCode,
+              auctionType:
+                item.auctionType === "DUTCH" || String(item.auctionType) === "1"
+                  ? AuctionTypeEnum.DUTCH
+                  : AuctionTypeEnum.ENGLISH,
+              auctionTypeName: item.auctionType,
+              auctionStatus:
+                item.auctionStatus === "SCHEDULE" || String(item.auctionStatus) === "1"
+                  ? AuctionStatusEnum.SCHEDULE
+                  : item.auctionStatus === "ACTIVE" || String(item.auctionStatus) === "2"
+                  ? AuctionStatusEnum.ACTIVE
+                  : item.auctionStatus === "END" || String(item.auctionStatus) === "3"
+                  ? AuctionStatusEnum.END
+                  : AuctionStatusEnum.DRAFT,
+              auctionStatusName: item.auctionStatus,
+              simNumberId: item.simNumberId,
+              phoneNumber: item.simPhoneNumber,
+              carrierName: item.carrierName,
+              formatRhythmName: item.formatRhythmName,
+              startingPrice: item.startingPrice,
+              currentPrice: item.currentPrice,
+              reservePrice: item.reservePrice,
+              startAt: item.startAt,
+              endAt: item.endAt,
+              registrationStartAt: item.registrationStartAt,
+              registrationEndAt: item.registrationEndAt,
+              authorName: item.authorName,
+              totalParticipants: item.totalParticipants,
+              totalBids: item.totalBids,
+            })),
+          };
+        }
+      } catch (innerErr) {
+        console.warn("[AuctionService] Lỗi khi truy vấn /Auctions fallback cho Admin:", innerErr);
+      }
     }
 
     return {
@@ -404,6 +454,17 @@ export const auctionService = {
       body: JSON.stringify({ isApproved, rejectionReason: rejectionReason || "" }),
     });
     if (!res.success) throw new Error(res.message || "Xử lý phê duyệt không thành công.");
+    return res.data;
+  },
+
+  /**
+   * Chấp nhận mua ngay trong phiên đấu giá kiểu Hà Lan (Dutch Auction)
+   */
+  async acceptDutchBuy(auctionId: string): Promise<any> {
+    const res = await apiFetch<any>(`/Auctions/${auctionId}/dutch-buy`, {
+      method: "POST",
+    });
+    if (!res.success) throw new Error(res.message || "Chấp nhận mua SIM không thành công.");
     return res.data;
   },
 };

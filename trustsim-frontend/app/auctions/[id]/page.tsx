@@ -1,6 +1,7 @@
+/* Redesigned AuctionDetailPage · Clean High-Trust Banking & Auction Terminal */
 "use client";
 
-import React, { useState, useEffect, useRef, use } from "react";
+import React, { useState, useEffect, useRef, use, useMemo } from "react";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -10,143 +11,37 @@ import { authService } from "@/services/authService";
 import { AuthResponseDto } from "@/types/auth";
 import { ToastContainer, ToastMessage } from "@/components/ui/Toast";
 import { DepositModal } from "@/components/wallet/DepositModal";
+import { formatPhoneNumber, getCarrierColor } from "@/services/simService";
+import {
+  Gavel, Clock, Flame, ShieldCheck, CheckCircle2, Lock,
+  ArrowLeft, TrendingUp, TrendingDown, RefreshCw, Wallet,
+  AlertTriangle, Crown, Copy, Check, Info, BadgeCheck,
+  Radio, FileText, X, ChevronDown, ChevronUp, Users, Zap,
+  Timer, BookOpen, CircleDollarSign, Scale, HelpCircle,
+} from "lucide-react";
 
-/* ─── Flat & Line SVG Icons (Strictly Line / Solid Monochrome, NO 3D) ───── */
-const Icons = {
-  LiveDot: () => (
-    <span className="relative flex h-2.5 w-2.5">
-      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-      <span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-50 scale-150" />
-      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#E4011E] shadow-[0_0_8px_#E4011E]" />
-    </span>
-  ),
-  Clock: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  ),
-  Flame: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
-    </svg>
-  ),
-  Gavel: () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m14 13-7.5 7.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0a2.12 2.12 0 0 1 0-3L11 10" />
-      <path d="m16 16 6-6" />
-      <path d="m8 8 6-6" />
-      <path d="m9 7 8 8" />
-      <path d="m21 11-8-8" />
-    </svg>
-  ),
-  Crown: () => (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-      <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z" />
-    </svg>
-  ),
-  ShieldCheck: () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-      <polyline points="9 12 11 14 15 10" />
-    </svg>
-  ),
-  Award: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="8" r="7" />
-      <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
-    </svg>
-  ),
-  Refresh: () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-    </svg>
-  ),
-  CheckCircle: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-      <polyline points="22 4 12 14.01 9 11.01" />
-    </svg>
-  ),
-  Lock: () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  ),
-  ArrowLeft: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="19" y1="12" x2="5" y2="12" />
-      <polyline points="12 19 5 12 12 5" />
-    </svg>
-  ),
-  TrendingUp: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-      <polyline points="17 6 23 6 23 12" />
-    </svg>
-  ),
-  Info: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" y1="16" x2="12" y2="12" />
-      <line x1="12" y1="8" x2="12.01" y2="8" />
-    </svg>
-  ),
-  Tag: () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z" />
-      <path d="M7 7h.01" />
-    </svg>
-  ),
+/* ─── Currency Formatter ─────────────────────────────────── */
+const formatPrice = (amount?: number) => {
+  if (amount === undefined || amount === null || isNaN(amount)) return "0 ₫";
+  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(amount);
 };
 
-/* ─── Format Currency Helper ─────────────────────────────────────────────── */
-const formatPrice = (amount: number) => {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
-
-/* ─── Carrier Color Config ────────────────────────────────────────────────── */
-const CARRIER_CONFIG: Record<string, { bg: string; text: string; border: string; dot: string; label: string }> = {
-  Viettel: { bg: "#FEF2F2", text: "#991B1B", border: "#FECACA", dot: "#EF4444", label: "Viettel Telecom" },
-  Mobifone: { bg: "#EFF6FF", text: "#1E40AF", border: "#BFDBFE", dot: "#3B82F6", label: "MobiFone" },
-  Mobi: { bg: "#EFF6FF", text: "#1E40AF", border: "#BFDBFE", dot: "#3B82F6", label: "MobiFone" },
-  Vinaphone: { bg: "#F0F9FF", text: "#0369A1", border: "#BAE6FD", dot: "#0EA5E9", label: "VinaPhone" },
-  Vina: { bg: "#F0F9FF", text: "#0369A1", border: "#BAE6FD", dot: "#0EA5E9", label: "VinaPhone" },
-  Vietnamobile: { bg: "#FFF7ED", text: "#9A3412", border: "#FED7AA", dot: "#F97316", label: "Vietnamobile" },
-};
-
-const getCarrierConfig = (name: string = "") => {
-  const found = Object.keys(CARRIER_CONFIG).find((k) => name.toLowerCase().includes(k.toLowerCase()));
-  return found ? CARRIER_CONFIG[found] : { bg: "#F9FAFB", text: "#374151", border: "#E5E7EB", dot: "#9CA3AF", label: name || "Di động" };
-};
-
-/* ─── Deterministic Avatar Color Generator for Light Theme ─────────────────── */
+/* ─── Avatar Colors ──────────────────────────────────────── */
 const AVATAR_COLORS = [
-  { bg: "#DBEAFE", text: "#1D4ED8" },
-  { bg: "#FEE2E2", text: "#B91C1C" },
-  { bg: "#D1FAE5", text: "#065F46" },
-  { bg: "#FEF3C7", text: "#92400E" },
-  { bg: "#EDE9FE", text: "#5B21B6" },
-  { bg: "#CCFBF1", text: "#0F766E" },
+  { bg: "#DBEAFE", text: "#1D4ED8" }, { bg: "#FEE2E2", text: "#B91C1C" },
+  { bg: "#D1FAE5", text: "#065F46" }, { bg: "#FEF3C7", text: "#92400E" },
+  { bg: "#EDE9FE", text: "#5B21B6" }, { bg: "#CCFBF1", text: "#0F766E" },
 ];
-
 const getAvatarStyle = (name: string = "") => {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = (hash << 5) - hash + name.charCodeAt(i);
-  const index = Math.abs(hash) % AVATAR_COLORS.length;
-  return AVATAR_COLORS[index];
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 };
 
-/* ─── Count-Up Price Hook (500ms Smooth Easing) ──────────────────────────── */
+/* ─── Animated Count-Up Hook ─────────────────────────────── */
 function useCountUp(target: number, duration: number = 500) {
   const [current, setCurrent] = useState(target);
   const currentRef = useRef(target);
-
   useEffect(() => {
     const start = currentRef.current;
     const diff = target - start;
@@ -156,225 +51,141 @@ function useCountUp(target: number, duration: number = 500) {
     const animate = (now: number) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // Easing: easeOutCubic
       const eased = 1 - Math.pow(1 - progress, 3);
       const val = Math.round(start + diff * eased);
       currentRef.current = val;
       setCurrent(val);
-      if (progress < 1) {
-        req = requestAnimationFrame(animate);
-      } else {
-        currentRef.current = target;
-        setCurrent(target);
-      }
+      if (progress < 1) { req = requestAnimationFrame(animate); } else { currentRef.current = target; setCurrent(target); }
     };
     req = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(req);
   }, [target, duration]);
-
   return current;
 }
 
-/* ─── Gold SIM Microchip (Matches Luxury Physical Card Spec) ────────── */
-function SimMicrochip() {
-  return (
-    <svg width="48" height="38" viewBox="0 0 48 38" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
-      <defs>
-        <linearGradient id="chipBorderGrad" x1="0" y1="0" x2="48" y2="38" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#FDE68A" />
-          <stop offset="45%" stopColor="#D97706" />
-          <stop offset="100%" stopColor="#78350F" />
-        </linearGradient>
-        <linearGradient id="chipBgGrad" x1="0" y1="0" x2="48" y2="38" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#B45309" />
-          <stop offset="50%" stopColor="#78350F" />
-          <stop offset="100%" stopColor="#451A03" />
-        </linearGradient>
-        <linearGradient id="padGrad" x1="0" y1="0" x2="0" y2="100%">
-          <stop offset="0%" stopColor="#FEF08A" />
-          <stop offset="35%" stopColor="#FBBF24" />
-          <stop offset="100%" stopColor="#D97706" />
-        </linearGradient>
-      </defs>
-      {/* Chip base card */}
-      <rect x="0.75" y="0.75" width="46.5" height="36.5" rx="5.5" fill="url(#chipBgGrad)" stroke="url(#chipBorderGrad)" strokeWidth="1.5" />
-      {/* Top Row: 3 pads */}
-      <rect x="4.5" y="4.5" width="10" height="7.5" rx="2" fill="url(#padGrad)" />
-      <rect x="19" y="4.5" width="10" height="7.5" rx="2" fill="url(#padGrad)" />
-      <rect x="33.5" y="4.5" width="10" height="7.5" rx="2" fill="url(#padGrad)" />
-      {/* Middle Row: 2 side pads + 1 center pill pad */}
-      <rect x="4.5" y="15" width="10" height="8" rx="2" fill="url(#padGrad)" />
-      <rect x="18" y="15" width="12" height="8" rx="4" fill="url(#padGrad)" />
-      <rect x="33.5" y="15" width="10" height="8" rx="2" fill="url(#padGrad)" />
-      {/* Bottom Row: 3 pads */}
-      <rect x="4.5" y="26" width="10" height="7.5" rx="2" fill="url(#padGrad)" />
-      <rect x="19" y="26" width="10" height="7.5" rx="2" fill="url(#padGrad)" />
-      <rect x="33.5" y="26" width="10" height="7.5" rx="2" fill="url(#padGrad)" />
-    </svg>
-  );
-}
+/* ─── SIM Number Display ─────────────────────────────────── */
+function SimAssetDisplay({ phone, carrier }: { phone?: string; carrier?: string }) {
+  const [copied, setCopied] = useState(false);
+  const clean = (phone || "").replace(/\D/g, "");
+  let formatted = phone || "---";
+  if (clean.length === 10) formatted = `${clean.slice(0, 4)} · ${clean.slice(4, 7)} · ${clean.slice(7)}`;
+  else if (clean.length === 11) formatted = `${clean.slice(0, 5)} · ${clean.slice(5, 8)} · ${clean.slice(8)}`;
 
-/* ─── Luxury SIM Number Renderer (0909: Silver | 999 999: Vivid Gold) ──── */
-function renderLuxurySimNumber(phone?: string) {
-  if (!phone) return <span style={{ color: "#FACC15" }}>---</span>;
-  const clean = phone.replace(/\D/g, "");
-  if (clean.length === 10) {
-    const prefix = clean.slice(0, 4);
-    const middle = clean.slice(4, 7);
-    const suffix = clean.slice(7);
-
-    return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "clamp(12px, 2.5vw, 24px)",
-          fontFamily: "var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-          fontWeight: 900,
-          fontSize: "clamp(2rem, 5.2vw, 3.25rem)",
-          letterSpacing: "0.08em",
-          lineHeight: 1,
-          userSelect: "all",
-        }}
-      >
-        {/* Prefix: Ice Silver / Cool White */}
-        <span style={{ color: "#CBD5E1", textShadow: "0 2px 10px rgba(0,0,0,0.5)" }}>
-          {prefix}
-        </span>
-        {/* Middle: Vivid Gold */}
-        <span style={{ color: "#FACC15", textShadow: "0 0 25px rgba(250, 204, 21, 0.3)" }}>
-          {middle}
-        </span>
-        {/* Suffix: Vivid Gold */}
-        <span style={{ color: "#FACC15", textShadow: "0 0 25px rgba(250, 204, 21, 0.3)" }}>
-          {suffix}
-        </span>
-      </div>
-    );
-  }
-
-  if (clean.length === 11) {
-    const prefix = clean.slice(0, 5);
-    const middle = clean.slice(5, 8);
-    const suffix = clean.slice(8);
-
-    return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "clamp(10px, 2vw, 20px)",
-          fontFamily: "var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-          fontWeight: 900,
-          fontSize: "clamp(1.75rem, 4.5vw, 2.75rem)",
-          letterSpacing: "0.08em",
-          lineHeight: 1,
-          userSelect: "all",
-        }}
-      >
-        <span style={{ color: "#CBD5E1", textShadow: "0 2px 10px rgba(0,0,0,0.5)" }}>{prefix}</span>
-        <span style={{ color: "#FACC15", textShadow: "0 0 25px rgba(250, 204, 21, 0.3)" }}>{middle}</span>
-        <span style={{ color: "#FACC15", textShadow: "0 0 25px rgba(250, 204, 21, 0.3)" }}>{suffix}</span>
-      </div>
-    );
-  }
+  const handleCopy = () => {
+    if (!phone) return;
+    navigator.clipboard.writeText(phone);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
-    <div
-      style={{
-        color: "#FACC15",
-        fontWeight: 900,
-        fontSize: "clamp(2rem, 5vw, 3rem)",
-        fontFamily: "monospace",
-        letterSpacing: "0.08em",
-      }}
-    >
-      {phone}
+    <div className="flex items-center justify-center gap-3 py-3">
+      <span className="font-mono text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white select-all tabular-nums">
+        {formatted}
+      </span>
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="opacity-50 hover:opacity-100 p-2 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 transition-all text-xs flex items-center gap-1.5 cursor-pointer"
+        title="Sao chép số SIM"
+      >
+        {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+        <span className="text-[11px] font-sans font-medium hidden sm:inline">{copied ? "Đã chép" : "Chép"}</span>
+      </button>
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════════
-   MAIN COMPONENT: AuctionDetailPage (Fintech Trading Terminal - #001644)
-   ═══════════════════════════════════════════════════════════════════════════════ */
+/* ─── Collapsible Section ────────────────────────────────── */
+function CollapsibleSection({ title, icon, defaultOpen = true, children, badge }: {
+  title: string; icon: React.ReactNode; defaultOpen?: boolean; children: React.ReactNode; badge?: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-slate-50/50 transition-colors"
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">{icon}</div>
+          <span className="font-bold text-sm text-[#001743]">{title}</span>
+          {badge}
+        </div>
+        {open ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
+      </button>
+      {open && <div className="border-t border-slate-100">{children}</div>}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MAIN COMPONENT
+   ═══════════════════════════════════════════════════════════ */
 export default function AuctionDetailPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
-  // Unwrap Next.js 15 params Promise
   const resolvedParams = typeof (params as any)?.then === "function" ? use(params as Promise<{ id: string }>) : (params as { id: string });
   const auctionId = resolvedParams.id;
 
-  // State
   const [auction, setAuction] = useState<AuctionDto | null>(null);
   const [bids, setBids] = useState<BidDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [bidding, setBidding] = useState(false);
   const [registering, setRegistering] = useState(false);
+  const [acceptingDutchBuy, setAcceptingDutchBuy] = useState(false);
   const [bidAmountInput, setBidAmountInput] = useState<string>("");
   const [inputError, setInputError] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"rules" | "sim_info" | "seller">("rules");
 
-  // User Authentication State
+  const isDutch = useMemo(() => {
+    if (!auction) return false;
+    return auction.auctionType === "DUTCH" || String(auction.auctionType) === "1" || (auction as any).auctionType === 1;
+  }, [auction?.auctionType]);
+
   const [currentUser, setCurrentUser] = useState<AuthResponseDto | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
-  // Sync Auth State with localStorage & custom events
   useEffect(() => {
     const syncAuth = () => {
       const user = authService.getUser();
       setCurrentUser(user);
       setIsLoggedIn(Boolean(user && user.userId));
     };
-
     syncAuth();
     window.addEventListener("trustsim_auth_change", syncAuth);
     window.addEventListener("storage", syncAuth);
-
     return () => {
       window.removeEventListener("trustsim_auth_change", syncAuth);
       window.removeEventListener("storage", syncAuth);
     };
   }, []);
 
-  // Visual feedback states
   const [priceFlash, setPriceFlash] = useState(false);
   const [antiSnipingFlash, setAntiSnipingFlash] = useState(false);
   const [newestBidId, setNewestBidId] = useState<string | null>(null);
   const previousEndAtRef = useRef<string | null>(null);
 
-  // Countdown timer state
-  const [timeLeft, setTimeLeft] = useState<{
-    days: number;
-    hours: number;
-    minutes: number;
-    seconds: number;
-    isEnded: boolean;
-  }>({ days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: false });
+  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number; isEnded: boolean }>({ days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: false });
 
-  // Deposit modal
   const [depositModalOpen, setDepositModalOpen] = useState(false);
+  const [dutchConfirmModalOpen, setDutchConfirmModalOpen] = useState(false);
+  const [showBidsExpanded, setShowBidsExpanded] = useState(false);
 
-  // Toasts
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const addToast = (toast: Omit<ToastMessage, "id">) => {
     const id = Date.now().toString() + Math.random().toString(36).substring(2, 5);
     setToasts((prev) => [...prev, { ...toast, id }]);
   };
-  const removeToast = (id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  };
+  const removeToast = (id: string) => setToasts((prev) => prev.filter((t) => t.id !== id));
 
-  // ─── 1. Load Data ──────────────────────────────────────────────────────────
+  /* ─── Data Loading ─────────────────────────────────────── */
   const fetchAuctionData = async (isBackground: boolean = false) => {
     try {
       if (!isBackground) setLoading(true);
-
       const [auctionData, bidsData] = await Promise.all([
         auctionService.getAuctionById(auctionId),
         auctionService.getAuctionBids(auctionId, 40),
       ]);
 
-      // Check if price changed
       setAuction((prev) => {
         if (prev && prev.currentPrice !== auctionData.currentPrice) {
           setPriceFlash(true);
@@ -383,14 +194,12 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
         return auctionData;
       });
 
-      // Check if anti-sniping extension occurred
       if (previousEndAtRef.current && previousEndAtRef.current !== auctionData.endAt) {
         setAntiSnipingFlash(true);
         setTimeout(() => setAntiSnipingFlash(false), 4500);
       }
       previousEndAtRef.current = auctionData.endAt;
 
-      // Check newest bid
       if (bidsData.length > 0) {
         setBids((prev) => {
           if (prev.length > 0 && bidsData[0].id !== prev[0]?.id) {
@@ -404,1041 +213,782 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
       }
 
       if (!isBackground) {
-        const nextPrice = auctionData.currentPrice + (auctionData.minBidStep || 500_000);
-        setBidAmountInput(nextPrice.toLocaleString("vi-VN"));
+        const isDutchAuction = auctionData.auctionType === "DUTCH" || String(auctionData.auctionType) === "1" || (auctionData as any).auctionType === 1;
+        if (!isDutchAuction) {
+          const nextPrice = auctionData.currentPrice + (auctionData.minBidStep || 500_000);
+          setBidAmountInput(nextPrice.toLocaleString("vi-VN"));
+        } else {
+          setBidAmountInput(auctionData.currentPrice.toLocaleString("vi-VN"));
+        }
       }
     } catch (err: any) {
-      if (!isBackground) {
-        addToast({
-          type: "error",
-          title: "Không thể tải phiên đấu giá",
-          message: err.message || "Vui lòng kiểm tra lại đường truyền mạng.",
-        });
-      }
+      if (!isBackground) addToast({ type: "error", title: "Không thể tải phiên đấu giá", message: err.message || "Vui lòng kiểm tra đường truyền." });
     } finally {
       if (!isBackground) setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchAuctionData(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auctionId]);
+  useEffect(() => { fetchAuctionData(false); }, [auctionId]);
 
-  // ─── 1.1. SignalR WebSockets Real-time Stream (Thay thế hoàn toàn Polling) ──
+  /* ─── SignalR Real-time ────────────────────────────────── */
   useEffect(() => {
     let isSubscribed = true;
-
     const setupRealtime = async () => {
       try {
         await auctionHubService.joinAuction(auctionId);
         if (!isSubscribed) return;
 
-        // 1. Lắng nghe lượt trả giá mới theo thời gian thực
         auctionHubService.onNewBid((newBid, newCurrentPrice, totalBidsCount) => {
           if (!isSubscribed) return;
-
-          // Kích hoạt hiệu ứng phát sáng giá nhảy
           setPriceFlash(true);
           setTimeout(() => setPriceFlash(false), 1200);
-
-          // Cập nhật giá hiện tại và tổng số lượt trả
-          setAuction((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  currentPrice: newCurrentPrice,
-                  totalBids: totalBidsCount,
-                }
-              : null
-          );
-
-          // Chèn lượt trả giá mới lên đầu Orderbook (đánh dấu OUTBID cho các lượt cũ)
-          setBids((prev) => [
-            newBid,
-            ...prev
-              .filter((b) => b.id !== newBid.id)
-              .map((b) => ({ ...b, status: "OUTBID" })),
-          ]);
+          setAuction((prev) => prev ? { ...prev, currentPrice: newCurrentPrice, totalBids: totalBidsCount } : null);
+          setBids((prev) => [newBid, ...prev.filter((b) => b.id !== newBid.id).map((b) => ({ ...b, status: "OUTBID" }))]);
           setNewestBidId(newBid.id);
           setTimeout(() => setNewestBidId(null), 3000);
 
-          // Tự động cập nhật gợi ý mức giá tiếp theo trên ô input
-          setBidAmountInput((prevVal) => {
+          if (!isDutch) {
             const minStep = auction?.minBidStep || 500_000;
-            return (newCurrentPrice + minStep).toLocaleString("vi-VN");
-          });
+            setBidAmountInput((newCurrentPrice + minStep).toLocaleString("vi-VN"));
+          } else {
+            setBidAmountInput(newCurrentPrice.toLocaleString("vi-VN"));
+          }
         });
 
-        // 2. Lắng nghe gia hạn Anti-Sniping giờ chót
-        auctionHubService.onAuctionExtended((newEndAtStr, extensionSecs) => {
+        auctionHubService.onAuctionExtended((newEndAtStr) => {
           if (!isSubscribed) return;
           setAuction((prev) => (prev ? { ...prev, endAt: newEndAtStr } : null));
           setAntiSnipingFlash(true);
           setTimeout(() => setAntiSnipingFlash(false), 5000);
         });
 
-        // 3. Lắng nghe thay đổi trạng thái phiên
         auctionHubService.onAuctionStatusChanged((aId, newStatus) => {
           if (!isSubscribed || aId !== auctionId) return;
           setAuction((prev) => (prev ? { ...prev, auctionStatus: newStatus as any } : null));
         });
-      } catch (err) {
-        console.warn("[SignalR] Không thể kết nối Socket:", err);
-      }
+      } catch (err) { console.warn("[SignalR] Không thể kết nối:", err); }
     };
 
     setupRealtime();
+    return () => { isSubscribed = false; auctionHubService.leaveAuction(auctionId); auctionHubService.removeAuctionListeners(); };
+  }, [auctionId, auction?.minBidStep, isDutch]);
 
-    return () => {
-      isSubscribed = false;
-      auctionHubService.leaveAuction(auctionId);
-      auctionHubService.removeAuctionListeners();
-    };
-  }, [auctionId, auction?.minBidStep]);
-
-  // ─── 2. Real-time Countdown Timer ────────────────────────────────────────
+  /* ─── Countdown Timer ──────────────────────────────────── */
   useEffect(() => {
     if (!auction?.endAt) return;
     const target = new Date(auction.endAt).getTime();
-
     const updateTimer = () => {
-      const now = Date.now();
-      const diff = target - now;
-
-      if (diff <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: true });
-        return;
-      }
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      setTimeLeft({ days, hours, minutes, seconds, isEnded: false });
+      const diff = target - Date.now();
+      if (diff <= 0) { setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: true }); return; }
+      setTimeLeft({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((diff % (1000 * 60)) / (1000 * 60)),
+        seconds: Math.floor((diff % (1000 * 60)) / 1000),
+        isEnded: false,
+      });
     };
-
     updateTimer();
     const timerInterval = setInterval(updateTimer, 1000);
     return () => clearInterval(timerInterval);
   }, [auction?.endAt]);
 
-  // Smooth Count-Up for current price (500ms)
   const animatedPrice = useCountUp(auction?.currentPrice || 0, 500);
 
-  // ─── 3. Handlers ────────────────────────────────────────────────────────
+  /* ─── Quick Add Steps ──────────────────────────────────── */
+  const quickAddSteps = useMemo(() => {
+    if (!auction || isDutch) return [];
+    const step = auction.minBidStep || 500_000;
+    const maxMul = auction.maxStepMultiplier && auction.maxStepMultiplier > 0 ? auction.maxStepMultiplier : 10;
+    const multipliers: number[] = [1];
+    if (maxMul >= 2) multipliers.push(2);
+    if (maxMul >= 5 && !multipliers.includes(5)) multipliers.push(5);
+    if (!multipliers.includes(maxMul) && maxMul > 1) multipliers.push(maxMul);
+    return multipliers.map((mul) => ({
+      label: mul === maxMul && mul > 1 ? "Trần tối đa" : `+${mul} bước`,
+      amountText: `+${formatPrice(step * mul)}`,
+      val: step * mul,
+    }));
+  }, [auction?.minBidStep, auction?.maxStepMultiplier, isDutch]);
+
+  /* ─── Handlers ─────────────────────────────────────────── */
   const handleQuickAdd = (increment: number) => {
     if (!auction) return;
-    const current = auction.currentPrice;
-    const newBid = current + increment;
-    setBidAmountInput(newBid.toLocaleString("vi-VN"));
+    setBidAmountInput((auction.currentPrice + increment).toLocaleString("vi-VN"));
     setInputError("");
   };
 
   const handleInputChange = (val: string) => {
     const raw = val.replace(/\D/g, "");
-    if (!raw) {
-      setBidAmountInput("");
-      return;
-    }
+    if (!raw) { setBidAmountInput(""); setInputError(""); return; }
     const num = parseInt(raw, 10);
     setBidAmountInput(num.toLocaleString("vi-VN"));
-
-    if (auction) {
-      const minAllowed = auction.currentPrice + (auction.minBidStep || 500_000);
-      if (num < minAllowed) {
-        setInputError(`Giá đặt tối thiểu phải là ${formatPrice(minAllowed)}`);
-      } else {
-        setInputError("");
-      }
+    if (auction && !isDutch) {
+      const minStep = auction.minBidStep || 500_000;
+      const minAllowed = auction.currentPrice + minStep;
+      const maxMultiplier = auction.maxStepMultiplier && auction.maxStepMultiplier > 0 ? auction.maxStepMultiplier : 10;
+      const maxAllowed = auction.currentPrice + maxMultiplier * minStep;
+      if (num < minAllowed) setInputError(`Tối thiểu: ${formatPrice(minAllowed)}`);
+      else if (num > maxAllowed) setInputError(`Tối đa: ${formatPrice(maxAllowed)} (${maxMultiplier}× bước giá)`);
+      else setInputError("");
     }
   };
 
   const handleRegisterParticipant = async () => {
-    if (!isLoggedIn) {
-      window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
-      return;
-    }
-
+    if (!isLoggedIn) { window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`; return; }
     setRegistering(true);
     try {
       await auctionService.registerParticipant(auctionId);
-      addToast({
-        type: "success",
-        title: "Đăng ký thành công",
-        message: "Bạn đã được cấp quyền tham gia trả giá trong phiên đấu giá này!",
-        duration: 4000,
-      });
+      addToast({ type: "success", title: "Đăng ký thành công", message: "Bạn đã được cấp quyền tham gia trả giá!", duration: 4000 });
       setAuction((prev) => (prev ? { ...prev, isUserRegistered: true } : null));
     } catch (err: any) {
-      const msg = err.message || "Vui lòng kiểm tra lại số dư ví hoặc liên hệ hỗ trợ.";
-      addToast({
-        type: "error",
-        title: "Đăng ký không thành công",
-        message: msg,
-        duration: 5000,
-      });
-      if (msg.includes("Số dư") || msg.includes("không đủ") || msg.includes("nạp thêm")) {
-        setTimeout(() => {
-          setDepositModalOpen(true);
-        }, 1200);
-      }
-    } finally {
-      setRegistering(false);
-    }
+      const msg = err.message || "Vui lòng kiểm tra số dư ví.";
+      addToast({ type: "error", title: "Đăng ký không thành công", message: msg, duration: 5000 });
+      if (msg.includes("Số dư") || msg.includes("không đủ") || msg.includes("nạp thêm")) setTimeout(() => setDepositModalOpen(true), 1200);
+    } finally { setRegistering(false); }
   };
 
   const handlePlaceBid = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auction) return;
-
-    if (!isLoggedIn) {
-      window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
-      return;
-    }
-
+    if (!isLoggedIn) { window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`; return; }
     const raw = bidAmountInput.replace(/\D/g, "");
-    if (!raw) {
-      setInputError("Vui lòng nhập số tiền hợp lệ.");
-      return;
-    }
-
+    if (!raw) { setInputError("Vui lòng nhập số tiền."); return; }
     const amount = parseInt(raw, 10);
-    const minAllowed = auction.currentPrice + (auction.minBidStep || 500_000);
+    const minStep = auction.minBidStep || 500_000;
+    const minAllowed = auction.currentPrice + minStep;
+    const maxMultiplier = auction.maxStepMultiplier && auction.maxStepMultiplier > 0 ? auction.maxStepMultiplier : 10;
+    const maxAllowed = auction.currentPrice + maxMultiplier * minStep;
+    if (amount < minAllowed) { setInputError(`Tối thiểu: ${formatPrice(minAllowed)}`); return; }
+    if (amount > maxAllowed) { setInputError(`Tối đa: ${formatPrice(maxAllowed)}`); return; }
 
-    if (amount < minAllowed) {
-      setInputError(`Mức giá tối thiểu hợp lệ là ${formatPrice(minAllowed)}`);
-      return;
-    }
-
-    setBidding(true);
-    setInputError("");
-
+    setBidding(true); setInputError("");
     try {
       const newBid = await auctionService.placeBid(auctionId, amount);
-      addToast({
-        type: "success",
-        title: "Đặt giá thành công!",
-        message: `Bạn đang tạm dẫn đầu phiên đấu giá với mức giá ${formatPrice(amount)}.`,
-        duration: 4000,
-      });
-
-      // Update state locally
+      addToast({ type: "success", title: "Đặt giá thành công!", message: `Bạn đang dẫn đầu với ${formatPrice(amount)}.`, duration: 4000 });
       setAuction((prev) => (prev ? { ...prev, currentPrice: newBid.bidAmount, totalBids: prev.totalBids + 1 } : null));
-      setBids((prev) => [newBid, ...prev.map((b) => ({ ...b, status: "OUTBIB" }))]);
+      setBids((prev) => [newBid, ...prev.map((b) => ({ ...b, status: "OUTBID" }))]);
       setNewestBidId(newBid.id);
-
-      // Prepare next bid suggestion
-      const nextSuggested = newBid.bidAmount + (auction.minBidStep || 500_000);
-      setBidAmountInput(nextSuggested.toLocaleString("vi-VN"));
-      setInputError("");
-
-      // Re-fetch to ensure sync
+      setBidAmountInput((newBid.bidAmount + (auction.minBidStep || 500_000)).toLocaleString("vi-VN"));
       fetchAuctionData(true);
     } catch (err: any) {
-      addToast({
-        type: "error",
-        title: "Đặt giá thất bại",
-        message: err.message || "Không thể gửi lượt trả giá. Vui lòng kiểm tra lại số dư hoặc thử lại.",
-        duration: 5000,
-      });
-    } finally {
-      setBidding(false);
-    }
+      addToast({ type: "error", title: "Đặt giá thất bại", message: err.message || "Không thể gửi lượt trả giá.", duration: 5000 });
+    } finally { setBidding(false); }
   };
 
-  // ─── Urgency Level Calculation ──────────────────────────────────────────
+  const handleOpenDutchConfirm = () => {
+    if (!auction) return;
+    if (!isLoggedIn) { window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`; return; }
+    setDutchConfirmModalOpen(true);
+  };
+
+  const handleExecuteDutchBuy = async () => {
+    if (!auction) return;
+    setAcceptingDutchBuy(true);
+    try {
+      await auctionService.acceptDutchBuy(auctionId);
+      setDutchConfirmModalOpen(false);
+      addToast({ type: "success", title: "Mua SIM thành công!", message: `Chúc mừng! Bạn đã sở hữu ${auction.simPhoneNumber} với giá ${formatPrice(auction.currentPrice)}.`, duration: 6000 });
+      fetchAuctionData(false);
+    } catch (err: any) {
+      addToast({ type: "error", title: "Không thể mua SIM", message: err.message || "Đã có người mua trước.", duration: 5000 });
+    } finally { setAcceptingDutchBuy(false); }
+  };
+
+  /* ─── Derived State ────────────────────────────────────── */
   const isUrgentAmber = !timeLeft.isEnded && timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes < 5 && timeLeft.minutes >= 1;
   const isUrgentRed = !timeLeft.isEnded && timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0;
+  const carrierColor = getCarrierColor(auction?.carrierName || "");
 
-  const carrierConfig = getCarrierConfig(auction?.carrierName);
+  const timerBg = isUrgentRed ? "bg-rose-50 text-rose-700 border-rose-200" : isUrgentAmber ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-slate-50 text-[#001743] border-slate-200";
 
-  /* ─── STATUS HELPERS ───────────────────────────────────────────────────── */
-  const statusBadge = () => {
-    if (auction?.auctionStatus === "ACTIVE") {
-      return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
-          <Icons.LiveDot /> Đang diễn ra
-        </span>
-      );
-    }
-    if (auction?.auctionStatus === "SCHEDULE") {
-      return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-          <Icons.Clock /> Sắp diễn ra
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-500 border border-gray-200">
-        Đã kết thúc
-      </span>
-    );
-  };
-
-  const countdownColor = isUrgentRed
-    ? { num: "text-red-600", bg: "bg-red-50 border-red-200", label: "text-red-400" }
-    : isUrgentAmber
-    ? { num: "text-amber-600", bg: "bg-amber-50 border-amber-200", label: "text-amber-400" }
-    : { num: "text-gray-900", bg: "bg-gray-50 border-gray-200", label: "text-gray-400" };
-
+  /* ═══════════════════════════════════════════════════════════
+     RENDER
+     ═══════════════════════════════════════════════════════════ */
   return (
-    <div className="min-h-screen bg-[#F9FAFB]" style={{ color: "#111827" }}>
+    <div className="min-h-screen bg-[#F1F5F9] text-slate-900 flex flex-col">
       <ToastContainer toasts={toasts} onClose={removeToast} />
-      <DepositModal
-        isOpen={depositModalOpen}
-        onClose={() => setDepositModalOpen(false)}
-        initialAmount={auction?.depositAmount || 500_000}
-        onSuccess={() => {
-          addToast({
-            type: "success",
-            title: "Nạp tiền thành công",
-            message: "Số dư ví đã được cập nhật, bạn có thể tiến hành đặt cọc ngay!",
-          });
-        }}
-      />
-      <Navbar />
+      <DepositModal isOpen={depositModalOpen} onClose={() => setDepositModalOpen(false)} initialAmount={auction?.depositAmount || 500_000} onSuccess={() => addToast({ type: "success", title: "Nạp tiền thành công", message: "Số dư ví đã được cập nhật!" })} />
 
-      <main className="pt-20 pb-20">
-        <div className="max-w-[1240px] mx-auto px-4 sm:px-6">
-
-          {/* ─── Breadcrumb ─── */}
-          <div className="flex items-center justify-between py-4 mb-4 text-sm text-gray-500">
-            <div className="flex items-center gap-2">
-              <Link href="/" className="hover:text-gray-900 transition-colors">Trang chủ</Link>
-              <span className="text-gray-300">/</span>
-              <Link href="/auctions" className="hover:text-gray-900 transition-colors">Sàn Đấu Giá</Link>
-              <span className="text-gray-300">/</span>
-              <span className="text-gray-800 font-medium">
-                {auction ? auction.auctionCode : "Chi tiết phiên"}
-              </span>
+      {/* ─── Dutch Buy Confirmation Modal ─── */}
+      {dutchConfirmModalOpen && auction && (
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 shadow-2xl space-y-5">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center shrink-0">
+                  <CheckCircle2 size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-[#001743]">Xác nhận mua số SIM</h3>
+                  <p className="text-xs text-slate-500">Khớp lệnh tức thì · Đấu giá Hà Lan</p>
+                </div>
+              </div>
+              <button type="button" onClick={() => setDutchConfirmModalOpen(false)} className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors">
+                <X size={16} />
+              </button>
             </div>
 
-            <button
-              onClick={() => fetchAuctionData(false)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded transition-all cursor-pointer"
-            >
-              <Icons.Refresh /> Làm mới
-            </button>
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-2.5 text-xs">
+              {[
+                { label: "Số thuê bao", value: auction.simPhoneNumber, bold: true, mono: true },
+                { label: "Nhà mạng", value: auction.carrierName },
+                { label: "Giá chốt mua", value: formatPrice(auction.currentPrice), bold: true, color: "text-rose-600" },
+                { label: "Tiền cọc đã giữ", value: auction.depositAmount > 0 ? `-${formatPrice(auction.depositAmount)}` : "0 ₫" },
+              ].map((row, i) => (
+                <div key={i} className="flex justify-between items-center py-1 border-b border-slate-200/60 last:border-0">
+                  <span className="text-slate-500">{row.label}</span>
+                  <span className={`${row.bold ? "font-bold" : "font-semibold"} ${row.mono ? "font-mono" : ""} ${row.color || "text-slate-800"} tabular-nums`}>{row.value}</span>
+                </div>
+              ))}
+              <div className="flex justify-between items-center pt-2 font-bold text-sm border-t border-slate-200">
+                <span className="text-[#001743]">Số tiền cần tất toán</span>
+                <span className="font-mono text-[#001743] tabular-nums">{formatPrice(Math.max(0, auction.currentPrice - (auction.depositAmount || 0)))}</span>
+              </div>
+            </div>
+
+            <div className="p-3 bg-blue-50/70 border border-blue-200/70 rounded-xl text-[11px] text-blue-900 leading-relaxed flex items-start gap-2">
+              <Info size={14} className="text-blue-600 shrink-0 mt-0.5" />
+              <span>Sau khi bấm xác nhận, bạn có <strong>{auction.paymentGracePeriodHours || 24} giờ</strong> để hoàn tất thanh toán và sang tên SIM chính chủ.</span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={() => setDutchConfirmModalOpen(false)} disabled={acceptingDutchBuy} className="flex-1 py-3 px-4 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold cursor-pointer transition-colors">Xem lại</button>
+              <button type="button" onClick={handleExecuteDutchBuy} disabled={acceptingDutchBuy} className="flex-1 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-xs font-bold shadow-md cursor-pointer transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                {acceptingDutchBuy ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                <span>{acceptingDutchBuy ? "Đang xử lý…" : "Xác nhận mua ngay"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Navbar />
+
+      <main className="flex-1 pt-20 pb-16">
+        <div className="max-w-[1320px] mx-auto px-4 sm:px-6 space-y-5">
+
+          {/* ─── Breadcrumb ─── */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Link href="/" className="hover:text-[#001743] transition-colors">Trang chủ</Link>
+              <span className="text-slate-300">/</span>
+              <Link href="/auctions" className="hover:text-[#001743] transition-colors">Sàn Đấu Giá</Link>
+              <span className="text-slate-300">/</span>
+              <span className="text-[#001743] font-mono font-bold">{auction ? auction.auctionCode : "..."}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Trực tiếp</span>
+              </div>
+              <button onClick={() => fetchAuctionData(false)} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition-all shadow-xs cursor-pointer">
+                <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
+                <span>Đồng bộ</span>
+              </button>
+            </div>
           </div>
 
           {loading ? (
-            /* Skeleton */
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-5">
               <div className="space-y-5">
-                <div className="h-56 bg-gray-100 rounded-lg animate-pulse" />
-                <div className="h-72 bg-gray-100 rounded-lg animate-pulse" />
+                <div className="h-72 bg-slate-200/70 rounded-2xl animate-pulse" />
+                <div className="h-80 bg-slate-200/70 rounded-2xl animate-pulse" />
               </div>
-              <div className="h-96 bg-gray-100 rounded-lg animate-pulse" />
+              <div className="h-[600px] bg-slate-200/70 rounded-2xl animate-pulse" />
             </div>
           ) : !auction ? (
-            /* Not Found */
-            <div className="bg-white border border-gray-200 rounded-lg p-12 text-center max-w-lg mx-auto mt-12">
-              <div className="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-xl border border-red-200">!</div>
-              <h2 className="text-xl font-bold text-gray-900 mb-2">Không tìm thấy phiên đấu giá</h2>
-              <p className="text-sm text-gray-500 mb-6">Phiên đấu giá này không tồn tại hoặc đã bị gỡ khỏi sàn giao dịch.</p>
-              <Link href="/auctions" className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold rounded-md transition-colors">
-                <Icons.ArrowLeft /> Quay lại danh sách
+            <div className="bg-white border border-slate-200 rounded-2xl p-16 text-center max-w-lg mx-auto">
+              <div className="w-14 h-14 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-rose-200"><AlertTriangle size={24} /></div>
+              <h2 className="text-lg font-bold text-[#001743] mb-2">Không tìm thấy phiên đấu giá</h2>
+              <p className="text-xs text-slate-500 mb-6 leading-relaxed">Phiên này không tồn tại hoặc đã bị gỡ.</p>
+              <Link href="/auctions" className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-xl shadow-xs transition-colors">
+                <ArrowLeft size={14} /><span>Quay lại sàn đấu giá</span>
               </Link>
             </div>
           ) : (
-            /* ════ 2-COLUMN LAYOUT (65% / 35%) ════ */
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 items-start">
+            /* ═══ 2-COLUMN LAYOUT ═══ */
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-5 items-start">
 
-              {/* ════ LEFT COLUMN ════ */}
+              {/* ═══ LEFT COLUMN ═══ */}
               <div className="space-y-5">
 
-                {/* ── 1. LUXURY PHYSICAL SIM ASSET CARD (MATCHING USER SPEC) ── */}
-                {(() => {
-                  const rawCarrier = (auction.carrierName || "").toUpperCase();
-                  let displayCarrierName = "MOBIFONE";
-                  if (rawCarrier.includes("MOBI")) displayCarrierName = "MOBIFONE";
-                  else if (rawCarrier.includes("VIETTEL")) displayCarrierName = "VIETTEL";
-                  else if (rawCarrier.includes("VINA")) displayCarrierName = "VINAPHONE";
-                  else if (rawCarrier.includes("VIETNAMOBILE") || rawCarrier.includes("VNM")) displayCarrierName = "VIETNAMOBILE";
-                  else if (rawCarrier.includes("WINTEL") || rawCarrier.includes("REDDI")) displayCarrierName = "WINTEL";
-                  else if (rawCarrier.includes("ITELECOM") || rawCarrier.includes("INDOCHINA")) displayCarrierName = "ITELECOM";
-                  else if (rawCarrier) displayCarrierName = rawCarrier;
+                {/* ── 1. SIM ASSET SHOWCASE ── */}
+                <div className="bg-[#001743] rounded-2xl border border-[#0D2847] p-6 text-white shadow-xl relative overflow-hidden">
+                  <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
+                  <div className="absolute -right-16 -top-16 w-[300px] h-[300px] rounded-full opacity-[0.05]" style={{ background: "radial-gradient(circle, #E4011E, transparent 70%)" }} />
 
-                  const typeStr = String(auction.auctionType).toUpperCase();
-                  let displayAuctionType = "Đấu giá Kiểu Anh";
-                  if (typeStr === "DUTCH" || typeStr === "1") displayAuctionType = "Đấu giá Hà Lan";
-                  else if (typeStr === "SEALED" || typeStr === "2") displayAuctionType = "Đấu giá Kín";
-
-                  return (
-                    <div className="space-y-3">
-                      {/* Luxury Physical SIM Asset Card */}
-                      <div
-                        style={{
-                          position: "relative",
-                          padding: "1px",
-                          borderRadius: "14px",
-                          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(234, 179, 8, 0.35) 100%)",
-                          clipPath: "polygon(0 0, calc(100% - 32px) 0, 100% 32px, 100% 100%, 0 100%)",
-                          boxShadow: "0 25px 50px -12px rgba(0, 15, 45, 0.65), 0 0 0 1px rgba(0, 23, 67, 0.15)",
-                        }}
-                      >
-                        <div
-                          style={{
-                            background: "linear-gradient(145deg, #010A1A 0%, #00122E 55%, #010B1B 100%)",
-                            clipPath: "polygon(0 0, calc(100% - 31.5px) 0, 100% 31.5px, 100% 100%, 0 100%)",
-                            borderRadius: "13px",
-                            padding: "26px 30px 22px",
-                            position: "relative",
-                            overflow: "hidden",
-                            minHeight: 250,
-                            display: "flex",
-                            flexDirection: "column",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          {/* Subtle Dotted Matrix Pattern Overlay */}
-                          <div
-                            style={{
-                              position: "absolute",
-                              inset: 0,
-                              backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.08) 1.2px, transparent 1.2px)",
-                              backgroundSize: "16px 16px",
-                              pointerEvents: "none",
-                            }}
-                          />
-
-                          {/* Diagonal Gold Accent Line at Chamfered Corner */}
-                          <div
-                            style={{
-                              position: "absolute",
-                              top: 16,
-                              right: 16,
-                              width: 46,
-                              height: 1.5,
-                              background: "linear-gradient(90deg, transparent 0%, #FDE047 50%, #CA8A04 100%)",
-                              transform: "rotate(45deg)",
-                              transformOrigin: "center",
-                              boxShadow: "0 0 8px rgba(250, 204, 21, 0.6)",
-                              pointerEvents: "none",
-                            }}
-                          />
-
-                          {/* Faint Massive Watermark in Bottom Right */}
-                          <div
-                            style={{
-                              position: "absolute",
-                              right: 16,
-                              bottom: -16,
-                              fontSize: "clamp(54px, 10vw, 86px)",
-                              fontWeight: 950,
-                              color: "rgba(255, 255, 255, 0.03)",
-                              letterSpacing: "0.06em",
-                              pointerEvents: "none",
-                              userSelect: "none",
-                              lineHeight: 1,
-                              zIndex: 1,
-                              textTransform: "uppercase",
-                              fontFamily: "var(--font-inter), sans-serif",
-                            }}
-                          >
-                            {displayCarrierName}
-                          </div>
-
-                          {/* ── CARD HEADER: CHIP + CARRIER + TYPE BADGE ── */}
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              position: "relative",
-                              zIndex: 2,
-                            }}
-                          >
-                            {/* Left: Gold Microchip & Carrier Header */}
-                            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                              <SimMicrochip />
-                              <div>
-                                <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}>
-                                  <span
-                                    style={{
-                                      color: "#FFFFFF",
-                                      fontWeight: 900,
-                                      fontSize: 16,
-                                      letterSpacing: "0.05em",
-                                      textTransform: "uppercase",
-                                      fontFamily: "var(--font-inter), sans-serif",
-                                    }}
-                                  >
-                                    {displayCarrierName}
-                                  </span>
-                                  <span
-                                    style={{
-                                      color: "#EAB308",
-                                      fontWeight: 700,
-                                      fontSize: 11,
-                                      letterSpacing: "0.06em",
-                                      textTransform: "uppercase",
-                                    }}
-                                  >
-                                    SIM-CARD
-                                  </span>
-                                </div>
-                                <div
-                                  style={{
-                                    color: "#F59E0B",
-                                    fontSize: 12.5,
-                                    fontWeight: 700,
-                                    marginTop: 1,
-                                    letterSpacing: "0.01em",
-                                  }}
-                                >
-                                  SIM Đấu Giá
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Right: Pill Badge for Auction Type */}
-                            <div
-                              style={{
-                                padding: "6px 16px",
-                                borderRadius: 9999,
-                                background: "rgba(234, 179, 8, 0.08)",
-                                border: "1px solid rgba(234, 179, 8, 0.35)",
-                                color: "#FACC15",
-                                fontSize: 12.5,
-                                fontWeight: 800,
-                                whiteSpace: "nowrap",
-                                letterSpacing: "0.02em",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 6,
-                              }}
-                            >
-                              {displayAuctionType}
-                            </div>
-                          </div>
-
-                          {/* ── CARD CENTER: LARGE SIM NUMBER (0909 999 999) ── */}
-                          <div
-                            style={{
-                              margin: "34px 0 26px",
-                              textAlign: "center",
-                              position: "relative",
-                              zIndex: 2,
-                            }}
-                          >
-                            {renderLuxurySimNumber(auction.simPhoneNumber)}
-                          </div>
-
-                          {/* ── CARD FOOTER: GIÁ KHỞI ĐIỂM & GIÁ HIỆN TẠI ── */}
-                          <div
-                            style={{
-                              borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-                              paddingTop: 16,
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "flex-end",
-                              position: "relative",
-                              zIndex: 2,
-                            }}
-                          >
-                            {/* Left: Starting Price */}
-                            <div>
-                              <div
-                                style={{
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                  color: "#64748B",
-                                  letterSpacing: "0.1em",
-                                  textTransform: "uppercase",
-                                  fontFamily: "monospace",
-                                  marginBottom: 4,
-                                }}
-                              >
-                                GIÁ KHỞI ĐIỂM
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: "clamp(16px, 2.2vw, 20px)",
-                                  fontWeight: 800,
-                                  color: "#FFFFFF",
-                                  fontFamily: "monospace",
-                                  letterSpacing: "0.02em",
-                                }}
-                              >
-                                {formatPrice(auction.startingPrice).replace("₫", "").trim()}{" "}
-                                <span style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>đ</span>
-                              </div>
-                            </div>
-
-                            {/* Right: Current Price */}
-                            <div style={{ textAlign: "right" }}>
-                              <div
-                                style={{
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                  color: "#EAB308",
-                                  letterSpacing: "0.1em",
-                                  textTransform: "uppercase",
-                                  fontFamily: "monospace",
-                                  marginBottom: 4,
-                                }}
-                              >
-                                GIÁ HIỆN TẠI
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: "clamp(20px, 3.2vw, 28px)",
-                                  fontWeight: 900,
-                                  color: "#FACC15",
-                                  fontFamily: "monospace",
-                                  letterSpacing: "0.02em",
-                                  textShadow: "0 0 20px rgba(250, 204, 21, 0.35)",
-                                  transition: "transform 0.2s",
-                                  transform: priceFlash ? "scale(1.04)" : "scale(1)",
-                                }}
-                              >
-                                {formatPrice(animatedPrice).replace("₫", "").trim()}{" "}
-                                <span style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>đ</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* ── Metadata & Trust Bar Below Card ── */}
-                      <div
-                        style={{
-                          background: "#FFFFFF",
-                          border: "1px solid #E5E7EB",
-                          borderRadius: 8,
-                          padding: "12px 18px",
-                          display: "flex",
-                          flexWrap: "wrap",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: 12,
-                        }}
-                      >
-                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
-                          {statusBadge()}
-                          {auction.formatRhythmName && (
-                            <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200">
-                              {auction.formatRhythmName}
-                            </span>
-                          )}
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold bg-gray-50 text-gray-500 border border-gray-200 font-mono">
-                            <Icons.Tag /> {auction.auctionCode}
-                          </span>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-gray-500 font-medium">
-                          <span className="flex items-center gap-1.5"><Icons.ShieldCheck /> Sang tên chính chủ</span>
-                          <span className="flex items-center gap-1.5"><Icons.CheckCircle /> Xác thực eKYC</span>
-                          <span className="flex items-center gap-1.5"><Icons.Lock /> Ký quỹ hợp đồng</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* ── 2. BIDDING PANEL ── */}
-                <div className={`bg-white border rounded-lg overflow-hidden transition-all duration-300 ${
-                  antiSnipingFlash ? "border-emerald-300 ring-2 ring-emerald-200" : "border-gray-200"
-                }`}>
-                  {/* Panel header bar */}
-                  <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                    <h2 className="font-bold text-gray-900 text-sm uppercase tracking-wide flex items-center gap-2">
-                      <Icons.TrendingUp /> Trả Giá Trực Tiếp
-                    </h2>
-                    {auction.auctionStatus === "ACTIVE" && !timeLeft.isEnded && (
-                      <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                        Đang mở nhận giá
+                  {/* Header Badges */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 relative z-10 mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-white/10 border border-white/15 text-xs font-bold text-white">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: carrierColor }} />
+                        {auction.carrierName || "Nhà mạng"}
                       </span>
-                    )}
+                      <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${isDutch ? "bg-blue-500/15 border-blue-400/25 text-blue-300" : "bg-amber-400/15 border-amber-400/25 text-amber-300"}`}>
+                        {isDutch ? (
+                          <span className="flex items-center gap-1"><TrendingDown size={12} />Đấu giá Hà Lan (Giảm dần)</span>
+                        ) : (
+                          <span className="flex items-center gap-1"><TrendingUp size={12} />Đấu giá Kiểu Anh (Tăng dần)</span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs text-slate-300 bg-white/10 px-2.5 py-1 rounded-lg border border-white/10">{auction.auctionCode}</span>
+                      {auction.auctionStatus === "ACTIVE" ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/25">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />Đang diễn ra
+                        </span>
+                      ) : auction.auctionStatus === "SCHEDULE" ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/25">
+                          <Clock size={12} />Sắp mở
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-white/10 text-slate-300 border border-white/10">Đã chốt</span>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="p-6 sm:p-8 space-y-6">
-
-                    {/* Anti-Sniping Alert */}
-                    {antiSnipingFlash && (
-                      <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-md flex items-center gap-2.5 text-emerald-700 text-sm font-medium">
-                        <Icons.Flame />
-                        <span>
-                          Hệ thống tự động kích hoạt <strong>Anti-Sniping</strong>: Đã gia hạn thêm
-                          +{auction.extensionDurationSeconds || 30}s để bảo đảm công bằng.
+                  {/* SIM Number */}
+                  <div className="relative z-10">
+                    <div className="text-[11px] font-semibold text-slate-400 text-center mb-1">Số SIM đang đấu giá</div>
+                    <SimAssetDisplay phone={auction.simPhoneNumber} carrier={auction.carrierName} />
+                    {auction.formatRhythmName && (
+                      <div className="text-center mt-1">
+                        <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-[11px] font-semibold bg-white/10 text-slate-300 border border-white/10">
+                          Thế số: {auction.formatRhythmName}
                         </span>
                       </div>
                     )}
+                  </div>
 
-                    {/* Key Stats Row */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-
-                      {/* Current Price */}
-                      <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1.5">
-                          <Icons.TrendingUp /> Giá Hiện Tại
-                        </p>
-                        <div
-                          className={`text-3xl sm:text-4xl font-black font-mono tabular-nums tracking-tight transition-transform duration-300 ${
-                            priceFlash ? "scale-[1.03]" : "scale-100"
-                          }`}
-                          style={{ color: "#DC2626" }}
-                        >
-                          {formatPrice(animatedPrice)}
-                        </div>
-                        <div className="text-xs text-gray-400 mt-1.5">
-                          Khởi điểm: <span className="text-gray-600 font-medium">{formatPrice(auction.startingPrice)}</span>
-                          &nbsp;·&nbsp;
-                          <span className="text-gray-600 font-medium">{bids.length}</span> lượt trả
-                        </div>
+                  {/* Price Bar */}
+                  <div className="pt-5 border-t border-white/10 flex flex-col sm:flex-row sm:items-end justify-between gap-4 relative z-10 mt-4">
+                    <div>
+                      <div className="text-[11px] font-medium text-slate-400">Giá khởi điểm</div>
+                      <div className="text-base font-bold text-slate-200 font-mono tabular-nums mt-0.5">{formatPrice(auction.startingPrice)}</div>
+                    </div>
+                    <div className="sm:text-right">
+                      <div className="text-[11px] font-bold text-amber-400 flex items-center gap-1.5 sm:justify-end">
+                        {isDutch ? <TrendingDown size={13} /> : <TrendingUp size={13} />}
+                        <span>Giá hiện tại</span>
                       </div>
-
-                      {/* Countdown */}
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-                            <Icons.Clock /> Thời Gian Còn Lại
-                          </p>
-                          {isUrgentRed && (
-                            <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded animate-pulse">
-                              Giây cuối!
-                            </span>
-                          )}
-                          {isUrgentAmber && !isUrgentRed && (
-                            <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
-                              Dưới 5 phút
-                            </span>
-                          )}
-                        </div>
-                        {timeLeft.isEnded ? (
-                          <div className="text-sm font-semibold text-gray-500 py-2">
-                            Phiên đấu giá đã kết thúc
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2 mt-1">
-                            {timeLeft.days > 0 && (
-                              <>
-                                <div className={`px-3 py-2 rounded text-center border font-mono font-black min-w-[48px] ${countdownColor.bg} ${countdownColor.num}`}>
-                                  <div className="text-2xl tabular-nums leading-none">{timeLeft.days}</div>
-                                  <div className={`text-[9px] font-semibold mt-0.5 uppercase ${countdownColor.label}`}>Ngày</div>
-                                </div>
-                                <span className="text-gray-300 font-bold text-lg">:</span>
-                              </>
-                            )}
-                            <div className={`px-3 py-2 rounded text-center border font-mono font-black min-w-[48px] ${countdownColor.bg} ${countdownColor.num}`}>
-                              <div className={`text-2xl tabular-nums leading-none ${isUrgentRed ? "animate-pulse" : ""}`}>{String(timeLeft.hours).padStart(2, "0")}</div>
-                              <div className={`text-[9px] font-semibold mt-0.5 uppercase ${countdownColor.label}`}>Giờ</div>
-                            </div>
-                            <span className="text-gray-300 font-bold text-lg">:</span>
-                            <div className={`px-3 py-2 rounded text-center border font-mono font-black min-w-[48px] ${countdownColor.bg} ${countdownColor.num}`}>
-                              <div className={`text-2xl tabular-nums leading-none ${isUrgentRed ? "animate-pulse" : ""}`}>{String(timeLeft.minutes).padStart(2, "0")}</div>
-                              <div className={`text-[9px] font-semibold mt-0.5 uppercase ${countdownColor.label}`}>Phút</div>
-                            </div>
-                            <span className="text-gray-300 font-bold text-lg">:</span>
-                            <div className={`px-3 py-2 rounded text-center border font-mono font-black min-w-[48px] ${countdownColor.bg} ${countdownColor.num}`}>
-                              <div className={`text-2xl tabular-nums leading-none ${isUrgentRed ? "animate-pulse" : ""}`}>{String(timeLeft.seconds).padStart(2, "0")}</div>
-                              <div className={`text-[9px] font-semibold mt-0.5 uppercase ${countdownColor.label}`}>Giây</div>
-                            </div>
-                          </div>
-                        )}
+                      <div className={`text-2xl sm:text-3xl font-black text-amber-300 font-mono tabular-nums mt-0.5 transition-transform duration-200 ${priceFlash ? "scale-105" : "scale-100"}`}>
+                        {formatPrice(animatedPrice)}
                       </div>
                     </div>
+                  </div>
 
-                    {/* Quick meta strip */}
-                    <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-xs text-gray-500 py-3 border-t border-b border-gray-100">
-                      <span>
-                        Bước giá tối thiểu:&nbsp;
-                        <strong className="text-gray-800 font-mono">+{formatPrice(auction.minBidStep || 500_000)}</strong>
+                  {/* Trust Strip */}
+                  <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-300 relative z-10 font-medium mt-2">
+                    <span className="flex items-center gap-1.5"><ShieldCheck size={13} className="text-emerald-400" />Sang tên chính chủ</span>
+                    <span className="flex items-center gap-1.5"><CheckCircle2 size={13} className="text-blue-400" />Hợp đồng điện tử</span>
+                    <span className="flex items-center gap-1.5"><Lock size={13} className="text-amber-400" />Ký quỹ 100%</span>
+                  </div>
+                </div>
+
+                {/* ── 2. BIDDING CONSOLE ── */}
+                <div className={`bg-white border rounded-2xl shadow-xs overflow-hidden transition-colors duration-200 ${antiSnipingFlash ? "border-emerald-400 ring-2 ring-emerald-200" : "border-slate-200"}`}>
+                  <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Gavel size={17} className="text-[#001743]" />
+                      <h2 className="font-bold text-sm text-[#001743]">{isDutch ? "Mua Ngay" : "Đặt Giá"}</h2>
+                    </div>
+                    {auction.auctionStatus === "ACTIVE" && !timeLeft.isEnded && (
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        {isDutch ? "Đang mở bán" : "Đang nhận lượt trả"}
                       </span>
-                      <span>
-                        Tiền cọc:&nbsp;
-                        <strong className="text-gray-800 font-mono">
-                          {auction.depositAmount > 0 ? formatPrice(auction.depositAmount) : "Miễn phí cọc"}
-                        </strong>
-                      </span>
-                      <span>
-                        Người tham gia:&nbsp;
-                        <strong className="text-gray-800">{auction.totalParticipants || 0} thành viên</strong>
-                      </span>
+                    )}
+                  </div>
+
+                  <div className="p-5 space-y-5">
+                    {/* Anti-sniping Alert */}
+                    {!isDutch && antiSnipingFlash && (
+                      <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3 text-emerald-800 text-xs font-semibold">
+                        <Flame size={16} className="text-emerald-600 shrink-0" />
+                        <span><strong>Gia hạn giờ chót:</strong> +{auction.extensionDurationSeconds || 30}s để bảo đảm công bằng.</span>
+                      </div>
+                    )}
+
+                    {/* Countdown */}
+                    <div className="bg-slate-50/80 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-white border border-slate-200/80 flex items-center justify-center text-slate-700 shadow-xs shrink-0">
+                          <Clock size={15} />
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-slate-700 block">{timeLeft.isEnded ? "Đã kết thúc" : "Còn lại"}</span>
+                          <span className="text-[11px] text-slate-400 font-mono block">{new Date(auction.endAt).toLocaleTimeString("vi-VN")} · {new Date(auction.endAt).toLocaleDateString("vi-VN")}</span>
+                        </div>
+                      </div>
+                      {timeLeft.isEnded ? (
+                        <span className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-200 text-slate-700">Phiên đã kết thúc</span>
+                      ) : (
+                        <div className="flex items-center gap-1.5 font-mono self-start sm:self-auto">
+                          {timeLeft.days > 0 && (<><div className={`px-2.5 py-1 rounded-lg border text-center ${timerBg}`}><span className="text-base font-black tabular-nums block leading-tight">{timeLeft.days}</span><span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">ngày</span></div><span className="text-slate-300 font-bold">:</span></>)}
+                          <div className={`px-2.5 py-1 rounded-lg border text-center ${timerBg}`}><span className="text-base font-black tabular-nums block leading-tight">{String(timeLeft.hours).padStart(2, "0")}</span><span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">giờ</span></div>
+                          <span className="text-slate-300 font-bold">:</span>
+                          <div className={`px-2.5 py-1 rounded-lg border text-center ${timerBg}`}><span className="text-base font-black tabular-nums block leading-tight">{String(timeLeft.minutes).padStart(2, "0")}</span><span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">phút</span></div>
+                          <span className="text-slate-300 font-bold">:</span>
+                          <div className={`px-2.5 py-1 rounded-lg border text-center ${timerBg} ${isUrgentRed ? "animate-pulse" : ""}`}><span className="text-base font-black tabular-nums block leading-tight">{String(timeLeft.seconds).padStart(2, "0")}</span><span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">giây</span></div>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Bidding form */}
+                    {/* Quick Rules Strip */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                      {!isDutch ? (
+                        <>
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                            <span className="text-[10px] text-slate-400 block font-medium">Bước giá tối thiểu</span>
+                            <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">+{formatPrice(auction.minBidStep || 500_000)}</span>
+                          </div>
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                            <span className="text-[10px] text-slate-400 block font-medium">Tăng tối đa 1 lượt</span>
+                            <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">+{formatPrice((auction.maxStepMultiplier || 10) * (auction.minBidStep || 500_000))}</span>
+                          </div>
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                            <span className="text-[10px] text-slate-400 block font-medium">Tiền đặt cọc</span>
+                            <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">{auction.depositAmount > 0 ? formatPrice(auction.depositAmount) : "Miễn cọc"}</span>
+                          </div>
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                            <span className="text-[10px] text-slate-400 block font-medium">Gia hạn phút chót</span>
+                            <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">+{auction.extensionDurationSeconds || 30}s / lần</span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                            <span className="text-[10px] text-slate-400 block font-medium">Mức giảm định kỳ</span>
+                            <span className="font-mono font-bold text-rose-600 tabular-nums mt-0.5 block">-{formatPrice(auction.dutchDecreaseAmount || 0)}</span>
+                          </div>
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                            <span className="text-[10px] text-slate-400 block font-medium">Chu kỳ hạ giá</span>
+                            <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">Mỗi {auction.dutchDecreaseIntervalSeconds || 60}s</span>
+                          </div>
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                            <span className="text-[10px] text-slate-400 block font-medium">Giá sàn bảo lưu</span>
+                            <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">{formatPrice(auction.reservePrice)}</span>
+                          </div>
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                            <span className="text-[10px] text-slate-400 block font-medium">Tiền đặt cọc</span>
+                            <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">{auction.depositAmount > 0 ? formatPrice(auction.depositAmount) : "Miễn cọc"}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Bidding / Dutch Buy Form */}
                     {auction.auctionStatus === "ACTIVE" && !timeLeft.isEnded ? (
-                      <form onSubmit={handlePlaceBid} className="space-y-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
-                            Mức giá bạn muốn trả (VNĐ) <span className="text-red-500">*</span>
-                          </label>
-                          <div className="relative">
-                            <input
-                              type="text"
-                              value={bidAmountInput}
-                              onChange={(e) => handleInputChange(e.target.value)}
-                              placeholder="Nhập mức giá bạn muốn trả"
-                              className={`w-full py-3.5 pl-4 pr-14 text-xl font-black font-mono text-gray-900 bg-white border rounded-md outline-none transition-all ${
-                                inputError
-                                  ? "border-red-400 focus:ring-2 focus:ring-red-200"
-                                  : "border-gray-300 focus:border-gray-800 focus:ring-2 focus:ring-gray-100"
-                              }`}
-                            />
-                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">₫</span>
+                      !isDutch ? (
+                        <form onSubmit={handlePlaceBid} className="space-y-4">
+                          <div>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <label className="text-xs font-bold text-[#001743]">Mức giá bạn muốn trả (VNĐ) <span className="text-rose-500">*</span></label>
+                              <span className="text-[11px] text-slate-400 font-mono">Min: <strong className="text-slate-600">{formatPrice(auction.currentPrice + (auction.minBidStep || 500_000))}</strong></span>
+                            </div>
+                            <div className="relative">
+                              <input
+                                type="text"
+                                value={bidAmountInput}
+                                onChange={(e) => handleInputChange(e.target.value)}
+                                placeholder="Nhập mức giá"
+                                className={`w-full py-3 pl-4 pr-12 text-xl font-black font-mono text-[#001743] bg-white border rounded-xl outline-none transition-colors duration-150 ${inputError ? "border-rose-400 ring-2 ring-rose-100" : "border-slate-300 focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10"}`}
+                              />
+                              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">₫</span>
+                            </div>
+                            {inputError && <p className="text-xs text-rose-600 mt-1.5 font-medium">{inputError}</p>}
                           </div>
-                          {inputError && <p className="text-xs text-red-600 mt-1.5 font-medium">{inputError}</p>}
-                        </div>
 
-                        {/* Quick add chips */}
-                        <div>
-                          <span className="text-xs text-gray-500 mb-2 block font-medium">Chọn nhanh bước giá:</span>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            {[
-                              { label: `+Bước (${formatPrice(auction.minBidStep || 500_000)})`, val: auction.minBidStep || 500_000 },
-                              { label: "+10 Triệu", val: 10_000_000 },
-                              { label: "+50 Triệu", val: 50_000_000 },
-                              { label: "+100 Triệu", val: 100_000_000 },
-                            ].map((chip, idx) => (
-                              <button
-                                key={idx}
-                                type="button"
-                                onClick={() => handleQuickAdd(chip.val)}
-                                className="py-2 px-2 text-xs font-semibold text-gray-600 bg-gray-50 border border-gray-200 rounded hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all duration-150 cursor-pointer text-center select-none"
-                              >
-                                {chip.label}
+                          <div>
+                            <span className="text-[11px] font-semibold text-slate-500 mb-2 block">Cộng nhanh:</span>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              {quickAddSteps.map((chip, idx) => (
+                                <button key={idx} type="button" onClick={() => handleQuickAdd(chip.val)} className="py-2 px-2 text-center rounded-xl border border-slate-200 bg-slate-50 hover:bg-[#001743] hover:text-white hover:border-[#001743] transition-colors duration-150 cursor-pointer shadow-xs select-none">
+                                  <span className="text-xs font-bold block">{chip.label}</span>
+                                  <span className="text-[10px] font-mono opacity-80 block">{chip.amountText}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {!isLoggedIn ? (
+                            <Link href={`/login?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "")}`} className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] text-white font-bold text-sm rounded-xl text-center block shadow-md transition-colors active:scale-[0.99]">Đăng nhập để trả giá</Link>
+                          ) : !auction.isUserRegistered && auction.depositAmount > 0 ? (
+                            <div className="space-y-3">
+                              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 leading-relaxed flex items-center gap-2">
+                                <Lock size={15} className="text-amber-700 shrink-0" />
+                                <span>Yêu cầu đặt cọc <strong>{formatPrice(auction.depositAmount)}</strong>. Hoàn 100% nếu không trúng.</span>
+                              </div>
+                              <button type="button" onClick={handleRegisterParticipant} disabled={registering} className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white font-bold text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md disabled:opacity-50">
+                                {registering ? <RefreshCw size={15} className="animate-spin" /> : <Wallet size={15} />}
+                                <span>{registering ? "Đang xác nhận…" : `Đặt cọc (${formatPrice(auction.depositAmount)})`}</span>
                               </button>
-                            ))}
+                            </div>
+                          ) : (
+                            <button type="submit" disabled={bidding} className="w-full py-3.5 px-6 bg-[#E4011E] hover:bg-[#C00119] active:scale-[0.99] text-white font-black text-base rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2.5 uppercase tracking-wide shadow-md disabled:opacity-50 select-none">
+                              {bidding ? <RefreshCw size={18} className="animate-spin" /> : <Gavel size={18} />}
+                              <span>{bidding ? "Đang gửi…" : `Đặt giá — ${bidAmountInput || "0"} ₫`}</span>
+                            </button>
+                          )}
+                        </form>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="p-4 bg-amber-50/60 border border-amber-200 rounded-xl space-y-2">
+                            <div className="flex items-center gap-2 text-amber-900 font-bold text-xs uppercase tracking-wide">
+                              <TrendingDown size={14} className="text-amber-700" />
+                              <span>Người đầu tiên bấm mua sẽ thắng</span>
+                            </div>
+                            <p className="text-slate-600 text-xs leading-relaxed">
+                              Giá đang giảm dần. Nếu <strong className="text-[#001743] font-mono">{formatPrice(auction.currentPrice)}</strong> phù hợp, bấm <strong>Mua ngay</strong> để sở hữu.
+                            </p>
                           </div>
-                        </div>
 
-                        {/* CTA */}
-                        {!isLoggedIn ? (
-                          <Link
-                            href={`/login?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "")}`}
-                            className="w-full py-4 px-6 bg-gray-900 hover:bg-gray-800 text-white font-bold text-sm rounded-md text-center block transition-all"
-                          >
-                            Đăng nhập để tham gia đấu giá
-                          </Link>
-                        ) : !auction.isUserRegistered && auction.depositAmount > 0 ? (
-                          <button
-                            type="button"
-                            onClick={handleRegisterParticipant}
-                            disabled={registering}
-                            className="w-full py-4 px-6 bg-blue-700 hover:bg-blue-800 text-white font-bold text-sm rounded-md transition-all cursor-pointer flex items-center justify-center gap-2"
-                          >
-                            {registering ? "Đang xử lý đăng ký..." : `Đăng ký tham gia (Đặt cọc ${formatPrice(auction.depositAmount)})`}
-                          </button>
-                        ) : (
-                          <button
-                            type="submit"
-                            disabled={bidding}
-                            className="w-full py-4 px-6 bg-red-600 hover:bg-red-700 active:scale-[0.985] text-white font-black text-base rounded-md transition-all duration-150 cursor-pointer flex items-center justify-center gap-2.5 uppercase tracking-wide select-none"
-                          >
-                            {bidding ? (
-                              <>
-                                <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                <span>Đang gửi lượt trả giá...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Icons.Gavel />
-                                <span>Đặt giá — {bidAmountInput || "0"} ₫</span>
-                              </>
-                            )}
-                          </button>
-                        )}
-                      </form>
+                          {!isLoggedIn ? (
+                            <Link href={`/login?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "")}`} className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] text-white font-bold text-sm rounded-xl text-center block shadow-md transition-colors active:scale-[0.99]">Đăng nhập để mua</Link>
+                          ) : !auction.isUserRegistered && auction.depositAmount > 0 ? (
+                            <div className="space-y-3">
+                              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-center gap-2">
+                                <Lock size={15} className="text-amber-700 shrink-0" />
+                                <span>Yêu cầu đặt cọc <strong>{formatPrice(auction.depositAmount)}</strong> trước khi mua.</span>
+                              </div>
+                              <button type="button" onClick={handleRegisterParticipant} disabled={registering} className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white font-bold text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md disabled:opacity-50">
+                                {registering ? <RefreshCw size={15} className="animate-spin" /> : <Wallet size={15} />}
+                                <span>{registering ? "Đang xác nhận…" : `Đặt cọc (${formatPrice(auction.depositAmount)})`}</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <button type="button" onClick={handleOpenDutchConfirm} disabled={acceptingDutchBuy} className="w-full py-3.5 px-6 bg-[#E4011E] hover:bg-[#C00119] active:scale-[0.99] text-white font-black text-base rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2.5 shadow-md disabled:opacity-50 select-none">
+                              {acceptingDutchBuy ? <RefreshCw size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
+                              <span>{acceptingDutchBuy ? "Đang xác nhận…" : `Mua ngay — ${formatPrice(auction.currentPrice)}`}</span>
+                            </button>
+                          )}
+                        </div>
+                      )
                     ) : (
-                      <div className="py-4 text-center text-sm text-gray-500 font-medium bg-gray-50 rounded-md border border-gray-100">
-                        Phiên đấu giá hiện không mở để trả giá trực tiếp.
-                      </div>
+                      <div className="py-6 text-center text-xs font-semibold text-slate-500 bg-slate-50 rounded-xl border border-slate-200">Phiên đấu giá không mở giao dịch.</div>
                     )}
                   </div>
                 </div>
 
-                {/* ── 3. TABS: RULES / SIM INFO / SELLER ── */}
-                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                  {/* Tab Nav */}
-                  <div className="flex border-b border-gray-200 px-6 gap-6">
-                    {(["rules", "sim_info", "seller"] as const).map((tab) => {
-                      const labels = { rules: "Quy Chế Đấu Giá", sim_info: "Thông Tin SIM", seller: "Người Bán" };
-                      return (
-                        <button
-                          key={tab}
-                          onClick={() => setActiveTab(tab)}
-                          className={`py-4 text-sm font-semibold transition-colors relative cursor-pointer border-b-2 -mb-px ${
-                            activeTab === tab
-                              ? "text-gray-900 border-gray-900"
-                              : "text-gray-400 border-transparent hover:text-gray-700"
-                          }`}
-                        >
-                          {labels[tab]}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="p-6 sm:p-8">
-                    {/* RULES TAB */}
-                    {activeTab === "rules" && (
-                      <div className="space-y-5 text-sm text-gray-600 leading-relaxed">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                          <div>
-                            <h4 className="font-bold text-gray-900 mb-1.5">Cơ chế đấu giá kiểu Anh</h4>
-                            <p className="text-sm text-gray-500">
-                              Giá khởi điểm từ {formatPrice(auction.startingPrice)}. Các thành viên trả giá công khai tăng dần,
-                              mỗi lượt tối thiểu phải cao hơn mức giá hiện tại một bước giá ({formatPrice(auction.minBidStep || 500_000)}).
-                            </p>
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-gray-900 mb-1.5">Quy định chống Sniping</h4>
-                            <p className="text-sm text-gray-500">
-                              Nếu có lượt trả giá trong 60 giây cuối, hệ thống tự động cộng thêm {auction.extensionDurationSeconds || 60} giây
-                              để bảo vệ quyền lợi của mọi người tham gia.
-                            </p>
-                          </div>
-                        </div>
-                        <div className="pt-4 border-t border-gray-100">
-                          <h4 className="font-bold text-gray-900 mb-1.5">Hoàn tiền cọc</h4>
-                          <p className="text-sm text-gray-500">
-                            Người không trúng đấu giá được hoàn 100% tiền đặt cọc vào ví TrustSim trong vòng 24 giờ sau khi phiên kết thúc.
-                            Người thắng dùng tiền cọc cấn trừ vào giá trị hợp đồng.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* SIM INFO TAB */}
-                    {activeTab === "sim_info" && (
-                      <div className="space-y-5">
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-                          <div className="border-b border-gray-100 pb-3">
-                            <p className="text-xs text-gray-400 mb-0.5">Số thuê bao</p>
-                            <p className="font-bold text-gray-900 font-mono">{auction.simPhoneNumber}</p>
-                          </div>
-                          <div className="border-b border-gray-100 pb-3">
-                            <p className="text-xs text-gray-400 mb-0.5">Nhà mạng phát hành</p>
-                            <p className="font-bold text-gray-900">{carrierConfig.label}</p>
-                          </div>
-                          <div className="border-b border-gray-100 pb-3">
-                            <p className="text-xs text-gray-400 mb-0.5">Tình trạng phôi SIM</p>
-                            <p className="font-bold text-gray-900">SIM Vật lý / eSIM</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-md text-sm">
-                          <span className="text-emerald-600 mt-0.5"><Icons.ShieldCheck /></span>
-                          <div>
-                            <p className="font-bold text-emerald-800 mb-1">Cam kết bảo đảm pháp lý từ TrustSim</p>
-                            <p className="text-emerald-700 text-xs leading-relaxed">
-                              100% số SIM niêm yết đã vượt qua quy trình thẩm định quyền sở hữu, không có tranh chấp,
-                              không vướng nợ cước và được bảo hành chuyển quyền sở hữu chính chủ trọn đời.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* SELLER TAB */}
-                    {activeTab === "seller" && (
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg shrink-0">
-                          {auction.authorName?.charAt(0) || "T"}
-                        </div>
+                {/* ── 3. AUCTION RULES & MECHANISM EXPLANATION ── */}
+                <CollapsibleSection
+                  title={isDutch ? "Quy Chế Đấu Giá Hà Lan (Giảm Dần)" : "Quy Chế Đấu Giá Kiểu Anh (Tăng Dần)"}
+                  icon={isDutch ? <TrendingDown size={16} /> : <Scale size={16} />}
+                  badge={<span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600">Quy định phiên</span>}
+                >
+                  <div className="p-5 space-y-5">
+                    {/* Mechanism Explanation */}
+                    <div className="p-4 bg-blue-50/70 border border-blue-200/70 rounded-xl">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-0.5"><BookOpen size={16} /></div>
                         <div>
-                          <div className="font-bold text-gray-900 text-base flex items-center gap-2">
-                            {auction.authorName || "Đối tác TrustSim"}
-                            <span className="text-xs px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded font-semibold">
-                              Đã xác minh eKYC
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Thành viên uy tín · Đã hoàn tất nhiều phiên đấu giá SIM số đẹp thành công trên sàn
+                          <h4 className="font-bold text-xs text-blue-900 mb-1">
+                            {isDutch ? "Cơ chế Đấu giá Hà Lan hoạt động như thế nào?" : "Cơ chế Đấu giá Kiểu Anh hoạt động như thế nào?"}
+                          </h4>
+                          <p className="text-[12px] text-blue-800 leading-relaxed">
+                            {isDutch
+                              ? "Giá niêm yết bắt đầu từ mức cao nhất (giá khởi điểm) và tự động giảm đều đặn theo từng chu kỳ thời gian. Người tham gia đầu tiên bấm \"Mua ngay\" tại mức giá đang hiển thị sẽ lập tức giành quyền sở hữu số SIM và phiên kết thúc ngay. Nếu không ai bấm mua và giá giảm chạm giá sàn bảo lưu, phiên tự động đóng."
+                              : "Giá khởi điểm bắt đầu từ mức thấp nhất. Người tham gia lần lượt trả giá cao hơn, mỗi lượt phải tăng ít nhất bằng bước giá tối thiểu. Khi hết thời gian, người đang giữ mức giá cao nhất sẽ giành quyền sở hữu SIM. Nếu có lượt trả giá ở những giây cuối phiên, hệ thống tự động gia hạn thêm thời gian để đảm bảo công bằng (Anti-Sniping)."}
                           </p>
                         </div>
                       </div>
+                    </div>
+
+                    {/* Detailed Rules Grid */}
+                    {isDutch ? (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Giá khởi điểm (Trần)</span>
+                          <div className="font-mono text-lg font-bold text-[#001743] tabular-nums">{formatPrice(auction.startingPrice)}</div>
+                          <span className="text-[11px] text-slate-400 mt-1 block">Mức giá cao nhất khi mở phiên</span>
+                        </div>
+                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Tốc độ giảm giá</span>
+                          <div className="font-mono text-lg font-bold text-rose-600 tabular-nums">-{formatPrice(auction.dutchDecreaseAmount || 0)}</div>
+                          <span className="text-[11px] text-slate-500 mt-1 block">Mỗi <strong>{auction.dutchDecreaseIntervalSeconds || 60} giây</strong> hạ 1 lần</span>
+                        </div>
+                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Giá sàn bảo lưu</span>
+                          <div className="font-mono text-lg font-bold text-[#001743] tabular-nums">{formatPrice(auction.reservePrice)}</div>
+                          <span className="text-[11px] text-slate-400 mt-1 block">Mức giá tối thiểu người bán chấp nhận</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bước giá tối thiểu</span>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-200/70">Mỗi lượt</span>
+                          </div>
+                          <div className="font-mono text-lg font-bold text-[#001743] tabular-nums">+{formatPrice(auction.minBidStep || 0)}</div>
+                          <p className="text-[11px] text-slate-400 mt-1">Mức tăng tối thiểu mỗi lần trả giá</p>
+                        </div>
+                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Giới hạn 1 lượt</span>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200/70">Chống nhầm</span>
+                          </div>
+                          <div className="font-mono text-lg font-bold text-[#001743] tabular-nums">Tối đa {auction.maxStepMultiplier || 10}× bước</div>
+                          <p className="text-[11px] text-slate-400 mt-1">= Tối đa +{formatPrice((auction.maxStepMultiplier || 10) * (auction.minBidStep || 0))} / lượt</p>
+                        </div>
+                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Anti-Sniping</span>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70">Công bằng</span>
+                          </div>
+                          <div className="font-mono text-lg font-bold text-[#001743] tabular-nums">+{auction.extensionDurationSeconds || 30}s</div>
+                          <p className="text-[11px] text-slate-400 mt-1">Gia hạn khi có bid ở 60s cuối (tối đa {auction.maxSnipeExtensionsPerParticipant || 3} lần/người)</p>
+                        </div>
+                      </div>
                     )}
+
+                    {/* Financial Obligations */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="p-4 rounded-xl border border-slate-200 bg-white">
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <span className="text-xs font-bold text-slate-700">Tiền đặt cọc</span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">Hoàn 100%</span>
+                        </div>
+                        <div className="font-mono text-xl font-black text-[#001743] tabular-nums">{auction.depositAmount > 0 ? formatPrice(auction.depositAmount) : "Miễn cọc"}</div>
+                        <p className="text-[11px] text-slate-500 leading-relaxed mt-2 pt-2 border-t border-slate-100">Tạm khóa trong ví TrustSim. Tự động hoàn lại 100% nếu bạn không trúng phiên.</p>
+                      </div>
+                      <div className="p-4 rounded-xl border border-slate-200 bg-white">
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <span className="text-xs font-bold text-slate-700">Thời hạn thanh toán</span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">Tất toán</span>
+                        </div>
+                        <div className="font-mono text-xl font-black text-[#001743] tabular-nums">{auction.paymentGracePeriodHours || 24} giờ</div>
+                        <p className="text-[11px] text-slate-500 leading-relaxed mt-2 pt-2 border-t border-slate-100">Thời hạn hoàn tất thanh toán phần còn lại và sang tên SIM chính chủ.</p>
+                      </div>
+                    </div>
+
+                    {/* Trust Guarantees */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {[
+                        { icon: <ShieldCheck size={15} />, color: "text-emerald-600 bg-emerald-50 border-emerald-200/60", title: "Hoàn cọc 100%", desc: "Tự động mở khóa ngay sau phiên nếu không trúng." },
+                        { icon: <CheckCircle2 size={15} />, color: "text-blue-600 bg-blue-50 border-blue-200/60", title: "Ký quỹ an toàn", desc: "Tiền ký quỹ tại sàn, chỉ giải ngân sau sang tên." },
+                        { icon: <Lock size={15} />, color: "text-slate-700 bg-slate-100 border-slate-200", title: "Minh bạch", desc: "Ghi nhận mọi lượt vào lệnh, chống gian lận." },
+                      ].map((item, i) => (
+                        <div key={i} className="flex items-start gap-3">
+                          <div className={`w-7 h-7 rounded-lg ${item.color} flex items-center justify-center shrink-0 border mt-0.5`}>{item.icon}</div>
+                          <div>
+                            <span className="font-bold text-xs text-[#001743] block">{item.title}</span>
+                            <p className="text-[11px] text-slate-500 leading-relaxed">{item.desc}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                </CollapsibleSection>
+
+                {/* ── 4. SIM INFO ── */}
+                <CollapsibleSection title="Thông Tin Số SIM" icon={<FileText size={16} />} defaultOpen={false}>
+                  <div className="p-5 space-y-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {[
+                        { label: "Số thuê bao", value: auction.simPhoneNumber, mono: true },
+                        { label: "Nhà mạng", value: auction.carrierName },
+                        { label: "Loại hình", value: "SIM vật lý & eSIM" },
+                        ...(auction.formatRhythmName ? [{ label: "Thế số", value: auction.formatRhythmName }] : []),
+                      ].map((item, i) => (
+                        <div key={i} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                          <span className="text-[11px] text-slate-400 font-medium block">{item.label}</span>
+                          <span className={`font-bold text-[#001743] text-xs mt-0.5 block ${(item as any).mono ? "font-mono" : ""}`}>{item.value}</span>
+                        </div>
+                      ))}
+                      {auction.categories && auction.categories.length > 0 && (
+                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 sm:col-span-2">
+                          <span className="text-[11px] text-slate-400 font-medium block">Phân loại</span>
+                          <span className="font-bold text-[#001743] text-xs mt-0.5 block">{auction.categories.join(", ")}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl flex items-start gap-2.5">
+                      <ShieldCheck size={15} className="text-blue-600 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold text-blue-900 block text-xs">Cam kết pháp lý</span>
+                        <p className="text-blue-800 text-[11px] mt-0.5 leading-relaxed">Số SIM đã qua kiểm tra đối soát, nguyên phôi sạch, không nợ cước, hỗ trợ sang tên chính chủ.</p>
+                      </div>
+                    </div>
+                  </div>
+                </CollapsibleSection>
+
+                {/* ── 5. SELLER INFO ── */}
+                <CollapsibleSection title="Thông Tin Người Bán" icon={<BadgeCheck size={16} />} defaultOpen={false}>
+                  <div className="p-5 space-y-4">
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-11 h-11 rounded-full bg-[#001743] text-white flex items-center justify-center font-bold text-sm">{auction.authorName?.charAt(0) || "T"}</div>
+                        <div>
+                          <div className="font-bold text-xs text-[#001743] flex items-center gap-1.5">
+                            <span>{auction.authorName || "Đối tác TrustSim"}</span>
+                            <BadgeCheck size={14} className="text-blue-600" />
+                          </div>
+                          <span className="text-[11px] text-slate-500">Đã xác minh căn cước chính chủ</span>
+                        </div>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Đã xác minh</span>
+                    </div>
+                    <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl text-slate-600 text-[11px] leading-relaxed">
+                      Người bán đã ký cam kết bảo đảm chuyển nhượng và tuân thủ quy chế giao dịch của TrustSim.
+                    </div>
+                  </div>
+                </CollapsibleSection>
               </div>
 
-              {/* ════ RIGHT COLUMN: BID FEED ════ */}
-              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden sticky top-24">
-
-                {/* Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              {/* ═══ RIGHT COLUMN: BID HISTORY ═══ */}
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden sticky top-24">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                   <div className="flex items-center gap-2">
-                    {auction.auctionStatus === "ACTIVE" && !timeLeft.isEnded && <Icons.LiveDot />}
-                    <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wide">
-                      Diễn Biến Đấu Giá
-                    </h3>
+                    {auction.auctionStatus === "ACTIVE" && !timeLeft.isEnded ? (
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    ) : (
+                      <Radio size={14} className="text-slate-400" />
+                    )}
+                    <h3 className="font-bold text-xs text-[#001743]">{isDutch ? "Diễn biến phiên" : "Lịch sử trả giá"}</h3>
                   </div>
-                  <span className="text-xs font-semibold px-2.5 py-1 bg-gray-100 text-gray-600 border border-gray-200 rounded font-mono">
-                    {bids.length} lượt
-                  </span>
+                  <span className="text-xs font-mono font-bold px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-full border border-slate-200">{bids.length} lượt</span>
                 </div>
 
-                {/* Bid list */}
-                <div className="divide-y divide-gray-100 max-h-[520px] overflow-y-auto">
+                <div className="divide-y divide-slate-100 max-h-[calc(100vh-220px)] min-h-[380px] overflow-y-auto">
                   {bids.length === 0 ? (
-                    <div className="py-14 text-center text-gray-400 text-sm">
-                      <div className="flex justify-center mb-2">
-                        <svg className="w-8 h-8 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z" />
-                          <path d="M7 7h.01" />
-                        </svg>
-                      </div>
-                      <p>Chưa có lượt trả giá nào.</p>
-                      <p className="text-xs mt-1 text-blue-600 font-semibold">Hãy là người đầu tiên đặt giá!</p>
+                    <div className="py-16 text-center text-slate-400 space-y-2">
+                      <Gavel size={24} className="mx-auto text-slate-300" />
+                      <p className="text-xs font-semibold text-slate-600">{isDutch ? "Chưa có người mua" : "Chưa có lượt trả giá"}</p>
+                      <p className="text-[11px] text-blue-600 font-semibold">
+                        {isDutch ? `Giá hiện tại: ${formatPrice(auction.currentPrice)} — bấm Mua ngay!` : "Hãy là người đầu tiên!"}
+                      </p>
                     </div>
                   ) : (
                     bids.map((bid, index) => {
                       const isTop = index === 0;
                       const isNewlyAdded = bid.id === newestBidId;
                       const avatar = getAvatarStyle(bid.userNameMasked);
-
                       return (
-                        <div
-                          key={bid.id}
-                          className={`flex items-center justify-between px-5 py-3.5 transition-colors ${
-                            isNewlyAdded
-                              ? "bg-amber-50 animate-slide-down"
-                              : isTop
-                              ? "bg-amber-50"
-                              : "hover:bg-gray-50"
-                          }`}
-                        >
-                          {/* Left: avatar + user */}
+                        <div key={bid.id} className={`flex items-center justify-between px-5 py-3.5 transition-colors ${isNewlyAdded ? "bg-amber-50/80" : isTop ? "bg-amber-50/40" : "hover:bg-slate-50/80"}`}>
                           <div className="flex items-center gap-3 min-w-0">
-                            <div
-                              className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0"
-                              style={{ backgroundColor: avatar.bg, color: avatar.text }}
-                            >
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ring-1 ring-slate-200" style={{ backgroundColor: avatar.bg, color: avatar.text }}>
                               {bid.userNameMasked.slice(0, 2).toUpperCase()}
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="font-semibold text-xs text-gray-800 truncate font-mono">
-                                  {bid.userNameMasked}
-                                </span>
+                                <span className="font-mono font-bold text-xs text-[#001743] truncate">{bid.userNameMasked}</span>
                                 {isTop && (
-                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                                    <Icons.Crown /> Dẫn đầu
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                                    <Crown size={10} className="text-amber-700" />Dẫn đầu
                                   </span>
                                 )}
                               </div>
-                              <div className="text-[11px] text-gray-400 mt-0.5">
-                                {new Date(bid.placedAt).toLocaleTimeString("vi-VN", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                  second: "2-digit",
-                                })}
+                              <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                {new Date(bid.placedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                               </div>
                             </div>
                           </div>
-
-                          {/* Right: amount */}
                           <div className="text-right shrink-0 ml-3">
-                            <div className={`font-mono text-sm font-bold tabular-nums ${isTop ? "text-red-600" : "text-gray-700"}`}>
-                              {formatPrice(bid.bidAmount)}
-                            </div>
-                            <div className="text-[10px] text-gray-400">
-                              {isTop ? "Cao nhất" : "Đã bị vượt"}
-                            </div>
+                            <div className={`font-mono text-sm font-black tabular-nums ${isTop ? "text-amber-600" : "text-slate-800"}`}>{formatPrice(bid.bidAmount)}</div>
+                            <div className="text-[10px] text-slate-400 font-medium">{isTop ? "Đang dẫn đầu" : "Đã bị vượt"}</div>
                           </div>
                         </div>
                       );
@@ -1446,30 +996,17 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                   )}
                 </div>
 
-                {/* Footer notice */}
-                <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 text-[11px] text-gray-400 flex items-start gap-1.5">
-                  <Icons.Lock />
-                  <span>Mọi dữ liệu trả giá được mã hóa an toàn và kiểm toán tự động theo thời gian thực (UTC+7).</span>
+                <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 text-[11px] text-slate-400 flex items-start gap-2">
+                  <Lock size={13} className="shrink-0 mt-0.5 text-slate-500" />
+                  <span>Mọi lệnh giao dịch đều được ghi nhận tự động theo giờ Việt Nam.</span>
                 </div>
               </div>
-
             </div>
           )}
         </div>
       </main>
 
       <Footer />
-
-      {/* ─── Keyframe Animations ─────────────────────────────────────── */}
-      <style>{`
-        @keyframes slide-down {
-          0% { opacity: 0; transform: translateY(-8px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        .animate-slide-down {
-          animation: slide-down 0.3s ease-out;
-        }
-      `}</style>
     </div>
   );
 }
