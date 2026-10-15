@@ -53,6 +53,35 @@ export interface AuctionDto {
   formatRhythmName?: string;
   categories?: string[];
   isUserRegistered?: boolean;
+  result?: AuctionResultDto;
+}
+
+export interface AuctionResultDto {
+  id?: string;
+  auctionId: string;
+  winnerId?: string | null;
+  winnerUserName?: string | null;
+  winnerFullName?: string | null;
+  finalPrice: number;
+  initialWinnerId?: string | null;
+  initialWinnerUserName?: string | null;
+  initialWinnerFullName?: string | null;
+  initialWinningPrice?: number | null;
+  runnerUpParticipantId?: string | null;
+  runnerUpUserName?: string | null;
+  runnerUpFullName?: string | null;
+  runnerUpFinalPrice?: number | null;
+  winType: number | string;
+  priceGapRatio?: number | null;
+  sellerCompensationAmount?: number | null;
+  auctionResultStatus: number | string;
+  paymentDeadline?: string | null;
+  isRunnerUpOffered?: boolean;
+  runnerUpPaymentDeadline?: string | null;
+  settledAt?: string | null;
+  determinedAt?: string | null;
+  confirmedAt?: string | null;
+  cancelledReason?: string | null;
 }
 
 export interface BidDto {

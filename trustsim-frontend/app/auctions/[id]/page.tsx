@@ -5,12 +5,13 @@ import React, { useState, useEffect, useRef, use, useMemo } from "react";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { auctionService, AuctionDto, BidDto } from "@/services/auctionService";
+import { auctionService, AuctionDto, BidDto, PendingSettlementDto } from "@/services/auctionService";
 import { auctionHubService } from "@/services/auctionHubService";
 import { authService } from "@/services/authService";
 import { AuthResponseDto } from "@/types/auth";
 import { ToastContainer, ToastMessage } from "@/components/ui/Toast";
 import { DepositModal } from "@/components/wallet/DepositModal";
+import PostAuctionSettlementTerminal from "@/components/auction/PostAuctionSettlementTerminal";
 import { formatPhoneNumber, getCarrierColor } from "@/services/simService";
 import {
   Gavel, Clock, Flame, ShieldCheck, CheckCircle2, Lock,
@@ -166,7 +167,9 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
 
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number; isEnded: boolean }>({ days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: false });
 
+  const [mySettlement, setMySettlement] = useState<PendingSettlementDto | null>(null);
   const [depositModalOpen, setDepositModalOpen] = useState(false);
+  const [depositInitialAmount, setDepositInitialAmount] = useState<number | null>(null);
   const [dutchConfirmModalOpen, setDutchConfirmModalOpen] = useState(false);
   const [showBidsExpanded, setShowBidsExpanded] = useState(false);
 
@@ -210,6 +213,21 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
         });
       } else {
         setBids([]);
+      }
+
+      // Tải trạng thái quyết toán nếu đã đăng nhập
+      if (authService.isAuthenticated()) {
+        try {
+          const settlements = await auctionService.getPendingSettlements();
+          const match = settlements.find(
+            (s) => s.auctionId.toLowerCase() === auctionId.toLowerCase()
+          );
+          setMySettlement(match || null);
+        } catch {
+          // Bỏ qua lỗi ngầm
+        }
+      } else {
+        setMySettlement(null);
       }
 
       if (!isBackground) {
@@ -265,6 +283,22 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
         auctionHubService.onAuctionStatusChanged((aId, newStatus) => {
           if (!isSubscribed || aId !== auctionId) return;
           setAuction((prev) => (prev ? { ...prev, auctionStatus: newStatus as any } : null));
+          fetchAuctionData(true);
+        });
+
+        auctionHubService.onAuctionEnded(() => {
+          if (!isSubscribed) return;
+          fetchAuctionData(true);
+        });
+
+        auctionHubService.onAuctionFailed(() => {
+          if (!isSubscribed) return;
+          fetchAuctionData(true);
+        });
+
+        auctionHubService.onAuctionNotification(() => {
+          if (!isSubscribed) return;
+          fetchAuctionData(true);
         });
       } catch (err) { console.warn("[SignalR] Không thể kết nối:", err); }
     };
@@ -408,7 +442,19 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
   return (
     <div className="min-h-screen bg-[#F1F5F9] text-slate-900 flex flex-col">
       <ToastContainer toasts={toasts} onClose={removeToast} />
-      <DepositModal isOpen={depositModalOpen} onClose={() => setDepositModalOpen(false)} initialAmount={auction?.depositAmount || 500_000} onSuccess={() => addToast({ type: "success", title: "Nạp tiền thành công", message: "Số dư ví đã được cập nhật!" })} />
+      <DepositModal
+        isOpen={depositModalOpen}
+        onClose={() => setDepositModalOpen(false)}
+        initialAmount={depositInitialAmount || auction?.depositAmount || 500_000}
+        onSuccess={() => {
+          addToast({
+            type: "success",
+            title: "Nạp tiền thành công",
+            message: "Số dư ví đã được cập nhật!",
+          });
+          fetchAuctionData(true);
+        }}
+      />
 
       {/* ─── Dutch Buy Confirmation Modal ─── */}
       {dutchConfirmModalOpen && auction && (
@@ -767,7 +813,18 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                         </div>
                       )
                     ) : (
-                      <div className="py-6 text-center text-xs font-semibold text-slate-500 bg-slate-50 rounded-xl border border-slate-200">Phiên đấu giá không mở giao dịch.</div>
+                      <PostAuctionSettlementTerminal
+                        auction={auction}
+                        currentUser={currentUser}
+                        isLoggedIn={isLoggedIn}
+                        mySettlement={mySettlement}
+                        onRefresh={() => fetchAuctionData(true)}
+                        onOpenDeposit={(amt) => {
+                          if (amt && amt > 0) setDepositInitialAmount(amt);
+                          setDepositModalOpen(true);
+                        }}
+                        addToast={addToast}
+                      />
                     )}
                   </div>
                 </div>

@@ -172,6 +172,33 @@ class AuctionHubService {
   }
 
   /**
+   * Đăng ký lắng nghe sự kiện phiên kết thúc và có kết quả quyết toán
+   */
+  public onAuctionEnded(callback: (result: any) => void) {
+    if (!this.connection) return;
+    this.connection.off("ReceiveAuctionEnded");
+    this.connection.on("ReceiveAuctionEnded", callback);
+  }
+
+  /**
+   * Đăng ký lắng nghe sự kiện phiên thất bại/hủy
+   */
+  public onAuctionFailed(callback: (reason: string) => void) {
+    if (!this.connection) return;
+    this.connection.off("ReceiveAuctionFailed");
+    this.connection.on("ReceiveAuctionFailed", callback);
+  }
+
+  /**
+   * Đăng ký lắng nghe sự kiện thông báo chung trong phiên
+   */
+  public onAuctionNotification(callback: (message: string, type: string) => void) {
+    if (!this.connection) return;
+    this.connection.off("ReceiveAuctionNotification");
+    this.connection.on("ReceiveAuctionNotification", callback);
+  }
+
+  /**
    * Đăng ký lắng nghe khi có phiên đấu giá mới được tạo
    */
   public onNewAuctionCreated(callback: (auction: AuctionDto) => void) {
@@ -188,6 +215,9 @@ class AuctionHubService {
     this.connection.off("ReceiveNewBid");
     this.connection.off("ReceiveAuctionExtended");
     this.connection.off("ReceiveAuctionStatusChanged");
+    this.connection.off("ReceiveAuctionEnded");
+    this.connection.off("ReceiveAuctionFailed");
+    this.connection.off("ReceiveAuctionNotification");
   }
 
   /**

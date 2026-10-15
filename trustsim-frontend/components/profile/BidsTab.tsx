@@ -486,8 +486,16 @@ export default function BidsTab({
                           </span>
                           <CarrierBadge carrier={item.carrierName} />
                         </div>
-                        <div className="text-[11px] text-slate-500 font-mono mt-1">
-                          Mã phiên: <strong className="text-slate-700">{item.auctionCode}</strong>
+                        <div className="flex items-center gap-2 text-[11px] text-slate-500 font-mono mt-1 flex-wrap">
+                          <span>Mã: <strong className="text-slate-700">{item.auctionCode}</strong></span>
+                          <span>•</span>
+                          <Link
+                            href={`/auctions/${item.auctionId}`}
+                            className="inline-flex items-center gap-0.5 text-blue-600 hover:text-blue-800 font-semibold hover:underline"
+                          >
+                            <span>Bàn quyết toán phòng</span>
+                            <ArrowUpRight size={11} />
+                          </Link>
                         </div>
                       </div>
 
