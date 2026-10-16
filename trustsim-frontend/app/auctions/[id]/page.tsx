@@ -263,76 +263,137 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
 
   useEffect(() => { fetchAuctionData(false); }, [auctionId]);
 
+  const minBidStepRef = useRef<number>(auction?.minBidStep || 500_000);
+  const isDutchRef = useRef<boolean>(isDutch);
+
+  useEffect(() => {
+    if (auction?.minBidStep) {
+      minBidStepRef.current = auction.minBidStep;
+    }
+  }, [auction?.minBidStep]);
+
+  useEffect(() => {
+    isDutchRef.current = isDutch;
+  }, [isDutch]);
+
   /* ─── SignalR Real-time ────────────────────────────────── */
   useEffect(() => {
     let isSubscribed = true;
-    const setupRealtime = async () => {
-      try {
-        await auctionHubService.joinAuction(auctionId);
-        if (!isSubscribed) return;
 
-        auctionHubService.onNewBid((newBid, newCurrentPrice, totalBidsCount) => {
-          if (!isSubscribed) return;
-          setPriceFlash(true);
-          setTimeout(() => setPriceFlash(false), 1200);
-          setAuction((prev) => prev ? { ...prev, currentPrice: newCurrentPrice, totalBids: totalBidsCount } : null);
-          setBids((prev) => {
-            // Thêm bid mới, loại trùng, đánh dấu các bid cũ là OUTBID, sắp xếp mới nhất trên đầu
-            const merged = [newBid, ...prev.filter((b) => b.id !== newBid.id).map((b) => ({ ...b, status: "OUTBID" }))];
-            return merged.sort((a, b) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime());
-          });
-          setNewestBidId(newBid.id);
-          setTimeout(() => setNewestBidId(null), 3000);
+    // 1. Đăng ký listeners NGAY LẬP TỨC để không bỏ sót bất kỳ thông điệp nào
+    auctionHubService.onNewBid((newBid, newCurrentPrice, totalBidsCount) => {
+      if (!isSubscribed) return;
 
-          if (!isDutch) {
-            const minStep = auction?.minBidStep || 500_000;
-            setBidAmountInput((newCurrentPrice + minStep).toLocaleString("vi-VN"));
-          } else {
-            setBidAmountInput(newCurrentPrice.toLocaleString("vi-VN"));
-          }
-        });
+      // Chuẩn hóa dữ liệu lượt trả giá (hỗ trợ cả camelCase và PascalCase từ backend)
+      const bidId = String(newBid.id || (newBid as any).Id || `bid-${Date.now()}`);
+      const bidAmount = Number(newBid.bidAmount ?? (newBid as any).BidAmount ?? newCurrentPrice);
+      const placedAt = String(newBid.placedAt || (newBid as any).PlacedAt || new Date().toISOString());
+      const userNameMasked = String(newBid.userNameMasked || (newBid as any).UserNameMasked || "Ẩn danh");
+      const currentPriceVal = Number(newCurrentPrice ?? bidAmount);
 
-        auctionHubService.onAuctionExtended((newEndAtStr) => {
-          if (!isSubscribed) return;
-          setAuction((prev) => (prev ? { ...prev, endAt: newEndAtStr } : null));
-          setAntiSnipingFlash(true);
-          setTimeout(() => setAntiSnipingFlash(false), 5000);
-        });
+      const normalizedBid: BidDto = {
+        id: bidId,
+        auctionId: String(newBid.auctionId || (newBid as any).AuctionId || auctionId),
+        participantId: String(newBid.participantId || (newBid as any).ParticipantId || ""),
+        userAccountId: String(newBid.userAccountId || (newBid as any).UserAccountId || ""),
+        userNameMasked,
+        bidAmount,
+        placedAt,
+        status: String(newBid.status || (newBid as any).Status || "ACCEPTED"),
+      };
 
-        auctionHubService.onAuctionStatusChanged((aId, newStatus) => {
-          if (!isSubscribed || aId !== auctionId) return;
-          setAuction((prev) => (prev ? { ...prev, auctionStatus: newStatus as any } : null));
-          fetchAuctionData(true);
-        });
+      // Kích hoạt hiệu ứng nhấp nháy giá cập nhật
+      setPriceFlash(true);
+      setTimeout(() => setPriceFlash(false), 1200);
 
-        auctionHubService.onAuctionEnded(() => {
-          if (!isSubscribed) return;
-          fetchAuctionData(true);
-        });
+      // Cập nhật giá hiện tại và tổng số lượt trả giá
+      setAuction((prev) => {
+        if (!prev) return null;
+        const nextTotalBids =
+          typeof totalBidsCount === "number" && totalBidsCount > 0
+            ? totalBidsCount
+            : (prev.totalBids || 0) + 1;
+        return {
+          ...prev,
+          currentPrice: currentPriceVal,
+          totalBids: nextTotalBids,
+        };
+      });
 
-        auctionHubService.onAuctionFailed(() => {
-          if (!isSubscribed) return;
-          fetchAuctionData(true);
-        });
+      // Cập nhật danh sách bids theo thời gian thực (loại bỏ trùng lặp, đẩy bid mới lên đầu, cập nhật trạng thái OUTBID cho các bid cũ)
+      setBids((prev) => {
+        const remaining = prev
+          .filter((b) => b.id !== normalizedBid.id)
+          .map((b) => ({ ...b, status: "OUTBID" }));
+        const updated = [normalizedBid, ...remaining];
+        return updated.sort(
+          (a, b) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime()
+        );
+      });
 
-        auctionHubService.onPriceDrop((newPrice) => {
-          if (!isSubscribed) return;
-          setPriceFlash(true);
-          setTimeout(() => setPriceFlash(false), 1200);
-          setAuction((prev) => (prev ? { ...prev, currentPrice: newPrice } : null));
-          setBidAmountInput(newPrice.toLocaleString("vi-VN"));
-        });
+      setNewestBidId(normalizedBid.id);
+      setTimeout(() => setNewestBidId(null), 3000);
 
-        auctionHubService.onAuctionNotification(() => {
-          if (!isSubscribed) return;
-          fetchAuctionData(true);
-        });
-      } catch (err) { console.warn("[SignalR] Không thể kết nối:", err); }
+      // Cập nhật đề xuất mức trả giá kế tiếp trong ô input
+      const step = minBidStepRef.current || 500_000;
+      if (!isDutchRef.current) {
+        setBidAmountInput((currentPriceVal + step).toLocaleString("vi-VN"));
+      } else {
+        setBidAmountInput(currentPriceVal.toLocaleString("vi-VN"));
+      }
+
+      // Tự động đồng bộ ngầm toàn bộ dữ liệu phiên (ví tiền, người tham gia, hạn chót) mà không gián đoạn UI
+      fetchAuctionData(true);
+    });
+
+    auctionHubService.onAuctionExtended((newEndAtStr) => {
+      if (!isSubscribed) return;
+      setAuction((prev) => (prev ? { ...prev, endAt: newEndAtStr } : null));
+      setAntiSnipingFlash(true);
+      setTimeout(() => setAntiSnipingFlash(false), 5000);
+      fetchAuctionData(true);
+    });
+
+    auctionHubService.onAuctionStatusChanged((aId, newStatus) => {
+      if (!isSubscribed || aId?.toLowerCase() !== auctionId.toLowerCase()) return;
+      setAuction((prev) => (prev ? { ...prev, auctionStatus: newStatus as any } : null));
+      fetchAuctionData(true);
+    });
+
+    auctionHubService.onAuctionEnded(() => {
+      if (!isSubscribed) return;
+      fetchAuctionData(true);
+    });
+
+    auctionHubService.onAuctionFailed(() => {
+      if (!isSubscribed) return;
+      fetchAuctionData(true);
+    });
+
+    auctionHubService.onPriceDrop((newPrice) => {
+      if (!isSubscribed) return;
+      setPriceFlash(true);
+      setTimeout(() => setPriceFlash(false), 1200);
+      setAuction((prev) => (prev ? { ...prev, currentPrice: newPrice } : null));
+      setBidAmountInput(newPrice.toLocaleString("vi-VN"));
+    });
+
+    auctionHubService.onAuctionNotification(() => {
+      if (!isSubscribed) return;
+      fetchAuctionData(true);
+    });
+
+    // 2. Tham gia phòng đấu giá trên SignalR Hub
+    auctionHubService.joinAuction(auctionId).catch((err) => {
+      console.warn("[SignalR] Lỗi kết nối phòng đấu giá:", err);
+    });
+
+    return () => {
+      isSubscribed = false;
+      auctionHubService.leaveAuction(auctionId);
+      auctionHubService.removeAuctionListeners();
     };
-
-    setupRealtime();
-    return () => { isSubscribed = false; auctionHubService.leaveAuction(auctionId); auctionHubService.removeAuctionListeners(); };
-  }, [auctionId, auction?.minBidStep, isDutch]);
+  }, [auctionId]);
 
   /* ─── Precise Timeline & Lifecycle Phase Derivation ───── */
   const startMs = useMemo(() => (auction?.startAt ? new Date(auction.startAt).getTime() : 0), [auction?.startAt]);
