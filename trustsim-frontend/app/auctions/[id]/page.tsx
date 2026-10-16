@@ -20,7 +20,7 @@ import {
   ArrowLeft, TrendingUp, TrendingDown, RefreshCw, Wallet,
   AlertTriangle, Crown, Copy, Check, Info, BadgeCheck,
   Radio, FileText, X, ChevronDown, ChevronUp, Users, Zap,
-  Timer, BookOpen, CircleDollarSign, Scale, HelpCircle,
+  Timer, BookOpen, CircleDollarSign, Scale, HelpCircle, Flag, Hourglass,
 } from "lucide-react";
 
 /* ─── Currency Formatter ─────────────────────────────────── */
@@ -168,6 +168,8 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
   const previousEndAtRef = useRef<string | null>(null);
 
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number; isEnded: boolean }>({ days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: false });
+  const [dutchSecondsRemaining, setDutchSecondsRemaining] = useState<number>(60);
+  const [dutchCycleTotal, setDutchCycleTotal] = useState<number>(60);
 
   const [mySettlement, setMySettlement] = useState<PendingSettlementDto | null>(null);
   const [wallet, setWallet] = useState<WalletDto | null>(null);
@@ -304,6 +306,24 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
           fetchAuctionData(true);
         });
 
+        auctionHubService.onPriceDrop((newPrice, nextDropSeconds) => {
+          if (!isSubscribed) return;
+          setPriceFlash(true);
+          setTimeout(() => setPriceFlash(false), 1500);
+          setAuction((prev) => (prev ? { ...prev, currentPrice: newPrice } : null));
+          setBidAmountInput(newPrice.toLocaleString("vi-VN"));
+          if (nextDropSeconds > 0) {
+            setDutchSecondsRemaining(nextDropSeconds);
+            setDutchCycleTotal(nextDropSeconds);
+          }
+          addToast({
+            type: "info",
+            title: "📉 Giá vừa hạ!",
+            message: `Mức giá hiện tại giảm còn ${formatPrice(newPrice)}.`,
+            duration: 3500,
+          });
+        });
+
         auctionHubService.onAuctionNotification(() => {
           if (!isSubscribed) return;
           fetchAuctionData(true);
@@ -315,7 +335,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
     return () => { isSubscribed = false; auctionHubService.leaveAuction(auctionId); auctionHubService.removeAuctionListeners(); };
   }, [auctionId, auction?.minBidStep, isDutch]);
 
-  /* ─── Countdown Timer ──────────────────────────────────── */
+  /* ─── 1. Main Countdown Timer (To StartAt or EndAt) ────── */
   useEffect(() => {
     if (!auction) return;
     const isScheduled = auction.auctionStatus === "SCHEDULE";
@@ -323,12 +343,16 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
     if (!targetDateStr) return;
 
     const target = new Date(targetDateStr).getTime();
+    let hasTriggeredTransition = false;
+
     const updateTimer = () => {
       const diff = target - Date.now();
       if (diff <= 0) {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: true });
-        if (isScheduled) {
+        if (isScheduled && !hasTriggeredTransition) {
+          hasTriggeredTransition = true;
           fetchAuctionData(true);
+          setTimeout(() => fetchAuctionData(true), 2500);
         }
         return;
       }
@@ -344,6 +368,46 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
     const timerInterval = setInterval(updateTimer, 1000);
     return () => clearInterval(timerInterval);
   }, [auction?.startAt, auction?.endAt, auction?.auctionStatus]);
+
+  /* ─── 2. Dutch Auction Price Drop Cycle Timer ───────────── */
+  useEffect(() => {
+    if (!auction || !isDutch || auction.auctionStatus !== "ACTIVE" || timeLeft.isEnded) return;
+
+    const interval = auction.dutchDecreaseIntervalSeconds && auction.dutchDecreaseIntervalSeconds > 0
+      ? auction.dutchDecreaseIntervalSeconds
+      : 60;
+    setDutchCycleTotal(interval);
+
+    const startMs = new Date(auction.startAt).getTime();
+    const nowMs = Date.now();
+    const elapsedSeconds = Math.max(0, Math.floor((nowMs - startMs) / 1000));
+    const cycleElapsed = elapsedSeconds % interval;
+    const initialRem = Math.max(1, interval - cycleElapsed);
+    setDutchSecondsRemaining(initialRem);
+
+    const cycleInterval = setInterval(() => {
+      setDutchSecondsRemaining((prev) => {
+        if (prev <= 1) {
+          setAuction((currentAuc) => {
+            if (!currentAuc) return null;
+            const decrease = currentAuc.dutchDecreaseAmount || 0;
+            const reserve = currentAuc.reservePrice || 0;
+            const nextPrice = Math.max(reserve, currentAuc.currentPrice - decrease);
+            if (nextPrice !== currentAuc.currentPrice) {
+              setPriceFlash(true);
+              setTimeout(() => setPriceFlash(false), 1200);
+            }
+            return { ...currentAuc, currentPrice: nextPrice };
+          });
+          fetchAuctionData(true);
+          return interval;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(cycleInterval);
+  }, [auction?.id, auction?.startAt, auction?.auctionStatus, isDutch, auction?.dutchDecreaseIntervalSeconds, timeLeft.isEnded]);
 
   const animatedPrice = useCountUp(auction?.currentPrice || 0, 500);
 
@@ -678,48 +742,190 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                   </div>
 
                   <div className="p-5 space-y-5">
-                    {/* Anti-sniping Alert */}
+                    {/* ── 1. TIMELINE MILESTONE STRIP (RÕ RÀNG BẮT ĐẦU & KẾT THÚC) ── */}
+                    <div className="bg-slate-50/90 border border-slate-200/80 rounded-xl p-3.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs">
+                      {/* Mốc bắt đầu */}
+                      <div className="flex items-center gap-2.5 flex-1">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${auction.auctionStatus === "SCHEDULE" ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>
+                          <Clock size={16} />
+                        </div>
+                        <div>
+                          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wide">
+                            {auction.auctionStatus === "SCHEDULE" ? "Thời gian mở sàn" : "Đã mở sàn lúc"}
+                          </span>
+                          <span className="font-mono font-bold text-[#001743] text-sm tabular-nums">
+                            {new Date(auction.startAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                          </span>
+                          <span className="text-[11px] text-slate-500 font-mono ml-1.5">
+                            · {new Date(auction.startAt).toLocaleDateString("vi-VN")}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="hidden sm:block text-slate-300 font-bold text-sm">⟶</div>
+
+                      {/* Mốc kết thúc */}
+                      <div className="flex items-center gap-2.5 flex-1 sm:justify-end">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${timeLeft.isEnded ? "bg-slate-200 text-slate-600" : "bg-rose-100 text-rose-800"}`}>
+                          <Flag size={16} />
+                        </div>
+                        <div className="sm:text-right">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wide">
+                            {timeLeft.isEnded ? "Đã kết thúc lúc" : isDutch ? "Hạn chót toàn phiên" : "Chốt phiên gõ búa"}
+                          </span>
+                          <span className="font-mono font-bold text-[#001743] text-sm tabular-nums">
+                            {new Date(auction.endAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                          </span>
+                          <span className="text-[11px] text-slate-500 font-mono ml-1.5">
+                            · {new Date(auction.endAt).toLocaleDateString("vi-VN")}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Anti-sniping Alert (English Auction) */}
                     {!isDutch && antiSnipingFlash && (
-                      <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3 text-emerald-800 text-xs font-semibold">
+                      <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3 text-emerald-800 text-xs font-semibold animate-in fade-in duration-200">
                         <Flame size={16} className="text-emerald-600 shrink-0" />
                         <span><strong>Gia hạn giờ chót:</strong> +{auction.extensionDurationSeconds || 30}s để bảo đảm công bằng.</span>
                       </div>
                     )}
 
-                    {/* Countdown */}
-                    <div className="bg-slate-50/80 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-white border border-slate-200/80 flex items-center justify-center text-slate-700 shadow-xs shrink-0">
-                          <Clock size={15} />
+                    {/* ── 2. DEDICATED COUNTDOWN TIMER DISPLAY ── */}
+                    {/* TRƯỜNG HỢP 1: ĐẤU GIÁ HÀ LAN (DUTCH AUCTION) */}
+                    {isDutch ? (
+                      auction.auctionStatus === "SCHEDULE" ? (
+                        /* Dutch - Sắp mở bán */
+                        <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs shrink-0">
+                              <Hourglass size={18} />
+                            </div>
+                            <div>
+                              <span className="text-xs font-bold text-amber-900 block">Đếm ngược mở bán phiên Hà Lan:</span>
+                              <span className="text-[11px] text-amber-700">Mở bán từ <strong>{formatPrice(auction.startingPrice)}</strong>, hạ định kỳ mỗi {auction.dutchDecreaseIntervalSeconds || 60}s</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 font-mono self-start sm:self-auto">
+                            {timeLeft.days > 0 && (<><div className="px-2.5 py-1 rounded-lg border border-amber-300 bg-white text-amber-900 text-center"><span className="text-base font-black tabular-nums block leading-tight">{timeLeft.days}</span><span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">ngày</span></div><span className="text-amber-400 font-bold">:</span></>)}
+                            <div className="px-2.5 py-1 rounded-lg border border-amber-300 bg-white text-amber-900 text-center"><span className="text-base font-black tabular-nums block leading-tight">{String(timeLeft.hours).padStart(2, "0")}</span><span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">giờ</span></div>
+                            <span className="text-amber-400 font-bold">:</span>
+                            <div className="px-2.5 py-1 rounded-lg border border-amber-300 bg-white text-amber-900 text-center"><span className="text-base font-black tabular-nums block leading-tight">{String(timeLeft.minutes).padStart(2, "0")}</span><span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">phút</span></div>
+                            <span className="text-amber-400 font-bold">:</span>
+                            <div className="px-2.5 py-1 rounded-lg border border-amber-300 bg-white text-amber-900 text-center"><span className="text-base font-black tabular-nums block leading-tight">{String(timeLeft.seconds).padStart(2, "0")}</span><span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">giây</span></div>
+                          </div>
                         </div>
-                        <div>
-                          <span className="text-xs font-bold text-slate-700 block">
-                            {auction.auctionStatus === "SCHEDULE"
-                              ? "Thời gian mở sàn:"
-                              : timeLeft.isEnded
-                              ? "Đã kết thúc"
-                              : "Thời gian còn lại"}
-                          </span>
-                          <span className="text-[11px] text-slate-400 font-mono block">
-                            {auction.auctionStatus === "SCHEDULE"
-                              ? `${new Date(auction.startAt).toLocaleTimeString("vi-VN")} · ${new Date(auction.startAt).toLocaleDateString("vi-VN")}`
-                              : `${new Date(auction.endAt).toLocaleTimeString("vi-VN")} · ${new Date(auction.endAt).toLocaleDateString("vi-VN")}`}
-                          </span>
+                      ) : !timeLeft.isEnded ? (
+                        /* Dutch - Đang mở bán (ACTIVE) */
+                        <div className="space-y-2.5">
+                          {/* Console nhịp hạ giá tiếp theo */}
+                          <div className="bg-gradient-to-r from-amber-50/80 via-white to-rose-50/50 rounded-xl p-4 border border-amber-200/90 shadow-xs space-y-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                                  <TrendingDown size={17} />
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-[#001743]">Nhịp hạ giá tiếp theo:</span>
+                                    <span className="font-mono font-bold text-rose-600 text-xs">-{formatPrice(auction.dutchDecreaseAmount || 0)}</span>
+                                  </div>
+                                  <span className="text-[11px] text-slate-500">
+                                    Giá tiếp theo: <strong className="font-mono text-emerald-700">{formatPrice(Math.max(auction.reservePrice || 0, auction.currentPrice - (auction.dutchDecreaseAmount || 0)))}</strong>
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-2xl font-black font-mono text-rose-600 tabular-nums block leading-none">
+                                  00:{String(dutchSecondsRemaining).padStart(2, "0")}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-medium">Chu kỳ {dutchCycleTotal}s</span>
+                              </div>
+                            </div>
+
+                            {/* Thanh tiến trình hạ giá (Progress Bar) */}
+                            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-gradient-to-r from-amber-500 to-rose-600 transition-all duration-1000 ease-linear rounded-full"
+                                style={{
+                                  width: `${Math.min(100, Math.max(0, (dutchSecondsRemaining / (dutchCycleTotal || 60)) * 100))}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Dòng thời gian tối đa toàn phiên */}
+                          <div className="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-lg border border-slate-100 text-[11px] text-slate-600">
+                            <span className="flex items-center gap-1.5 font-medium">
+                              <Clock size={13} className="text-slate-400" />
+                              <span>Thời gian tối đa toàn phiên:</span>
+                            </span>
+                            <span className="font-mono font-bold text-[#001743]">
+                              {timeLeft.hours > 0 ? `${timeLeft.hours}h ` : ""}{timeLeft.minutes}m {String(timeLeft.seconds).padStart(2, "0")}s
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                      {auction.auctionStatus !== "SCHEDULE" && timeLeft.isEnded ? (
-                        <span className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-200 text-slate-700">Phiên đã kết thúc</span>
                       ) : (
-                        <div className="flex items-center gap-1.5 font-mono self-start sm:self-auto">
-                          {timeLeft.days > 0 && (<><div className={`px-2.5 py-1 rounded-lg border text-center ${timerBg}`}><span className="text-base font-black tabular-nums block leading-tight">{timeLeft.days}</span><span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">ngày</span></div><span className="text-slate-300 font-bold">:</span></>)}
-                          <div className={`px-2.5 py-1 rounded-lg border text-center ${timerBg}`}><span className="text-base font-black tabular-nums block leading-tight">{String(timeLeft.hours).padStart(2, "0")}</span><span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">giờ</span></div>
-                          <span className="text-slate-300 font-bold">:</span>
-                          <div className={`px-2.5 py-1 rounded-lg border text-center ${timerBg}`}><span className="text-base font-black tabular-nums block leading-tight">{String(timeLeft.minutes).padStart(2, "0")}</span><span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">phút</span></div>
-                          <span className="text-slate-300 font-bold">:</span>
-                          <div className={`px-2.5 py-1 rounded-lg border text-center ${timerBg} ${isUrgentRed ? "animate-pulse" : ""}`}><span className="text-base font-black tabular-nums block leading-tight">{String(timeLeft.seconds).padStart(2, "0")}</span><span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">giây</span></div>
+                        /* Dutch - Đã kết thúc */
+                        <div className="p-3.5 bg-slate-100 rounded-xl text-center text-xs font-bold text-slate-700">
+                          Phiên đấu giá Hà Lan đã kết thúc
                         </div>
-                      )}
-                    </div>
+                      )
+                    ) : (
+                      /* TRƯỜNG HỢP 2: ĐẤU GIÁ KIỂU ANH (ENGLISH AUCTION) */
+                      <div className="bg-slate-50/90 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-200/80">
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-slate-700 shadow-xs shrink-0 ${auction.auctionStatus === "SCHEDULE" ? "bg-amber-100 text-amber-900" : "bg-white border border-slate-200"}`}>
+                            <Clock size={15} />
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-slate-800 block">
+                              {auction.auctionStatus === "SCHEDULE"
+                                ? "Mở sàn nhận trả giá sau:"
+                                : timeLeft.isEnded
+                                ? "Phiên đã kết thúc"
+                                : "Thời gian trả giá còn lại:"}
+                            </span>
+                            <span className="text-[11px] text-slate-500 font-mono block">
+                              {auction.auctionStatus === "SCHEDULE"
+                                ? `Mở sàn lúc: ${new Date(auction.startAt).toLocaleTimeString("vi-VN")} · ${new Date(auction.startAt).toLocaleDateString("vi-VN")}`
+                                : `Chốt phiên gõ búa: ${new Date(auction.endAt).toLocaleTimeString("vi-VN")} · ${new Date(auction.endAt).toLocaleDateString("vi-VN")}`}
+                            </span>
+                          </div>
+                        </div>
+                        {auction.auctionStatus !== "SCHEDULE" && timeLeft.isEnded ? (
+                          <span className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 self-start sm:self-auto">
+                            Phiên đã kết thúc
+                          </span>
+                        ) : (
+                          <div className="flex items-center gap-1.5 font-mono self-start sm:self-auto">
+                            {timeLeft.days > 0 && (
+                              <>
+                                <div className={`px-2.5 py-1 rounded-lg border text-center ${timerBg}`}>
+                                  <span className="text-base font-black tabular-nums block leading-tight">{timeLeft.days}</span>
+                                  <span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">ngày</span>
+                                </div>
+                                <span className="text-slate-300 font-bold">:</span>
+                              </>
+                            )}
+                            <div className={`px-2.5 py-1 rounded-lg border text-center ${timerBg}`}>
+                              <span className="text-base font-black tabular-nums block leading-tight">{String(timeLeft.hours).padStart(2, "0")}</span>
+                              <span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">giờ</span>
+                            </div>
+                            <span className="text-slate-300 font-bold">:</span>
+                            <div className={`px-2.5 py-1 rounded-lg border text-center ${timerBg}`}>
+                              <span className="text-base font-black tabular-nums block leading-tight">{String(timeLeft.minutes).padStart(2, "0")}</span>
+                              <span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">phút</span>
+                            </div>
+                            <span className="text-slate-300 font-bold">:</span>
+                            <div className={`px-2.5 py-1 rounded-lg border text-center ${timerBg} ${isUrgentRed ? "animate-pulse" : ""}`}>
+                              <span className="text-base font-black tabular-nums block leading-tight">{String(timeLeft.seconds).padStart(2, "0")}</span>
+                              <span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">giây</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Quick Rules Strip */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">

@@ -208,6 +208,15 @@ class AuctionHubService {
   }
 
   /**
+   * Đăng ký lắng nghe sự kiện giảm giá định kỳ trong đấu giá Hà Lan
+   */
+  public onPriceDrop(callback: (newPrice: number, nextDropSeconds: number) => void) {
+    if (!this.connection) return;
+    this.connection.off("ReceivePriceDrop");
+    this.connection.on("ReceivePriceDrop", callback);
+  }
+
+  /**
    * Xóa toàn bộ listeners của phòng đấu giá
    */
   public removeAuctionListeners() {
@@ -218,6 +227,7 @@ class AuctionHubService {
     this.connection.off("ReceiveAuctionEnded");
     this.connection.off("ReceiveAuctionFailed");
     this.connection.off("ReceiveAuctionNotification");
+    this.connection.off("ReceivePriceDrop");
   }
 
   /**
