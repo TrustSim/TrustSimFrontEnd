@@ -17,6 +17,10 @@ import {
   ArrowRight,
   Loader2,
   FileText,
+  ShieldCheck,
+  Check,
+  Copy,
+  ChevronDown,
 } from "lucide-react";
 import { walletService } from "@/services/walletService";
 import type { WalletTransactionDto } from "@/types/wallet";
@@ -53,7 +57,6 @@ const POPULAR_BANKS = [
 ];
 
 const PRESET_AMOUNTS = [
-  { label: "50.000 ₫", val: 50_000 },
   { label: "100.000 ₫", val: 100_000 },
   { label: "200.000 ₫", val: 200_000 },
   { label: "500.000 ₫", val: 500_000 },
@@ -78,6 +81,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [completedTx, setCompletedTx] = useState<WalletTransactionDto | null>(null);
+  const [copiedCode, setCopiedCode] = useState<boolean>(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -89,6 +93,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
       setNote("");
       setError("");
       setCompletedTx(null);
+      setCopiedCode(false);
     }
   }, [isOpen]);
 
@@ -196,7 +201,14 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
     }
   };
 
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
+  };
+
   const selectedBankObj = POPULAR_BANKS.find((b) => b.code === bankCode);
+  const remainingBalanceAfterWithdraw = Math.max(0, availableBalance - amount);
 
   return (
     <div
@@ -210,25 +222,30 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
     >
       <div className="relative w-full max-w-lg bg-white rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden flex flex-col max-h-[calc(100vh-2rem)] animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#001743] flex items-center justify-center shadow-xs border border-white/10 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-[#001743] flex items-center justify-center shadow-xs border border-white/10 shrink-0">
               <Image
                 src="/logo/S-White-Logo.png"
                 alt="TrustSim"
-                width={20}
-                height={20}
+                width={22}
+                height={22}
                 className="w-5 h-5 object-contain"
               />
             </div>
             <div>
-              <h2 id="withdraw-modal-title" className="text-sm font-bold text-[#001743] tracking-tight">
-                {completedTx ? "Rút tiền thành công" : "Rút tiền về tài khoản ngân hàng"}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 id="withdraw-modal-title" className="text-sm font-bold text-[#001743] tracking-tight">
+                  {completedTx ? "Rút tiền thành công" : "Rút tiền về tài khoản ngân hàng"}
+                </h2>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                  NAPAS 24/7
+                </span>
+              </div>
               <p className="text-xs text-slate-500 mt-0.5">
                 {completedTx
-                  ? "Giao dịch đã được hệ thống phê duyệt tức thì"
-                  : "Chuyển khoản tự động 24/7 (Tối thiểu 50.000 ₫)"}
+                  ? "Lệnh chuyển khoản đã được ghi nhận và xuất tiền"
+                  : "Chuyển tiền liên ngân hàng tức thì · Tối thiểu 50.000 ₫"}
               </p>
             </div>
           </div>
@@ -236,7 +253,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="p-1.5 text-slate-400 hover:text-[#001743] hover:bg-slate-100 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E4011E] disabled:opacity-40"
+            className="p-2 text-slate-400 hover:text-[#001743] hover:bg-slate-200/60 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#001743] disabled:opacity-40 cursor-pointer"
             aria-label="Đóng cửa sổ"
           >
             <X className="w-5 h-5" />
@@ -245,30 +262,55 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
 
         {/* Modal Body */}
         {completedTx ? (
-          /* ─── SUCCESS RECEIPT VIEW ─── */
-          <div className="p-5 overflow-y-auto flex flex-col items-center text-center">
-            <div className="w-14 h-14 rounded-full bg-emerald-50 border-2 border-emerald-200 text-emerald-600 flex items-center justify-center mb-3 shadow-xs">
-              <CheckCircle2 className="w-8 h-8" />
+          /* ═══ SUCCESS DIGITAL RECEIPT VOUCHER ═══ */
+          <div className="p-5 overflow-y-auto flex flex-col items-center text-center animate-in fade-in duration-200">
+            <div className="w-16 h-16 rounded-full bg-emerald-50 border-2 border-emerald-200 text-emerald-600 flex items-center justify-center mb-3 shadow-xs">
+              <CheckCircle2 className="w-9 h-9" />
             </div>
 
-            <h3 className="text-lg font-bold text-[#001743]">
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200/80 mb-2">
+              Lệnh Rút Tiền Đã Ghi Nhận
+            </span>
+            <h3 className="text-xl font-black text-[#001743]">
               Yêu cầu rút tiền thành công!
             </h3>
-            <p className="text-sm font-bold text-emerald-600 mt-1 mb-4 font-mono tabular-nums">
-              -{completedTx.amount.toLocaleString("vi-VN")} ₫ đã được xuất lệnh về tài khoản
+            <div className="text-2xl font-black text-rose-600 font-mono tabular-nums my-2">
+              -{completedTx.amount.toLocaleString("vi-VN")}{" "}
+              <span className="text-sm font-bold">₫</span>
+            </div>
+            <p className="text-xs text-slate-500 mb-5 max-w-sm">
+              Tiền sẽ về tài khoản ngân hàng của quý khách trong vòng 1–5 phút qua liên ngân hàng NAPAS 247.
             </p>
 
             {/* Receipt Summary Card */}
-            <div className="w-full bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 mb-4 text-xs text-slate-600 flex flex-col gap-2.5 text-left">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500">Mã giao dịch:</span>
-                <span className="font-mono font-bold text-[#001743] tracking-wider">
-                  {completedTx.transactionCode}
+            <div className="w-full bg-slate-50 border border-slate-200/90 rounded-2xl p-4 mb-5 text-xs text-slate-600 flex flex-col gap-2.5 text-left shadow-2xs">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200/80">
+                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                  Biên nhận giao dịch
+                </span>
+                <span className="font-mono text-[11px] text-slate-500">
+                  {new Date().toLocaleTimeString("vi-VN")} · {new Date().toLocaleDateString("vi-VN")}
                 </span>
               </div>
               <div className="flex justify-between items-center">
+                <span className="text-slate-500">Mã giao dịch:</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono font-bold text-[#001743] tracking-wider">
+                    {completedTx.transactionCode}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyCode(completedTx.transactionCode)}
+                    className="p-1 text-slate-400 hover:text-[#001743] rounded cursor-pointer"
+                    title="Sao chép mã"
+                  >
+                    {copiedCode ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                  </button>
+                </div>
+              </div>
+              <div className="flex justify-between items-center">
                 <span className="text-slate-500">Ngân hàng thụ hưởng:</span>
-                <span className="font-semibold text-[#001743]">
+                <span className="font-bold text-[#001743]">
                   {completedTx.destinationBankName || selectedBankObj?.short}
                 </span>
               </div>
@@ -284,54 +326,50 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                   {completedTx.destinationAccountHolderName || accountHolderName}
                 </span>
               </div>
-              <div className="flex justify-between items-center border-t border-dashed border-slate-200 pt-2">
+              <div className="flex justify-between items-center border-t border-dashed border-slate-200 pt-2.5">
                 <span className="text-slate-500">Trạng thái xử lý:</span>
-                <span className="inline-flex items-center gap-1.5 font-bold text-emerald-600">
+                <span className="inline-flex items-center gap-1.5 font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Hoàn tất tức thì
+                  Đang chuyển khoản NAPAS
                 </span>
               </div>
             </div>
 
-            <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-              Số dư khả dụng của bạn đã được cập nhật. Tiền sẽ về tài khoản ngân hàng trong vòng 1–5 phút tùy theo liên ngân hàng NAPAS 247.
-            </p>
-
             <button
               type="button"
               onClick={onClose}
-              className="w-full py-2.5 px-4 rounded-xl bg-[#001743] hover:bg-[#0A2566] text-white text-xs font-bold transition-colors shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E4011E] active:scale-[0.99]"
+              className="w-full py-3 px-4 rounded-xl bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold transition-all shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#001743] active:scale-[0.99] cursor-pointer"
             >
-              Hoàn tất & Đóng
+              Hoàn tất & Đóng cửa sổ
             </button>
           </div>
         ) : (
-          /* ─── WITHDRAW FORM VIEW ─── */
-          <form onSubmit={handleSubmit} className="p-5 overflow-y-auto flex flex-col gap-4">
-            {/* Balance Overview */}
-            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex items-center justify-between">
+          /* ═══ WITHDRAW CONFIGURATION FORM ═══ */
+          <form onSubmit={handleSubmit} className="p-5 overflow-y-auto flex flex-col gap-4 animate-in fade-in duration-150">
+            {/* Available Balance Banner with Fast Percentage Chips */}
+            <div className="bg-slate-50/90 border border-slate-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
               <div>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                  Số Dư Khả Dụng
+                  Số Dư Khả Dụng Trong Ví
                 </span>
-                <div className="text-base font-bold text-[#001743] font-mono tabular-nums mt-0.5">
+                <div className="text-xl font-black text-[#001743] font-mono tabular-nums mt-0.5">
                   {availableBalance.toLocaleString("vi-VN")}{" "}
-                  <span className="text-xs font-bold text-[#E4011E]">₫</span>
+                  <span className="text-xs font-bold text-slate-500">₫</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 {[
                   { label: "25%", val: 25 },
                   { label: "50%", val: 50 },
                   { label: "75%", val: 75 },
-                  { label: "100%", val: 100 },
+                  { label: "Tối đa", val: 100 },
                 ].map((p) => (
                   <button
                     key={p.val}
                     type="button"
                     onClick={() => handleSelectPercentage(p.val)}
-                    className="px-2 py-1 text-[11px] font-bold rounded-md border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E4011E] active:scale-[0.98]"
+                    className="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white hover:bg-slate-100/90 text-slate-700 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#001743] active:scale-[0.97] cursor-pointer shadow-2xs"
                   >
                     {p.label}
                   </button>
@@ -339,23 +377,57 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
               </div>
             </div>
 
-            {/* Quick Amount Presets */}
+            {/* Input Amount Section */}
             <div>
-              <label className="block text-[11px] font-bold text-[#001743] uppercase tracking-wider mb-2">
-                Chọn nhanh số tiền rút
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="text-xs font-bold text-[#001743]">
+                  Số tiền muốn rút (VNĐ) <span className="text-[#E4011E]">*</span>
+                </label>
+                <span className="text-[11px] font-semibold text-slate-400">
+                  Min: <strong className="text-slate-600 font-mono">50.000 ₫</strong>
+                </span>
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={amountInput}
+                  onChange={handleAmountChange}
+                  placeholder="Nhập số tiền cần rút"
+                  required
+                  autoFocus
+                  className={`w-full py-3.5 pl-4 pr-14 text-lg font-black font-mono tabular-nums text-[#001743] bg-white border rounded-xl outline-none transition-all ${
+                    error && (amount < 50_000 || amount > availableBalance)
+                      ? "border-rose-400 ring-2 ring-rose-100 focus:border-rose-500"
+                      : "border-slate-200 hover:border-slate-300 focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/15"
+                  }`}
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 font-mono">
+                  ₫
+                </span>
+              </div>
+            </div>
+
+            {/* Curated Preset Chips */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                Hoặc chọn nhanh số tiền:
               </label>
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-4 gap-2">
                 {PRESET_AMOUNTS.map((item) => {
                   const isSelected = amount === item.val;
+                  const isExceed = item.val > availableBalance;
                   return (
                     <button
                       key={item.val}
                       type="button"
                       onClick={() => handleSelectPreset(item.val)}
-                      className={`py-2 px-1 text-xs rounded-lg border font-mono tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E4011E] active:scale-[0.98] ${
+                      disabled={isExceed}
+                      className={`py-2 px-1 text-xs rounded-xl border font-mono tabular-nums transition-all text-center cursor-pointer active:scale-[0.98] ${
                         isSelected
-                          ? "bg-[#001743] text-white border-[#001743] font-bold shadow-xs"
-                          : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50 font-medium"
+                          ? "bg-[#001743] text-white border-[#001743] font-bold shadow-xs ring-2 ring-[#001743]/20"
+                          : isExceed
+                          ? "bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed opacity-60"
+                          : "bg-slate-50/70 hover:bg-slate-100/90 text-slate-700 border-slate-200/80 font-medium"
                       }`}
                     >
                       {item.label}
@@ -365,34 +437,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
               </div>
             </div>
 
-            {/* Input Amount */}
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="text-[11px] font-bold text-[#001743] uppercase tracking-wider">
-                  Số tiền muốn rút (VNĐ) <span className="text-[#E4011E]">*</span>
-                </label>
-                <span className="text-[11px] text-slate-400">Tối thiểu 50.000 ₫</span>
-              </div>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={amountInput}
-                  onChange={handleAmountChange}
-                  placeholder="Nhập số tiền (tối thiểu 50.000 ₫)"
-                  required
-                  className={`w-full py-2.5 pl-3.5 pr-14 text-sm font-bold font-mono tabular-nums text-[#001743] bg-white border rounded-lg outline-none transition-colors focus-visible:ring-2 ${
-                    error
-                      ? "border-rose-400 focus-visible:ring-rose-500"
-                      : "border-slate-200 focus-visible:border-[#001743] focus-visible:ring-[#001743]"
-                  }`}
-                />
-                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                  VNĐ
-                </span>
-              </div>
-            </div>
-
-            {/* Bank Select */}
+            {/* Beneficiary Bank Select */}
             <div>
               <label className="block text-[11px] font-bold text-[#001743] uppercase tracking-wider mb-1.5">
                 Ngân hàng nhận tiền <span className="text-[#E4011E]">*</span>
@@ -401,7 +446,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                 <select
                   value={bankCode}
                   onChange={(e) => setBankCode(e.target.value)}
-                  className="w-full py-2.5 pl-3.5 pr-8 text-xs font-semibold text-[#001743] bg-white border border-slate-200 rounded-lg outline-none cursor-pointer focus-visible:border-[#001743] focus-visible:ring-2 focus-visible:ring-[#001743] transition-colors"
+                  className="w-full py-3 pl-3.5 pr-10 text-xs font-bold text-[#001743] bg-white border border-slate-200 hover:border-slate-300 rounded-xl outline-none cursor-pointer focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/15 transition-all appearance-none"
                 >
                   {POPULAR_BANKS.map((b) => (
                     <option key={b.code} value={b.code}>
@@ -409,11 +454,12 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                     </option>
                   ))}
                 </select>
+                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
-            {/* Account Number & Account Holder Name */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* Account Number & Account Holder Name Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-bold text-[#001743] uppercase tracking-wider mb-1.5">
                   Số tài khoản nhận <span className="text-[#E4011E]">*</span>
@@ -425,7 +471,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                     onChange={(e) => setAccountNumber(e.target.value.replace(/[^0-9A-Za-z]/g, ""))}
                     placeholder="VD: 19036582910012"
                     required
-                    className="w-full py-2 pl-3 pr-3 text-xs font-bold font-mono tabular-nums text-[#001743] bg-white border border-slate-200 rounded-lg outline-none focus-visible:border-[#001743] focus-visible:ring-2 focus-visible:ring-[#001743] transition-colors"
+                    className="w-full py-2.5 px-3.5 text-xs font-bold font-mono tabular-nums text-[#001743] bg-white border border-slate-200 hover:border-slate-300 rounded-xl outline-none focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/15 transition-all"
                   />
                 </div>
               </div>
@@ -441,42 +487,53 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                     onChange={(e) => setAccountHolderName(e.target.value.toUpperCase())}
                     placeholder="VD: NGUYEN VAN AN"
                     required
-                    className="w-full py-2 pl-3 pr-3 text-xs font-bold uppercase text-[#001743] bg-white border border-slate-200 rounded-lg outline-none focus-visible:border-[#001743] focus-visible:ring-2 focus-visible:ring-[#001743] transition-colors"
+                    className="w-full py-2.5 px-3.5 text-xs font-bold uppercase text-[#001743] bg-white border border-slate-200 hover:border-slate-300 rounded-xl outline-none focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/15 transition-all"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Note Field */}
+            {/* Note Field (Optional) */}
             <div>
-              <label className="block text-[11px] font-bold text-[#001743] uppercase tracking-wider mb-1.5">
+              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                 Ghi chú rút tiền (Không bắt buộc)
               </label>
               <input
                 type="text"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="VD: Rút tiền về tài khoản ngân hàng chính chủ"
-                className="w-full py-2 px-3 text-xs text-slate-700 bg-white border border-slate-200 rounded-lg outline-none focus-visible:border-[#001743] focus-visible:ring-2 focus-visible:ring-[#001743] transition-colors"
+                placeholder="VD: Rút tiền về tài khoản chính chủ"
+                className="w-full py-2 px-3 text-xs text-slate-700 bg-white border border-slate-200 hover:border-slate-300 rounded-xl outline-none focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/15 transition-all"
               />
             </div>
 
-            {/* Settlement Summary Preview */}
+            {/* Financial Settlement Breakdown Card */}
             {amount >= 50_000 && amount <= availableBalance && (
-              <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-xs text-slate-600 flex flex-col gap-1.5">
+              <div className="bg-slate-50/90 border border-slate-200/90 rounded-2xl p-4 text-xs text-slate-600 flex flex-col gap-2 shadow-2xs">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 pb-1 border-b border-slate-200/80">
+                  Đối Soát Giao Dịch
+                </span>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Số tiền trừ số dư ví:</span>
+                  <span className="text-slate-500">Số tiền xuất lệnh:</span>
                   <span className="font-mono font-bold text-[#001743]">
                     {amount.toLocaleString("vi-VN")} ₫
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500">Phí giao dịch rút tiền:</span>
-                  <span className="font-semibold text-emerald-600">0 ₫ (Miễn phí)</span>
+                  <span className="font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
+                    0 ₫ (Miễn phí)
+                  </span>
                 </div>
-                <div className="flex justify-between items-center border-t border-dashed border-slate-200 pt-1.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Số dư ví còn lại:</span>
+                  <span className="font-mono font-bold text-slate-700">
+                    {remainingBalanceAfterWithdraw.toLocaleString("vi-VN")} ₫
+                  </span>
+                </div>
+                <div className="flex justify-between items-center border-t border-dashed border-slate-200 pt-2">
                   <span className="font-bold text-[#001743]">Thực nhận vào tài khoản:</span>
-                  <span className="font-mono font-bold text-sm text-[#E4011E] tabular-nums">
+                  <span className="font-mono font-black text-sm text-[#E4011E] tabular-nums">
                     {amount.toLocaleString("vi-VN")} ₫
                   </span>
                 </div>
@@ -485,7 +542,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
 
             {/* Error Message */}
             {error && (
-              <div className="bg-rose-50 border border-rose-200/80 rounded-xl px-3 py-2 text-xs text-rose-700 font-medium flex items-center gap-2">
+              <div className="bg-rose-50 border border-rose-200 rounded-xl px-3.5 py-2.5 text-xs text-rose-700 font-medium flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
                 <span>{error}</span>
               </div>
@@ -497,7 +554,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="py-2.5 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E4011E] active:scale-[0.99]"
+                className="py-3 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#001743] active:scale-[0.99] cursor-pointer"
               >
                 Hủy bỏ
               </button>
@@ -510,17 +567,17 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                   !accountNumber.trim() ||
                   !accountHolderName.trim()
                 }
-                className="py-2.5 px-4 rounded-xl bg-[#001743] hover:bg-[#0A2566] disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold transition-colors shadow-xs flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E4011E] active:scale-[0.99]"
+                className="py-3 px-4 rounded-xl bg-[#001743] hover:bg-[#00266B] disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#001743] active:scale-[0.99] cursor-pointer"
               >
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Đang gửi lệnh rút…
+                    <span>Đang gửi lệnh rút…</span>
                   </>
                 ) : (
                   <>
                     <span>Xác nhận rút tiền</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
@@ -531,3 +588,5 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
     </div>
   );
 };
+
+export default WithdrawModal;
