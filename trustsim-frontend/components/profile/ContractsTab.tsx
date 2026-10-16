@@ -513,10 +513,10 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
                 <div className="bg-slate-50 border border-slate-100 rounded-[6px] p-3">
                   <div className="grid grid-cols-4 gap-2 text-center">
                     {[
-                      { step: 1, label: "1. Ký quỹ Escrow" },
-                      { step: 2, label: "2. Ký hợp đồng số" },
+                      { step: 1, label: "1. Ký quỹ" },
+                      { step: 2, label: "2. Ký hợp đồng" },
                       { step: 3, label: "3. Sang tên SIM" },
-                      { step: 4, label: "4. Giải ngân & Hoàn tất" },
+                      { step: 4, label: "4. Giải ngân" },
                     ].map((s) => {
                       const isDone = currentStep > s.step;
                       const isCurrent = currentStep === s.step;
@@ -579,14 +579,13 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
                       </a>
                     )}
 
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTrade(trade)}
+                    <Link
+                      href={`/trades/${trade.id}`}
                       className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[6px] bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold transition-colors cursor-pointer shadow-xs"
                     >
                       <span>Xem chi tiết tiến trình</span>
                       <ChevronRight size={13} />
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>

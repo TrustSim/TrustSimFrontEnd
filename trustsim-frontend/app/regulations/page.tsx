@@ -238,11 +238,10 @@ export default function RegulationsPage() {
                     key={item.key}
                     href={item.href}
                     onClick={() => setActiveChapter(item.key as ChapterKey)}
-                    className={`block px-3 py-2.5 rounded-xl transition-all ${
-                      activeChapter === item.key
+                    className={`block px-3 py-2.5 rounded-xl transition-all ${activeChapter === item.key
                         ? "bg-[#001743] text-white font-bold shadow-xs"
                         : "text-slate-600 hover:text-[#001743] hover:bg-slate-50"
-                    }`}
+                      }`}
                   >
                     {item.label}
                   </a>
@@ -559,11 +558,10 @@ export default function RegulationsPage() {
                         key={cat.key}
                         type="button"
                         onClick={() => setFaqCategoryFilter(cat.key)}
-                        className={`px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                          faqCategoryFilter === cat.key
+                        className={`px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${faqCategoryFilter === cat.key
                             ? "bg-[#001743] text-white font-bold"
                             : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                        }`}
+                          }`}
                       >
                         {cat.label}
                       </button>
@@ -648,7 +646,6 @@ export default function RegulationsPage() {
         </div>
       </main>
 
-      <Footer />
     </div>
   );
 }
