@@ -212,7 +212,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#001743]/60 backdrop-blur-xs transition-opacity duration-150 animate-in fade-in"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#001743]/60 backdrop-blur-xs transition-opacity duration-150 animate-in fade-in"
       onClick={(e) => {
         if (e.target === e.currentTarget && !loading) onClose();
       }}
