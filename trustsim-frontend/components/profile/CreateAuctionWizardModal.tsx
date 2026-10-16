@@ -18,10 +18,9 @@ import {
   TrendingDown,
   Wallet,
   ShieldAlert,
-  HelpCircle,
-  FileText,
   Calendar,
   CheckCircle2,
+  Zap,
 } from "lucide-react";
 import { OwnedSim } from "../../types/types";
 import {
@@ -56,6 +55,82 @@ interface CreateAuctionWizardModalProps {
     title: string;
     message: string;
   }) => void;
+}
+
+/**
+ * Ô nhập tiền tệ chuẩn định dạng Việt Nam (VND)
+ * - Tự động định dạng dấu chấm phân cách hàng nghìn (100.000, 1.000.000) ngay khi gõ
+ * - Bo góc vừa vặn 8px (rounded-lg), viền sắc sảo, chống AI-slop và pill-shape
+ * - Có huy hiệu tiền tệ "VNĐ" bên phải
+ */
+function FormattedCurrencyInput({
+  id,
+  value,
+  onChange,
+  placeholder = "0",
+  disabled = false,
+  hasError = false,
+  suffix = "VNĐ",
+}: {
+  id?: string;
+  value: number;
+  onChange: (val: number) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  hasError?: boolean;
+  suffix?: string;
+}) {
+  const formatNumber = (num: number) => {
+    if (!num || isNaN(num) || num === 0) return "";
+    return num.toLocaleString("vi-VN");
+  };
+
+  const [displayValue, setDisplayValue] = useState<string>(formatNumber(value));
+
+  useEffect(() => {
+    setDisplayValue(formatNumber(value));
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const digitsOnly = raw.replace(/\D/g, "");
+    if (!digitsOnly) {
+      setDisplayValue("");
+      onChange(0);
+      return;
+    }
+    const num = Number(digitsOnly);
+    // Giới hạn an toàn 15 chữ số
+    if (num > 999_999_999_999_999) return;
+    setDisplayValue(num.toLocaleString("vi-VN"));
+    onChange(num);
+  };
+
+  return (
+    <div
+      className={`group relative flex items-center w-full h-11 bg-white rounded-lg border transition-all shadow-xs ${
+        hasError
+          ? "border-rose-500 ring-2 ring-rose-500/10"
+          : "border-slate-300 hover:border-slate-400 focus-within:border-[#E4011E] focus-within:ring-2 focus-within:ring-[#E4011E]/15"
+      } ${disabled ? "opacity-60 cursor-not-allowed bg-slate-50" : ""}`}
+    >
+      <input
+        id={id}
+        type="text"
+        inputMode="numeric"
+        value={displayValue}
+        onChange={handleChange}
+        placeholder={placeholder}
+        disabled={disabled}
+        className="w-full h-full pl-3.5 pr-14 bg-transparent font-mono text-[15px] font-semibold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-hidden"
+      />
+      <div className="absolute right-2 flex items-center pointer-events-none">
+        <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold text-slate-600 bg-slate-100 border border-slate-200/80">
+          {suffix}
+        </span>
+      </div>
+    </div>
+  );
 }
 
 export default function CreateAuctionWizardModal({
@@ -126,7 +201,7 @@ export default function CreateAuctionWizardModal({
   // Lịch trình thời gian
   const [startPreset, setStartPreset] = useState<string>("15"); // '0' (ngay sau 1 phút), '15', '60', '180', '1440', 'custom'
   const [customStartAt, setCustomStartAt] = useState<string>("");
-  const [durationHours, setDurationHours] = useState<number>(24); // 24 giờ
+  const [durationMinutes, setDurationMinutes] = useState<number>(1440); // 24 giờ (1440 phút) mặc định
   const [gracePeriodHours, setGracePeriodHours] = useState<number>(24); // 24 giờ thanh toán
 
   // Định dạng tiền tệ VND
@@ -136,6 +211,15 @@ export default function CreateAuctionWizardModal({
       currency: "VND",
       maximumFractionDigits: 0,
     }).format(val || 0);
+
+  // Định dạng hiển thị thời lượng phiên
+  const formatDurationText = (min: number) => {
+    if (min < 60) return `${min} phút (Thử nghiệm nhanh)`;
+    const hours = min / 60;
+    if (hours === 24) return "24 giờ (1 ngày - Tiêu chuẩn)";
+    if (hours === 48) return "48 giờ (2 ngày)";
+    return `${hours} giờ`;
+  };
 
   // 1. Tải danh sách SIM sở hữu đã xác thực
   useEffect(() => {
@@ -373,7 +457,7 @@ export default function CreateAuctionWizardModal({
             <button
               type="button"
               onClick={onClose}
-              className="h-10 px-4 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="h-10 px-4 rounded-lg border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
               Để sau
             </button>
@@ -383,7 +467,7 @@ export default function CreateAuctionWizardModal({
                 onClose();
                 if (onNavigateToEkyc) onNavigateToEkyc();
               }}
-              className="h-10 px-4 rounded-xl bg-[#E4011E] text-sm font-semibold text-white hover:bg-[#B80018] flex items-center gap-1.5"
+              className="h-10 px-4 rounded-lg bg-[#E4011E] text-sm font-semibold text-white hover:bg-[#B80018] flex items-center gap-1.5"
             >
               <span>Xác thực danh tính ngay</span>
               <ArrowRight className="size-4" />
@@ -511,7 +595,7 @@ export default function CreateAuctionWizardModal({
 
     const regStartDate = new Date(now - 60 * 1000); // Mở đăng ký từ lúc tạo
     const regEndDate = new Date(startAtDate.getTime()); // Kết thúc đăng ký lúc phiên bắt đầu
-    const endAtDate = new Date(startAtDate.getTime() + durationHours * 3600 * 1000);
+    const endAtDate = new Date(startAtDate.getTime() + durationMinutes * 60 * 1000);
 
     // Kiểm tra theo bộ quy tắc máy chủ
     const valRes = auctionValidators.validateCreateAuction({
@@ -633,7 +717,7 @@ export default function CreateAuctionWizardModal({
               <h2 className="text-lg font-semibold text-slate-900">
                 Thiết lập phiên đấu giá số SIM
               </h2>
-              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-[#E4011E] border border-red-200">
+              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-[#E4011E] border border-red-200">
                 Bước {step}/4
               </span>
             </div>
@@ -644,7 +728,7 @@ export default function CreateAuctionWizardModal({
           <button
             type="button"
             onClick={onClose}
-            className="size-9 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors"
+            className="size-9 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors"
             title="Đóng"
           >
             <X className="size-5" />
@@ -730,7 +814,7 @@ export default function CreateAuctionWizardModal({
                           onClose();
                           if (onNavigateToVerifySim) onNavigateToVerifySim();
                         }}
-                        className="h-10 px-4 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors inline-flex items-center gap-1.5"
+                        className="h-10 px-4 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors inline-flex items-center gap-1.5 shadow-xs"
                       >
                         <ShieldCheck className="size-4" />
                         <span>Xác thực quyền sở hữu SIM ngay</span>
@@ -741,9 +825,9 @@ export default function CreateAuctionWizardModal({
                   <div className="space-y-2">
                     {/* Thẻ SIM được chọn */}
                     {selectedSim && (
-                      <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
                         <div className="flex items-center gap-3">
-                          <div className="size-11 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center text-[#E4011E] font-bold text-xs shrink-0">
+                          <div className="size-11 rounded-lg bg-red-50 border border-red-200/80 flex items-center justify-center text-[#E4011E] font-bold text-xs shrink-0">
                             SIM
                           </div>
                           <div>
@@ -772,7 +856,7 @@ export default function CreateAuctionWizardModal({
                           <button
                             type="button"
                             onClick={() => setIsSimPickerOpen(!isSimPickerOpen)}
-                            className="h-9 px-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1.5 shrink-0 transition-colors"
+                            className="h-9 px-3 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors shadow-xs"
                           >
                             <span>Đổi SIM khác</span>
                             <ChevronDown className="size-3.5" />
@@ -840,7 +924,7 @@ export default function CreateAuctionWizardModal({
                   {/* Mô hình 1: Giá lên (Tăng dần) */}
                   <div
                     onClick={() => handleAuctionTypeChange(AuctionTypeEnum.ENGLISH)}
-                    className={`cursor-pointer rounded-xl border p-4 transition-all ${
+                    className={`cursor-pointer rounded-xl border p-4 transition-all shadow-xs ${
                       auctionType === AuctionTypeEnum.ENGLISH
                         ? "border-[#E4011E] bg-red-50/30 ring-1 ring-[#E4011E]"
                         : "border-slate-200 bg-white hover:border-slate-300"
@@ -882,7 +966,7 @@ export default function CreateAuctionWizardModal({
                   {/* Mô hình 2: Giá xuống (Hà Lan - Giảm dần tự động) */}
                   <div
                     onClick={() => handleAuctionTypeChange(AuctionTypeEnum.DUTCH)}
-                    className={`cursor-pointer rounded-xl border p-4 transition-all ${
+                    className={`cursor-pointer rounded-xl border p-4 transition-all shadow-xs ${
                       auctionType === AuctionTypeEnum.DUTCH
                         ? "border-[#E4011E] bg-red-50/30 ring-1 ring-[#E4011E]"
                         : "border-slate-200 bg-white hover:border-slate-300"
@@ -931,9 +1015,9 @@ export default function CreateAuctionWizardModal({
           {step === 2 && (
             <div className="space-y-6">
               {/* Thẻ hỗ trợ định giá thông minh */}
-              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
                 <div className="flex items-center gap-3">
-                  <div className="size-10 rounded-xl bg-amber-100/80 text-amber-700 flex items-center justify-center shrink-0">
+                  <div className="size-10 rounded-lg bg-amber-100/80 text-amber-700 flex items-center justify-center shrink-0">
                     <Sparkles className="size-5" />
                   </div>
                   <div>
@@ -950,17 +1034,17 @@ export default function CreateAuctionWizardModal({
                     <button
                       type="button"
                       onClick={handleApplyAiPrice}
-                      className="h-9 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors flex items-center gap-1.5"
+                      className="h-9 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-xs"
                     >
                       <Check className="size-3.5" />
-                      <span>Áp dụng {formatVND(aiValuation.suggestedPrice)}</span>
+                      <span>Áp dụng {aiValuation.suggestedPrice.toLocaleString("vi-VN")} ₫</span>
                     </button>
                   ) : (
                     <button
                       type="button"
                       onClick={handleRequestAiValuation}
                       disabled={loadingAi}
-                      className="h-9 px-3 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-medium transition-colors flex items-center gap-1.5"
+                      className="h-9 px-3 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-xs"
                     >
                       {loadingAi ? (
                         <>
@@ -978,100 +1062,72 @@ export default function CreateAuctionWizardModal({
                 </div>
               </div>
 
-              {/* Ô nhập Giá khởi điểm */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-900 flex items-center justify-between">
-                  <span>
-                    Giá khởi điểm mở phiên
-                    <span className="text-rose-600 font-bold ml-1">*</span>
-                  </span>
-                  <span className="text-xs font-mono font-semibold text-[#E4011E]">
-                    {formatVND(startingPrice)}
-                  </span>
+              {/* Ô nhập Giá khởi điểm (Tự động định dạng tiền) */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-900 block">
+                  Giá khởi điểm mở phiên
+                  <span className="text-rose-600 font-bold ml-1">*</span>
                 </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min={100_000}
-                    step={100_000}
-                    value={startingPrice || ""}
-                    onChange={(e) => {
-                      const v = Math.max(0, Number(e.target.value));
-                      setStartingPrice(v);
-                      if (auctionType === AuctionTypeEnum.DUTCH && reservePrice > v) {
-                        setReservePrice(Math.round(v * 0.6));
-                      }
-                    }}
-                    placeholder="Nhập giá khởi điểm (VNĐ)..."
-                    className="w-full h-11 px-3.5 rounded-xl border border-slate-200 text-slate-900 font-medium text-sm focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-hidden"
-                  />
-                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">
-                    VNĐ
-                  </span>
-                </div>
+                <FormattedCurrencyInput
+                  value={startingPrice}
+                  onChange={(val) => {
+                    setStartingPrice(val);
+                    if (auctionType === AuctionTypeEnum.DUTCH && reservePrice > val) {
+                      setReservePrice(Math.round(val * 0.6));
+                    }
+                  }}
+                  placeholder="Nhập giá khởi điểm..."
+                />
                 {/* Các nút chọn nhanh mức giá */}
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  {[2_000_000, 5_000_000, 10_000_000, 20_000_000, 50_000_000].map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => {
-                        setStartingPrice(p);
-                        if (auctionType === AuctionTypeEnum.DUTCH) {
-                          setReservePrice(Math.round(p * 0.6));
-                        } else {
-                          setReservePrice(Math.round(p * 1.15));
-                        }
-                      }}
-                      className={`px-2.5 py-1 rounded-lg border text-xs font-medium transition-colors ${
-                        startingPrice === p
-                          ? "border-[#E4011E] bg-red-50 text-[#E4011E]"
-                          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                      }`}
-                    >
-                      {formatVND(p)}
-                    </button>
-                  ))}
+                  {[2_000_000, 5_000_000, 10_000_000, 20_000_000, 50_000_000].map((p) => {
+                    const isSelected = startingPrice === p;
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => {
+                          setStartingPrice(p);
+                          if (auctionType === AuctionTypeEnum.DUTCH) {
+                            setReservePrice(Math.round(p * 0.6));
+                          } else {
+                            setReservePrice(Math.round(p * 1.15));
+                          }
+                        }}
+                        className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                          isSelected
+                            ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/30"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
+                        }`}
+                      >
+                        {p.toLocaleString("vi-VN")} ₫
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Ô nhập Giá sàn dừng giảm (Hà Lan) hoặc Giá kỳ vọng (Anh) */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-900 flex items-center justify-between">
-                  <span>
-                    {auctionType === AuctionTypeEnum.DUTCH ? (
-                      <>
-                        Giá sàn dừng giảm tối thiểu
-                        <span className="text-rose-600 font-bold ml-1">*</span>
-                      </>
-                    ) : (
-                      <>
-                        Mức giá kỳ vọng tối thiểu (Tùy chọn)
-                      </>
-                    )}
-                  </span>
-                  <span className="text-xs font-mono font-semibold text-slate-700">
-                    {formatVND(reservePrice)}
-                  </span>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-900 block">
+                  {auctionType === AuctionTypeEnum.DUTCH ? (
+                    <>
+                      Giá sàn dừng giảm tối thiểu
+                      <span className="text-rose-600 font-bold ml-1">*</span>
+                    </>
+                  ) : (
+                    <>Mức giá kỳ vọng tối thiểu (Tùy chọn)</>
+                  )}
                 </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min={0}
-                    step={100_000}
-                    value={reservePrice || ""}
-                    onChange={(e) => setReservePrice(Math.max(0, Number(e.target.value)))}
-                    placeholder={
-                      auctionType === AuctionTypeEnum.DUTCH
-                        ? "Mức giá tối thiểu dừng giảm..."
-                        : "Giá bảo lưu không bắt buộc..."
-                    }
-                    className="w-full h-11 px-3.5 rounded-xl border border-slate-200 text-slate-900 font-medium text-sm focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-hidden"
-                  />
-                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">
-                    VNĐ
-                  </span>
-                </div>
+                <FormattedCurrencyInput
+                  value={reservePrice}
+                  onChange={(val) => setReservePrice(val)}
+                  placeholder={
+                    auctionType === AuctionTypeEnum.DUTCH
+                      ? "Mức giá tối thiểu dừng giảm..."
+                      : "Giá bảo lưu không bắt buộc..."
+                  }
+                />
                 <p className="text-[11px] text-slate-500 leading-relaxed">
                   {auctionType === AuctionTypeEnum.DUTCH
                     ? "Trong đấu giá giảm dần, khi giá tự động hạ tới mức giá sàn này, hệ thống sẽ dừng giảm để bảo vệ tài sản của bạn."
@@ -1080,50 +1136,39 @@ export default function CreateAuctionWizardModal({
               </div>
 
               {/* Ô nhập Tiền đặt cọc của người tham gia */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-900 flex items-center justify-between">
-                  <span>
-                    Tiền đặt cọc của người tham gia
-                    <span className="text-rose-600 font-bold ml-1">*</span>
-                  </span>
-                  <span className="text-xs font-mono font-semibold text-slate-700">
-                    {formatVND(depositAmount)}
-                  </span>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-900 block">
+                  Tiền đặt cọc của người tham gia
+                  <span className="text-rose-600 font-bold ml-1">*</span>
                 </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min={0}
-                    step={100_000}
-                    value={depositAmount || ""}
-                    onChange={(e) => setDepositAmount(Math.max(0, Number(e.target.value)))}
-                    placeholder="Tiền cọc người mua (VNĐ)..."
-                    className="w-full h-11 px-3.5 rounded-xl border border-slate-200 text-slate-900 font-medium text-sm focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-hidden"
-                  />
-                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">
-                    VNĐ
-                  </span>
-                </div>
+                <FormattedCurrencyInput
+                  value={depositAmount}
+                  onChange={(val) => setDepositAmount(val)}
+                  placeholder="Nhập số tiền đặt cọc..."
+                />
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  {[500_000, 1_000_000, 2_000_000, 5_000_000].map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setDepositAmount(c)}
-                      className={`px-2.5 py-1 rounded-lg border text-xs font-medium transition-colors ${
-                        depositAmount === c
-                          ? "border-[#E4011E] bg-red-50 text-[#E4011E]"
-                          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                      }`}
-                    >
-                      {formatVND(c)}
-                    </button>
-                  ))}
+                  {[500_000, 1_000_000, 2_000_000, 5_000_000].map((c) => {
+                    const isSelected = depositAmount === c;
+                    return (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setDepositAmount(c)}
+                        className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                          isSelected
+                            ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/30"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
+                        }`}
+                      >
+                        {c.toLocaleString("vi-VN")} ₫
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Khối minh bạch: Tiền cọc cam kết bán của chủ SIM & Đối chiếu số dư ví */}
-              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
+              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 shadow-xs">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Wallet className="size-4 text-slate-700" />
@@ -1224,44 +1269,34 @@ export default function CreateAuctionWizardModal({
               {auctionType === AuctionTypeEnum.ENGLISH && (
                 <div className="space-y-5">
                   {/* Bước giá tối thiểu */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-900 flex items-center justify-between">
-                      <span>
-                        Bước giá tối thiểu mỗi lượt
-                        <span className="text-rose-600 font-bold ml-1">*</span>
-                      </span>
-                      <span className="text-xs font-mono font-semibold text-[#E4011E]">
-                        {formatVND(minimumBidIncrement)}
-                      </span>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-900 block">
+                      Bước giá tối thiểu mỗi lượt
+                      <span className="text-rose-600 font-bold ml-1">*</span>
                     </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        min={50_000}
-                        step={50_000}
-                        value={minimumBidIncrement || ""}
-                        onChange={(e) => setMinimumBidIncrement(Math.max(0, Number(e.target.value)))}
-                        className="w-full h-11 px-3.5 rounded-xl border border-slate-200 text-slate-900 font-medium text-sm focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-hidden"
-                      />
-                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">
-                        VNĐ
-                      </span>
-                    </div>
+                    <FormattedCurrencyInput
+                      value={minimumBidIncrement}
+                      onChange={(val) => setMinimumBidIncrement(val)}
+                      placeholder="Nhập bước giá tối thiểu..."
+                    />
                     <div className="flex flex-wrap gap-1.5 pt-1">
-                      {[100_000, 200_000, 500_000, 1_000_000, 2_000_000].map((inc) => (
-                        <button
-                          key={inc}
-                          type="button"
-                          onClick={() => setMinimumBidIncrement(inc)}
-                          className={`px-2.5 py-1 rounded-lg border text-xs font-medium transition-colors ${
-                            minimumBidIncrement === inc
-                              ? "border-[#E4011E] bg-red-50 text-[#E4011E]"
-                              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                          }`}
-                        >
-                          {formatVND(inc)}
-                        </button>
-                      ))}
+                      {[100_000, 200_000, 500_000, 1_000_000, 2_000_000].map((inc) => {
+                        const isSelected = minimumBidIncrement === inc;
+                        return (
+                          <button
+                            key={inc}
+                            type="button"
+                            onClick={() => setMinimumBidIncrement(inc)}
+                            className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                              isSelected
+                                ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/30"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
+                            }`}
+                          >
+                            {inc.toLocaleString("vi-VN")} ₫
+                          </button>
+                        );
+                      })}
                     </div>
                     <p className="text-[11px] text-slate-500">
                       Mỗi lần đặt giá, người mua phải trả giá cao hơn giá hiện tại ít nhất bằng mức bước giá này.
@@ -1270,25 +1305,25 @@ export default function CreateAuctionWizardModal({
 
                   {/* Bội số bước giá tối đa */}
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-900 flex items-center justify-between">
-                      <span>
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-semibold text-slate-900">
                         Giới hạn mức nhảy giá mỗi lần
                         <span className="text-rose-600 font-bold ml-1">*</span>
+                      </label>
+                      <span className="text-xs text-slate-500 font-medium">
+                        Tối đa: <strong className="font-mono text-slate-900">{formatVND(minimumBidIncrement * maxStepMultiplier)}</strong>
                       </span>
-                      <span className="text-xs font-mono font-semibold text-slate-700">
-                        Tối đa {maxStepMultiplier} lần bước giá ({formatVND(minimumBidIncrement * maxStepMultiplier)})
-                      </span>
-                    </label>
+                    </div>
                     <div className="grid grid-cols-4 gap-2">
                       {[5, 10, 20, 50].map((mult) => (
                         <button
                           key={mult}
                           type="button"
                           onClick={() => setMaxStepMultiplier(mult)}
-                          className={`h-10 rounded-xl border text-xs font-semibold transition-colors ${
+                          className={`h-10 rounded-lg border text-xs font-semibold transition-all ${
                             maxStepMultiplier === mult
-                              ? "border-[#E4011E] bg-red-50 text-[#E4011E]"
-                              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                              ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/40"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
                           }`}
                         >
                           {mult}x bước giá
@@ -1301,7 +1336,7 @@ export default function CreateAuctionWizardModal({
                   </div>
 
                   {/* Tự động bù giờ ở những giây cuối */}
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 shadow-xs">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Clock className="size-4 text-slate-700" />
@@ -1332,7 +1367,7 @@ export default function CreateAuctionWizardModal({
                             <select
                               value={extensionThresholdSeconds}
                               onChange={(e) => setExtensionThresholdSeconds(Number(e.target.value))}
-                              className="w-full h-9 px-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs"
+                              className="w-full h-10 px-3 rounded-lg border border-slate-300 bg-white text-slate-900 text-xs font-medium focus:border-[#E4011E] focus:ring-2 focus:ring-[#E4011E]/15"
                             >
                               <option value={60}>Trong 1 phút cuối (60 giây)</option>
                               <option value={120}>Trong 2 phút cuối (120 giây)</option>
@@ -1346,7 +1381,7 @@ export default function CreateAuctionWizardModal({
                             <select
                               value={extensionDurationSeconds}
                               onChange={(e) => setExtensionDurationSeconds(Number(e.target.value))}
-                              className="w-full h-9 px-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs"
+                              className="w-full h-10 px-3 rounded-lg border border-slate-300 bg-white text-slate-900 text-xs font-medium focus:border-[#E4011E] focus:ring-2 focus:ring-[#E4011E]/15"
                             >
                               <option value={120}>Kéo dài thêm 2 phút (120 giây)</option>
                               <option value={300}>Kéo dài thêm 5 phút (300 giây)</option>
@@ -1364,7 +1399,7 @@ export default function CreateAuctionWizardModal({
                   </div>
 
                   {/* Cơ chế chuyển nhượng cho người về nhì (Á quân) */}
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-2">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-2 shadow-xs">
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="text-xs font-semibold text-slate-900">
@@ -1389,44 +1424,35 @@ export default function CreateAuctionWizardModal({
               {auctionType === AuctionTypeEnum.DUTCH && (
                 <div className="space-y-5">
                   {/* Mức giảm mỗi chu kỳ */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-900 flex items-center justify-between">
-                      <span>
-                        Mức giảm giá sau mỗi chu kỳ
-                        <span className="text-rose-600 font-bold ml-1">*</span>
-                      </span>
-                      <span className="text-xs font-mono font-semibold text-[#E4011E]">
-                        -{formatVND(dutchDecreaseAmount)}
-                      </span>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-900 block">
+                      Mức giảm giá sau mỗi chu kỳ
+                      <span className="text-rose-600 font-bold ml-1">*</span>
                     </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        min={100_000}
-                        step={100_000}
-                        value={dutchDecreaseAmount || ""}
-                        onChange={(e) => setDutchDecreaseAmount(Math.max(0, Number(e.target.value)))}
-                        className="w-full h-11 px-3.5 rounded-xl border border-slate-200 text-slate-900 font-medium text-sm focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-hidden"
-                      />
-                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">
-                        VNĐ / nấc
-                      </span>
-                    </div>
+                    <FormattedCurrencyInput
+                      value={dutchDecreaseAmount}
+                      onChange={(val) => setDutchDecreaseAmount(val)}
+                      placeholder="Nhập mức giảm mỗi nấc..."
+                      suffix="VNĐ / nấc"
+                    />
                     <div className="flex flex-wrap gap-1.5 pt-1">
-                      {[200_000, 500_000, 1_000_000, 2_000_000].map((amt) => (
-                        <button
-                          key={amt}
-                          type="button"
-                          onClick={() => setDutchDecreaseAmount(amt)}
-                          className={`px-2.5 py-1 rounded-lg border text-xs font-medium transition-colors ${
-                            dutchDecreaseAmount === amt
-                              ? "border-[#E4011E] bg-red-50 text-[#E4011E]"
-                              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                          }`}
-                        >
-                          {formatVND(amt)}
-                        </button>
-                      ))}
+                      {[200_000, 500_000, 1_000_000, 2_000_000].map((amt) => {
+                        const isSelected = dutchDecreaseAmount === amt;
+                        return (
+                          <button
+                            key={amt}
+                            type="button"
+                            onClick={() => setDutchDecreaseAmount(amt)}
+                            className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                              isSelected
+                                ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/30"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
+                            }`}
+                          >
+                            {amt.toLocaleString("vi-VN")} ₫
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -1446,10 +1472,10 @@ export default function CreateAuctionWizardModal({
                           key={item.sec}
                           type="button"
                           onClick={() => setDutchDecreaseIntervalSeconds(item.sec)}
-                          className={`h-10 rounded-xl border text-xs font-semibold transition-colors ${
+                          className={`h-10 rounded-lg border text-xs font-semibold transition-all ${
                             dutchDecreaseIntervalSeconds === item.sec
-                              ? "border-[#E4011E] bg-red-50 text-[#E4011E]"
-                              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                              ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/40"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
                           }`}
                         >
                           {item.text}
@@ -1460,7 +1486,7 @@ export default function CreateAuctionWizardModal({
 
                   {/* Bảng mô phỏng tiến trình hạ giá */}
                   {dutchSimulation && (
-                    <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/50 space-y-2">
+                    <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/50 space-y-2 shadow-xs">
                       <div className="flex items-center gap-2 text-blue-900 font-semibold text-xs">
                         <Info className="size-4 text-blue-600" />
                         <span>Mô phỏng chu trình hạ giá tự động</span>
@@ -1504,49 +1530,109 @@ export default function CreateAuctionWizardModal({
                     { val: "15", label: "Mở sau 15 phút" },
                     { val: "60", label: "Mở sau 1 giờ" },
                     { val: "1440", label: "Mở vào ngày mai" },
-                  ].map((preset) => (
-                    <button
-                      key={preset.val}
-                      type="button"
-                      onClick={() => setStartPreset(preset.val)}
-                      className={`h-10 px-2 rounded-xl border text-xs font-semibold transition-colors ${
-                        startPreset === preset.val
-                          ? "border-[#E4011E] bg-red-50 text-[#E4011E]"
-                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                      }`}
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
+                  ].map((preset) => {
+                    const isSelected = startPreset === preset.val;
+                    return (
+                      <button
+                        key={preset.val}
+                        type="button"
+                        onClick={() => setStartPreset(preset.val)}
+                        className={`h-10 px-2 rounded-lg border text-xs font-semibold transition-all ${
+                          isSelected
+                            ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/40"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Thời lượng diễn ra phiên (áp dụng cho Đấu giá giá lên) */}
               {auctionType === AuctionTypeEnum.ENGLISH && (
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-900 block">
-                    Thời lượng mở phiên đấu giá
-                    <span className="text-rose-600 font-bold ml-1">*</span>
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { h: 12, text: "12 giờ" },
-                      { h: 24, text: "24 giờ (1 ngày)" },
-                      { h: 48, text: "48 giờ (2 ngày)" },
-                    ].map((item) => (
-                      <button
-                        key={item.h}
-                        type="button"
-                        onClick={() => setDurationHours(item.h)}
-                        className={`h-10 rounded-xl border text-xs font-semibold transition-colors ${
-                          durationHours === item.h
-                            ? "border-[#E4011E] bg-red-50 text-[#E4011E]"
-                            : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                        }`}
-                      >
-                        {item.text}
-                      </button>
-                    ))}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-semibold text-slate-900">
+                      Thời lượng mở phiên đấu giá
+                      <span className="text-rose-600 font-bold ml-1">*</span>
+                    </label>
+                    <span className="text-xs text-slate-500">
+                      Đang chọn: <strong className="text-slate-900">{formatDurationText(durationMinutes)}</strong>
+                    </span>
+                  </div>
+
+                  {/* Mục 1: Thử nghiệm nhanh (3 - 5 phút) theo yêu cầu người dùng */}
+                  <div className="p-3 rounded-lg border border-amber-200/90 bg-amber-50/60 space-y-2 shadow-xs">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
+                      <Zap className="size-3.5 text-amber-600" />
+                      <span>Thử nghiệm nhanh (Dành cho kiểm thử chức năng):</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { min: 3, label: "3 phút", desc: "Phiên kết thúc sau 3 phút" },
+                        { min: 5, label: "5 phút", desc: "Phiên kết thúc sau 5 phút" },
+                      ].map((item) => {
+                        const isSelected = durationMinutes === item.min;
+                        return (
+                          <button
+                            key={item.min}
+                            type="button"
+                            onClick={() => setDurationMinutes(item.min)}
+                            className={`p-2.5 rounded-lg border text-left transition-all ${
+                              isSelected
+                                ? "border-amber-600 bg-amber-100/90 text-amber-950 ring-1 ring-amber-500 shadow-xs"
+                                : "border-amber-200 bg-white text-slate-700 hover:border-amber-300 hover:bg-amber-50/40 shadow-xs"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold">{item.label}</span>
+                              <span
+                                className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                                  isSelected
+                                    ? "bg-amber-200 text-amber-900"
+                                    : "bg-slate-100 text-slate-600"
+                                }`}
+                              >
+                                Test nhanh
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">{item.desc}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Mục 2: Thời lượng tiêu chuẩn sàn */}
+                  <div>
+                    <span className="text-xs font-semibold text-slate-700 block mb-1.5">
+                      Thời lượng tiêu chuẩn sàn:
+                    </span>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { min: 720, text: "12 giờ" },
+                        { min: 1440, text: "24 giờ (1 ngày)" },
+                        { min: 2880, text: "48 giờ (2 ngày)" },
+                      ].map((item) => {
+                        const isSelected = durationMinutes === item.min;
+                        return (
+                          <button
+                            key={item.min}
+                            type="button"
+                            onClick={() => setDurationMinutes(item.min)}
+                            className={`h-10 rounded-lg border text-xs font-semibold transition-all ${
+                              isSelected
+                                ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/40"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
+                            }`}
+                          >
+                            {item.text}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               )}
@@ -1561,20 +1647,23 @@ export default function CreateAuctionWizardModal({
                   {[
                     { h: 24, text: "24 giờ (Tiêu chuẩn sàn)" },
                     { h: 48, text: "48 giờ (Kéo dài tối đa)" },
-                  ].map((item) => (
-                    <button
-                      key={item.h}
-                      type="button"
-                      onClick={() => setGracePeriodHours(item.h)}
-                      className={`h-10 rounded-xl border text-xs font-semibold transition-colors ${
-                        gracePeriodHours === item.h
-                          ? "border-[#E4011E] bg-red-50 text-[#E4011E]"
-                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                      }`}
-                    >
-                      {item.text}
-                    </button>
-                  ))}
+                  ].map((item) => {
+                    const isSelected = gracePeriodHours === item.h;
+                    return (
+                      <button
+                        key={item.h}
+                        type="button"
+                        onClick={() => setGracePeriodHours(item.h)}
+                        className={`h-10 rounded-lg border text-xs font-semibold transition-all ${
+                          isSelected
+                            ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/40"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
+                        }`}
+                      >
+                        {item.text}
+                      </button>
+                    );
+                  })}
                 </div>
                 <p className="text-[11px] text-slate-500">
                   Nếu quá thời hạn này người thắng không thanh toán, người thắng sẽ bị xử phạt cọc theo quy chế sàn.
@@ -1582,9 +1671,9 @@ export default function CreateAuctionWizardModal({
               </div>
 
               {/* BẢNG ĐỐI SOÁT THÔNG SỐ NIÊM YẾT */}
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3 shadow-xs">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
-                  <FileText className="size-4 text-[#E4011E]" />
+                  <div className="size-2 rounded-full bg-[#E4011E]" />
                   <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
                     Biên lai đối soát thông số niêm yết
                   </h4>
@@ -1606,6 +1695,10 @@ export default function CreateAuctionWizardModal({
                         ? "Đấu giá tăng dần"
                         : "Đấu giá giảm dần"}
                     </strong>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span className="text-slate-500">Thời lượng mở phiên:</span>
+                    <strong className="text-slate-900">{formatDurationText(durationMinutes)}</strong>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-100">
                     <span className="text-slate-500">Giá khởi điểm:</span>
@@ -1642,7 +1735,9 @@ export default function CreateAuctionWizardModal({
                       <div className="flex justify-between py-1 border-b border-slate-100">
                         <span className="text-slate-500">Tự động bù giờ:</span>
                         <strong className="text-slate-900">
-                          {enableAutoExtension ? `Bù ${extensionDurationSeconds / 60} phút ở ${extensionThresholdSeconds / 60} phút cuối` : "Tắt"}
+                          {enableAutoExtension
+                            ? `Bù ${extensionDurationSeconds / 60} phút ở ${extensionThresholdSeconds / 60} phút cuối`
+                            : "Tắt"}
                         </strong>
                       </div>
                     </>
@@ -1676,7 +1771,7 @@ export default function CreateAuctionWizardModal({
           <button
             type="button"
             onClick={step === 1 ? onClose : handlePrev}
-            className="h-11 px-4 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-sm font-medium transition-colors flex items-center gap-1.5"
+            className="h-11 px-4 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 text-sm font-semibold transition-colors flex items-center gap-1.5 shadow-xs"
           >
             {step === 1 ? (
               <span>Hủy bỏ</span>
@@ -1693,7 +1788,7 @@ export default function CreateAuctionWizardModal({
               <button
                 type="button"
                 onClick={handleNext}
-                className="h-11 px-6 rounded-xl bg-[#E4011E] hover:bg-[#B80018] text-white text-sm font-semibold transition-colors flex items-center gap-2 shadow-sm"
+                className="h-11 px-6 rounded-lg bg-[#E4011E] hover:bg-[#B80018] text-white text-sm font-semibold transition-colors flex items-center gap-2 shadow-xs"
               >
                 <span>Tiếp tục</span>
                 <ArrowRight className="size-4" />
@@ -1703,7 +1798,7 @@ export default function CreateAuctionWizardModal({
                 type="button"
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="h-11 px-6 rounded-xl bg-[#E4011E] hover:bg-[#B80018] text-white text-sm font-semibold transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-11 px-6 rounded-lg bg-[#E4011E] hover:bg-[#B80018] text-white text-sm font-semibold transition-colors flex items-center gap-2 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? (
                   <>
