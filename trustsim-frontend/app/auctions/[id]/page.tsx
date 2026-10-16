@@ -9,6 +9,8 @@ import { auctionService, AuctionDto, BidDto, PendingSettlementDto } from "@/serv
 import { auctionHubService } from "@/services/auctionHubService";
 import { authService } from "@/services/authService";
 import { AuthResponseDto } from "@/types/auth";
+import { walletService } from "@/services/walletService";
+import type { WalletDto } from "@/types/wallet";
 import { ToastContainer, ToastMessage } from "@/components/ui/Toast";
 import { DepositModal } from "@/components/wallet/DepositModal";
 import PostAuctionSettlementTerminal from "@/components/auction/PostAuctionSettlementTerminal";
@@ -168,6 +170,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number; isEnded: boolean }>({ days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: false });
 
   const [mySettlement, setMySettlement] = useState<PendingSettlementDto | null>(null);
+  const [wallet, setWallet] = useState<WalletDto | null>(null);
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [depositInitialAmount, setDepositInitialAmount] = useState<number | null>(null);
   const [dutchConfirmModalOpen, setDutchConfirmModalOpen] = useState(false);
@@ -215,19 +218,24 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
         setBids([]);
       }
 
-      // Tải trạng thái quyết toán nếu đã đăng nhập
+      // Tải trạng thái quyết toán và ví tiền nếu đã đăng nhập
       if (authService.isAuthenticated()) {
         try {
-          const settlements = await auctionService.getPendingSettlements();
+          const [settlements, myWallet] = await Promise.all([
+            auctionService.getPendingSettlements().catch(() => []),
+            walletService.getMyWallet().catch(() => null),
+          ]);
           const match = settlements.find(
             (s) => s.auctionId.toLowerCase() === auctionId.toLowerCase()
           );
           setMySettlement(match || null);
+          if (myWallet) setWallet(myWallet);
         } catch {
           // Bỏ qua lỗi ngầm
         }
       } else {
         setMySettlement(null);
+        setWallet(null);
       }
 
       if (!isBackground) {
@@ -309,11 +317,21 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
 
   /* ─── Countdown Timer ──────────────────────────────────── */
   useEffect(() => {
-    if (!auction?.endAt) return;
-    const target = new Date(auction.endAt).getTime();
+    if (!auction) return;
+    const isScheduled = auction.auctionStatus === "SCHEDULE";
+    const targetDateStr = isScheduled ? auction.startAt : auction.endAt;
+    if (!targetDateStr) return;
+
+    const target = new Date(targetDateStr).getTime();
     const updateTimer = () => {
       const diff = target - Date.now();
-      if (diff <= 0) { setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: true }); return; }
+      if (diff <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: true });
+        if (isScheduled) {
+          fetchAuctionData(true);
+        }
+        return;
+      }
       setTimeLeft({
         days: Math.floor(diff / (1000 * 60 * 60 * 24)),
         hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
@@ -325,7 +343,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
     updateTimer();
     const timerInterval = setInterval(updateTimer, 1000);
     return () => clearInterval(timerInterval);
-  }, [auction?.endAt]);
+  }, [auction?.startAt, auction?.endAt, auction?.auctionStatus]);
 
   const animatedPrice = useCountUp(auction?.currentPrice || 0, 500);
 
@@ -638,14 +656,25 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                   <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Gavel size={17} className="text-[#001743]" />
-                      <h2 className="font-bold text-sm text-[#001743]">{isDutch ? "Mua Ngay" : "Đặt Giá"}</h2>
+                      <h2 className="font-bold text-sm text-[#001743]">
+                        {auction.auctionStatus === "SCHEDULE"
+                          ? "Thông Tin Đăng Ký"
+                          : isDutch
+                          ? "Mua Ngay"
+                          : "Đặt Giá"}
+                      </h2>
                     </div>
-                    {auction.auctionStatus === "ACTIVE" && !timeLeft.isEnded && (
+                    {auction.auctionStatus === "SCHEDULE" ? (
+                      <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                        Sắp mở phiên đấu giá
+                      </span>
+                    ) : auction.auctionStatus === "ACTIVE" && !timeLeft.isEnded ? (
                       <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         {isDutch ? "Đang mở bán" : "Đang nhận lượt trả"}
                       </span>
-                    )}
+                    ) : null}
                   </div>
 
                   <div className="p-5 space-y-5">
@@ -664,11 +693,21 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                           <Clock size={15} />
                         </div>
                         <div>
-                          <span className="text-xs font-bold text-slate-700 block">{timeLeft.isEnded ? "Đã kết thúc" : "Còn lại"}</span>
-                          <span className="text-[11px] text-slate-400 font-mono block">{new Date(auction.endAt).toLocaleTimeString("vi-VN")} · {new Date(auction.endAt).toLocaleDateString("vi-VN")}</span>
+                          <span className="text-xs font-bold text-slate-700 block">
+                            {auction.auctionStatus === "SCHEDULE"
+                              ? "Thời gian mở sàn:"
+                              : timeLeft.isEnded
+                              ? "Đã kết thúc"
+                              : "Thời gian còn lại"}
+                          </span>
+                          <span className="text-[11px] text-slate-400 font-mono block">
+                            {auction.auctionStatus === "SCHEDULE"
+                              ? `${new Date(auction.startAt).toLocaleTimeString("vi-VN")} · ${new Date(auction.startAt).toLocaleDateString("vi-VN")}`
+                              : `${new Date(auction.endAt).toLocaleTimeString("vi-VN")} · ${new Date(auction.endAt).toLocaleDateString("vi-VN")}`}
+                          </span>
                         </div>
                       </div>
-                      {timeLeft.isEnded ? (
+                      {auction.auctionStatus !== "SCHEDULE" && timeLeft.isEnded ? (
                         <span className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-200 text-slate-700">Phiên đã kết thúc</span>
                       ) : (
                         <div className="flex items-center gap-1.5 font-mono self-start sm:self-auto">
@@ -725,8 +764,130 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                       )}
                     </div>
 
-                    {/* Bidding / Dutch Buy Form */}
-                    {auction.auctionStatus === "ACTIVE" && !timeLeft.isEnded ? (
+                    {/* ── CASE 1: PHIÊN SẮP DIỄN RA (SCHEDULE) ── */}
+                    {auction.auctionStatus === "SCHEDULE" ? (
+                      <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-5 space-y-4">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                            <Clock size={20} />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-sm text-[#001743] uppercase tracking-wide">
+                              Phiên Sắp Mở Nhận Trả Giá
+                            </h3>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              Thời gian mở sàn: <strong className="text-slate-700 font-mono">{new Date(auction.startAt).toLocaleTimeString("vi-VN")} · {new Date(auction.startAt).toLocaleDateString("vi-VN")}</strong>
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Phân nhánh A: Chủ phiên (Người bán) */}
+                        {currentUser?.userId === auction.authorId ? (
+                          <div className="p-4 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 space-y-1">
+                            <div className="flex items-center gap-2 font-bold text-blue-950">
+                              <Info size={15} className="text-blue-600 shrink-0" />
+                              <span>Phiên đấu giá do bạn tạo</span>
+                            </div>
+                            <p className="text-slate-600 leading-relaxed">
+                              Phiên đấu giá đang trong thời gian chờ mở sàn. Hệ thống sẽ tự động kích hoạt nhận lệnh trả giá khi đến giờ bắt đầu. Bạn không cần đặt cọc và không thể trả giá trong phiên của mình.
+                            </p>
+                          </div>
+                        ) : !isLoggedIn ? (
+                          /* Phân nhánh B: Khách chưa đăng nhập */
+                          <div className="space-y-3">
+                            <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-center gap-2.5">
+                              <Lock size={15} className="text-amber-700 shrink-0" />
+                              <span>Vui lòng đăng nhập để đặt cọc và sẵn sàng trả giá khi phiên mở sàn.</span>
+                            </div>
+                            <Link
+                              href={`/login?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "")}`}
+                              className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white font-bold text-sm rounded-xl text-center block shadow-md transition-colors"
+                            >
+                              Đăng nhập để đặt cọc tham gia
+                            </Link>
+                          </div>
+                        ) : auction.isUserRegistered ? (
+                          /* Phân nhánh C: Đã đặt cọc thành công */
+                          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl space-y-2">
+                            <div className="flex items-center gap-2 text-emerald-900 font-bold text-sm">
+                              <ShieldCheck size={18} className="text-emerald-600 shrink-0" />
+                              <span>Bạn đã đặt cọc tham gia thành công</span>
+                            </div>
+                            <p className="text-xs text-emerald-800/90 leading-relaxed">
+                              Khoản tiền cọc <strong>{formatPrice(auction.depositAmount)}</strong> đã được tạm khóa bảo đảm. Bảng đặt giá sẽ tự động mở ngay khi phiên bắt đầu!
+                            </p>
+                          </div>
+                        ) : auction.depositAmount > 0 ? (
+                          /* Phân nhánh D: Chưa cọc và có yêu cầu tiền cọc */
+                          <div className="space-y-4">
+                            <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-2.5 text-xs">
+                              <div className="flex justify-between items-center text-slate-600">
+                                <span>Tiền cọc bảo đảm tham gia:</span>
+                                <span className="font-mono font-bold text-[#001743] text-sm tabular-nums">
+                                  {formatPrice(auction.depositAmount)}
+                                </span>
+                              </div>
+                              {wallet && (
+                                <div className="flex justify-between items-center text-slate-500 pt-1.5 border-t border-slate-100 text-[11px]">
+                                  <span>Số dư khả dụng trong ví:</span>
+                                  <span className={`font-mono font-bold tabular-nums ${wallet.availableBalance < auction.depositAmount ? "text-rose-600" : "text-emerald-700"}`}>
+                                    {formatPrice(wallet.availableBalance)}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="pt-2 text-[11px] text-slate-500 flex items-start gap-1.5 leading-relaxed">
+                                <ShieldCheck size={14} className="text-emerald-600 shrink-0 mt-0.5" />
+                                <span>Cam kết hoàn 100% tiền cọc về ví ngay lập tức nếu không trúng đấu giá hoặc phiên bị hủy.</span>
+                              </div>
+                            </div>
+
+                            {wallet && wallet.availableBalance < auction.depositAmount ? (
+                              <div className="space-y-2.5">
+                                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-center justify-between">
+                                  <span>Số dư ví không đủ (Thiếu {formatPrice(auction.depositAmount - wallet.availableBalance)})</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setDepositInitialAmount(auction.depositAmount - wallet.availableBalance);
+                                      setDepositModalOpen(true);
+                                    }}
+                                    className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shrink-0 ml-2 cursor-pointer transition-colors"
+                                  >
+                                    Nạp ví ngay
+                                  </button>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={handleRegisterParticipant}
+                                  disabled={registering}
+                                  className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white font-bold text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
+                                >
+                                  {registering ? <RefreshCw size={15} className="animate-spin" /> : <Wallet size={15} />}
+                                  <span>{registering ? "Đang xác nhận…" : `Đặt cọc (${formatPrice(auction.depositAmount)})`}</span>
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={handleRegisterParticipant}
+                                disabled={registering}
+                                className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white font-bold text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
+                              >
+                                {registering ? <RefreshCw size={15} className="animate-spin" /> : <Wallet size={15} />}
+                                <span>{registering ? "Đang xác nhận…" : `Đặt cọc tham gia (${formatPrice(auction.depositAmount)})`}</span>
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          /* Phân nhánh E: Miễn phí đặt cọc */
+                          <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-center gap-2">
+                            <ShieldCheck size={16} className="text-emerald-600 shrink-0" />
+                            <span>Phiên đấu giá này <strong>miễn phí cọc</strong>. Bạn có thể trực tiếp trả giá ngay khi phiên mở!</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : /* ── CASE 2: PHIÊN ĐANG DIỄN RA (ACTIVE) ── */
+                    auction.auctionStatus === "ACTIVE" && !timeLeft.isEnded ? (
                       !isDutch ? (
                         <form onSubmit={handlePlaceBid} className="space-y-4">
                           <div>
