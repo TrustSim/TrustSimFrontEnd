@@ -49,6 +49,7 @@ import {
 } from "@/services/simService";
 import { getCarriers, SimCarrierDto } from "@/services/carrierService";
 import { getCategories, SimCategoryDto } from "@/services/categoryService";
+import { auctionService } from "@/services/auctionService";
 
 interface OwnedSimsTabProps {
   isEkycVerified: boolean;
@@ -458,7 +459,11 @@ function OwnedSimHeroCard({
 
             {sim.hasActiveAuction ? (
               <Link
-                href={`/auctions/${sim.activeAuctionId || 1}`}
+                href={
+                  sim.activeAuctionId
+                    ? `/auctions/${sim.activeAuctionId}`
+                    : `/auctions?keyword=${sim.simNumber.replace(/\D/g, "")}`
+                }
                 className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-[6px] text-xs font-bold bg-white/10 hover:bg-white/15 border border-white/20 text-white transition-colors shadow-sm whitespace-nowrap flex-1 min-w-[132px]"
               >
                 <span>Đang đấu giá</span>
@@ -574,8 +579,35 @@ export default function OwnedSimsTab({
           createdDate: item.createdDate
             ? new Date(item.createdDate).toLocaleDateString("vi-VN")
             : "10/09/2026",
-          hasActiveAuction: item.simStatus === "IN_AUCTION",
+          hasActiveAuction: item.simStatus === "IN_AUCTION" || Boolean(item.activeAuctionId),
+          activeAuctionId: item.activeAuctionId,
         }));
+
+        // Tra cứu bổ sung nếu SIM đang ở trạng thái đấu giá mà chưa có activeAuctionId
+        const needingAuctionId = mapped.filter((s) => s.hasActiveAuction && !s.activeAuctionId);
+        if (needingAuctionId.length > 0) {
+          try {
+            const auctionsRes = await auctionService.getAuctions({ myAuctions: true, pageSize: 50 });
+            if (auctionsRes.items && auctionsRes.items.length > 0) {
+              mapped.forEach((sim) => {
+                if (sim.hasActiveAuction && !sim.activeAuctionId) {
+                  const cleanPhone = sim.simNumber.replace(/\D/g, "");
+                  const matched = auctionsRes.items.find(
+                    (a) =>
+                      a.simNumberId === sim.id ||
+                      (a.simPhoneNumber && a.simPhoneNumber.replace(/\D/g, "") === cleanPhone)
+                  );
+                  if (matched) {
+                    sim.activeAuctionId = matched.id;
+                  }
+                }
+              });
+            }
+          } catch (e) {
+            console.warn("Không thể tải fallback myAuctions:", e);
+          }
+        }
+
         setOwnedSims(mapped);
       } else {
         setOwnedSims([]);
@@ -1087,7 +1119,11 @@ export default function OwnedSimsTab({
 
                           {sim.hasActiveAuction ? (
                             <Link
-                              href={`/auctions/${sim.activeAuctionId || 1}`}
+                              href={
+                                sim.activeAuctionId
+                                  ? `/auctions/${sim.activeAuctionId}`
+                                  : `/auctions?keyword=${sim.simNumber.replace(/\D/g, "")}`
+                              }
                               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[6px] text-xs font-bold border border-slate-300 text-slate-700 hover:bg-slate-100 transition-colors"
                             >
                               <span>Đang đấu giá</span>

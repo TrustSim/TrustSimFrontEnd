@@ -135,6 +135,7 @@ export interface MySimItemDto {
   categoryNames: string[];
   ownerId?: string;
   verificationStatus?: number | string;
+  activeAuctionId?: string;
   createdDate: string;
 }
 
@@ -223,6 +224,7 @@ export interface AdminSimItemDto {
   ownerFullName?: string;
   ownerPhoneNumber?: string;
   verificationStatus?: number | string;
+  activeAuctionId?: string;
   createdDate: string;
 }
 
