@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { FileText } from "lucide-react";
 import { walletService } from "@/services/walletService";
 import { WalletTransactionDto, WalletTransactionType, TransactionStatus } from "@/types/wallet";
 import { ToastMessage } from "@/components/ui/Toast";
@@ -141,6 +143,13 @@ export default function TransactionsTab({
           </select>
 
           {/* Action Buttons */}
+          <Link
+            href="/profile?tab=contracts"
+            className="btn-outline"
+            style={{ padding: "7px 14px", fontSize: 12.5, borderRadius: 6, display: "flex", alignItems: "center", gap: 5, textDecoration: "none", color: "#001743" }}
+          >
+            <FileText size={15} /> Tiến trình hợp đồng SIM
+          </Link>
           <button
             type="button"
             onClick={onOpenDeposit}

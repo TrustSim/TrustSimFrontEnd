@@ -57,3 +57,60 @@ export interface TradeFilter {
   pageIndex?: number;
   pageSize?: number;
 }
+
+export interface ContractPreviewDto {
+  tradeId: string;
+  tradeTransactionCode: string;
+  htmlContent: string;
+  buyerSigned: boolean;
+  buyerSignedAt?: string;
+  sellerSigned: boolean;
+  sellerSignedAt?: string;
+  isFullySigned: boolean;
+  contractStatus: string;
+  documentPdfUrl?: string;
+  signingDeadline: string;
+  documentHash?: string;
+  padesSignatureSerial?: string;
+  padesSignatureHash?: string;
+  tsaTimestamp?: string;
+  tsaAuthority?: string;
+  isAutoEnforced?: boolean;
+  sealedAt?: string;
+  buyerIp?: string;
+  buyerAuthMethod?: string;
+  sellerIp?: string;
+  sellerAuthMethod?: string;
+}
+
+export interface TransferProofDto {
+  proofId?: string;
+  documentType: string;
+  proofDocumentUrl: string;
+  uploadedAt: string;
+  note?: string;
+}
+
+export interface SimTransferDetailsDto {
+  tradeId: string;
+  tradeTransactionCode: string;
+  simTransferId?: string;
+  simTransferStatus: string;
+  startAt?: string;
+  deadline?: string;
+  cancelledReason?: string;
+  isSeller: boolean;
+  isBuyer: boolean;
+  canSubmitProof: boolean;
+  canConfirmTransfer: boolean;
+  simPhoneNumber: string;
+  proofs: TransferProofDto[];
+  escrowAmount: number;
+  escrowStatus: string;
+  platformFeePercent: number;
+  platformFeeAmount: number;
+  netSellerPayout: number;
+  completedAt?: string;
+  message?: string;
+}
+

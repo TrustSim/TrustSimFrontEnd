@@ -95,9 +95,11 @@ function ProfilePageInner() {
     setUser(currentUser);
 
     if (typeof window !== "undefined") {
-      const tabParam = searchParams.get("tab") as ProfileTab;
-      if (tabParam && ["overview", "ekyc", "auctions", "bids", "transactions", "contracts", "settings"].includes(tabParam)) {
-        setActiveTab(tabParam);
+      const tabParam = searchParams.get("tab");
+      if (tabParam === "trades" || tabParam === "contracts") {
+        setActiveTab("contracts");
+      } else if (tabParam && ["overview", "ekyc", "auctions", "bids", "transactions", "settings"].includes(tabParam)) {
+        setActiveTab(tabParam as ProfileTab);
       }
     }
 

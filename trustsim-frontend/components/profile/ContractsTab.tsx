@@ -14,22 +14,14 @@ import {
   FileText,
   Search,
   RefreshCw,
-  Copy,
   ExternalLink,
-  ShieldCheck,
   CheckCircle2,
   Clock,
   AlertTriangle,
-  X,
   ChevronRight,
   ArrowRight,
+  Copy,
   Lock,
-  User,
-  Smartphone,
-  CreditCard,
-  Building,
-  Check,
-  ArrowUpRight,
 } from "lucide-react";
 
 interface ContractsTabProps {
@@ -47,11 +39,6 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
   // Filters & Search
   const [searchKeyword, setSearchKeyword] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
-
-  // Detail Modal State
-  const [selectedTrade, setSelectedTrade] = useState<TradeTransactionDto | null>(
-    null
-  );
 
   const fetchTrades = useCallback(async () => {
     setLoading(true);
@@ -258,10 +245,10 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-black text-[#001743] m-0">
-            Hợp đồng chuyển nhượng & Ký quỹ bảo đảm
+            Hợp đồng chuyển nhượng SIM
           </h2>
           <p className="text-xs text-slate-500 m-0 mt-0.5">
-            Tài khoản bảo chứng trung gian Escrow bảo vệ an toàn 100% tài chính cho cả bên mua và bên bán
+            Tài khoản bảo chứng trung gian bảo vệ an toàn 100% tài chính cho cả bên mua và bên bán
           </p>
         </div>
 
@@ -623,248 +610,6 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
         </div>
       )}
 
-      {/* ── Modal: Chi Tiết Tiến Trình Hợp Đồng ── */}
-      {selectedTrade && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
-        >
-          <div className="bg-white rounded-[10px] border border-slate-200 shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in-50 zoom-in-95">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-[6px] bg-[#001743] text-white flex items-center justify-center">
-                  <FileText size={16} />
-                </div>
-                <div>
-                  <h3 className="text-sm font-extrabold text-[#001743] m-0">
-                    Chi tiết hợp đồng #{selectedTrade.tradeTransactionCode}
-                  </h3>
-                  <div className="text-[11px] text-slate-500 mt-0.5">
-                    Hệ thống lưu trữ và chứng thực hợp đồng điện tử TrustSim
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setSelectedTrade(null)}
-                className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors cursor-pointer"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-5 overflow-y-auto flex flex-col gap-5 text-xs text-slate-600">
-              {/* Status Banner */}
-              <div className="bg-slate-50 border border-slate-200 rounded-[8px] p-3 flex items-center justify-between flex-wrap gap-2">
-                <div>
-                  <div className="text-[11px] text-slate-400 font-semibold uppercase">
-                    Trạng thái tiến trình
-                  </div>
-                  <div className="text-sm font-black text-[#001743] mt-0.5">
-                    {getTradeStatusBadge(selectedTrade.status).text}
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <div className="text-[11px] text-slate-400 font-semibold uppercase">
-                    Tài khoản ký quỹ
-                  </div>
-                  <div className="text-sm font-black text-[#E4011E] font-mono tabular-nums mt-0.5">
-                    {selectedTrade.escrowAmount.toLocaleString("vi-VN")} ₫
-                  </div>
-                </div>
-              </div>
-
-              {/* Transaction Metadata Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="p-3 bg-slate-50/70 border border-slate-100 rounded-[6px]">
-                  <div className="text-[11px] text-slate-400 font-semibold mb-1">
-                    Số SIM chuyển giao
-                  </div>
-                  <div className="text-base font-extrabold text-[#001743] font-mono">
-                    {formatPhoneNumber(selectedTrade.simPhoneNumber)}
-                  </div>
-                </div>
-
-                <div className="p-3 bg-slate-50/70 border border-slate-100 rounded-[6px]">
-                  <div className="text-[11px] text-slate-400 font-semibold mb-1">
-                    Trạng thái ký quỹ Escrow
-                  </div>
-                  <div className="text-xs font-bold text-blue-700">
-                    {getEscrowBadge(selectedTrade.escrowStatus).text}
-                  </div>
-                </div>
-
-                <div className="p-3 bg-slate-50/70 border border-slate-100 rounded-[6px]">
-                  <div className="text-[11px] text-slate-400 font-semibold mb-1">
-                    Bên bán SIM
-                  </div>
-                  <div className="text-xs font-bold text-slate-800">
-                    {selectedTrade.sellerName || "Chưa xác định"}
-                  </div>
-                </div>
-
-                <div className="p-3 bg-slate-50/70 border border-slate-100 rounded-[6px]">
-                  <div className="text-[11px] text-slate-400 font-semibold mb-1">
-                    Bên mua SIM
-                  </div>
-                  <div className="text-xs font-bold text-slate-800">
-                    {selectedTrade.buyerName || "Chưa xác định"}
-                  </div>
-                </div>
-              </div>
-
-              {/* Deadlines Section */}
-              <div className="border border-slate-200 rounded-[8px] p-3">
-                <div className="text-xs font-bold text-[#001743] mb-2 flex items-center gap-1.5">
-                  <Clock size={14} className="text-slate-500" />
-                  <span>Các mốc thời gian chuyển nhượng quan trọng</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11.5px]">
-                  <div>
-                    <span className="text-slate-400">Thời hạn nộp ký quỹ:</span>{" "}
-                    <strong className="text-slate-700 font-mono">
-                      {new Date(selectedTrade.escrowDeadline).toLocaleString(
-                        "vi-VN"
-                      )}
-                    </strong>
-                  </div>
-                  {selectedTrade.signingDeadline && (
-                    <div>
-                      <span className="text-slate-400">Thời hạn ký hợp đồng:</span>{" "}
-                      <strong className="text-slate-700 font-mono">
-                        {new Date(
-                          selectedTrade.signingDeadline
-                        ).toLocaleString("vi-VN")}
-                      </strong>
-                    </div>
-                  )}
-                  {selectedTrade.transferDeadline && (
-                    <div>
-                      <span className="text-slate-400">Thời hạn sang tên:</span>{" "}
-                      <strong className="text-slate-700 font-mono">
-                        {new Date(
-                          selectedTrade.transferDeadline
-                        ).toLocaleString("vi-VN")}
-                      </strong>
-                    </div>
-                  )}
-                  {selectedTrade.completedAt && (
-                    <div>
-                      <span className="text-slate-400">Thời điểm hoàn tất:</span>{" "}
-                      <strong className="text-emerald-700 font-mono">
-                        {new Date(selectedTrade.completedAt).toLocaleString(
-                          "vi-VN"
-                        )}
-                      </strong>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Digital Contract & Blockchain Proof Section */}
-              <div className="border border-slate-200 rounded-[8px] p-3 bg-slate-50/50">
-                <div className="text-xs font-bold text-[#001743] mb-2 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <ShieldCheck size={14} className="text-emerald-600" />
-                    Tính toàn vẹn hợp đồng số hóa
-                  </span>
-                  {selectedTrade.contractStatus && (
-                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
-                      {selectedTrade.contractStatus}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex flex-col gap-2 text-[11px]">
-                  {selectedTrade.documentHash && (
-                    <div className="flex items-center justify-between gap-2 p-2 bg-white rounded border border-slate-200">
-                      <div className="min-w-0">
-                        <div className="font-semibold text-slate-500">
-                          Mã băm tài liệu (SHA-256):
-                        </div>
-                        <div className="font-mono text-slate-800 truncate">
-                          {selectedTrade.documentHash}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleCopy(
-                            selectedTrade.documentHash || "",
-                            "Mã băm tài liệu"
-                          )
-                        }
-                        className="p-1 text-slate-400 hover:text-slate-700"
-                        title="Sao chép"
-                      >
-                        <Copy size={13} />
-                      </button>
-                    </div>
-                  )}
-
-                  {selectedTrade.blockchainTxHash && (
-                    <div className="flex items-center justify-between gap-2 p-2 bg-white rounded border border-slate-200">
-                      <div className="min-w-0">
-                        <div className="font-semibold text-slate-500">
-                          Chứng thực sổ cái phân tán (TxHash):
-                        </div>
-                        <div className="font-mono text-slate-800 truncate">
-                          {selectedTrade.blockchainTxHash}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleCopy(
-                            selectedTrade.blockchainTxHash || "",
-                            "Mã giao dịch sổ cái"
-                          )
-                        }
-                        className="p-1 text-slate-400 hover:text-slate-700"
-                        title="Sao chép"
-                      >
-                        <Copy size={13} />
-                      </button>
-                    </div>
-                  )}
-
-                  {selectedTrade.documentUrl ? (
-                    <a
-                      href={selectedTrade.documentUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-1 inline-flex items-center justify-center gap-1.5 p-2 bg-[#001743] hover:bg-[#00266B] text-white rounded-[6px] font-bold transition-colors"
-                    >
-                      <ExternalLink size={13} />
-                      <span>Xem và tải bản hợp đồng số hóa (.pdf)</span>
-                    </a>
-                  ) : (
-                    <div className="text-slate-400 italic text-[11px] mt-1">
-                      * Bản hợp đồng số đang được tạo lập và lưu trữ trong hồ sơ số hóa.
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end">
-              <button
-                type="button"
-                onClick={() => setSelectedTrade(null)}
-                className="px-4 py-1.5 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-[6px] hover:bg-slate-100 transition-colors cursor-pointer"
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

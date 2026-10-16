@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AuthResponseDto, UserProfileDto } from "@/types/auth";
 import { ToastMessage } from "@/components/ui/Toast";
 import { ProfileTab } from "../../types/types";
@@ -38,6 +39,7 @@ interface OverviewTabProps {
 
 interface ActivityItem {
   id: string;
+  tradeId?: string;
   type: "TRANSACTION" | "TRADE";
   title: string;
   subtitle: string;
@@ -57,6 +59,7 @@ export default function OverviewTab({
   onNavigateTab,
   addToast,
 }: OverviewTabProps) {
+  const router = useRouter();
   const [stats, setStats] = useState({
     ownedSimsCount: 0,
     tradesCount: 0,
@@ -200,6 +203,7 @@ export default function OverviewTab({
 
         feed.push({
           id: `tr-${tr.id}`,
+          tradeId: tr.id,
           type: "TRADE",
           title: `Hợp đồng chuyển nhượng #${tr.tradeTransactionCode}`,
           subtitle: `SIM: ${formatPhoneNumber(tr.simPhoneNumber)}${
@@ -606,11 +610,15 @@ export default function OverviewTab({
                 {activities.map((item) => (
                   <div
                     key={item.id}
-                    onClick={() =>
-                      item.type === "TRADE"
-                        ? onNavigateTab("contracts")
-                        : onNavigateTab("transactions")
-                    }
+                    onClick={() => {
+                      if (item.type === "TRADE" && item.tradeId) {
+                        router.push(`/trades/${item.tradeId}`);
+                      } else if (item.type === "TRADE") {
+                        onNavigateTab("contracts");
+                      } else {
+                        onNavigateTab("transactions");
+                      }
+                    }}
                     className="flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100/80 rounded-[6px] border border-slate-100 transition-colors cursor-pointer group"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
