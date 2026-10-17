@@ -42,6 +42,7 @@ import {
 import { walletService } from "@/services/walletService";
 import type { WalletDto } from "@/types/wallet";
 import { auctionValidators } from "@/utils/validators";
+import { AuctionGuideModal } from "@/components/auction/AuctionGuide";
 
 interface CreateAuctionWizardModalProps {
   sim?: OwnedSim | null;
@@ -144,6 +145,7 @@ export default function CreateAuctionWizardModal({
   // Tiến trình 4 bước
   const [step, setStep] = useState<number>(1);
   const [submitting, setSubmitting] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   // Danh sách SIM sở hữu & SIM được chọn
   const [ownedSimList, setOwnedSimList] = useState<OwnedSim[]>([]);
@@ -709,6 +711,7 @@ export default function CreateAuctionWizardModal({
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 sm:p-6"
     >
       <div className="relative flex flex-col w-full max-w-3xl max-h-[90vh] rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
+        <AuctionGuideModal open={guideOpen} onClose={() => setGuideOpen(false)} initialType="create" />
         {/* ── CỐ ĐỊNH: HEADER ── */}
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
           <div>
@@ -724,6 +727,9 @@ export default function CreateAuctionWizardModal({
               Tạo phiên đấu giá minh bạch, tuân thủ quy chế sàn giao dịch TrustSim
             </p>
           </div>
+          <button type="button" onClick={() => setGuideOpen(true)} className="mr-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:border-[#001743] hover:text-[#001743]">
+            Hướng dẫn tạo phiên
+          </button>
           <button
             type="button"
             onClick={onClose}
@@ -1511,7 +1517,7 @@ export default function CreateAuctionWizardModal({
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
-                    { val: "5", label: "Mở sau 5 phút" },
+                    { val: "2", label: "Mở sau 2 phút" },
                     { val: "15", label: "Mở sau 15 phút" },
                     { val: "60", label: "Mở sau 1 giờ" },
                     { val: "1440", label: "Mở vào ngày mai" },

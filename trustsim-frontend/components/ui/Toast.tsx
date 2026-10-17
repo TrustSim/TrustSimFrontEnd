@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 export type ToastType = "success" | "error" | "warning" | "info";
 
@@ -104,20 +104,25 @@ export const ToastContainer: React.FC<ToastProps> = ({ toasts, onClose }) => {
 
 const ToastItem: React.FC<{ toast: ToastMessage; onClose: () => void }> = ({ toast, onClose }) => {
   const [exiting, setExiting] = useState(false);
+  const onCloseRef = useRef(onClose);
   const style = TOAST_STYLES[toast.type] || TOAST_STYLES.info;
   const duration = toast.duration || 4000;
 
   useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setExiting(true);
-      setTimeout(onClose, 250);
+      setTimeout(() => onCloseRef.current(), 250);
     }, duration);
     return () => clearTimeout(timer);
-  }, [duration, onClose]);
+  }, [duration]);
 
   const handleManualClose = () => {
     setExiting(true);
-    setTimeout(onClose, 250);
+    setTimeout(() => onCloseRef.current(), 250);
   };
 
   const IconComponent = Icons[toast.type] || Icons.info;

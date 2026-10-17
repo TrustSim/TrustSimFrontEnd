@@ -5,6 +5,7 @@ import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import SimAuctionCard, { SimAuctionCardData } from "@/components/ui/SimAuctionCard";
+import { AuctionGuideModal } from "@/components/auction/AuctionGuide";
 import { auctionService, AuctionDto } from "@/services/auctionService";
 import { auctionHubService } from "@/services/auctionHubService";
 import {
@@ -261,6 +262,7 @@ export default function AuctionsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   const [heroAuctions, setHeroAuctions] = useState<AuctionDto[]>([]);
   const [heroIndex, setHeroIndex] = useState(0);
@@ -828,6 +830,9 @@ export default function AuctionsPage() {
                 </span>
               )}
             </div>
+            <button type="button" onClick={() => setGuideOpen(true)} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:border-[#001743] hover:text-[#001743]">
+              Cách tham gia phiên
+            </button>
             {loading && (
               <span className="text-[12px] text-slate-400 flex items-center gap-1.5">
                 <RotateCcw size={12} className="animate-spin" />
@@ -838,7 +843,8 @@ export default function AuctionsPage() {
         </div>
 
         {/* ═══ 4. AUCTION GRID ════════════════════════════════ */}
-        <main className="max-w-[1280px] mx-auto px-4 sm:px-6 pt-4 pb-16">
+       <main className="max-w-[1280px] mx-auto px-4 sm:px-6 pt-4 pb-16">
+          <AuctionGuideModal open={guideOpen} onClose={() => setGuideOpen(false)} initialType="participate" />
           {error && (
             <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 mb-6 flex items-center justify-between">
               <div className="text-[13px] text-rose-800">

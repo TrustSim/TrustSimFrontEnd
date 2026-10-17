@@ -26,8 +26,9 @@ import {
   PhoneCall,
   Check,
   AlertOctagon,
-  Info,
+ Info,
 } from "lucide-react";
+import { AuctionGuide } from "@/components/auction/AuctionGuide";
 
 /* ─── Dữ Liệu Câu Hỏi & Giải Đáp Thực Tế ──────────────────── */
 interface FaqItem {
@@ -122,7 +123,7 @@ const FAQS: FaqItem[] = [
 ];
 
 /* ─── Mục Lục Điều Hướng ─────────────────────────────────── */
-type ChapterKey = "all" | "escrow" | "auction_rules" | "runner_up" | "handover" | "faq";
+type ChapterKey = "all" | "guides" | "escrow" | "auction_rules" | "runner_up" | "handover" | "faq";
 
 export default function RegulationsPage() {
   const [activeChapter, setActiveChapter] = useState<ChapterKey>("all");
@@ -198,7 +199,8 @@ export default function RegulationsPage() {
 
             {/* 4 Trụ Cột An Toàn */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-8 pt-6 border-t border-white/10">
-              {[
+               {[
+                  { key: "guides", label: "Hướng dẫn tạo & tham gia phiên", href: "#auction-guides" },
                 { icon: <Lock size={15} className="text-emerald-400" />, title: "Ký Quỹ 100% An Toàn", desc: "Tiền cọc giữ tại ngân hàng bảo lãnh, hoàn 100% nếu không trúng" },
                 { icon: <Clock size={15} className="text-amber-400" />, title: "Tự Động Bù Giờ Phút Chót", desc: "Tự động cộng thêm thời gian khi có người trả giá ở giây cuối" },
                 { icon: <AlertTriangle size={15} className="text-rose-400" />, title: "Chế Tài Phạt Cọc 50/50", desc: "50% bồi thường cho Người bán, 50% nộp vào Quỹ bảo đảm" },
@@ -233,7 +235,7 @@ export default function RegulationsPage() {
                   { key: "runner_up", label: "Chương III: Chế Tài Bùng Cọc & Quyền Á Quân", href: "#runner-up" },
                   { key: "handover", label: "Chương IV: Quy Trình Sang Tên 5 Bước", href: "#handover" },
                   { key: "faq", label: "Chương V: Câu Hỏi Thường Gặp & Giải Đáp", href: "#faq" },
-                ].map((item) => (
+               ].map((item) => (
                   <a
                     key={item.key}
                     href={item.href}
@@ -266,7 +268,11 @@ export default function RegulationsPage() {
             <div className="space-y-8">
 
               {/* ═══ CHƯƠNG I: KÝ QUỸ ĐẶT CỌC & HOÀN TIỀN ═══ */}
-              <section id="escrow" className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-5">
+             <section id="escrow" className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-5">
+              <section id="auction-guides" className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+                <AuctionGuide initialType="participate" />
+              </section>
+
                 <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
                   <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center font-bold text-sm shrink-0">
                     I
