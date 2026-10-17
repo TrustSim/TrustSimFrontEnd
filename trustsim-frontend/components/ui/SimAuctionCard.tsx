@@ -159,7 +159,7 @@ export const SimAuctionCard: React.FC<SimAuctionCardProps> = ({ data, featured =
             overflow: "hidden",
             display: "flex",
             flexDirection: "column",
-            minHeight: 230,
+            minHeight: 250,
             height: "100%",
             justifyContent: "space-between",
           }}
@@ -168,7 +168,7 @@ export const SimAuctionCard: React.FC<SimAuctionCardProps> = ({ data, featured =
           <MicrochipWatermark isHovered={hovered} />
 
           {/* ═══ 1. HEADER ROW (Carrier, Auction Type, Status / Countdown) ═══ */}
-          <div className="sim-auction-card-header" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", alignItems: "start", gap: 10, position: "relative", zIndex: 2 }}>
+          <div className="sim-auction-card-header" style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8, position: "relative", zIndex: 2 }}>
             {/* Carrier & Auction Type Badges */}
             <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "nowrap", minWidth: 0 }}>
               <span
@@ -210,7 +210,7 @@ export const SimAuctionCard: React.FC<SimAuctionCardProps> = ({ data, featured =
             </div>
 
             {/* Status & Live Countdown Pill */}
-            <div className="sim-auction-card-status" style={{ display: "flex", alignItems: "center", gap: 6, paddingRight: 14, flexShrink: 0, whiteSpace: "nowrap" }}>
+            <div className="sim-auction-card-status" style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 6, paddingRight: 14, flexShrink: 0, whiteSpace: "nowrap" }}>
               {isLive ? (
                 <div
                   style={{
@@ -320,18 +320,19 @@ export const SimAuctionCard: React.FC<SimAuctionCardProps> = ({ data, featured =
               </div>
               <div
                 style={{
-                  fontSize: 19,
+                  fontSize: 17,
                   fontWeight: 900,
                   color: "#E4011E",
                   fontVariantNumeric: "tabular-nums",
                   letterSpacing: "-0.02em",
                   lineHeight: 1.1,
+                  whiteSpace: "nowrap",
                 }}
               >
                 {formattedPrice} <span style={{ fontSize: 13, fontWeight: 700 }}>₫</span>
               </div>
               {formattedStartPrice && (
-                <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>
+                <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2, whiteSpace: "nowrap" }}>
                   Khởi điểm: {formattedStartPrice} ₫
                 </div>
               )}

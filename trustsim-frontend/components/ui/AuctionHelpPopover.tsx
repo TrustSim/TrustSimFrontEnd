@@ -27,6 +27,11 @@ const TOPIC_CONTENT: Record<AuctionHelpTopic, { title: string; description: stri
   "current-price": { title: "Giá hiện tại", description: "Mức giá đang được hệ thống ghi nhận ở thời điểm hiện tại.", impact: "Giá này được dùng làm căn cứ cho lượt trả giá tiếp theo." },
 };
 
+const WHY_IT_MATTERS: Partial<Record<AuctionHelpTopic, string>> = {
+  extension: "Cần để tránh việc đặt giá ở giây cuối khiến người khác không kịp phản hồi. Mọi người đều có thêm thời gian cạnh tranh công bằng.",
+  deposit: "Cần để xác nhận người tham gia có cam kết tài chính và hạn chế lượt đăng ký ảo. Khoản tiền được hoàn lại theo quy định nếu bạn không trúng phiên.",
+};
+
 export function AuctionHelpPopover({ topic, value, children, className = "" }: AuctionHelpPopoverProps) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -76,6 +81,7 @@ export function AuctionHelpPopover({ topic, value, children, className = "" }: A
             <h3 className="pr-6 text-[14px] font-bold text-[#001743]">{content.title}</h3>
             <p className="mt-1.5 text-[12px] leading-relaxed text-slate-600">{content.description}</p>
             <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2.5 text-[12px] leading-relaxed text-slate-700"><strong className="font-bold text-[#001743]">Điều này có nghĩa là:</strong><br />{impact}</div>
+            {WHY_IT_MATTERS[topic] && <div className="mt-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2.5 text-[12px] leading-relaxed text-blue-900"><strong className="font-bold">Vì sao cần?</strong><br />{WHY_IT_MATTERS[topic]}</div>}
             {children && <div className="mt-3 text-[12px] text-slate-600">{children}</div>}
           </div>
         </div>,
