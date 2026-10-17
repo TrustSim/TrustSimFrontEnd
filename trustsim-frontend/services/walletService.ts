@@ -15,13 +15,39 @@ import type {
 } from "@/types/wallet";
 import type { PagedResult } from "@/types/common";
 
+const DEMO_DEPOSIT_STORAGE_KEY = "trustsim_demo_deposit_total";
+
+function getDemoDepositTotal(): number {
+  if (typeof window === "undefined") return 0;
+  const value = Number.parseInt(localStorage.getItem(DEMO_DEPOSIT_STORAGE_KEY) || "0", 10);
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+export function addDemoDeposit(amount: number): number {
+  const nextTotal = getDemoDepositTotal() + amount;
+  localStorage.setItem(DEMO_DEPOSIT_STORAGE_KEY, String(nextTotal));
+  window.dispatchEvent(new CustomEvent("trustsim_demo_wallet_updated"));
+  return nextTotal;
+}
+
 export const walletService = {
   // ─── User Wallet ──────────────────────────────────────────────────────────
 
   /** Lấy thông tin ví và số dư của tài khoản đang đăng nhập */
   async getMyWallet(): Promise<WalletDto> {
     const res = await apiFetch<WalletDto>("/Wallets/me");
-    if (res.data) return res.data;
+    if (res.data) {
+      // Demo-only overlay: không ghi dữ liệu giả lập vào backend.
+      const demoAmount = getDemoDepositTotal();
+      if (demoAmount > 0) {
+        return {
+          ...res.data,
+          availableBalance: res.data.availableBalance + demoAmount,
+          totalBalance: res.data.totalBalance + demoAmount,
+        };
+      }
+      return res.data;
+    }
     throw new Error(res.message || "Không thể tải thông tin ví");
   },
 

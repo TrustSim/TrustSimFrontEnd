@@ -62,11 +62,12 @@ export default function EkycTab({
           </button>
           <button
             onClick={() => setIsModalOpen(true)}
+            disabled={isPending || loading}
             className="btn-red"
-            style={{ padding: "8px 16px", fontSize: 13, borderRadius: 6, display: "flex", alignItems: "center", gap: 6, fontWeight: 700 }}
+            style={{ padding: "8px 16px", fontSize: 13, borderRadius: 6, display: "flex", alignItems: "center", gap: 6, fontWeight: 700, opacity: isPending || loading ? 0.55 : 1, cursor: isPending || loading ? "not-allowed" : "pointer" }}
           >
             <Icons.ShieldCheck size={16} />
-            {isVerified ? "Cập nhật lại CCCD" : isRejected ? "Nộp lại hồ sơ eKYC" : "Bắt đầu xác thực eKYC"}
+            {isVerified ? "Cập nhật lại CCCD" : isRejected ? "Nộp lại hồ sơ eKYC" : isPending ? "Đang chờ xác minh" : "Bắt đầu xác thực eKYC"}
           </button>
         </div>
       </div>
@@ -1845,4 +1846,3 @@ function EkycWizardModal({
     </div>
   );
 }
-

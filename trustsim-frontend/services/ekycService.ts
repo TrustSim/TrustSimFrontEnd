@@ -94,7 +94,6 @@ export const ekycService = {
 
     return (
       val === 1 || // Domain Enum VerificationStatus.VERIFIED = 1
-      val === 2 || // Sometimes 2 in UI enums
       val === "VERIFIED" ||
       val === "Verified" ||
       val === "verified"

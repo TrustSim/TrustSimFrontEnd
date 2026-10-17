@@ -24,7 +24,7 @@ import {
   AlertCircle,
   HelpCircle,
 } from "lucide-react";
-import { walletService } from "@/services/walletService";
+import { addDemoDeposit, walletService } from "@/services/walletService";
 import type { DepositResponseDto } from "@/types/wallet";
 import { financialValidators } from "@/utils/validators";
 
@@ -46,6 +46,10 @@ const PRESET_AMOUNTS = [
   { label: "10.000.000 ₫", val: 10_000_000 },
 ];
 
+const DEMO_DEPOSIT_ENABLED =
+  process.env.NODE_ENV !== "production" &&
+  process.env.NEXT_PUBLIC_ENABLE_DEMO_DEPOSIT !== "false";
+
 export const DepositModal: React.FC<DepositModalProps> = ({
   isOpen,
   onClose,
@@ -59,6 +63,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [depositData, setDepositData] = useState<DepositResponseDto | null>(null);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
+  const [isDemoDeposit, setIsDemoDeposit] = useState<boolean>(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [error, setError] = useState<string>("");
   const [timeLeft, setTimeLeft] = useState<number>(1800);
@@ -78,6 +83,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
       setCustomInput(startAmount.toLocaleString("vi-VN"));
       setDepositData(null);
       setIsCompleted(false);
+      setIsDemoDeposit(false);
       setError("");
       setTimeLeft(1800);
       setAutoCloseCountdown(3);
@@ -225,6 +231,33 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDemoDeposit = () => {
+    const valRes = financialValidators.validateDeposit(amount);
+    if (!valRes.isValid) {
+      setError(valRes.error || "Số tiền nạp tối thiểu là 10.000 ₫");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    const demoTransactionCode = `DEMO-${Date.now().toString(36).toUpperCase()}`;
+
+    window.setTimeout(() => {
+      addDemoDeposit(amount);
+      setIsDemoDeposit(true);
+      setDepositData({
+        transactionId: demoTransactionCode,
+        transactionCode: demoTransactionCode,
+        amount,
+        transferContent: "Nạp tiền giả lập",
+        qrCodeUrl: "",
+        expiredAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+      });
+      setIsCompleted(true);
+      setLoading(false);
+    }, 350);
   };
 
   const handleCopy = (text: string, field: string) => {
@@ -382,7 +415,9 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500">Kênh thanh toán:</span>
-                  <span className="font-semibold text-[#001743]">VietQR SePay (Tự động 24/7)</span>
+                  <span className="font-semibold text-[#001743]">
+                    {isDemoDeposit ? "Nạp tiền giả lập (môi trường demo)" : "VietQR SePay (Tự động 24/7)"}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center border-t border-dashed border-slate-200 pt-2.5">
                   <span className="text-slate-500">Trạng thái:</span>
@@ -520,6 +555,29 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   )}
                 </button>
               </div>
+
+              {DEMO_DEPOSIT_ENABLED && (
+                <div className="mt-1 rounded-xl border border-dashed border-amber-300 bg-amber-50/70 p-3.5">
+                  <div className="flex items-start gap-2.5">
+                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-amber-900">Môi trường thử nghiệm</p>
+                      <p className="mt-0.5 text-[11px] leading-relaxed text-amber-800/80">
+                        Không cần quét mã hoặc chuyển tiền thật. Số dư giả lập chỉ lưu trên trình duyệt này.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleDemoDeposit}
+                        disabled={loading || amount < 10_000}
+                        className="mt-2.5 inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-amber-400 bg-white px-3 text-xs font-bold text-amber-900 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Giả lập nạp {amount > 0 ? `${amount.toLocaleString("vi-VN")} ₫` : "tiền"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             /* ═══ BƯỚC 2: VIETQR PAYMENT COCKPIT (QUÉT MÃ & THÔNG TIN CHUYỂN KHOẢN) ═══ */
