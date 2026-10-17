@@ -1508,6 +1508,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                     <CollapsibleSection
                       title={isDutch ? "Quy Chế Đấu Giá Hà Lan (Giảm Dần)" : "Quy Chế Đấu Giá Kiểu Anh (Tăng Dần)"}
                       icon={isDutch ? <TrendingDown size={16} /> : <Scale size={16} />}
+                      defaultOpen={false}
                       badge={<span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600">Quy định phiên</span>}
                     >
                       <div className="p-5 space-y-5">
