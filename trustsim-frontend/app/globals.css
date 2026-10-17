@@ -442,6 +442,22 @@ body {
   min-width: 0;
 }
 
+.sim-auction-card-badges {
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .sim-auction-card-header {
+    grid-template-columns: minmax(0, 1fr) !important;
+    row-gap: 8px !important;
+  }
+
+  .sim-auction-card-status {
+    justify-self: start;
+    padding-right: 0 !important;
+  }
+}
+
 .auction-desk-action .overflow-x-auto {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

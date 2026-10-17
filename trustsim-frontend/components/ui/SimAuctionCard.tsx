@@ -168,7 +168,7 @@ export const SimAuctionCard: React.FC<SimAuctionCardProps> = ({ data, featured =
           <MicrochipWatermark isHovered={hovered} />
 
           {/* ═══ 1. HEADER ROW (Carrier, Auction Type, Status / Countdown) ═══ */}
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", alignItems: "start", gap: 10, position: "relative", zIndex: 2 }}>
+          <div className="sim-auction-card-header" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", alignItems: "start", gap: 10, position: "relative", zIndex: 2 }}>
             {/* Carrier & Auction Type Badges */}
             <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "nowrap", minWidth: 0 }}>
               <span
@@ -210,7 +210,7 @@ export const SimAuctionCard: React.FC<SimAuctionCardProps> = ({ data, featured =
             </div>
 
             {/* Status & Live Countdown Pill */}
-            <div style={{ display: "flex", alignItems: "center", gap: 6, paddingRight: 14, flexShrink: 0, whiteSpace: "nowrap" }}>
+            <div className="sim-auction-card-status" style={{ display: "flex", alignItems: "center", gap: 6, paddingRight: 14, flexShrink: 0, whiteSpace: "nowrap" }}>
               {isLive ? (
                 <div
                   style={{
