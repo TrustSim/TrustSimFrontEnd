@@ -94,8 +94,8 @@ function SimAssetDisplay({ phone, carrier }: { phone?: string; carrier?: string 
   };
 
   return (
-    <div className="flex items-center justify-center gap-3 py-3">
-      <span className="font-mono text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white select-all tabular-nums">
+    <div className="flex items-center justify-center gap-2 py-1.5">
+      <span className="font-mono text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white select-all tabular-nums">
         {formatted}
       </span>
       <button
@@ -425,8 +425,8 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
   }, [auctionId]);
 
   /* ─── Precise Timeline & Lifecycle Phase Derivation ───── */
-  const startMs = useMemo(() => (auction?.startAt ? new Date(auction.startAt).getTime() : 0), [auction?.startAt]);
-  const endMs = useMemo(() => (auction?.endAt ? new Date(auction.endAt).getTime() : 0), [auction?.endAt]);
+  const startMs = useMemo(() => (auction?.startAt ? new Date(auction.startAt).getTime() : 0), [auction]);
+  const endMs = useMemo(() => (auction?.endAt ? new Date(auction.endAt).getTime() : 0), [auction]);
 
   const isTerminatedInDb = useMemo(() => {
     return auction?.auctionStatus === "END" || auction?.auctionStatus === "CANCELLED" || auction?.auctionStatus === "FAILED";
@@ -757,7 +757,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
     }
 
     return (
-      <form onSubmit={handlePlaceBid} className="space-y-2.5">
+      <form onSubmit={handlePlaceBid} className="auction-desk-action space-y-2.5 min-w-0">
         <div className="flex items-center justify-between gap-3 text-xs"><label htmlFor="auction-desk-bid" className="font-semibold text-slate-700">Mức giá muốn trả</label><span className="font-mono text-slate-500 tabular-nums">Tối thiểu {formatPrice((auction?.currentPrice || 0) + (auction?.minBidStep || 500_000))}</span></div>
         <div className="flex gap-2">
           <input id="auction-desk-bid" type="text" inputMode="numeric" value={bidAmountInput} onChange={(e) => handleInputChange(e.target.value)} aria-invalid={Boolean(inputError)} className={`h-11 min-w-0 flex-1 rounded-lg border bg-white px-3 font-mono text-base font-bold text-[#001743] outline-none transition-colors ${inputError ? "border-rose-400 ring-2 ring-rose-100" : "border-slate-300 focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10"}`} />
@@ -896,7 +896,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                 <div className="order-2 flex flex-col gap-5 lg:order-none">
 
                   {/* ── 1. SIM ASSET SHOWCASE ── */}
-                  <div className="order-2 lg:order-2 bg-[#001743] rounded-2xl border border-[#0D2847] p-4 sm:p-5 text-white shadow-none relative overflow-hidden">
+                  <div className="order-1 lg:order-1 bg-[#001743] rounded-2xl border border-[#0D2847] p-3 sm:p-4 text-white shadow-none relative overflow-hidden">
                     <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
                     <div className="absolute -right-16 -top-16 w-[300px] h-[300px] rounded-full opacity-[0.05]" style={{ background: "radial-gradient(circle, #E4011E, transparent 70%)" }} />
 
@@ -970,7 +970,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                   </div>
 
                   {/* ── 2. BIDDING CONSOLE ── */}
-                  <div className={`order-1 lg:order-1 bg-white border rounded-2xl shadow-none overflow-hidden transition-colors duration-200 ${antiSnipingFlash ? "border-emerald-400 ring-2 ring-emerald-200" : "border-slate-200"}`}>
+                  <div className={`order-2 lg:order-2 bg-white border rounded-2xl shadow-none overflow-hidden transition-colors duration-200 ${antiSnipingFlash ? "border-emerald-400 ring-2 ring-emerald-200" : "border-slate-200"}`}>
                     <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Gavel size={17} className="text-[#001743]" />

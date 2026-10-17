@@ -169,7 +169,7 @@ export const SimAuctionCard: React.FC<SimAuctionCardProps> = ({ data, featured =
           {/* ═══ 1. HEADER ROW (Carrier, Auction Type, Status / Countdown) ═══ */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, position: "relative", zIndex: 2 }}>
             {/* Carrier & Auction Type Badges */}
-            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "nowrap", minWidth: 0 }}>
               <span
                 style={{
                   fontSize: 11,
@@ -196,6 +196,7 @@ export const SimAuctionCard: React.FC<SimAuctionCardProps> = ({ data, featured =
                     border: "1px solid #E5E7EB",
                     padding: "3px 7px",
                     borderRadius: 4,
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {data.type === "english" ? "Đấu giá Anh" : data.type === "dutch" ? "Đấu giá Hà Lan" : "Bí mật"}

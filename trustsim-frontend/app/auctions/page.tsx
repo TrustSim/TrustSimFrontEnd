@@ -28,10 +28,16 @@ function formatCarrier(rawCarrier?: string): string {
   return rawCarrier;
 }
 
-function mapAuctionStatus(status: any): "live" | "upcoming" | "ended" {
+function mapAuctionStatus(status: any, startAt?: string, endAt?: string): "live" | "upcoming" | "ended" {
   const s = String(status).toUpperCase();
+  const now = Date.now();
+  const start = startAt ? new Date(startAt).getTime() : 0;
+  const end = endAt ? new Date(endAt).getTime() : 0;
+  if (start > 0 && end > 0 && now >= start && now < end && s !== "END" && s !== "ENDED" && s !== "CANCELLED") return "live";
+  if (start > 0 && now < start && s !== "END" && s !== "ENDED" && s !== "CANCELLED") return "upcoming";
+  if (end > 0 && now >= end) return "ended";
   if (s === "ACTIVE" || s === "2") return "live";
-  if (s === "SCHEDULE" || s === "1") return "upcoming";
+  if (s === "SCHEDULE" || s === "UPCOMING" || s === "0" || s === "1") return "upcoming";
   return "ended";
 }
 
@@ -48,7 +54,7 @@ function toCardData(item: AuctionDto): SimAuctionCardData {
     simNumber: item.simPhoneNumber || "---",
     carrier: formatCarrier(item.carrierName),
     type: mapAuctionType(item.auctionType),
-    status: mapAuctionStatus(item.auctionStatus),
+    status: mapAuctionStatus(item.auctionStatus, item.startAt, item.endAt),
     currentPrice: item.currentPrice ?? item.startingPrice,
     startPrice: item.startingPrice,
     bidCount: item.totalBids ?? 0,

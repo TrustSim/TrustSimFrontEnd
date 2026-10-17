@@ -437,3 +437,28 @@ body {
   animation: breathe-red 2.5s ease-in-out infinite;
 }
 
+/* Auction desk: keep the compact action panel inside the history column. */
+.auction-desk-action {
+  min-width: 0;
+}
+
+.auction-desk-action .overflow-x-auto {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  overflow: visible;
+}
+
+.auction-desk-action .overflow-x-auto > button {
+  min-width: 0;
+  white-space: normal;
+  line-height: 1.2;
+  padding-inline: 6px;
+}
+
+@media (max-width: 480px) {
+  .auction-desk-action .overflow-x-auto {
+    grid-template-columns: 1fr;
+  }
+}
+
