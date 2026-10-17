@@ -41,6 +41,17 @@ const getAvatarStyle = (name: string = "") => {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 };
 
+const sortAndMergeBids = (items: BidDto[]) => {
+  const unique = new Map<string, BidDto>();
+  for (const bid of items) {
+    const key = String(bid.id || `${bid.userAccountId}-${bid.placedAt}-${bid.bidAmount}`);
+    if (!unique.has(key)) unique.set(key, bid);
+  }
+  return [...unique.values()]
+    .sort((a, b) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime())
+    .map((bid, index) => ({ ...bid, status: index === 0 ? "WINNING" : "OUTBID" }));
+};
+
 /* ─── Animated Count-Up Hook ─────────────────────────────── */
 function useCountUp(target: number, duration: number = 500) {
   const [current, setCurrent] = useState(target);
@@ -202,6 +213,15 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
           setPriceFlash(true);
           setTimeout(() => setPriceFlash(false), 1200);
         }
+        // Không để một phản hồi nền cũ kéo mốc kết thúc đang chạy lùi lại.
+        // Mốc mới chỉ được nhận khi phiên chưa chạy hoặc backend thực sự gia hạn.
+        if (prev && prev.auctionStatus === "ACTIVE" && auctionData.auctionType !== "DUTCH") {
+          const previousEnd = new Date(prev.endAt).getTime();
+          const nextEnd = new Date(auctionData.endAt).getTime();
+          if (Number.isFinite(previousEnd) && Number.isFinite(nextEnd) && nextEnd < previousEnd) {
+            return { ...auctionData, endAt: prev.endAt };
+          }
+        }
         return auctionData;
       });
 
@@ -213,7 +233,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
 
       if (bidsData.length > 0) {
         // Sắp xếp theo thời gian mới nhất trên đầu
-        const sortedBids = [...bidsData].sort((a, b) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime());
+        const sortedBids = sortAndMergeBids(bidsData);
         setBids((prev) => {
           if (prev.length > 0 && sortedBids[0].id !== prev[0]?.id) {
             setNewestBidId(sortedBids[0].id);
@@ -262,6 +282,21 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
   };
 
   useEffect(() => { fetchAuctionData(false); }, [auctionId]);
+
+  // SignalR là kênh chính. Tải lại nhẹ danh sách định kỳ để tự phục hồi khi
+  // trình duyệt ngủ, mạng đổi hoặc một sự kiện bị bỏ lỡ trong lúc kết nối lại.
+  useEffect(() => {
+    const refreshBids = async () => {
+      try {
+        const nextBids = await auctionService.getAuctionBids(auctionId, 40);
+        setBids(sortAndMergeBids(nextBids));
+      } catch {
+        // Không làm gián đoạn màn hình đang xem nếu lần đồng bộ dự phòng lỗi.
+      }
+    };
+    const interval = window.setInterval(refreshBids, 5000);
+    return () => window.clearInterval(interval);
+  }, [auctionId]);
 
   const minBidStepRef = useRef<number>(auction?.minBidStep || 500_000);
   const isDutchRef = useRef<boolean>(isDutch);
@@ -321,15 +356,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
       });
 
       // Cập nhật danh sách bids theo thời gian thực (loại bỏ trùng lặp, đẩy bid mới lên đầu, cập nhật trạng thái OUTBID cho các bid cũ)
-      setBids((prev) => {
-        const remaining = prev
-          .filter((b) => b.id !== normalizedBid.id)
-          .map((b) => ({ ...b, status: "OUTBID" }));
-        const updated = [normalizedBid, ...remaining];
-        return updated.sort(
-          (a, b) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime()
-        );
-      });
+      setBids((prev) => sortAndMergeBids([normalizedBid, ...prev]));
 
       setNewestBidId(normalizedBid.id);
       setTimeout(() => setNewestBidId(null), 3000);
@@ -343,7 +370,8 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
       }
 
       // Tự động đồng bộ ngầm toàn bộ dữ liệu phiên (ví tiền, người tham gia, hạn chót) mà không gián đoạn UI
-      fetchAuctionData(true);
+      // Bản tin SignalR đã cập nhật màn hình ngay; lần tải nền sau đó chỉ
+      // bổ sung dữ liệu phụ, không để phản hồi cũ ghi đè danh sách lượt giá.
     });
 
     auctionHubService.onAuctionExtended((newEndAtStr) => {
@@ -451,7 +479,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
     const diff = Math.max(0, endMs - now);
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60)) / (1000 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
     const isUrgentAmber = days === 0 && hours === 0 && minutes < 5 && minutes >= 1;
     const isUrgentRed = days === 0 && hours === 0 && minutes === 0;
@@ -641,13 +669,10 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
       const newBid = await auctionService.placeBid(auctionId, amount);
       addToast({ type: "success", title: "Đặt giá thành công!", message: `Bạn đang dẫn đầu với ${formatPrice(amount)}.`, duration: 4000 });
       setAuction((prev) => (prev ? { ...prev, currentPrice: newBid.bidAmount, totalBids: prev.totalBids + 1 } : null));
-      setBids((prev) => {
-        const merged = [newBid, ...prev.map((b) => ({ ...b, status: "OUTBID" }))];
-        return merged.sort((a, b) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime());
-      });
+      setBids((prev) => sortAndMergeBids([newBid, ...prev]));
       setNewestBidId(newBid.id);
       setBidAmountInput((newBid.bidAmount + (auction.minBidStep || 500_000)).toLocaleString("vi-VN"));
-      fetchAuctionData(true);
+      // SignalR và đồng bộ dự phòng sẽ xác nhận lại lượt giá này.
     } catch (err: any) {
       addToast({ type: "error", title: "Đặt giá thất bại", message: err.message || "Không thể gửi lượt trả giá.", duration: 5000 });
     } finally { setBidding(false); }
@@ -677,8 +702,73 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
   const englishTimerBg = englishTimeLeft.isUrgentRed
     ? "bg-rose-50 text-rose-700 border-rose-200"
     : englishTimeLeft.isUrgentAmber
-    ? "bg-amber-50 text-amber-700 border-amber-200"
-    : "bg-slate-50 text-[#001743] border-slate-200";
+      ? "bg-amber-50 text-amber-700 border-amber-200"
+      : "bg-slate-50 text-[#001743] border-slate-200";
+
+  const renderAuctionDeskAction = () => {
+    if (isEndedPhase) {
+      return <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-center text-xs font-semibold text-slate-600">Phiên đấu giá đã kết thúc</div>;
+    }
+
+    if (currentUser?.userId === auction?.authorId) {
+      return <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 text-xs leading-relaxed text-blue-900">Đây là phiên do bạn tạo. Người bán không thể đặt cọc hoặc đặt giá.</div>;
+    }
+
+    if (!isLoggedIn) {
+      return (
+        <Link href={`/login?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "")}`} className="flex h-11 w-full items-center justify-center rounded-lg bg-[#001743] px-4 text-sm font-bold text-white transition-colors hover:bg-[#00266B]">
+          Đăng nhập để {isScheduledPhase ? "đặt cọc" : isDutch ? "mua ngay" : "đặt giá"}
+        </Link>
+      );
+    }
+
+    const needsDeposit = !auction?.isUserRegistered && (auction?.depositAmount || 0) > 0;
+    if (needsDeposit && auction) {
+      const missingAmount = wallet ? Math.max(0, auction.depositAmount - wallet.availableBalance) : 0;
+      if (wallet && missingAmount > 0) {
+        return (
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between gap-3 text-xs"><span className="text-slate-500">Cần nạp thêm để đặt cọc</span><strong className="font-mono text-rose-600 tabular-nums">{formatPrice(missingAmount)}</strong></div>
+            <button type="button" onClick={() => { setDepositInitialAmount(missingAmount); setDepositModalOpen(true); }} className="h-11 w-full rounded-lg bg-[#001743] px-4 text-sm font-bold text-white transition-colors hover:bg-[#00266B]">Nạp tiền vào ví</button>
+          </div>
+        );
+      }
+      return (
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between gap-3 text-xs"><span className="text-slate-500">Tiền đặt cọc · hoàn lại nếu không trúng</span><strong className="font-mono text-[#001743] tabular-nums">{formatPrice(auction.depositAmount)}</strong></div>
+          <button type="button" onClick={handleRegisterParticipant} disabled={registering} className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#001743] px-4 text-sm font-bold text-white transition-colors hover:bg-[#00266B] disabled:cursor-not-allowed disabled:opacity-60">
+            {registering && <RefreshCw size={15} className="animate-spin" />}{registering ? "Đang xác nhận…" : `Đặt cọc ${formatPrice(auction.depositAmount)}`}
+          </button>
+        </div>
+      );
+    }
+
+    if (isScheduledPhase) {
+      return <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-center text-xs font-semibold text-emerald-800">{auction?.isUserRegistered ? "Đã đặt cọc · sẵn sàng tham gia" : "Phiên này không yêu cầu đặt cọc"}</div>;
+    }
+
+    if (isDutch && auction) {
+      return (
+        <button type="button" onClick={handleOpenDutchConfirm} disabled={acceptingDutchBuy} className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#E4011E] px-4 text-sm font-bold text-white transition-colors hover:bg-[#C00119] disabled:cursor-not-allowed disabled:opacity-60">
+          {acceptingDutchBuy && <RefreshCw size={15} className="animate-spin" />}{acceptingDutchBuy ? "Đang xác nhận…" : `Mua ngay ${formatPrice(auction.currentPrice)}`}
+        </button>
+      );
+    }
+
+    return (
+      <form onSubmit={handlePlaceBid} className="space-y-2.5">
+        <div className="flex items-center justify-between gap-3 text-xs"><label htmlFor="auction-desk-bid" className="font-semibold text-slate-700">Mức giá muốn trả</label><span className="font-mono text-slate-500 tabular-nums">Tối thiểu {formatPrice((auction?.currentPrice || 0) + (auction?.minBidStep || 500_000))}</span></div>
+        <div className="flex gap-2">
+          <input id="auction-desk-bid" type="text" inputMode="numeric" value={bidAmountInput} onChange={(e) => handleInputChange(e.target.value)} aria-invalid={Boolean(inputError)} className={`h-11 min-w-0 flex-1 rounded-lg border bg-white px-3 font-mono text-base font-bold text-[#001743] outline-none transition-colors ${inputError ? "border-rose-400 ring-2 ring-rose-100" : "border-slate-300 focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10"}`} />
+          <button type="submit" disabled={bidding} className="h-11 shrink-0 rounded-lg bg-[#E4011E] px-4 text-sm font-bold text-white transition-colors hover:bg-[#C00119] disabled:cursor-not-allowed disabled:opacity-60">{bidding ? "Đang gửi…" : "Đặt giá"}</button>
+        </div>
+        {inputError && <p className="text-xs font-medium text-rose-600">{inputError}</p>}
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+          {quickAddSteps.slice(0, 4).map((chip) => <button key={chip.val} type="button" onClick={() => handleQuickAdd(chip.val)} className="h-8 shrink-0 rounded-md border border-slate-200 bg-slate-50 px-2.5 text-[11px] font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-100">{chip.label} · {chip.amountText}</button>)}
+        </div>
+      </form>
+    );
+  };
 
   /* ═══════════════════════════════════════════════════════════
      RENDER
@@ -797,849 +887,873 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
               </Link>
             </div>
           ) : (
-            /* ═══ 2-COLUMN LAYOUT ═══ */
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-5 items-start">
+            <>
+              {/* ═══ 2-COLUMN LAYOUT ═══ */}
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-5 items-start">
 
-              {/* ═══ LEFT COLUMN ═══ */}
-              <div className="space-y-5">
+                {/* ═══ LEFT COLUMN ═══ */}
+                <div className="order-2 flex flex-col gap-5 lg:order-none">
 
-                {/* ── 1. SIM ASSET SHOWCASE ── */}
-                <div className="bg-[#001743] rounded-2xl border border-[#0D2847] p-6 text-white shadow-xl relative overflow-hidden">
-                  <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
-                  <div className="absolute -right-16 -top-16 w-[300px] h-[300px] rounded-full opacity-[0.05]" style={{ background: "radial-gradient(circle, #E4011E, transparent 70%)" }} />
+                  {/* ── 1. SIM ASSET SHOWCASE ── */}
+                  <div className="order-2 lg:order-2 bg-[#001743] rounded-2xl border border-[#0D2847] p-4 sm:p-5 text-white shadow-none relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
+                    <div className="absolute -right-16 -top-16 w-[300px] h-[300px] rounded-full opacity-[0.05]" style={{ background: "radial-gradient(circle, #E4011E, transparent 70%)" }} />
 
-                  {/* Header Badges */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 relative z-10 mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-white/10 border border-white/15 text-xs font-bold text-white">
-                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: carrierColor }} />
-                        {auction.carrierName || "Nhà mạng"}
-                      </span>
-                      <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${isDutch ? "bg-blue-500/15 border-blue-400/25 text-blue-300" : "bg-amber-400/15 border-amber-400/25 text-amber-300"}`}>
-                        {isDutch ? (
-                          <span className="flex items-center gap-1"><TrendingDown size={12} />Đấu giá Hà Lan (Giảm dần)</span>
+                    {/* Header Badges */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 relative z-10 mb-4">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-white/10 border border-white/15 text-xs font-bold text-white">
+                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: carrierColor }} />
+                          {auction.carrierName || "Nhà mạng"}
+                        </span>
+                        <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${isDutch ? "bg-blue-500/15 border-blue-400/25 text-blue-300" : "bg-amber-400/15 border-amber-400/25 text-amber-300"}`}>
+                          {isDutch ? (
+                            <span className="flex items-center gap-1"><TrendingDown size={12} />Đấu giá Hà Lan (Giảm dần)</span>
+                          ) : (
+                            <span className="flex items-center gap-1"><TrendingUp size={12} />Đấu giá Kiểu Anh (Tăng dần)</span>
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs text-slate-300 bg-white/10 px-2.5 py-1 rounded-lg border border-white/10">{auction.auctionCode}</span>
+                        {isActivePhase ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/25">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />Đang diễn ra
+                          </span>
+                        ) : isScheduledPhase ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/25">
+                            <Clock size={12} />Sắp mở
+                          </span>
                         ) : (
-                          <span className="flex items-center gap-1"><TrendingUp size={12} />Đấu giá Kiểu Anh (Tăng dần)</span>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-white/10 text-slate-300 border border-white/10">Đã chốt</span>
                         )}
-                      </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-slate-300 bg-white/10 px-2.5 py-1 rounded-lg border border-white/10">{auction.auctionCode}</span>
-                      {isActivePhase ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/25">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />Đang diễn ra
-                        </span>
-                      ) : isScheduledPhase ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/25">
-                          <Clock size={12} />Sắp mở
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-white/10 text-slate-300 border border-white/10">Đã chốt</span>
+
+                    {/* SIM Number */}
+                    <div className="relative z-10">
+                      <div className="text-[11px] font-semibold text-slate-400 text-center mb-1">Số SIM đang đấu giá</div>
+                      <SimAssetDisplay phone={auction.simPhoneNumber} carrier={auction.carrierName} />
+                      {auction.formatRhythmName && (
+                        <div className="text-center mt-1">
+                          <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-[11px] font-semibold bg-white/10 text-slate-300 border border-white/10">
+                            Thế số: {auction.formatRhythmName}
+                          </span>
+                        </div>
                       )}
                     </div>
+
+                    {/* Price Bar */}
+                    <div className="pt-5 border-t border-white/10 flex flex-col sm:flex-row sm:items-end justify-between gap-4 relative z-10 mt-4">
+                      <div>
+                        <div className="text-[11px] font-medium text-slate-400">Giá khởi điểm</div>
+                        <div className="text-base font-bold text-slate-200 font-mono tabular-nums mt-0.5">{formatPrice(auction.startingPrice)}</div>
+                      </div>
+                      <div className="sm:text-right">
+                        <div className="text-[11px] font-bold text-amber-400 flex items-center gap-1.5 sm:justify-end">
+                          {isDutch ? <TrendingDown size={13} /> : <TrendingUp size={13} />}
+                          <span>Giá hiện tại</span>
+                        </div>
+                        <div className={`text-2xl sm:text-3xl font-black text-amber-300 font-mono tabular-nums mt-0.5 transition-transform duration-200 ${priceFlash ? "scale-105" : "scale-100"}`}>
+                          {formatPrice(animatedPrice)}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Trust Strip */}
+                    <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-300 relative z-10 font-medium mt-2">
+                      <span className="flex items-center gap-1.5"><ShieldCheck size={13} className="text-emerald-400" />Sang tên chính chủ</span>
+                      <span className="flex items-center gap-1.5"><CheckCircle2 size={13} className="text-blue-400" />Hợp đồng điện tử</span>
+                      <span className="flex items-center gap-1.5"><Lock size={13} className="text-amber-400" />Ký quỹ 100%</span>
+                    </div>
                   </div>
 
-                  {/* SIM Number */}
-                  <div className="relative z-10">
-                    <div className="text-[11px] font-semibold text-slate-400 text-center mb-1">Số SIM đang đấu giá</div>
-                    <SimAssetDisplay phone={auction.simPhoneNumber} carrier={auction.carrierName} />
-                    {auction.formatRhythmName && (
-                      <div className="text-center mt-1">
-                        <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-[11px] font-semibold bg-white/10 text-slate-300 border border-white/10">
-                          Thế số: {auction.formatRhythmName}
+                  {/* ── 2. BIDDING CONSOLE ── */}
+                  <div className={`order-1 lg:order-1 bg-white border rounded-2xl shadow-none overflow-hidden transition-colors duration-200 ${antiSnipingFlash ? "border-emerald-400 ring-2 ring-emerald-200" : "border-slate-200"}`}>
+                    <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Gavel size={17} className="text-[#001743]" />
+                        <h2 className="font-bold text-sm text-[#001743]">
+                          {isScheduledPhase
+                            ? "Thông Tin Đăng Ký & Đặt Cọc"
+                            : isDutch
+                              ? "Khớp Lệnh Mua Ngay"
+                              : "Bảng Trả Giá Trực Tiếp"}
+                        </h2>
+                      </div>
+                      {isScheduledPhase ? (
+                        <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                          Sắp mở phiên đấu giá
                         </span>
+                      ) : isActivePhase ? (
+                        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          {isDutch ? "Đang mở bán hạ giá" : "Đang nhận lượt trả"}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                          Đã kết thúc
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="p-5 space-y-5">
+                      {/* ── 1. TIMELINE MILESTONE STRIP (RÕ RÀNG BẮT ĐẦU & KẾT THÚC) ── */}
+                      <div className="bg-slate-50/90 border border-slate-200/80 rounded-xl p-3.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs">
+                        {/* Mốc bắt đầu */}
+                        <div className="flex items-center gap-2.5 flex-1">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isScheduledPhase ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>
+                            <Clock size={16} />
+                          </div>
+                          <div>
+                            <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wide">
+                              {isScheduledPhase ? "Thời gian mở sàn" : "Đã mở sàn lúc"}
+                            </span>
+                            <span className="font-mono font-bold text-[#001743] text-sm tabular-nums">
+                              {new Date(auction.startAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                            </span>
+                            <span className="text-[11px] text-slate-500 font-mono ml-1.5">
+                              · {new Date(auction.startAt).toLocaleDateString("vi-VN")}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="hidden sm:block text-slate-300 font-bold text-sm">⟶</div>
+
+                        {/* Mốc kết thúc */}
+                        <div className="flex items-center gap-2.5 flex-1 sm:justify-end">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isEndedPhase ? "bg-slate-200 text-slate-600" : "bg-rose-100 text-rose-800"}`}>
+                            <Flag size={16} />
+                          </div>
+                          <div className="sm:text-right">
+                            <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wide">
+                              {isEndedPhase ? "Đã kết thúc lúc" : isDutch ? "Hạn chót toàn phiên" : "Chốt phiên gõ búa"}
+                            </span>
+                            <span className="font-mono font-bold text-[#001743] text-sm tabular-nums">
+                              {new Date(auction.endAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                            </span>
+                            <span className="text-[11px] text-slate-500 font-mono ml-1.5">
+                              · {new Date(auction.endAt).toLocaleDateString("vi-VN")}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    )}
+
+                      {/* Anti-sniping Alert (English Auction) */}
+                      {!isDutch && antiSnipingFlash && (
+                        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3 text-emerald-800 text-xs font-semibold animate-in fade-in duration-200">
+                          <Flame size={16} className="text-emerald-600 shrink-0" />
+                          <span><strong>Gia hạn giờ chót:</strong> +{auction.extensionDurationSeconds || 30}s để bảo đảm công bằng.</span>
+                        </div>
+                      )}
+
+                      {/* ── 2. DEDICATED COUNTDOWN TIMER DISPLAY ── */}
+                      {isEndedPhase ? (
+                        /* Phiên đã kết thúc */
+                        <div className="p-4 bg-slate-100 border border-slate-200 rounded-xl text-center text-xs font-bold text-slate-700 flex items-center justify-center gap-2">
+                          <Flag size={16} className="text-slate-500" />
+                          <span>Phiên đấu giá đã kết thúc lúc {new Date(auction.endAt).toLocaleTimeString("vi-VN")} · {new Date(auction.endAt).toLocaleDateString("vi-VN")}</span>
+                        </div>
+                      ) : isScheduledPhase ? (
+                        /* CẢ 2 LOẠI: GIAI ĐOẠN CHỜ MỞ SÀN (SCHEDULE) */
+                        /* Đếm ngược chính xác thời gian còn lại đến startAt (VD: mở lúc 16:30, hiện tại 16:20 -> đếm 10 phút, KHÔNG PHẢI 60s) */
+                        <div className="bg-amber-50/80 border border-amber-200/90 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs shrink-0">
+                              <Hourglass size={18} />
+                            </div>
+                            <div>
+                              <span className="text-xs font-bold text-amber-950 block">
+                                {isDutch ? "Mở bán giảm dần sau:" : "Mở sàn nhận trả giá sau:"}
+                              </span>
+                              <span className="text-[11px] text-amber-800 font-mono block">
+                                Mở sàn lúc: <strong>{new Date(auction.startAt).toLocaleTimeString("vi-VN")} · {new Date(auction.startAt).toLocaleDateString("vi-VN")}</strong>
+                              </span>
+                              {isDutch && (
+                                <span className="text-[10px] text-amber-700/90 block mt-0.5">
+                                  Khởi điểm: <strong>{formatPrice(auction.startingPrice)}</strong> · Giảm <strong>-{formatPrice(dutchCalc.decreaseAmount)}</strong> mỗi <strong>{dutchCalc.interval}s</strong>
+                                  {dutchCalc.formatRhythmName ? ` · Thế nhịp: ${dutchCalc.formatRhythmName}` : ""}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 font-mono self-start sm:self-auto">
+                            {scheduledTimeLeft.days > 0 && (
+                              <>
+                                <div className="px-2.5 py-1.5 rounded-lg border border-amber-300 bg-white text-amber-900 text-center min-w-[48px]">
+                                  <span className="text-base font-black tabular-nums block leading-tight">{scheduledTimeLeft.days}</span>
+                                  <span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">ngày</span>
+                                </div>
+                                <span className="text-amber-400 font-bold">:</span>
+                              </>
+                            )}
+                            <div className="px-2.5 py-1.5 rounded-lg border border-amber-300 bg-white text-amber-900 text-center min-w-[48px]">
+                              <span className="text-base font-black tabular-nums block leading-tight">{String(scheduledTimeLeft.hours).padStart(2, "0")}</span>
+                              <span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">giờ</span>
+                            </div>
+                            <span className="text-amber-400 font-bold">:</span>
+                            <div className="px-2.5 py-1.5 rounded-lg border border-amber-300 bg-white text-amber-900 text-center min-w-[48px]">
+                              <span className="text-base font-black tabular-nums block leading-tight">{String(scheduledTimeLeft.minutes).padStart(2, "0")}</span>
+                              <span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">phút</span>
+                            </div>
+                            <span className="text-amber-400 font-bold">:</span>
+                            <div className="px-2.5 py-1.5 rounded-lg border border-amber-300 bg-white text-amber-900 text-center min-w-[48px]">
+                              <span className="text-base font-black tabular-nums block leading-tight">{String(scheduledTimeLeft.seconds).padStart(2, "0")}</span>
+                              <span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">giây</span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : isDutch ? (
+                        /* ĐẤU GIÁ HÀ LAN ĐANG MỞ BÁN (ACTIVE) */
+                        /* Tính toán trực tiếp ở frontend theo chu kỳ & mức giảm từ API, giảm tải cho backend */
+                        <div className="space-y-2.5">
+                          {/* Console nhịp hạ giá tiếp theo */}
+                          <div className="bg-gradient-to-r from-amber-50/80 via-white to-rose-50/50 rounded-xl p-4 border border-amber-200/90 shadow-xs space-y-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                                  <TrendingDown size={17} />
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-xs font-bold text-[#001743]">Nhịp hạ giá tiếp theo:</span>
+                                    <span className="font-mono font-bold text-rose-600 text-xs">-{formatPrice(dutchCalc.decreaseAmount)}</span>
+                                    {dutchCalc.formatRhythmName && (
+                                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
+                                        {dutchCalc.formatRhythmName}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="text-[11px] text-slate-500">
+                                    {dutchCalc.isFloorReached ? (
+                                      <strong className="text-rose-600">Đã chạm giá sàn tối thiểu ({formatPrice(auction.reservePrice)}) - Dừng giảm</strong>
+                                    ) : (
+                                      <>
+                                        Giá tiếp theo: <strong className="font-mono text-emerald-700">{formatPrice(dutchCalc.nextPrice)}</strong>
+                                      </>
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                {dutchCalc.isFloorReached ? (
+                                  <span className="text-xs font-bold px-2 py-1 rounded bg-slate-100 text-slate-600 block">Dừng giảm</span>
+                                ) : (
+                                  <>
+                                    <span className="text-2xl font-black font-mono text-rose-600 tabular-nums block leading-none">
+                                      00:{String(dutchCalc.secondsRemainingInCycle).padStart(2, "0")}
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 font-medium">Chu kỳ {dutchCalc.interval}s</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Thanh tiến trình hạ giá (Progress Bar) */}
+                            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-gradient-to-r from-amber-500 to-rose-600 transition-all duration-1000 ease-linear rounded-full"
+                                style={{
+                                  width: `${dutchCalc.isFloorReached ? 0 : dutchCalc.progressPercent}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Dòng thời gian tối đa toàn phiên */}
+                          <div className="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-lg border border-slate-100 text-[11px] text-slate-600">
+                            <span className="flex items-center gap-1.5 font-medium">
+                              <Clock size={13} className="text-slate-400" />
+                              <span>Hạn chót toàn phiên còn lại:</span>
+                            </span>
+                            <span className="font-mono font-bold text-[#001743]">
+                              {dutchCalc.totalHours > 0 ? `${dutchCalc.totalHours}h ` : ""}{dutchCalc.totalMinutes}m {String(dutchCalc.totalSeconds).padStart(2, "0")}s
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        /* ĐẤU GIÁ KIỂU ANH ĐANG DIỄN RA (ACTIVE) */
+                        /* Đếm ngược đến thời gian kết thúc endAt */
+                        <div className="bg-slate-50/90 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-200/80">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-700 shadow-xs shrink-0">
+                              <Clock size={15} />
+                            </div>
+                            <div>
+                              <span className="text-xs font-bold text-slate-800 block">Thời gian trả giá còn lại:</span>
+                              <span className="text-[11px] text-slate-500 font-mono block">
+                                Chốt phiên gõ búa: {new Date(auction.endAt).toLocaleTimeString("vi-VN")} · {new Date(auction.endAt).toLocaleDateString("vi-VN")}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 font-mono self-start sm:self-auto">
+                            {englishTimeLeft.days > 0 && (
+                              <>
+                                <div className={`px-2.5 py-1.5 rounded-lg border text-center min-w-[48px] ${englishTimerBg}`}>
+                                  <span className="text-base font-black tabular-nums block leading-tight">{englishTimeLeft.days}</span>
+                                  <span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">ngày</span>
+                                </div>
+                                <span className="text-slate-300 font-bold">:</span>
+                              </>
+                            )}
+                            <div className={`px-2.5 py-1.5 rounded-lg border text-center min-w-[48px] ${englishTimerBg}`}>
+                              <span className="text-base font-black tabular-nums block leading-tight">{String(englishTimeLeft.hours).padStart(2, "0")}</span>
+                              <span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">giờ</span>
+                            </div>
+                            <span className="text-slate-300 font-bold">:</span>
+                            <div className={`px-2.5 py-1.5 rounded-lg border text-center min-w-[48px] ${englishTimerBg}`}>
+                              <span className="text-base font-black tabular-nums block leading-tight">{String(englishTimeLeft.minutes).padStart(2, "0")}</span>
+                              <span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">phút</span>
+                            </div>
+                            <span className="text-slate-300 font-bold">:</span>
+                            <div className={`px-2.5 py-1.5 rounded-lg border text-center min-w-[48px] ${englishTimerBg} ${englishTimeLeft.isUrgentRed ? "animate-pulse" : ""}`}>
+                              <span className="text-base font-black tabular-nums block leading-tight">{String(englishTimeLeft.seconds).padStart(2, "0")}</span>
+                              <span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">giây</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Quick Rules Strip */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                        {!isDutch ? (
+                          <>
+                            <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                              <span className="text-[10px] text-slate-400 block font-medium">Bước giá tối thiểu</span>
+                              <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">+{formatPrice(auction.minBidStep || 500_000)}</span>
+                            </div>
+                            <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                              <span className="text-[10px] text-slate-400 block font-medium">Tăng tối đa 1 lượt</span>
+                              <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">+{formatPrice((auction.maxStepMultiplier || 10) * (auction.minBidStep || 500_000))}</span>
+                            </div>
+                            <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                              <span className="text-[10px] text-slate-400 block font-medium">Tiền đặt cọc</span>
+                              <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">{auction.depositAmount > 0 ? formatPrice(auction.depositAmount) : "Miễn cọc"}</span>
+                            </div>
+                            <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                              <span className="text-[10px] text-slate-400 block font-medium">Gia hạn phút chót</span>
+                              <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">+{auction.extensionDurationSeconds || 30}s / lần</span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                              <span className="text-[10px] text-slate-400 block font-medium">Mức giảm định kỳ</span>
+                              <span className="font-mono font-bold text-rose-600 tabular-nums mt-0.5 block">-{formatPrice(auction.dutchDecreaseAmount || 0)}</span>
+                            </div>
+                            <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                              <span className="text-[10px] text-slate-400 block font-medium">Chu kỳ hạ giá</span>
+                              <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">Mỗi {auction.dutchDecreaseIntervalSeconds || 60}s</span>
+                            </div>
+                            <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                              <span className="text-[10px] text-slate-400 block font-medium">Giá sàn bảo lưu</span>
+                              <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">{formatPrice(auction.reservePrice)}</span>
+                            </div>
+                            <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                              <span className="text-[10px] text-slate-400 block font-medium">Tiền đặt cọc</span>
+                              <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">{auction.depositAmount > 0 ? formatPrice(auction.depositAmount) : "Miễn cọc"}</span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      <div className={isEndedPhase ? "block" : "hidden"}>
+                        {/* ── CASE 1: PHIÊN SẮP DIỄN RA (SCHEDULE) ── */}
+                        {isScheduledPhase ? (
+                          <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-5 space-y-4">
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                                <Clock size={20} />
+                              </div>
+                              <div>
+                                <h3 className="font-bold text-sm text-[#001743] uppercase tracking-wide">
+                                  Phiên Sắp Mở Nhận Trả Giá
+                                </h3>
+                                <p className="text-xs text-slate-500 mt-0.5">
+                                  Thời gian mở sàn: <strong className="text-slate-700 font-mono">{new Date(auction.startAt).toLocaleTimeString("vi-VN")} · {new Date(auction.startAt).toLocaleDateString("vi-VN")}</strong>
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Phân nhánh A: Chủ phiên (Người bán) — khóa toàn bộ hành động */}
+                            {currentUser?.userId === auction.authorId ? (
+                              <div className="p-4 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 space-y-1">
+                                <div className="flex items-center gap-2 font-bold text-blue-950">
+                                  <Info size={15} className="text-blue-600 shrink-0" />
+                                  <span>Phiên đấu giá do bạn tạo</span>
+                                </div>
+                                <p className="text-slate-600 leading-relaxed">
+                                  Phiên đấu giá đang trong thời gian chờ mở sàn. Hệ thống sẽ tự động kích hoạt nhận lệnh trả giá khi đến giờ bắt đầu. Với tư cách người tạo phiên, bạn không thể đặt cọc hay trả giá trong chính phiên của mình.
+                                </p>
+                              </div>
+                            ) : !isLoggedIn ? (
+                              /* Phân nhánh B: Khách chưa đăng nhập */
+                              <div className="space-y-3">
+                                <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-center gap-2.5">
+                                  <Lock size={15} className="text-amber-700 shrink-0" />
+                                  <span>Vui lòng đăng nhập để đặt cọc và sẵn sàng trả giá khi phiên mở sàn.</span>
+                                </div>
+                                <Link
+                                  href={`/login?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "")}`}
+                                  className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white font-bold text-sm rounded-xl text-center block shadow-md transition-colors"
+                                >
+                                  Đăng nhập để đặt cọc tham gia
+                                </Link>
+                              </div>
+                            ) : auction.isUserRegistered ? (
+                              /* Phân nhánh C: Đã đặt cọc thành công */
+                              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl space-y-2">
+                                <div className="flex items-center gap-2 text-emerald-900 font-bold text-sm">
+                                  <ShieldCheck size={18} className="text-emerald-600 shrink-0" />
+                                  <span>Bạn đã đặt cọc tham gia thành công</span>
+                                </div>
+                                <p className="text-xs text-emerald-800/90 leading-relaxed">
+                                  Khoản tiền cọc <strong>{formatPrice(auction.depositAmount)}</strong> đã được tạm khóa bảo đảm. Bảng đặt giá sẽ tự động mở ngay khi phiên bắt đầu!
+                                </p>
+                              </div>
+                            ) : auction.depositAmount > 0 ? (
+                              /* Phân nhánh D: Chưa cọc và có yêu cầu tiền cọc */
+                              <div className="space-y-4">
+                                <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-2.5 text-xs">
+                                  <div className="flex justify-between items-center text-slate-600">
+                                    <span>Tiền cọc bảo đảm tham gia:</span>
+                                    <span className="font-mono font-bold text-[#001743] text-sm tabular-nums">
+                                      {formatPrice(auction.depositAmount)}
+                                    </span>
+                                  </div>
+                                  {wallet && (
+                                    <div className="flex justify-between items-center text-slate-500 pt-1.5 border-t border-slate-100 text-[11px]">
+                                      <span>Số dư khả dụng trong ví:</span>
+                                      <span className={`font-mono font-bold tabular-nums ${wallet.availableBalance < auction.depositAmount ? "text-rose-600" : "text-emerald-700"}`}>
+                                        {formatPrice(wallet.availableBalance)}
+                                      </span>
+                                    </div>
+                                  )}
+                                  <div className="pt-2 text-[11px] text-slate-500 flex items-start gap-1.5 leading-relaxed">
+                                    <ShieldCheck size={14} className="text-emerald-600 shrink-0 mt-0.5" />
+                                    <span>Cam kết hoàn 100% tiền cọc về ví ngay lập tức nếu không trúng đấu giá hoặc phiên bị hủy.</span>
+                                  </div>
+                                </div>
+
+                                {wallet && wallet.availableBalance < auction.depositAmount ? (
+                                  <div className="space-y-2.5">
+                                    <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-center justify-between">
+                                      <span>Số dư ví không đủ (Thiếu {formatPrice(auction.depositAmount - wallet.availableBalance)})</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setDepositInitialAmount(auction.depositAmount - wallet.availableBalance);
+                                          setDepositModalOpen(true);
+                                        }}
+                                        className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shrink-0 ml-2 cursor-pointer transition-colors"
+                                      >
+                                        Nạp ví ngay
+                                      </button>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={handleRegisterParticipant}
+                                      disabled={registering}
+                                      className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white font-bold text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
+                                    >
+                                      {registering ? <RefreshCw size={15} className="animate-spin" /> : <Wallet size={15} />}
+                                      <span>{registering ? "Đang xác nhận…" : `Đặt cọc (${formatPrice(auction.depositAmount)})`}</span>
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={handleRegisterParticipant}
+                                    disabled={registering}
+                                    className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white font-bold text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
+                                  >
+                                    {registering ? <RefreshCw size={15} className="animate-spin" /> : <Wallet size={15} />}
+                                    <span>{registering ? "Đang xác nhận…" : `Đặt cọc tham gia (${formatPrice(auction.depositAmount)})`}</span>
+                                  </button>
+                                )}
+                              </div>
+                            ) : (
+                              /* Phân nhánh E: Miễn phí đặt cọc */
+                              <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-center gap-2">
+                                <ShieldCheck size={16} className="text-emerald-600 shrink-0" />
+                                <span>Phiên đấu giá này <strong>miễn phí cọc</strong>. Bạn có thể trực tiếp trả giá ngay khi phiên mở!</span>
+                              </div>
+                            )}
+                          </div>
+                        ) : /* ── CASE 2: PHIÊN ĐANG DIỄN RA (ACTIVE) ── */
+                          isActivePhase ? (
+                            !isDutch ? (
+                              <form onSubmit={handlePlaceBid} className="space-y-4">
+                                <div>
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <label className="text-xs font-bold text-[#001743]">Mức giá bạn muốn trả (VNĐ) <span className="text-rose-500">*</span></label>
+                                    <span className="text-[11px] text-slate-400 font-mono">Min: <strong className="text-slate-600">{formatPrice(auction.currentPrice + (auction.minBidStep || 500_000))}</strong></span>
+                                  </div>
+                                  <div className="relative">
+                                    <input
+                                      type="text"
+                                      value={bidAmountInput}
+                                      onChange={(e) => handleInputChange(e.target.value)}
+                                      placeholder="Nhập mức giá"
+                                      className={`w-full py-3 pl-4 pr-12 text-xl font-black font-mono text-[#001743] bg-white border rounded-xl outline-none transition-colors duration-150 ${inputError ? "border-rose-400 ring-2 ring-rose-100" : "border-slate-300 focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10"}`}
+                                    />
+                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">₫</span>
+                                  </div>
+                                  {inputError && <p className="text-xs text-rose-600 mt-1.5 font-medium">{inputError}</p>}
+                                </div>
+
+                                <div>
+                                  <span className="text-[11px] font-semibold text-slate-500 mb-2 block">Cộng nhanh:</span>
+                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                    {quickAddSteps.map((chip, idx) => (
+                                      <button key={idx} type="button" onClick={() => handleQuickAdd(chip.val)} className="py-2 px-2 text-center rounded-xl border border-slate-200 bg-slate-50 hover:bg-[#001743] hover:text-white hover:border-[#001743] transition-colors duration-150 cursor-pointer shadow-xs select-none">
+                                        <span className="text-xs font-bold block">{chip.label}</span>
+                                        <span className="text-[10px] font-mono opacity-80 block">{chip.amountText}</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {currentUser?.userId === auction.authorId ? (
+                                  /* Chủ phiên không được trả giá */
+                                  <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 flex items-center gap-2.5">
+                                    <Info size={15} className="text-blue-600 shrink-0" />
+                                    <span>Bạn là người tạo phiên này — không thể tham gia trả giá trong phiên của chính mình.</span>
+                                  </div>
+                                ) : !isLoggedIn ? (
+                                  <Link href={`/login?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "")}`} className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] text-white font-bold text-sm rounded-xl text-center block shadow-md transition-colors active:scale-[0.99]">Đăng nhập để trả giá</Link>
+                                ) : !auction.isUserRegistered && auction.depositAmount > 0 ? (
+                                  <div className="space-y-3">
+                                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 leading-relaxed flex items-center gap-2">
+                                      <Lock size={15} className="text-amber-700 shrink-0" />
+                                      <span>Yêu cầu đặt cọc <strong>{formatPrice(auction.depositAmount)}</strong>. Hoàn 100% nếu không trúng.</span>
+                                    </div>
+                                    <button type="button" onClick={handleRegisterParticipant} disabled={registering} className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white font-bold text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md disabled:opacity-50">
+                                      {registering ? <RefreshCw size={15} className="animate-spin" /> : <Wallet size={15} />}
+                                      <span>{registering ? "Đang xác nhận…" : `Đặt cọc (${formatPrice(auction.depositAmount)})`}</span>
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button type="submit" disabled={bidding} className="w-full py-3.5 px-6 bg-[#E4011E] hover:bg-[#C00119] active:scale-[0.99] text-white font-black text-base rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2.5 uppercase tracking-wide shadow-md disabled:opacity-50 select-none">
+                                    {bidding ? <RefreshCw size={18} className="animate-spin" /> : <Gavel size={18} />}
+                                    <span>{bidding ? "Đang gửi…" : `Đặt giá — ${bidAmountInput || "0"} ₫`}</span>
+                                  </button>
+                                )}
+                              </form>
+                            ) : (
+                              <div className="space-y-4">
+                                <div className="p-4 bg-amber-50/60 border border-amber-200 rounded-xl space-y-2">
+                                  <div className="flex items-center gap-2 text-amber-900 font-bold text-xs uppercase tracking-wide">
+                                    <TrendingDown size={14} className="text-amber-700" />
+                                    <span>Người đầu tiên bấm mua sẽ thắng</span>
+                                  </div>
+                                  <p className="text-slate-600 text-xs leading-relaxed">
+                                    Giá đang giảm dần. Nếu <strong className="text-[#001743] font-mono">{formatPrice(auction.currentPrice)}</strong> phù hợp, bấm <strong>Mua ngay</strong> để sở hữu.
+                                  </p>
+                                </div>
+
+                                {currentUser?.userId === auction.authorId ? (
+                                  /* Chủ phiên không được mua */
+                                  <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 flex items-center gap-2.5">
+                                    <Info size={15} className="text-blue-600 shrink-0" />
+                                    <span>Bạn là người tạo phiên này — không thể mua SIM trong phiên của chính mình.</span>
+                                  </div>
+                                ) : !isLoggedIn ? (
+                                  <Link href={`/login?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "")}`} className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] text-white font-bold text-sm rounded-xl text-center block shadow-md transition-colors active:scale-[0.99]">Đăng nhập để mua</Link>
+                                ) : !auction.isUserRegistered && auction.depositAmount > 0 ? (
+                                  <div className="space-y-3">
+                                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-center gap-2">
+                                      <Lock size={15} className="text-amber-700 shrink-0" />
+                                      <span>Yêu cầu đặt cọc <strong>{formatPrice(auction.depositAmount)}</strong> trước khi mua.</span>
+                                    </div>
+                                    <button type="button" onClick={handleRegisterParticipant} disabled={registering} className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white font-bold text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md disabled:opacity-50">
+                                      {registering ? <RefreshCw size={15} className="animate-spin" /> : <Wallet size={15} />}
+                                      <span>{registering ? "Đang xác nhận…" : `Đặt cọc (${formatPrice(auction.depositAmount)})`}</span>
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button type="button" onClick={handleOpenDutchConfirm} disabled={acceptingDutchBuy} className="w-full py-3.5 px-6 bg-[#E4011E] hover:bg-[#C00119] active:scale-[0.99] text-white font-black text-base rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2.5 shadow-md disabled:opacity-50 select-none">
+                                    {acceptingDutchBuy ? <RefreshCw size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
+                                    <span>{acceptingDutchBuy ? "Đang xác nhận…" : `Mua ngay — ${formatPrice(auction.currentPrice)}`}</span>
+                                  </button>
+                                )}
+                              </div>
+                            )
+                          ) : (
+                            <PostAuctionSettlementTerminal
+                              auction={auction}
+                              currentUser={currentUser}
+                              isLoggedIn={isLoggedIn}
+                              mySettlement={mySettlement}
+                              onRefresh={() => fetchAuctionData(true)}
+                              onOpenDeposit={(amt) => {
+                                if (amt && amt > 0) setDepositInitialAmount(amt);
+                                setDepositModalOpen(true);
+                              }}
+                              addToast={addToast}
+                            />
+                          )}
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Price Bar */}
-                  <div className="pt-5 border-t border-white/10 flex flex-col sm:flex-row sm:items-end justify-between gap-4 relative z-10 mt-4">
-                    <div>
-                      <div className="text-[11px] font-medium text-slate-400">Giá khởi điểm</div>
-                      <div className="text-base font-bold text-slate-200 font-mono tabular-nums mt-0.5">{formatPrice(auction.startingPrice)}</div>
-                    </div>
-                    <div className="sm:text-right">
-                      <div className="text-[11px] font-bold text-amber-400 flex items-center gap-1.5 sm:justify-end">
-                        {isDutch ? <TrendingDown size={13} /> : <TrendingUp size={13} />}
-                        <span>Giá hiện tại</span>
-                      </div>
-                      <div className={`text-2xl sm:text-3xl font-black text-amber-300 font-mono tabular-nums mt-0.5 transition-transform duration-200 ${priceFlash ? "scale-105" : "scale-100"}`}>
-                        {formatPrice(animatedPrice)}
-                      </div>
-                    </div>
-                  </div>
+                  {/* ── 3. AUCTION RULES & MECHANISM EXPLANATION ── */}
+                  <div className="order-3">
+                    <CollapsibleSection
+                      title={isDutch ? "Quy Chế Đấu Giá Hà Lan (Giảm Dần)" : "Quy Chế Đấu Giá Kiểu Anh (Tăng Dần)"}
+                      icon={isDutch ? <TrendingDown size={16} /> : <Scale size={16} />}
+                      badge={<span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600">Quy định phiên</span>}
+                    >
+                      <div className="p-5 space-y-5">
+                        {/* Mechanism Explanation */}
+                        <div className="p-4 bg-blue-50/70 border border-blue-200/70 rounded-xl">
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-0.5"><BookOpen size={16} /></div>
+                            <div>
+                              <h4 className="font-bold text-xs text-blue-900 mb-1">
+                                {isDutch ? "Cơ chế Đấu giá Hà Lan hoạt động như thế nào?" : "Cơ chế Đấu giá Kiểu Anh hoạt động như thế nào?"}
+                              </h4>
+                              <p className="text-[12px] text-blue-800 leading-relaxed">
+                                {isDutch
+                                  ? "Giá niêm yết bắt đầu từ mức cao nhất (giá khởi điểm) và tự động giảm đều đặn theo từng chu kỳ thời gian. Người tham gia đầu tiên bấm \"Mua ngay\" tại mức giá đang hiển thị sẽ lập tức giành quyền sở hữu số SIM và phiên kết thúc ngay. Nếu không ai bấm mua và giá giảm chạm giá sàn bảo lưu, phiên tự động đóng."
+                                  : "Giá khởi điểm bắt đầu từ mức thấp nhất. Người tham gia lần lượt trả giá cao hơn, mỗi lượt phải tăng ít nhất bằng bước giá tối thiểu. Khi hết thời gian, người đang giữ mức giá cao nhất sẽ giành quyền sở hữu SIM. Nếu có lượt trả giá ở những giây cuối phiên, hệ thống tự động gia hạn thêm thời gian để đảm bảo công bằng (Anti-Sniping)."}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
 
-                  {/* Trust Strip */}
-                  <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-300 relative z-10 font-medium mt-2">
-                    <span className="flex items-center gap-1.5"><ShieldCheck size={13} className="text-emerald-400" />Sang tên chính chủ</span>
-                    <span className="flex items-center gap-1.5"><CheckCircle2 size={13} className="text-blue-400" />Hợp đồng điện tử</span>
-                    <span className="flex items-center gap-1.5"><Lock size={13} className="text-amber-400" />Ký quỹ 100%</span>
+                        {/* Detailed Rules Grid */}
+                        {isDutch ? (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Giá khởi điểm (Trần)</span>
+                              <div className="font-mono text-lg font-bold text-[#001743] tabular-nums">{formatPrice(auction.startingPrice)}</div>
+                              <span className="text-[11px] text-slate-400 mt-1 block">Mức giá cao nhất khi mở phiên</span>
+                            </div>
+                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Tốc độ giảm giá</span>
+                              <div className="font-mono text-lg font-bold text-rose-600 tabular-nums">-{formatPrice(auction.dutchDecreaseAmount || 0)}</div>
+                              <span className="text-[11px] text-slate-500 mt-1 block">Mỗi <strong>{auction.dutchDecreaseIntervalSeconds || 60} giây</strong> hạ 1 lần</span>
+                            </div>
+                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Giá sàn bảo lưu</span>
+                              <div className="font-mono text-lg font-bold text-[#001743] tabular-nums">{formatPrice(auction.reservePrice)}</div>
+                              <span className="text-[11px] text-slate-400 mt-1 block">Mức giá tối thiểu người bán chấp nhận</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bước giá tối thiểu</span>
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-200/70">Mỗi lượt</span>
+                              </div>
+                              <div className="font-mono text-lg font-bold text-[#001743] tabular-nums">+{formatPrice(auction.minBidStep || 0)}</div>
+                              <p className="text-[11px] text-slate-400 mt-1">Mức tăng tối thiểu mỗi lần trả giá</p>
+                            </div>
+                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Giới hạn 1 lượt</span>
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200/70">Chống nhầm</span>
+                              </div>
+                              <div className="font-mono text-lg font-bold text-[#001743] tabular-nums">Tối đa {auction.maxStepMultiplier || 10}× bước</div>
+                              <p className="text-[11px] text-slate-400 mt-1">= Tối đa +{formatPrice((auction.maxStepMultiplier || 10) * (auction.minBidStep || 0))} / lượt</p>
+                            </div>
+                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Anti-Sniping</span>
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70">Công bằng</span>
+                              </div>
+                              <div className="font-mono text-lg font-bold text-[#001743] tabular-nums">+{auction.extensionDurationSeconds || 30}s</div>
+                              <p className="text-[11px] text-slate-400 mt-1">Gia hạn khi có bid ở 60s cuối (tối đa {auction.maxSnipeExtensionsPerParticipant || 3} lần/người)</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Financial Obligations */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="p-4 rounded-xl border border-slate-200 bg-white">
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <span className="text-xs font-bold text-slate-700">Tiền đặt cọc</span>
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">Hoàn 100%</span>
+                            </div>
+                            <div className="font-mono text-xl font-black text-[#001743] tabular-nums">{auction.depositAmount > 0 ? formatPrice(auction.depositAmount) : "Miễn cọc"}</div>
+                            <p className="text-[11px] text-slate-500 leading-relaxed mt-2 pt-2 border-t border-slate-100">Tạm khóa trong ví TrustSim. Tự động hoàn lại 100% nếu bạn không trúng phiên.</p>
+                          </div>
+                          <div className="p-4 rounded-xl border border-slate-200 bg-white">
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <span className="text-xs font-bold text-slate-700">Thời hạn thanh toán</span>
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">Tất toán</span>
+                            </div>
+                            <div className="font-mono text-xl font-black text-[#001743] tabular-nums">{auction.paymentGracePeriodHours || 24} giờ</div>
+                            <p className="text-[11px] text-slate-500 leading-relaxed mt-2 pt-2 border-t border-slate-100">Thời hạn hoàn tất thanh toán phần còn lại và sang tên SIM chính chủ.</p>
+                          </div>
+                        </div>
+
+                        {/* Trust Guarantees */}
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {[
+                            { icon: <ShieldCheck size={15} />, color: "text-emerald-600 bg-emerald-50 border-emerald-200/60", title: "Hoàn cọc 100%", desc: "Tự động mở khóa ngay sau phiên nếu không trúng." },
+                            { icon: <CheckCircle2 size={15} />, color: "text-blue-600 bg-blue-50 border-blue-200/60", title: "Ký quỹ an toàn", desc: "Tiền ký quỹ tại sàn, chỉ giải ngân sau sang tên." },
+                            { icon: <Lock size={15} />, color: "text-slate-700 bg-slate-100 border-slate-200", title: "Minh bạch", desc: "Ghi nhận mọi lượt vào lệnh, chống gian lận." },
+                          ].map((item, i) => (
+                            <div key={i} className="flex items-start gap-3">
+                              <div className={`w-7 h-7 rounded-lg ${item.color} flex items-center justify-center shrink-0 border mt-0.5`}>{item.icon}</div>
+                              <div>
+                                <span className="font-bold text-xs text-[#001743] block">{item.title}</span>
+                                <p className="text-[11px] text-slate-500 leading-relaxed">{item.desc}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CollapsibleSection>
+
+                    {/* ── 4. SIM INFO ── */}
+                  </div>
+                  <div className="order-4">
+                    <CollapsibleSection title="Thông Tin Số SIM" icon={<FileText size={16} />} defaultOpen={false}>
+                      <div className="p-5 space-y-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {[
+                            { label: "Số thuê bao", value: auction.simPhoneNumber, mono: true },
+                            { label: "Nhà mạng", value: auction.carrierName },
+                            { label: "Loại hình", value: "SIM vật lý & eSIM" },
+                            ...(auction.formatRhythmName ? [{ label: "Thế số", value: auction.formatRhythmName }] : []),
+                          ].map((item, i) => (
+                            <div key={i} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                              <span className="text-[11px] text-slate-400 font-medium block">{item.label}</span>
+                              <span className={`font-bold text-[#001743] text-xs mt-0.5 block ${(item as any).mono ? "font-mono" : ""}`}>{item.value}</span>
+                            </div>
+                          ))}
+                          {auction.categories && auction.categories.length > 0 && (
+                            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 sm:col-span-2">
+                              <span className="text-[11px] text-slate-400 font-medium block">Phân loại</span>
+                              <span className="font-bold text-[#001743] text-xs mt-0.5 block">{auction.categories.join(", ")}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl flex items-start gap-2.5">
+                          <ShieldCheck size={15} className="text-blue-600 shrink-0 mt-0.5" />
+                          <div>
+                            <span className="font-bold text-blue-900 block text-xs">Cam kết pháp lý</span>
+                            <p className="text-blue-800 text-[11px] mt-0.5 leading-relaxed">Số SIM đã qua kiểm tra đối soát, nguyên phôi sạch, không nợ cước, hỗ trợ sang tên chính chủ.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </CollapsibleSection>
+
+                    {/* ── 5. SELLER INFO ── */}
+                  </div>
+                  <div className="order-5">
+                    <CollapsibleSection title="Thông Tin Người Bán" icon={<BadgeCheck size={16} />} defaultOpen={false}>
+                      <div className="p-5 space-y-4">
+                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-11 h-11 rounded-full bg-[#001743] text-white flex items-center justify-center font-bold text-sm">{auction.authorName?.charAt(0) || "T"}</div>
+                            <div>
+                              <div className="font-bold text-xs text-[#001743] flex items-center gap-1.5">
+                                <span>{auction.authorName || "Đối tác TrustSim"}</span>
+                                <BadgeCheck size={14} className="text-blue-600" />
+                              </div>
+                              <span className="text-[11px] text-slate-500">Đã xác minh căn cước chính chủ</span>
+                            </div>
+                          </div>
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Đã xác minh</span>
+                        </div>
+                        <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl text-slate-600 text-[11px] leading-relaxed">
+                          Người bán đã ký cam kết bảo đảm chuyển nhượng và tuân thủ quy chế giao dịch của TrustSim.
+                        </div>
+                      </div>
+                    </CollapsibleSection>
                   </div>
                 </div>
 
-                {/* ── 2. BIDDING CONSOLE ── */}
-                <div className={`bg-white border rounded-2xl shadow-xs overflow-hidden transition-colors duration-200 ${antiSnipingFlash ? "border-emerald-400 ring-2 ring-emerald-200" : "border-slate-200"}`}>
-                  <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                {/* ═══ RIGHT COLUMN: BID HISTORY ═══ */}
+                <div className="order-1 bg-white border border-slate-200 rounded-2xl shadow-none overflow-hidden sticky top-24 lg:order-none lg:grid lg:h-[calc(100vh-112px)] lg:grid-rows-[auto_minmax(0,1fr)_auto_auto]">
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                     <div className="flex items-center gap-2">
-                      <Gavel size={17} className="text-[#001743]" />
-                      <h2 className="font-bold text-sm text-[#001743]">
-                        {isScheduledPhase
-                          ? "Thông Tin Đăng Ký & Đặt Cọc"
-                          : isDutch
-                          ? "Khớp Lệnh Mua Ngay"
-                          : "Bảng Trả Giá Trực Tiếp"}
-                      </h2>
+                      {isActivePhase ? (
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      ) : (
+                        <Radio size={14} className="text-slate-400" />
+                      )}
+                      <div>
+                        <h3 className="font-bold text-xs text-[#001743]">{isDutch ? "Diễn biến phiên" : "Lịch sử trả giá"}</h3>
+                        <span className="mt-0.5 block font-mono text-[10px] text-slate-500 tabular-nums">
+                          {formatPrice(auction.currentPrice)} · {isScheduledPhase
+                            ? `mở sau ${String(scheduledTimeLeft.hours).padStart(2, "0")}:${String(scheduledTimeLeft.minutes).padStart(2, "0")}:${String(scheduledTimeLeft.seconds).padStart(2, "0")}`
+                            : isEndedPhase
+                              ? "đã kết thúc"
+                              : isDutch
+                                ? `hạ giá sau ${dutchCalc.secondsRemainingInCycle} giây`
+                                : `còn ${String(englishTimeLeft.hours).padStart(2, "0")}:${String(englishTimeLeft.minutes).padStart(2, "0")}:${String(englishTimeLeft.seconds).padStart(2, "0")}`}
+                        </span>
+                      </div>
                     </div>
-                    {isScheduledPhase ? (
-                      <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                        Sắp mở phiên đấu giá
-                      </span>
-                    ) : isActivePhase ? (
-                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        {isDutch ? "Đang mở bán hạ giá" : "Đang nhận lượt trả"}
-                      </span>
-                    ) : (
-                      <span className="text-[11px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                        Đã kết thúc
-                      </span>
-                    )}
+                    <span className="text-xs font-mono font-bold px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-full border border-slate-200">{bids.length} lượt</span>
                   </div>
 
-                  <div className="p-5 space-y-5">
-                    {/* ── 1. TIMELINE MILESTONE STRIP (RÕ RÀNG BẮT ĐẦU & KẾT THÚC) ── */}
-                    <div className="bg-slate-50/90 border border-slate-200/80 rounded-xl p-3.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs">
-                      {/* Mốc bắt đầu */}
-                      <div className="flex items-center gap-2.5 flex-1">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isScheduledPhase ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>
-                          <Clock size={16} />
-                        </div>
-                        <div>
-                          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wide">
-                            {isScheduledPhase ? "Thời gian mở sàn" : "Đã mở sàn lúc"}
-                          </span>
-                          <span className="font-mono font-bold text-[#001743] text-sm tabular-nums">
-                            {new Date(auction.startAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-                          </span>
-                          <span className="text-[11px] text-slate-500 font-mono ml-1.5">
-                            · {new Date(auction.startAt).toLocaleDateString("vi-VN")}
-                          </span>
-                        </div>
+                  <div className="divide-y divide-slate-100 min-h-[320px] overflow-y-auto lg:min-h-0">
+                    {bids.length === 0 ? (
+                      <div className="py-16 text-center text-slate-400 space-y-2">
+                        <Gavel size={24} className="mx-auto text-slate-300" />
+                        <p className="text-xs font-semibold text-slate-600">{isDutch ? "Chưa có người mua" : "Chưa có lượt trả giá"}</p>
+                        <p className="text-[11px] text-blue-600 font-semibold">
+                          {isDutch ? `Giá hiện tại: ${formatPrice(auction.currentPrice)} — bấm Mua ngay!` : "Hãy là người đầu tiên!"}
+                        </p>
                       </div>
-
-                      <div className="hidden sm:block text-slate-300 font-bold text-sm">⟶</div>
-
-                      {/* Mốc kết thúc */}
-                      <div className="flex items-center gap-2.5 flex-1 sm:justify-end">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isEndedPhase ? "bg-slate-200 text-slate-600" : "bg-rose-100 text-rose-800"}`}>
-                          <Flag size={16} />
-                        </div>
-                        <div className="sm:text-right">
-                          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wide">
-                            {isEndedPhase ? "Đã kết thúc lúc" : isDutch ? "Hạn chót toàn phiên" : "Chốt phiên gõ búa"}
-                          </span>
-                          <span className="font-mono font-bold text-[#001743] text-sm tabular-nums">
-                            {new Date(auction.endAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-                          </span>
-                          <span className="text-[11px] text-slate-500 font-mono ml-1.5">
-                            · {new Date(auction.endAt).toLocaleDateString("vi-VN")}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Anti-sniping Alert (English Auction) */}
-                    {!isDutch && antiSnipingFlash && (
-                      <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3 text-emerald-800 text-xs font-semibold animate-in fade-in duration-200">
-                        <Flame size={16} className="text-emerald-600 shrink-0" />
-                        <span><strong>Gia hạn giờ chót:</strong> +{auction.extensionDurationSeconds || 30}s để bảo đảm công bằng.</span>
-                      </div>
-                    )}
-
-                    {/* ── 2. DEDICATED COUNTDOWN TIMER DISPLAY ── */}
-                    {isEndedPhase ? (
-                      /* Phiên đã kết thúc */
-                      <div className="p-4 bg-slate-100 border border-slate-200 rounded-xl text-center text-xs font-bold text-slate-700 flex items-center justify-center gap-2">
-                        <Flag size={16} className="text-slate-500" />
-                        <span>Phiên đấu giá đã kết thúc lúc {new Date(auction.endAt).toLocaleTimeString("vi-VN")} · {new Date(auction.endAt).toLocaleDateString("vi-VN")}</span>
-                      </div>
-                    ) : isScheduledPhase ? (
-                      /* CẢ 2 LOẠI: GIAI ĐOẠN CHỜ MỞ SÀN (SCHEDULE) */
-                      /* Đếm ngược chính xác thời gian còn lại đến startAt (VD: mở lúc 16:30, hiện tại 16:20 -> đếm 10 phút, KHÔNG PHẢI 60s) */
-                      <div className="bg-amber-50/80 border border-amber-200/90 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs shrink-0">
-                            <Hourglass size={18} />
-                          </div>
-                          <div>
-                            <span className="text-xs font-bold text-amber-950 block">
-                              {isDutch ? "Mở bán giảm dần sau:" : "Mở sàn nhận trả giá sau:"}
-                            </span>
-                            <span className="text-[11px] text-amber-800 font-mono block">
-                              Mở sàn lúc: <strong>{new Date(auction.startAt).toLocaleTimeString("vi-VN")} · {new Date(auction.startAt).toLocaleDateString("vi-VN")}</strong>
-                            </span>
-                            {isDutch && (
-                              <span className="text-[10px] text-amber-700/90 block mt-0.5">
-                                Khởi điểm: <strong>{formatPrice(auction.startingPrice)}</strong> · Giảm <strong>-{formatPrice(dutchCalc.decreaseAmount)}</strong> mỗi <strong>{dutchCalc.interval}s</strong>
-                                {dutchCalc.formatRhythmName ? ` · Thế nhịp: ${dutchCalc.formatRhythmName}` : ""}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1.5 font-mono self-start sm:self-auto">
-                          {scheduledTimeLeft.days > 0 && (
-                            <>
-                              <div className="px-2.5 py-1.5 rounded-lg border border-amber-300 bg-white text-amber-900 text-center min-w-[48px]">
-                                <span className="text-base font-black tabular-nums block leading-tight">{scheduledTimeLeft.days}</span>
-                                <span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">ngày</span>
+                    ) : (
+                      bids.map((bid, index) => {
+                        const isTop = index === 0;
+                        const isNewlyAdded = bid.id === newestBidId;
+                        const avatar = getAvatarStyle(bid.userNameMasked);
+                        return (
+                          <div key={bid.id} className={`flex items-center justify-between px-5 py-3.5 transition-colors ${isNewlyAdded ? "bg-amber-50/80" : isTop ? "bg-amber-50/40" : "hover:bg-slate-50/80"}`}>
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ring-1 ring-slate-200" style={{ backgroundColor: avatar.bg, color: avatar.text }}>
+                                {bid.userNameMasked.slice(0, 2).toUpperCase()}
                               </div>
-                              <span className="text-amber-400 font-bold">:</span>
-                            </>
-                          )}
-                          <div className="px-2.5 py-1.5 rounded-lg border border-amber-300 bg-white text-amber-900 text-center min-w-[48px]">
-                            <span className="text-base font-black tabular-nums block leading-tight">{String(scheduledTimeLeft.hours).padStart(2, "0")}</span>
-                            <span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">giờ</span>
-                          </div>
-                          <span className="text-amber-400 font-bold">:</span>
-                          <div className="px-2.5 py-1.5 rounded-lg border border-amber-300 bg-white text-amber-900 text-center min-w-[48px]">
-                            <span className="text-base font-black tabular-nums block leading-tight">{String(scheduledTimeLeft.minutes).padStart(2, "0")}</span>
-                            <span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">phút</span>
-                          </div>
-                          <span className="text-amber-400 font-bold">:</span>
-                          <div className="px-2.5 py-1.5 rounded-lg border border-amber-300 bg-white text-amber-900 text-center min-w-[48px]">
-                            <span className="text-base font-black tabular-nums block leading-tight">{String(scheduledTimeLeft.seconds).padStart(2, "0")}</span>
-                            <span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">giây</span>
-                          </div>
-                        </div>
-                      </div>
-                    ) : isDutch ? (
-                      /* ĐẤU GIÁ HÀ LAN ĐANG MỞ BÁN (ACTIVE) */
-                      /* Tính toán trực tiếp ở frontend theo chu kỳ & mức giảm từ API, giảm tải cho backend */
-                      <div className="space-y-2.5">
-                        {/* Console nhịp hạ giá tiếp theo */}
-                        <div className="bg-gradient-to-r from-amber-50/80 via-white to-rose-50/50 rounded-xl p-4 border border-amber-200/90 shadow-xs space-y-3">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
-                                <TrendingDown size={17} />
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="text-xs font-bold text-[#001743]">Nhịp hạ giá tiếp theo:</span>
-                                  <span className="font-mono font-bold text-rose-600 text-xs">-{formatPrice(dutchCalc.decreaseAmount)}</span>
-                                  {dutchCalc.formatRhythmName && (
-                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
-                                      {dutchCalc.formatRhythmName}
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-mono font-bold text-xs text-[#001743] truncate">{bid.userNameMasked}</span>
+                                  {isTop && (
+                                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                                      <Crown size={10} className="text-amber-700" />Dẫn đầu
                                     </span>
                                   )}
                                 </div>
-                                <span className="text-[11px] text-slate-500">
-                                  {dutchCalc.isFloorReached ? (
-                                    <strong className="text-rose-600">Đã chạm giá sàn tối thiểu ({formatPrice(auction.reservePrice)}) - Dừng giảm</strong>
-                                  ) : (
-                                    <>
-                                      Giá tiếp theo: <strong className="font-mono text-emerald-700">{formatPrice(dutchCalc.nextPrice)}</strong>
-                                    </>
-                                  )}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="text-right shrink-0">
-                              {dutchCalc.isFloorReached ? (
-                                <span className="text-xs font-bold px-2 py-1 rounded bg-slate-100 text-slate-600 block">Dừng giảm</span>
-                              ) : (
-                                <>
-                                  <span className="text-2xl font-black font-mono text-rose-600 tabular-nums block leading-none">
-                                    00:{String(dutchCalc.secondsRemainingInCycle).padStart(2, "0")}
-                                  </span>
-                                  <span className="text-[10px] text-slate-400 font-medium">Chu kỳ {dutchCalc.interval}s</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Thanh tiến trình hạ giá (Progress Bar) */}
-                          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-gradient-to-r from-amber-500 to-rose-600 transition-all duration-1000 ease-linear rounded-full"
-                              style={{
-                                width: `${dutchCalc.isFloorReached ? 0 : dutchCalc.progressPercent}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Dòng thời gian tối đa toàn phiên */}
-                        <div className="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-lg border border-slate-100 text-[11px] text-slate-600">
-                          <span className="flex items-center gap-1.5 font-medium">
-                            <Clock size={13} className="text-slate-400" />
-                            <span>Hạn chót toàn phiên còn lại:</span>
-                          </span>
-                          <span className="font-mono font-bold text-[#001743]">
-                            {dutchCalc.totalHours > 0 ? `${dutchCalc.totalHours}h ` : ""}{dutchCalc.totalMinutes}m {String(dutchCalc.totalSeconds).padStart(2, "0")}s
-                          </span>
-                        </div>
-                      </div>
-                    ) : (
-                      /* ĐẤU GIÁ KIỂU ANH ĐANG DIỄN RA (ACTIVE) */
-                      /* Đếm ngược đến thời gian kết thúc endAt */
-                      <div className="bg-slate-50/90 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-200/80">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-700 shadow-xs shrink-0">
-                            <Clock size={15} />
-                          </div>
-                          <div>
-                            <span className="text-xs font-bold text-slate-800 block">Thời gian trả giá còn lại:</span>
-                            <span className="text-[11px] text-slate-500 font-mono block">
-                              Chốt phiên gõ búa: {new Date(auction.endAt).toLocaleTimeString("vi-VN")} · {new Date(auction.endAt).toLocaleDateString("vi-VN")}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1.5 font-mono self-start sm:self-auto">
-                          {englishTimeLeft.days > 0 && (
-                            <>
-                              <div className={`px-2.5 py-1.5 rounded-lg border text-center min-w-[48px] ${englishTimerBg}`}>
-                                <span className="text-base font-black tabular-nums block leading-tight">{englishTimeLeft.days}</span>
-                                <span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">ngày</span>
-                              </div>
-                              <span className="text-slate-300 font-bold">:</span>
-                            </>
-                          )}
-                          <div className={`px-2.5 py-1.5 rounded-lg border text-center min-w-[48px] ${englishTimerBg}`}>
-                            <span className="text-base font-black tabular-nums block leading-tight">{String(englishTimeLeft.hours).padStart(2, "0")}</span>
-                            <span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">giờ</span>
-                          </div>
-                          <span className="text-slate-300 font-bold">:</span>
-                          <div className={`px-2.5 py-1.5 rounded-lg border text-center min-w-[48px] ${englishTimerBg}`}>
-                            <span className="text-base font-black tabular-nums block leading-tight">{String(englishTimeLeft.minutes).padStart(2, "0")}</span>
-                            <span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">phút</span>
-                          </div>
-                          <span className="text-slate-300 font-bold">:</span>
-                          <div className={`px-2.5 py-1.5 rounded-lg border text-center min-w-[48px] ${englishTimerBg} ${englishTimeLeft.isUrgentRed ? "animate-pulse" : ""}`}>
-                            <span className="text-base font-black tabular-nums block leading-tight">{String(englishTimeLeft.seconds).padStart(2, "0")}</span>
-                            <span className="text-[9px] uppercase tracking-wider opacity-75 block font-sans">giây</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Quick Rules Strip */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-                      {!isDutch ? (
-                        <>
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                            <span className="text-[10px] text-slate-400 block font-medium">Bước giá tối thiểu</span>
-                            <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">+{formatPrice(auction.minBidStep || 500_000)}</span>
-                          </div>
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                            <span className="text-[10px] text-slate-400 block font-medium">Tăng tối đa 1 lượt</span>
-                            <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">+{formatPrice((auction.maxStepMultiplier || 10) * (auction.minBidStep || 500_000))}</span>
-                          </div>
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                            <span className="text-[10px] text-slate-400 block font-medium">Tiền đặt cọc</span>
-                            <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">{auction.depositAmount > 0 ? formatPrice(auction.depositAmount) : "Miễn cọc"}</span>
-                          </div>
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                            <span className="text-[10px] text-slate-400 block font-medium">Gia hạn phút chót</span>
-                            <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">+{auction.extensionDurationSeconds || 30}s / lần</span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                            <span className="text-[10px] text-slate-400 block font-medium">Mức giảm định kỳ</span>
-                            <span className="font-mono font-bold text-rose-600 tabular-nums mt-0.5 block">-{formatPrice(auction.dutchDecreaseAmount || 0)}</span>
-                          </div>
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                            <span className="text-[10px] text-slate-400 block font-medium">Chu kỳ hạ giá</span>
-                            <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">Mỗi {auction.dutchDecreaseIntervalSeconds || 60}s</span>
-                          </div>
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                            <span className="text-[10px] text-slate-400 block font-medium">Giá sàn bảo lưu</span>
-                            <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">{formatPrice(auction.reservePrice)}</span>
-                          </div>
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                            <span className="text-[10px] text-slate-400 block font-medium">Tiền đặt cọc</span>
-                            <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">{auction.depositAmount > 0 ? formatPrice(auction.depositAmount) : "Miễn cọc"}</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    {/* ── CASE 1: PHIÊN SẮP DIỄN RA (SCHEDULE) ── */}
-                    {isScheduledPhase ? (
-                      <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-5 space-y-4">
-                        <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
-                            <Clock size={20} />
-                          </div>
-                          <div>
-                            <h3 className="font-bold text-sm text-[#001743] uppercase tracking-wide">
-                              Phiên Sắp Mở Nhận Trả Giá
-                            </h3>
-                            <p className="text-xs text-slate-500 mt-0.5">
-                              Thời gian mở sàn: <strong className="text-slate-700 font-mono">{new Date(auction.startAt).toLocaleTimeString("vi-VN")} · {new Date(auction.startAt).toLocaleDateString("vi-VN")}</strong>
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Phân nhánh A: Chủ phiên (Người bán) — khóa toàn bộ hành động */}
-                        {currentUser?.userId === auction.authorId ? (
-                          <div className="p-4 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 space-y-1">
-                            <div className="flex items-center gap-2 font-bold text-blue-950">
-                              <Info size={15} className="text-blue-600 shrink-0" />
-                              <span>Phiên đấu giá do bạn tạo</span>
-                            </div>
-                            <p className="text-slate-600 leading-relaxed">
-                              Phiên đấu giá đang trong thời gian chờ mở sàn. Hệ thống sẽ tự động kích hoạt nhận lệnh trả giá khi đến giờ bắt đầu. Với tư cách người tạo phiên, bạn không thể đặt cọc hay trả giá trong chính phiên của mình.
-                            </p>
-                          </div>
-                        ) : !isLoggedIn ? (
-                          /* Phân nhánh B: Khách chưa đăng nhập */
-                          <div className="space-y-3">
-                            <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-center gap-2.5">
-                              <Lock size={15} className="text-amber-700 shrink-0" />
-                              <span>Vui lòng đăng nhập để đặt cọc và sẵn sàng trả giá khi phiên mở sàn.</span>
-                            </div>
-                            <Link
-                              href={`/login?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "")}`}
-                              className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white font-bold text-sm rounded-xl text-center block shadow-md transition-colors"
-                            >
-                              Đăng nhập để đặt cọc tham gia
-                            </Link>
-                          </div>
-                        ) : auction.isUserRegistered ? (
-                          /* Phân nhánh C: Đã đặt cọc thành công */
-                          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl space-y-2">
-                            <div className="flex items-center gap-2 text-emerald-900 font-bold text-sm">
-                              <ShieldCheck size={18} className="text-emerald-600 shrink-0" />
-                              <span>Bạn đã đặt cọc tham gia thành công</span>
-                            </div>
-                            <p className="text-xs text-emerald-800/90 leading-relaxed">
-                              Khoản tiền cọc <strong>{formatPrice(auction.depositAmount)}</strong> đã được tạm khóa bảo đảm. Bảng đặt giá sẽ tự động mở ngay khi phiên bắt đầu!
-                            </p>
-                          </div>
-                        ) : auction.depositAmount > 0 ? (
-                          /* Phân nhánh D: Chưa cọc và có yêu cầu tiền cọc */
-                          <div className="space-y-4">
-                            <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-2.5 text-xs">
-                              <div className="flex justify-between items-center text-slate-600">
-                                <span>Tiền cọc bảo đảm tham gia:</span>
-                                <span className="font-mono font-bold text-[#001743] text-sm tabular-nums">
-                                  {formatPrice(auction.depositAmount)}
-                                </span>
-                              </div>
-                              {wallet && (
-                                <div className="flex justify-between items-center text-slate-500 pt-1.5 border-t border-slate-100 text-[11px]">
-                                  <span>Số dư khả dụng trong ví:</span>
-                                  <span className={`font-mono font-bold tabular-nums ${wallet.availableBalance < auction.depositAmount ? "text-rose-600" : "text-emerald-700"}`}>
-                                    {formatPrice(wallet.availableBalance)}
-                                  </span>
+                                <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                  {new Date(bid.placedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                                 </div>
-                              )}
-                              <div className="pt-2 text-[11px] text-slate-500 flex items-start gap-1.5 leading-relaxed">
-                                <ShieldCheck size={14} className="text-emerald-600 shrink-0 mt-0.5" />
-                                <span>Cam kết hoàn 100% tiền cọc về ví ngay lập tức nếu không trúng đấu giá hoặc phiên bị hủy.</span>
                               </div>
                             </div>
-
-                            {wallet && wallet.availableBalance < auction.depositAmount ? (
-                              <div className="space-y-2.5">
-                                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-center justify-between">
-                                  <span>Số dư ví không đủ (Thiếu {formatPrice(auction.depositAmount - wallet.availableBalance)})</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setDepositInitialAmount(auction.depositAmount - wallet.availableBalance);
-                                      setDepositModalOpen(true);
-                                    }}
-                                    className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shrink-0 ml-2 cursor-pointer transition-colors"
-                                  >
-                                    Nạp ví ngay
-                                  </button>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={handleRegisterParticipant}
-                                  disabled={registering}
-                                  className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white font-bold text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
-                                >
-                                  {registering ? <RefreshCw size={15} className="animate-spin" /> : <Wallet size={15} />}
-                                  <span>{registering ? "Đang xác nhận…" : `Đặt cọc (${formatPrice(auction.depositAmount)})`}</span>
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={handleRegisterParticipant}
-                                disabled={registering}
-                                className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white font-bold text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
-                              >
-                                {registering ? <RefreshCw size={15} className="animate-spin" /> : <Wallet size={15} />}
-                                <span>{registering ? "Đang xác nhận…" : `Đặt cọc tham gia (${formatPrice(auction.depositAmount)})`}</span>
-                              </button>
-                            )}
-                          </div>
-                        ) : (
-                          /* Phân nhánh E: Miễn phí đặt cọc */
-                          <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-center gap-2">
-                            <ShieldCheck size={16} className="text-emerald-600 shrink-0" />
-                            <span>Phiên đấu giá này <strong>miễn phí cọc</strong>. Bạn có thể trực tiếp trả giá ngay khi phiên mở!</span>
-                          </div>
-                        )}
-                      </div>
-                    ) : /* ── CASE 2: PHIÊN ĐANG DIỄN RA (ACTIVE) ── */
-                    isActivePhase ? (
-                      !isDutch ? (
-                        <form onSubmit={handlePlaceBid} className="space-y-4">
-                          <div>
-                            <div className="flex items-center justify-between mb-1.5">
-                              <label className="text-xs font-bold text-[#001743]">Mức giá bạn muốn trả (VNĐ) <span className="text-rose-500">*</span></label>
-                              <span className="text-[11px] text-slate-400 font-mono">Min: <strong className="text-slate-600">{formatPrice(auction.currentPrice + (auction.minBidStep || 500_000))}</strong></span>
-                            </div>
-                            <div className="relative">
-                              <input
-                                type="text"
-                                value={bidAmountInput}
-                                onChange={(e) => handleInputChange(e.target.value)}
-                                placeholder="Nhập mức giá"
-                                className={`w-full py-3 pl-4 pr-12 text-xl font-black font-mono text-[#001743] bg-white border rounded-xl outline-none transition-colors duration-150 ${inputError ? "border-rose-400 ring-2 ring-rose-100" : "border-slate-300 focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10"}`}
-                              />
-                              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">₫</span>
-                            </div>
-                            {inputError && <p className="text-xs text-rose-600 mt-1.5 font-medium">{inputError}</p>}
-                          </div>
-
-                          <div>
-                            <span className="text-[11px] font-semibold text-slate-500 mb-2 block">Cộng nhanh:</span>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                              {quickAddSteps.map((chip, idx) => (
-                                <button key={idx} type="button" onClick={() => handleQuickAdd(chip.val)} className="py-2 px-2 text-center rounded-xl border border-slate-200 bg-slate-50 hover:bg-[#001743] hover:text-white hover:border-[#001743] transition-colors duration-150 cursor-pointer shadow-xs select-none">
-                                  <span className="text-xs font-bold block">{chip.label}</span>
-                                  <span className="text-[10px] font-mono opacity-80 block">{chip.amountText}</span>
-                                </button>
-                              ))}
+                            <div className="text-right shrink-0 ml-3">
+                              <div className={`font-mono text-sm font-black tabular-nums ${isTop ? "text-amber-600" : "text-slate-800"}`}>{formatPrice(bid.bidAmount)}</div>
+                              <div className="text-[10px] text-slate-400 font-medium">{isTop ? "Đang dẫn đầu" : "Đã bị vượt"}</div>
                             </div>
                           </div>
-
-                          {currentUser?.userId === auction.authorId ? (
-                            /* Chủ phiên không được trả giá */
-                            <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 flex items-center gap-2.5">
-                              <Info size={15} className="text-blue-600 shrink-0" />
-                              <span>Bạn là người tạo phiên này — không thể tham gia trả giá trong phiên của chính mình.</span>
-                            </div>
-                          ) : !isLoggedIn ? (
-                            <Link href={`/login?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "")}`} className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] text-white font-bold text-sm rounded-xl text-center block shadow-md transition-colors active:scale-[0.99]">Đăng nhập để trả giá</Link>
-                          ) : !auction.isUserRegistered && auction.depositAmount > 0 ? (
-                            <div className="space-y-3">
-                              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 leading-relaxed flex items-center gap-2">
-                                <Lock size={15} className="text-amber-700 shrink-0" />
-                                <span>Yêu cầu đặt cọc <strong>{formatPrice(auction.depositAmount)}</strong>. Hoàn 100% nếu không trúng.</span>
-                              </div>
-                              <button type="button" onClick={handleRegisterParticipant} disabled={registering} className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white font-bold text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md disabled:opacity-50">
-                                {registering ? <RefreshCw size={15} className="animate-spin" /> : <Wallet size={15} />}
-                                <span>{registering ? "Đang xác nhận…" : `Đặt cọc (${formatPrice(auction.depositAmount)})`}</span>
-                              </button>
-                            </div>
-                          ) : (
-                            <button type="submit" disabled={bidding} className="w-full py-3.5 px-6 bg-[#E4011E] hover:bg-[#C00119] active:scale-[0.99] text-white font-black text-base rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2.5 uppercase tracking-wide shadow-md disabled:opacity-50 select-none">
-                              {bidding ? <RefreshCw size={18} className="animate-spin" /> : <Gavel size={18} />}
-                              <span>{bidding ? "Đang gửi…" : `Đặt giá — ${bidAmountInput || "0"} ₫`}</span>
-                            </button>
-                          )}
-                        </form>
-                      ) : (
-                        <div className="space-y-4">
-                          <div className="p-4 bg-amber-50/60 border border-amber-200 rounded-xl space-y-2">
-                            <div className="flex items-center gap-2 text-amber-900 font-bold text-xs uppercase tracking-wide">
-                              <TrendingDown size={14} className="text-amber-700" />
-                              <span>Người đầu tiên bấm mua sẽ thắng</span>
-                            </div>
-                            <p className="text-slate-600 text-xs leading-relaxed">
-                              Giá đang giảm dần. Nếu <strong className="text-[#001743] font-mono">{formatPrice(auction.currentPrice)}</strong> phù hợp, bấm <strong>Mua ngay</strong> để sở hữu.
-                            </p>
-                          </div>
-
-                          {currentUser?.userId === auction.authorId ? (
-                            /* Chủ phiên không được mua */
-                            <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 flex items-center gap-2.5">
-                              <Info size={15} className="text-blue-600 shrink-0" />
-                              <span>Bạn là người tạo phiên này — không thể mua SIM trong phiên của chính mình.</span>
-                            </div>
-                          ) : !isLoggedIn ? (
-                            <Link href={`/login?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "")}`} className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] text-white font-bold text-sm rounded-xl text-center block shadow-md transition-colors active:scale-[0.99]">Đăng nhập để mua</Link>
-                          ) : !auction.isUserRegistered && auction.depositAmount > 0 ? (
-                            <div className="space-y-3">
-                              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-center gap-2">
-                                <Lock size={15} className="text-amber-700 shrink-0" />
-                                <span>Yêu cầu đặt cọc <strong>{formatPrice(auction.depositAmount)}</strong> trước khi mua.</span>
-                              </div>
-                              <button type="button" onClick={handleRegisterParticipant} disabled={registering} className="w-full py-3.5 px-6 bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white font-bold text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md disabled:opacity-50">
-                                {registering ? <RefreshCw size={15} className="animate-spin" /> : <Wallet size={15} />}
-                                <span>{registering ? "Đang xác nhận…" : `Đặt cọc (${formatPrice(auction.depositAmount)})`}</span>
-                              </button>
-                            </div>
-                          ) : (
-                            <button type="button" onClick={handleOpenDutchConfirm} disabled={acceptingDutchBuy} className="w-full py-3.5 px-6 bg-[#E4011E] hover:bg-[#C00119] active:scale-[0.99] text-white font-black text-base rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2.5 shadow-md disabled:opacity-50 select-none">
-                              {acceptingDutchBuy ? <RefreshCw size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
-                              <span>{acceptingDutchBuy ? "Đang xác nhận…" : `Mua ngay — ${formatPrice(auction.currentPrice)}`}</span>
-                            </button>
-                          )}
-                        </div>
-                      )
-                    ) : (
-                      <PostAuctionSettlementTerminal
-                        auction={auction}
-                        currentUser={currentUser}
-                        isLoggedIn={isLoggedIn}
-                        mySettlement={mySettlement}
-                        onRefresh={() => fetchAuctionData(true)}
-                        onOpenDeposit={(amt) => {
-                          if (amt && amt > 0) setDepositInitialAmount(amt);
-                          setDepositModalOpen(true);
-                        }}
-                        addToast={addToast}
-                      />
+                        );
+                      })
                     )}
                   </div>
-                </div>
 
-                {/* ── 3. AUCTION RULES & MECHANISM EXPLANATION ── */}
-                <CollapsibleSection
-                  title={isDutch ? "Quy Chế Đấu Giá Hà Lan (Giảm Dần)" : "Quy Chế Đấu Giá Kiểu Anh (Tăng Dần)"}
-                  icon={isDutch ? <TrendingDown size={16} /> : <Scale size={16} />}
-                  badge={<span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600">Quy định phiên</span>}
-                >
-                  <div className="p-5 space-y-5">
-                    {/* Mechanism Explanation */}
-                    <div className="p-4 bg-blue-50/70 border border-blue-200/70 rounded-xl">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-0.5"><BookOpen size={16} /></div>
-                        <div>
-                          <h4 className="font-bold text-xs text-blue-900 mb-1">
-                            {isDutch ? "Cơ chế Đấu giá Hà Lan hoạt động như thế nào?" : "Cơ chế Đấu giá Kiểu Anh hoạt động như thế nào?"}
-                          </h4>
-                          <p className="text-[12px] text-blue-800 leading-relaxed">
-                            {isDutch
-                              ? "Giá niêm yết bắt đầu từ mức cao nhất (giá khởi điểm) và tự động giảm đều đặn theo từng chu kỳ thời gian. Người tham gia đầu tiên bấm \"Mua ngay\" tại mức giá đang hiển thị sẽ lập tức giành quyền sở hữu số SIM và phiên kết thúc ngay. Nếu không ai bấm mua và giá giảm chạm giá sàn bảo lưu, phiên tự động đóng."
-                              : "Giá khởi điểm bắt đầu từ mức thấp nhất. Người tham gia lần lượt trả giá cao hơn, mỗi lượt phải tăng ít nhất bằng bước giá tối thiểu. Khi hết thời gian, người đang giữ mức giá cao nhất sẽ giành quyền sở hữu SIM. Nếu có lượt trả giá ở những giây cuối phiên, hệ thống tự động gia hạn thêm thời gian để đảm bảo công bằng (Anti-Sniping)."}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Detailed Rules Grid */}
-                    {isDutch ? (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Giá khởi điểm (Trần)</span>
-                          <div className="font-mono text-lg font-bold text-[#001743] tabular-nums">{formatPrice(auction.startingPrice)}</div>
-                          <span className="text-[11px] text-slate-400 mt-1 block">Mức giá cao nhất khi mở phiên</span>
-                        </div>
-                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Tốc độ giảm giá</span>
-                          <div className="font-mono text-lg font-bold text-rose-600 tabular-nums">-{formatPrice(auction.dutchDecreaseAmount || 0)}</div>
-                          <span className="text-[11px] text-slate-500 mt-1 block">Mỗi <strong>{auction.dutchDecreaseIntervalSeconds || 60} giây</strong> hạ 1 lần</span>
-                        </div>
-                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Giá sàn bảo lưu</span>
-                          <div className="font-mono text-lg font-bold text-[#001743] tabular-nums">{formatPrice(auction.reservePrice)}</div>
-                          <span className="text-[11px] text-slate-400 mt-1 block">Mức giá tối thiểu người bán chấp nhận</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bước giá tối thiểu</span>
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-200/70">Mỗi lượt</span>
-                          </div>
-                          <div className="font-mono text-lg font-bold text-[#001743] tabular-nums">+{formatPrice(auction.minBidStep || 0)}</div>
-                          <p className="text-[11px] text-slate-400 mt-1">Mức tăng tối thiểu mỗi lần trả giá</p>
-                        </div>
-                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Giới hạn 1 lượt</span>
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200/70">Chống nhầm</span>
-                          </div>
-                          <div className="font-mono text-lg font-bold text-[#001743] tabular-nums">Tối đa {auction.maxStepMultiplier || 10}× bước</div>
-                          <p className="text-[11px] text-slate-400 mt-1">= Tối đa +{formatPrice((auction.maxStepMultiplier || 10) * (auction.minBidStep || 0))} / lượt</p>
-                        </div>
-                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Anti-Sniping</span>
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70">Công bằng</span>
-                          </div>
-                          <div className="font-mono text-lg font-bold text-[#001743] tabular-nums">+{auction.extensionDurationSeconds || 30}s</div>
-                          <p className="text-[11px] text-slate-400 mt-1">Gia hạn khi có bid ở 60s cuối (tối đa {auction.maxSnipeExtensionsPerParticipant || 3} lần/người)</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Financial Obligations */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="p-4 rounded-xl border border-slate-200 bg-white">
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                          <span className="text-xs font-bold text-slate-700">Tiền đặt cọc</span>
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">Hoàn 100%</span>
-                        </div>
-                        <div className="font-mono text-xl font-black text-[#001743] tabular-nums">{auction.depositAmount > 0 ? formatPrice(auction.depositAmount) : "Miễn cọc"}</div>
-                        <p className="text-[11px] text-slate-500 leading-relaxed mt-2 pt-2 border-t border-slate-100">Tạm khóa trong ví TrustSim. Tự động hoàn lại 100% nếu bạn không trúng phiên.</p>
-                      </div>
-                      <div className="p-4 rounded-xl border border-slate-200 bg-white">
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                          <span className="text-xs font-bold text-slate-700">Thời hạn thanh toán</span>
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">Tất toán</span>
-                        </div>
-                        <div className="font-mono text-xl font-black text-[#001743] tabular-nums">{auction.paymentGracePeriodHours || 24} giờ</div>
-                        <p className="text-[11px] text-slate-500 leading-relaxed mt-2 pt-2 border-t border-slate-100">Thời hạn hoàn tất thanh toán phần còn lại và sang tên SIM chính chủ.</p>
-                      </div>
-                    </div>
-
-                    {/* Trust Guarantees */}
-                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {[
-                        { icon: <ShieldCheck size={15} />, color: "text-emerald-600 bg-emerald-50 border-emerald-200/60", title: "Hoàn cọc 100%", desc: "Tự động mở khóa ngay sau phiên nếu không trúng." },
-                        { icon: <CheckCircle2 size={15} />, color: "text-blue-600 bg-blue-50 border-blue-200/60", title: "Ký quỹ an toàn", desc: "Tiền ký quỹ tại sàn, chỉ giải ngân sau sang tên." },
-                        { icon: <Lock size={15} />, color: "text-slate-700 bg-slate-100 border-slate-200", title: "Minh bạch", desc: "Ghi nhận mọi lượt vào lệnh, chống gian lận." },
-                      ].map((item, i) => (
-                        <div key={i} className="flex items-start gap-3">
-                          <div className={`w-7 h-7 rounded-lg ${item.color} flex items-center justify-center shrink-0 border mt-0.5`}>{item.icon}</div>
-                          <div>
-                            <span className="font-bold text-xs text-[#001743] block">{item.title}</span>
-                            <p className="text-[11px] text-slate-500 leading-relaxed">{item.desc}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="border-t border-slate-200 bg-white p-4">
+                    {renderAuctionDeskAction()}
                   </div>
-                </CollapsibleSection>
 
-                {/* ── 4. SIM INFO ── */}
-                <CollapsibleSection title="Thông Tin Số SIM" icon={<FileText size={16} />} defaultOpen={false}>
-                  <div className="p-5 space-y-4">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {[
-                        { label: "Số thuê bao", value: auction.simPhoneNumber, mono: true },
-                        { label: "Nhà mạng", value: auction.carrierName },
-                        { label: "Loại hình", value: "SIM vật lý & eSIM" },
-                        ...(auction.formatRhythmName ? [{ label: "Thế số", value: auction.formatRhythmName }] : []),
-                      ].map((item, i) => (
-                        <div key={i} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                          <span className="text-[11px] text-slate-400 font-medium block">{item.label}</span>
-                          <span className={`font-bold text-[#001743] text-xs mt-0.5 block ${(item as any).mono ? "font-mono" : ""}`}>{item.value}</span>
-                        </div>
-                      ))}
-                      {auction.categories && auction.categories.length > 0 && (
-                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 sm:col-span-2">
-                          <span className="text-[11px] text-slate-400 font-medium block">Phân loại</span>
-                          <span className="font-bold text-[#001743] text-xs mt-0.5 block">{auction.categories.join(", ")}</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl flex items-start gap-2.5">
-                      <ShieldCheck size={15} className="text-blue-600 shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-bold text-blue-900 block text-xs">Cam kết pháp lý</span>
-                        <p className="text-blue-800 text-[11px] mt-0.5 leading-relaxed">Số SIM đã qua kiểm tra đối soát, nguyên phôi sạch, không nợ cước, hỗ trợ sang tên chính chủ.</p>
-                      </div>
-                    </div>
+                  <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 text-[11px] text-slate-400 flex items-start gap-2">
+                    <Lock size={13} className="shrink-0 mt-0.5 text-slate-500" />
+                    <span>Mọi lệnh giao dịch đều được ghi nhận tự động theo giờ Việt Nam.</span>
                   </div>
-                </CollapsibleSection>
-
-                {/* ── 5. SELLER INFO ── */}
-                <CollapsibleSection title="Thông Tin Người Bán" icon={<BadgeCheck size={16} />} defaultOpen={false}>
-                  <div className="p-5 space-y-4">
-                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
-                      <div className="flex items-center gap-3.5">
-                        <div className="w-11 h-11 rounded-full bg-[#001743] text-white flex items-center justify-center font-bold text-sm">{auction.authorName?.charAt(0) || "T"}</div>
-                        <div>
-                          <div className="font-bold text-xs text-[#001743] flex items-center gap-1.5">
-                            <span>{auction.authorName || "Đối tác TrustSim"}</span>
-                            <BadgeCheck size={14} className="text-blue-600" />
-                          </div>
-                          <span className="text-[11px] text-slate-500">Đã xác minh căn cước chính chủ</span>
-                        </div>
-                      </div>
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Đã xác minh</span>
-                    </div>
-                    <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl text-slate-600 text-[11px] leading-relaxed">
-                      Người bán đã ký cam kết bảo đảm chuyển nhượng và tuân thủ quy chế giao dịch của TrustSim.
-                    </div>
-                  </div>
-                </CollapsibleSection>
-              </div>
-
-              {/* ═══ RIGHT COLUMN: BID HISTORY ═══ */}
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden sticky top-24">
-                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                  <div className="flex items-center gap-2">
-                    {isActivePhase ? (
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    ) : (
-                      <Radio size={14} className="text-slate-400" />
-                    )}
-                    <h3 className="font-bold text-xs text-[#001743]">{isDutch ? "Diễn biến phiên" : "Lịch sử trả giá"}</h3>
-                  </div>
-                  <span className="text-xs font-mono font-bold px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-full border border-slate-200">{bids.length} lượt</span>
-                </div>
-
-                <div className="divide-y divide-slate-100 max-h-[calc(100vh-220px)] min-h-[380px] overflow-y-auto">
-                  {bids.length === 0 ? (
-                    <div className="py-16 text-center text-slate-400 space-y-2">
-                      <Gavel size={24} className="mx-auto text-slate-300" />
-                      <p className="text-xs font-semibold text-slate-600">{isDutch ? "Chưa có người mua" : "Chưa có lượt trả giá"}</p>
-                      <p className="text-[11px] text-blue-600 font-semibold">
-                        {isDutch ? `Giá hiện tại: ${formatPrice(auction.currentPrice)} — bấm Mua ngay!` : "Hãy là người đầu tiên!"}
-                      </p>
-                    </div>
-                  ) : (
-                    bids.map((bid, index) => {
-                      const isTop = index === 0;
-                      const isNewlyAdded = bid.id === newestBidId;
-                      const avatar = getAvatarStyle(bid.userNameMasked);
-                      return (
-                        <div key={bid.id} className={`flex items-center justify-between px-5 py-3.5 transition-colors ${isNewlyAdded ? "bg-amber-50/80" : isTop ? "bg-amber-50/40" : "hover:bg-slate-50/80"}`}>
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ring-1 ring-slate-200" style={{ backgroundColor: avatar.bg, color: avatar.text }}>
-                              {bid.userNameMasked.slice(0, 2).toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="font-mono font-bold text-xs text-[#001743] truncate">{bid.userNameMasked}</span>
-                                {isTop && (
-                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                                    <Crown size={10} className="text-amber-700" />Dẫn đầu
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                                {new Date(bid.placedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right shrink-0 ml-3">
-                            <div className={`font-mono text-sm font-black tabular-nums ${isTop ? "text-amber-600" : "text-slate-800"}`}>{formatPrice(bid.bidAmount)}</div>
-                            <div className="text-[10px] text-slate-400 font-medium">{isTop ? "Đang dẫn đầu" : "Đã bị vượt"}</div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-
-                <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 text-[11px] text-slate-400 flex items-start gap-2">
-                  <Lock size={13} className="shrink-0 mt-0.5 text-slate-500" />
-                  <span>Mọi lệnh giao dịch đều được ghi nhận tự động theo giờ Việt Nam.</span>
                 </div>
               </div>
-            </div>
+            </>
           )}
         </div>
       </main>
 
-      <Footer />
     </div>
   );
 }

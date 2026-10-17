@@ -22,6 +22,7 @@ import OverviewTab from "@/components/profile/OverviewTab";
 import EkycTab from "@/components/profile/EkycTab";
 import OwnedSimsTab from "@/components/profile/OwnedSimsTab";
 import BidsTab from "@/components/profile/BidsTab";
+import SettlementsTab from "@/components/profile/SettlementsTab";
 import TransactionsTab from "@/components/profile/TransactionsTab";
 import ContractsTab from "@/components/profile/ContractsTab";
 import SettingsTab from "@/components/profile/SettingsTab";
@@ -31,15 +32,23 @@ const TABS: { key: ProfileTab; icon: React.ComponentType<{ size?: number }>; lab
   { key: "ekyc", icon: Icons.ShieldCheck, label: "Xác thực eKYC" },
   { key: "auctions", icon: Icons.Inbox, label: "SIM sở hữu" },
   { key: "bids", icon: Icons.Gavel, label: "Đang đấu giá" },
+  { key: "settlements", icon: Icons.FileCheck, label: "Hoàn tất giao dịch" },
   { key: "transactions", icon: Icons.Wallet, label: "Giao dịch Ví" },
   { key: "contracts", icon: Icons.FileText, label: "Hợp đồng" },
   { key: "settings", icon: Icons.Settings, label: "Cài đặt & Bảo mật" },
 ];
 
+const PROFILE_TAB_KEYS = new Set<ProfileTab>(TABS.map((tab) => tab.key));
+
+function getProfileTab(value: string | null): ProfileTab {
+  if (value === "trades") return "contracts";
+  return value && PROFILE_TAB_KEYS.has(value as ProfileTab) ? value as ProfileTab : "overview";
+}
+
 function ProfilePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<ProfileTab>("overview");
+  const [activeTab, setActiveTab] = useState<ProfileTab>(() => getProfileTab(searchParams.get("tab")));
   const [user, setUser] = useState<AuthResponseDto | null>(null);
   const [profile, setProfile] = useState<UserProfileDto | null>(null);
   const [wallet, setWallet] = useState<WalletDto | null>(null);
@@ -94,14 +103,7 @@ function ProfilePageInner() {
     const currentUser = authService.getUser();
     setUser(currentUser);
 
-    if (typeof window !== "undefined") {
-      const tabParam = searchParams.get("tab");
-      if (tabParam === "trades" || tabParam === "contracts") {
-        setActiveTab("contracts");
-      } else if (tabParam && ["overview", "ekyc", "auctions", "bids", "transactions", "settings"].includes(tabParam)) {
-        setActiveTab(tabParam as ProfileTab);
-      }
-    }
+    setActiveTab(getProfileTab(searchParams.get("tab")));
 
     if (authService.isAuthenticated()) {
       Promise.all([
@@ -230,9 +232,9 @@ function ProfilePageInner() {
         }}
       >
         <div className="container" style={{ maxWidth: 1180, margin: "0 auto", padding: "0 20px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 32, alignItems: "center" }}>
+          <div className="profile-hero-grid" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 32, alignItems: "center" }}>
             {/* Left Column: Avatar & Personal Credentials */}
-            <div style={{ display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
+            <div className="profile-hero-identity" style={{ display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
               <div style={{ position: "relative" }}>
                 <input
                   type="file"
@@ -390,7 +392,7 @@ function ProfilePageInner() {
                   {displayIdentity && <><span>·</span><span>CCCD: {displayIdentity}</span></>}
                 </div>
 
-                <div style={{ display: "flex", gap: 20, fontSize: 12, color: "rgba(255, 255, 255, 0.65)" }}>
+                <div className="profile-hero-meta" style={{ display: "flex", gap: 20, fontSize: 12, color: "rgba(255, 255, 255, 0.65)" }}>
                   <span>Thành viên từ: <strong style={{ color: "#FFFFFF" }}>01/2025</strong></span>
                   <span>·</span>
                   <span>
@@ -405,6 +407,7 @@ function ProfilePageInner() {
 
             {/* Right Column: Real-time Wallet Card */}
             <div
+              className="profile-wallet-card"
               style={{
                 background: "#FFFFFF",
                 borderRadius: 12,
@@ -578,6 +581,11 @@ function ProfilePageInner() {
               <BidsTab
                 addToast={addToast}
                 onNavigateTab={handleTabChange}
+              />
+            )}
+            {activeTab === "settlements" && (
+              <SettlementsTab
+                addToast={addToast}
                 onOpenDeposit={() => setDepositModalOpen(true)}
               />
             )}

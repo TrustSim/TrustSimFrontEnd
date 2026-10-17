@@ -109,8 +109,8 @@ function FormattedCurrencyInput({
   return (
     <div
       className={`group relative flex items-center w-full h-11 bg-white rounded-lg border transition-all shadow-xs ${hasError
-          ? "border-rose-500 ring-2 ring-rose-500/10"
-          : "border-slate-300 hover:border-slate-400 focus-within:border-[#E4011E] focus-within:ring-2 focus-within:ring-[#E4011E]/15"
+        ? "border-rose-500 ring-2 ring-rose-500/10"
+        : "border-slate-300 hover:border-slate-400 focus-within:border-[#E4011E] focus-within:ring-2 focus-within:ring-[#E4011E]/15"
         } ${disabled ? "opacity-60 cursor-not-allowed bg-slate-50" : ""}`}
     >
       <input
@@ -744,18 +744,18 @@ export default function CreateAuctionWizardModal({
                 <div key={s.num} className="flex flex-col gap-1">
                   <div
                     className={`h-1.5 rounded-full transition-colors ${isPast
+                      ? "bg-[#E4011E]"
+                      : isCurrent
                         ? "bg-[#E4011E]"
-                        : isCurrent
-                          ? "bg-[#E4011E]"
-                          : "bg-slate-200"
+                        : "bg-slate-200"
                       }`}
                   />
                   <span
                     className={`text-[11px] truncate ${isCurrent
-                        ? "font-semibold text-slate-900"
-                        : isPast
-                          ? "text-slate-600"
-                          : "text-slate-400"
+                      ? "font-semibold text-slate-900"
+                      : isPast
+                        ? "text-slate-600"
+                        : "text-slate-400"
                       }`}
                   >
                     {s.num}. {s.label}
@@ -888,8 +888,8 @@ export default function CreateAuctionWizardModal({
                                 }
                               }}
                               className={`w-full px-3 py-2.5 rounded-lg text-left text-xs flex items-center justify-between transition-colors ${isSelected
-                                  ? "bg-red-50 text-[#E4011E] font-semibold"
-                                  : "hover:bg-slate-50 text-slate-700"
+                                ? "bg-red-50 text-[#E4011E] font-semibold"
+                                : "hover:bg-slate-50 text-slate-700"
                                 }`}
                             >
                               <div>
@@ -921,8 +921,8 @@ export default function CreateAuctionWizardModal({
                   <div
                     onClick={() => handleAuctionTypeChange(AuctionTypeEnum.ENGLISH)}
                     className={`cursor-pointer rounded-xl border p-4 transition-all shadow-xs ${auctionType === AuctionTypeEnum.ENGLISH
-                        ? "border-[#E4011E] bg-red-50/30 ring-1 ring-[#E4011E]"
-                        : "border-slate-200 bg-white hover:border-slate-300"
+                      ? "border-[#E4011E] bg-red-50/30 ring-1 ring-[#E4011E]"
+                      : "border-slate-200 bg-white hover:border-slate-300"
                       }`}
                   >
                     <div className="flex items-start justify-between">
@@ -939,8 +939,8 @@ export default function CreateAuctionWizardModal({
                       </div>
                       <div
                         className={`size-4 rounded-full border flex items-center justify-center ${auctionType === AuctionTypeEnum.ENGLISH
-                            ? "border-[#E4011E] bg-[#E4011E]"
-                            : "border-slate-300"
+                          ? "border-[#E4011E] bg-[#E4011E]"
+                          : "border-slate-300"
                           }`}
                       >
                         {auctionType === AuctionTypeEnum.ENGLISH && (
@@ -961,8 +961,8 @@ export default function CreateAuctionWizardModal({
                   <div
                     onClick={() => handleAuctionTypeChange(AuctionTypeEnum.DUTCH)}
                     className={`cursor-pointer rounded-xl border p-4 transition-all shadow-xs ${auctionType === AuctionTypeEnum.DUTCH
-                        ? "border-[#E4011E] bg-red-50/30 ring-1 ring-[#E4011E]"
-                        : "border-slate-200 bg-white hover:border-slate-300"
+                      ? "border-[#E4011E] bg-red-50/30 ring-1 ring-[#E4011E]"
+                      : "border-slate-200 bg-white hover:border-slate-300"
                       }`}
                   >
                     <div className="flex items-start justify-between">
@@ -979,8 +979,8 @@ export default function CreateAuctionWizardModal({
                       </div>
                       <div
                         className={`size-4 rounded-full border flex items-center justify-center ${auctionType === AuctionTypeEnum.DUTCH
-                            ? "border-[#E4011E] bg-[#E4011E]"
-                            : "border-slate-300"
+                          ? "border-[#E4011E] bg-[#E4011E]"
+                          : "border-slate-300"
                           }`}
                       >
                         {auctionType === AuctionTypeEnum.DUTCH && (
@@ -1087,8 +1087,8 @@ export default function CreateAuctionWizardModal({
                           }
                         }}
                         className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${isSelected
-                            ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/30"
-                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
+                          ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/30"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
                           }`}
                       >
                         {p.toLocaleString("vi-VN")} ₫
@@ -1146,8 +1146,8 @@ export default function CreateAuctionWizardModal({
                         type="button"
                         onClick={() => setDepositAmount(c)}
                         className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${isSelected
-                            ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/30"
-                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
+                          ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/30"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
                           }`}
                       >
                         {c.toLocaleString("vi-VN")} ₫
@@ -1210,8 +1210,8 @@ export default function CreateAuctionWizardModal({
                       return (
                         <div
                           className={`p-3 rounded-lg border flex items-start gap-2.5 ${hasEnough
-                              ? "bg-emerald-50/70 border-emerald-200 text-emerald-900"
-                              : "bg-amber-50/80 border-amber-200 text-amber-900"
+                            ? "bg-emerald-50/70 border-emerald-200 text-emerald-900"
+                            : "bg-amber-50/80 border-amber-200 text-amber-900"
                             }`}
                         >
                           {hasEnough ? (
@@ -1277,8 +1277,8 @@ export default function CreateAuctionWizardModal({
                             type="button"
                             onClick={() => setMinimumBidIncrement(inc)}
                             className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${isSelected
-                                ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/30"
-                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
+                              ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/30"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
                               }`}
                           >
                             {inc.toLocaleString("vi-VN")} ₫
@@ -1309,8 +1309,8 @@ export default function CreateAuctionWizardModal({
                           type="button"
                           onClick={() => setMaxStepMultiplier(mult)}
                           className={`h-10 rounded-lg border text-xs font-semibold transition-all ${maxStepMultiplier === mult
-                              ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/40"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
+                            ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/40"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
                             }`}
                         >
                           {mult}x bước giá
@@ -1431,8 +1431,8 @@ export default function CreateAuctionWizardModal({
                             type="button"
                             onClick={() => setDutchDecreaseAmount(amt)}
                             className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${isSelected
-                                ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/30"
-                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
+                              ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/30"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
                               }`}
                           >
                             {amt.toLocaleString("vi-VN")} ₫
@@ -1459,8 +1459,8 @@ export default function CreateAuctionWizardModal({
                           type="button"
                           onClick={() => setDutchDecreaseIntervalSeconds(item.sec)}
                           className={`h-10 rounded-lg border text-xs font-semibold transition-all ${dutchDecreaseIntervalSeconds === item.sec
-                              ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/40"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
+                            ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/40"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
                             }`}
                         >
                           {item.text}
@@ -1523,8 +1523,8 @@ export default function CreateAuctionWizardModal({
                         type="button"
                         onClick={() => setStartPreset(preset.val)}
                         className={`h-10 px-2 rounded-lg border text-xs font-semibold transition-all ${isSelected
-                            ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/40"
-                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
+                          ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/40"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
                           }`}
                       >
                         {preset.label}
@@ -1555,7 +1555,7 @@ export default function CreateAuctionWizardModal({
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       {[
-                        { min: 3, label: "3 phút", desc: "Phiên kết thúc sau 3 phút" },
+                        { min: 2, label: "2 phút", desc: "Phiên kết thúc sau 3 phút" },
                         { min: 5, label: "5 phút", desc: "Phiên kết thúc sau 5 phút" },
                       ].map((item) => {
                         const isSelected = durationMinutes === item.min;
@@ -1565,16 +1565,16 @@ export default function CreateAuctionWizardModal({
                             type="button"
                             onClick={() => setDurationMinutes(item.min)}
                             className={`p-2.5 rounded-lg border text-left transition-all ${isSelected
-                                ? "border-amber-600 bg-amber-100/90 text-amber-950 ring-1 ring-amber-500 shadow-xs"
-                                : "border-amber-200 bg-white text-slate-700 hover:border-amber-300 hover:bg-amber-50/40 shadow-xs"
+                              ? "border-amber-600 bg-amber-100/90 text-amber-950 ring-1 ring-amber-500 shadow-xs"
+                              : "border-amber-200 bg-white text-slate-700 hover:border-amber-300 hover:bg-amber-50/40 shadow-xs"
                               }`}
                           >
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-bold">{item.label}</span>
                               <span
                                 className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${isSelected
-                                    ? "bg-amber-200 text-amber-900"
-                                    : "bg-slate-100 text-slate-600"
+                                  ? "bg-amber-200 text-amber-900"
+                                  : "bg-slate-100 text-slate-600"
                                   }`}
                               >
                                 Test nhanh
@@ -1605,8 +1605,8 @@ export default function CreateAuctionWizardModal({
                             type="button"
                             onClick={() => setDurationMinutes(item.min)}
                             className={`h-10 rounded-lg border text-xs font-semibold transition-all ${isSelected
-                                ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/40"
-                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
+                              ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/40"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
                               }`}
                           >
                             {item.text}
@@ -1636,8 +1636,8 @@ export default function CreateAuctionWizardModal({
                         type="button"
                         onClick={() => setGracePeriodHours(item.h)}
                         className={`h-10 rounded-lg border text-xs font-semibold transition-all ${isSelected
-                            ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/40"
-                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
+                          ? "border-[#E4011E] bg-red-50 text-[#E4011E] ring-1 ring-[#E4011E]/40"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-xs"
                           }`}
                       >
                         {item.text}

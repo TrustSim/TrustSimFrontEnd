@@ -311,10 +311,10 @@ export default function SellerConfirmRunnerUpPage({
             </Link>
             <span>/</span>
             <Link
-              href="/profile?tab=auctions"
+              href="/profile?tab=settlements"
               className="hover:text-[#001743] transition-colors font-medium"
             >
-              Kho SIM sở hữu
+              Hoàn tất giao dịch
             </Link>
             <span>/</span>
             <Link
@@ -358,10 +358,10 @@ export default function SellerConfirmRunnerUpPage({
               này.
             </p>
             <Link
-              href="/profile?tab=auctions"
+              href="/profile?tab=settlements"
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[6px] bg-[#001743] text-white text-xs font-bold hover:bg-[#00266B] transition-colors"
             >
-              Về danh sách SIM của tôi
+              Về giao dịch cần hoàn tất
             </Link>
           </div>
         ) : (
@@ -419,10 +419,10 @@ export default function SellerConfirmRunnerUpPage({
                     phiên mới.
                   </p>
                   <Link
-                    href="/profile?tab=auctions"
+                    href="/profile?tab=settlements"
                     className="inline-flex items-center gap-1 mt-3 px-3 py-1.5 rounded-[6px] bg-[#001743] hover:bg-[#00266B] text-white font-bold transition-colors"
                   >
-                    <span>Về kho SIM sở hữu</span>
+                    <span>Về giao dịch cần hoàn tất</span>
                     <ArrowRight size={12} />
                   </Link>
                 </div>

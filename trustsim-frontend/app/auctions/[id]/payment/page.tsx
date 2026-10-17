@@ -431,10 +431,10 @@ export default function AuctionPaymentTerminalPage({
             </Link>
             <span>/</span>
             <Link
-              href="/profile?tab=bids"
+              href="/profile?tab=settlements"
               className="hover:text-[#001743] transition-colors font-medium"
             >
-              Đang đấu giá
+              Hoàn tất giao dịch
             </Link>
             <span>/</span>
             <Link
@@ -485,10 +485,10 @@ export default function AuctionPaymentTerminalPage({
               Phiên đấu giá không tồn tại hoặc bạn không có quyền thanh toán phiên này.
             </p>
             <Link
-              href="/profile?tab=bids"
+              href="/profile?tab=settlements"
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[6px] bg-[#001743] text-white text-xs font-bold hover:bg-[#00266B] transition-colors"
             >
-              Về danh mục đấu giá của tôi
+              Về giao dịch cần hoàn tất
             </Link>
           </div>
         ) : (
@@ -555,10 +555,10 @@ export default function AuctionPaymentTerminalPage({
                     ví khả dụng của bạn theo quy định.
                   </p>
                   <Link
-                    href="/profile?tab=bids"
+                    href="/profile?tab=settlements"
                     className="inline-flex items-center gap-1 mt-3 px-3.5 py-1.5 rounded-[6px] bg-[#001743] text-white text-xs font-bold"
                   >
-                    Về danh mục đấu giá của tôi
+                    Về giao dịch cần hoàn tất
                   </Link>
                 </div>
               </div>

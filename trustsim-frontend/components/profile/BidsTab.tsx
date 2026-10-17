@@ -5,10 +5,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import {
   Gavel,
-  Trophy,
-  Award,
   Clock,
-  AlertTriangle,
   ArrowRight,
   Search,
   Sparkles,
@@ -17,12 +14,9 @@ import {
   Wallet,
   ChevronRight,
   Plus,
-  Flame,
-  Scale,
   X,
   ShoppingBag,
   Tag,
-  AlertCircle,
   CheckCircle2,
   SlidersHorizontal,
   LayoutGrid,
@@ -39,14 +33,12 @@ import { ToastMessage } from "@/components/ui/Toast";
 import {
   auctionService,
   AuctionDto,
-  PendingSettlementDto,
 } from "@/services/auctionService";
 import { formatPhoneNumber, getCarrierColor } from "@/services/simService";
 
 interface BidsTabProps {
   addToast: (t: Omit<ToastMessage, "id">) => void;
   onNavigateTab?: (tab: any) => void;
-  onOpenDeposit?: () => void;
 }
 
 type TabRole = "buyer" | "seller";
@@ -110,7 +102,6 @@ function CarrierBadge({ carrier }: { carrier?: string }) {
 export default function BidsTab({
   addToast,
   onNavigateTab,
-  onOpenDeposit,
 }: BidsTabProps) {
   // ─── State ───────────────────────────────────────────────────────────────
   const [role, setRole] = useState<TabRole>("buyer");
@@ -123,27 +114,15 @@ export default function BidsTab({
   // Data
   const [buyerAuctions, setBuyerAuctions] = useState<AuctionDto[]>([]);
   const [sellerAuctions, setSellerAuctions] = useState<AuctionDto[]>([]);
-  const [pendingSettlements, setPendingSettlements] = useState<PendingSettlementDto[]>([]);
-
-  // Action Loading
-  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
-
-  // Modal Action
-  const [activeActionModal, setActiveActionModal] = useState<{
-    item: PendingSettlementDto;
-    type: "PAY" | "FORFEIT" | "ACCEPT_RUNNER_UP" | "REJECT_RUNNER_UP" | "SELLER_APPROVE" | "SELLER_REJECT";
-  } | null>(null);
-
   // ─── Fetch Data ──────────────────────────────────────────────────────────
   const fetchData = useCallback(async (isSilent = false) => {
     if (!isSilent) setLoading(true);
     else setRefreshing(true);
 
     try {
-      const [buyerRes, sellerRes, pendingRes] = await Promise.allSettled([
+      const [buyerRes, sellerRes] = await Promise.allSettled([
         auctionService.getAuctions({ myParticipations: true, pageSize: 50 }),
         auctionService.getAuctions({ myAuctions: true, pageSize: 50 }),
-        auctionService.getPendingSettlements(),
       ]);
 
       if (buyerRes.status === "fulfilled") {
@@ -151,9 +130,6 @@ export default function BidsTab({
       }
       if (sellerRes.status === "fulfilled") {
         setSellerAuctions(sellerRes.value.items || []);
-      }
-      if (pendingRes.status === "fulfilled") {
-        setPendingSettlements(pendingRes.value || []);
       }
     } catch (err: any) {
       console.warn("Lỗi tải danh sách phiên đấu giá:", err);
@@ -211,15 +187,6 @@ export default function BidsTab({
     });
   }, [role, buyerAuctions, sellerAuctions, searchQuery, statusFilter]);
 
-  // ─── Urgent Settlements Filtered by Role ──────────────────────────────────
-  const urgentSettlements = useMemo(() => {
-    if (role === "buyer") {
-      return pendingSettlements.filter((s) => s.role === "WINNER" || s.role === "RUNNER_UP");
-    } else {
-      return pendingSettlements.filter((s) => s.role === "SELLER");
-    }
-  }, [pendingSettlements, role]);
-
   // ─── Financial Portfolio Metrics ─────────────────────────────────────────
   const portfolioMetrics = useMemo(() => {
     const currentList = role === "buyer" ? buyerAuctions : sellerAuctions;
@@ -240,73 +207,8 @@ export default function BidsTab({
       activeCount,
       totalDepositLocked,
       completedCount,
-      urgentCount: urgentSettlements.length,
     };
-  }, [role, buyerAuctions, sellerAuctions, urgentSettlements]);
-
-  // ─── Action Handlers ─────────────────────────────────────────────────────
-  const handleConfirmAction = async () => {
-    if (!activeActionModal) return;
-    const { item, type } = activeActionModal;
-    setActionLoadingId(item.auctionId);
-
-    try {
-      if (type === "PAY") {
-        await auctionService.confirmWinnerPayment(item.auctionId);
-        addToast({
-          type: "success",
-          title: "Thanh toán thành công",
-          message: `Đã hoàn tất thanh toán số tiền còn lại cho SIM ${formatPhoneNumber(item.simPhoneNumber)}. Hợp đồng điện tử đã được kích hoạt!`,
-        });
-      } else if (type === "FORFEIT") {
-        await auctionService.forfeitWinnerPurchase(item.auctionId);
-        addToast({
-          type: "warning",
-          title: "Đã từ bỏ quyền mua",
-          message: `Hệ thống đã ghi nhận việc từ bỏ quyền mua SIM ${formatPhoneNumber(item.simPhoneNumber)} và thực thi chế tài phạt cọc theo quy chế.`,
-        });
-      } else if (type === "ACCEPT_RUNNER_UP") {
-        await auctionService.acceptRunnerUpOffer(item.auctionId);
-        addToast({
-          type: "success",
-          title: "Nhận quyền mua thành công",
-          message: `Bạn đã chấp thuận nhận quyền mua SIM ${formatPhoneNumber(item.simPhoneNumber)} với mức giá Á Quân. Vui lòng thanh toán số tiền còn lại!`,
-        });
-      } else if (type === "REJECT_RUNNER_UP") {
-        await auctionService.rejectRunnerUpOffer(item.auctionId);
-        addToast({
-          type: "info",
-          title: "Đã từ chối nhận mua",
-          message: `Bạn đã từ chối nhận quyền mua SIM ${formatPhoneNumber(item.simPhoneNumber)}. Tiền cọc đã được hoàn về ví khả dụng.`,
-        });
-      } else if (type === "SELLER_APPROVE") {
-        await auctionService.sellerDecideRunnerUp(item.auctionId, true);
-        addToast({
-          type: "success",
-          title: "Đã phê duyệt bán cho Á Quân",
-          message: `Bạn đã chấp thuận bán SIM ${formatPhoneNumber(item.simPhoneNumber)} cho Á Quân. Hệ thống đã phát lệnh thanh toán cho người mua.`,
-        });
-      } else if (type === "SELLER_REJECT") {
-        await auctionService.sellerDecideRunnerUp(item.auctionId, false);
-        addToast({
-          type: "info",
-          title: "Đã từ chối bán cho Á Quân",
-          message: `Phiên đấu giá đã kết thúc. Bạn nhận được tiền bồi thường thiệt hại trích từ quỹ phạt cọc của Winner ban đầu.`,
-        });
-      }
-
-      setActiveActionModal(null);
-      await fetchData(true);
-    } catch (err: any) {
-      addToast({
-        type: "error",
-        title: "Thao tác không thành công",
-        message: err.message || "Đã xảy ra lỗi khi thực thi giao dịch. Vui lòng thử lại sau.",
-      });
-    } finally {
-      setActionLoadingId(null);
-    }
-  };
+  }, [role, buyerAuctions, sellerAuctions]);
 
   return (
     <div className="space-y-6">
@@ -319,17 +221,15 @@ export default function BidsTab({
             <div className="flex items-center gap-2.5">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider uppercase bg-slate-100 text-[#001743] border border-slate-200">
                 <Gavel size={12} className="text-[#001743]" />
-                <span>Trung tâm đối soát &amp; Danh mục đấu giá</span>
+                <span>Danh sách phiên đấu giá</span>
               </span>
-              <span className="text-[11px] font-mono text-slate-400">SMART ESCROW GUARANTEED</span>
             </div>
 
             <h1 className="text-xl font-bold tracking-tight text-[#001743] mt-2">
-              Quản Trị Phiên Đấu Giá &amp; Quyết Toán Ký Quỹ
+              Quản lý các phiên đấu giá
             </h1>
             <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
-              Theo dõi danh mục SIM đấu giá bạn tham gia đặt cọc hoặc đứng tên làm chủ phiên. Mọi giao dịch ký quỹ,
-              chuyển nhượng và bồi thường đều được bảo chứng tự động qua hợp đồng điện tử TrustSim.
+              Theo dõi các phiên bạn đang tham gia hoặc đang quản lý. Những phiên cần thanh toán hay xác nhận đã được chuyển sang tab Hoàn tất giao dịch.
             </p>
           </div>
 
@@ -414,279 +314,17 @@ export default function BidsTab({
 
           <div className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
             <div>
-              <div className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Lệnh đối soát chờ</div>
-              <div className="text-lg font-bold text-amber-950 font-mono tabular-nums mt-0.5 flex items-center gap-1.5">
-                <span>{portfolioMetrics.urgentCount} quyết định</span>
-                {portfolioMetrics.urgentCount > 0 && (
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-                )}
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Đã kết thúc</div>
+              <div className="text-lg font-bold text-slate-900 font-mono tabular-nums mt-0.5 flex items-center gap-1.5">
+                <span>{portfolioMetrics.completedCount} phiên</span>
               </div>
             </div>
-            <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200/70 flex items-center justify-center text-amber-700 shadow-2xs">
-              <Flame size={16} />
+            <div className="w-8 h-8 rounded-lg bg-white border border-slate-200/70 flex items-center justify-center text-slate-600 shadow-2xs">
+              <CheckCircle2 size={16} />
             </div>
           </div>
         </div>
       </div>
-
-      {/* ── SECTION 3: Urgent Escrow Settlement Cockpit (Phòng Quyết Định & Đối Soát Khẩn Cấp) ── */}
-      {urgentSettlements.length > 0 && (
-        <section
-          aria-label="Phòng đối soát ký quỹ khẩn cấp"
-          className="bg-gradient-to-r from-amber-50/70 via-white to-amber-50/40 border border-amber-300 rounded-2xl p-6 shadow-xs space-y-4"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-amber-200">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
-                <Flame size={18} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-bold text-amber-950 uppercase tracking-wider">
-                    Phòng Quyết Định Ký Quỹ &amp; Thanh Toán Khẩn Cấp
-                  </h2>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200 text-amber-900 font-mono">
-                    {urgentSettlements.length} yêu cầu
-                  </span>
-                </div>
-                <p className="text-xs text-amber-900/80 mt-0.5">
-                  {role === "buyer"
-                    ? "Bạn có phiên đấu giá đã kết thúc. Vui lòng thanh toán số tiền còn lại hoặc xác nhận quyền mua Á Quân trước hạn chót."
-                    : "Người trúng đấu giá ban đầu đã bỏ cọc. Bạn có quyền duyệt bán chuyển nhượng cho Á Quân hoặc nhận bồi thường phạt cọc."}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 text-xs font-semibold text-amber-900 font-mono tabular-nums bg-amber-100/80 px-3 py-1.5 rounded-xl border border-amber-300/60 self-start sm:self-auto">
-              <Clock size={14} className="text-amber-700 animate-spin" />
-              <span>Đếm ngược hiệu lực quyết toán</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {urgentSettlements.map((item) => {
-              const isWinner = item.role === "WINNER";
-              const isRunnerUp = item.role === "RUNNER_UP";
-              const isSeller = item.role === "SELLER";
-              const hasDeficit = item.deficitAmount > 0;
-              const remainingInfo = formatRemaining(item.deadline);
-
-              return (
-                <div
-                  key={item.auctionId}
-                  className="bg-white rounded-2xl p-5 border border-amber-200/90 shadow-2xs flex flex-col justify-between space-y-4 hover:border-amber-300 transition-colors"
-                >
-                  <div className="space-y-3.5">
-                    {/* Header: SIM, Code, Role Badge */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-lg font-black text-[#001743] tracking-tight tabular-nums block">
-                            {formatPhoneNumber(item.simPhoneNumber)}
-                          </span>
-                          <CarrierBadge carrier={item.carrierName} />
-                        </div>
-                        <div className="flex items-center gap-2 text-[11px] text-slate-500 font-mono mt-1 flex-wrap">
-                          <span>Mã: <strong className="text-slate-700">{item.auctionCode}</strong></span>
-                          <span>•</span>
-                          <Link
-                            href={`/auctions/${item.auctionId}`}
-                            className="inline-flex items-center gap-0.5 text-blue-600 hover:text-blue-800 font-semibold hover:underline"
-                          >
-                            <span>Bàn quyết toán phòng</span>
-                            <ArrowUpRight size={11} />
-                          </Link>
-                        </div>
-                      </div>
-
-                      <span
-                        className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-md border ${
-                          isWinner
-                            ? "bg-emerald-50 text-emerald-800 border-emerald-300"
-                            : isRunnerUp
-                            ? "bg-blue-50 text-blue-800 border-blue-300"
-                            : "bg-purple-50 text-purple-800 border-purple-300"
-                        }`}
-                      >
-                        {isWinner && <Trophy size={13} className="text-emerald-700" />}
-                        {isRunnerUp && <Award size={13} className="text-blue-700" />}
-                        {isSeller && <Scale size={13} className="text-purple-700" />}
-                        <span>
-                          {isWinner
-                            ? "Winner (Trúng Đấu Giá)"
-                            : isRunnerUp
-                            ? "Á Quân (Được Chuyển Nhượng)"
-                            : "Chủ Phiên (Duyệt Á Quân)"}
-                        </span>
-                      </span>
-                    </div>
-
-                    {/* Financial Ledger Breakdown */}
-                    <div className="space-y-2 text-xs bg-slate-50/80 p-3.5 rounded-xl border border-slate-100">
-                      {isWinner && (
-                        <>
-                          <div className="flex justify-between text-slate-600">
-                            <span>Giá trúng đấu giá chính thức:</span>
-                            <span className="font-mono font-bold text-[#001743] tabular-nums">
-                              {formatVND(item.finalPrice)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between text-slate-600">
-                            <span>Tiền cọc ký quỹ đã cấn trừ:</span>
-                            <span className="font-mono font-bold text-emerald-600 tabular-nums">
-                              -{formatVND(item.depositLocked)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between pt-1.5 border-t border-slate-200 font-bold text-[#001743]">
-                            <span>Số tiền còn lại cần thanh toán:</span>
-                            <span className="font-mono text-sm text-[#E4011E] tabular-nums">
-                              {formatVND(item.remainingPaymentRequired)}
-                            </span>
-                          </div>
-                        </>
-                      )}
-
-                      {isRunnerUp && (
-                        <>
-                          <div className="flex justify-between text-slate-600">
-                            <span>Mức giá chuyển nhượng Á Quân:</span>
-                            <span className="font-mono font-bold text-[#001743] tabular-nums">
-                              {formatVND(item.finalPrice)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between text-slate-600">
-                            <span>Tiền cọc ký quỹ sẵn sàng cấn trừ:</span>
-                            <span className="font-mono font-bold text-emerald-600 tabular-nums">
-                              -{formatVND(item.depositLocked)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between pt-1.5 border-t border-slate-200 font-bold text-[#001743]">
-                            <span>Số tiền bù thêm nếu nhận mua:</span>
-                            <span className="font-mono text-sm text-[#001743] tabular-nums">
-                              {formatVND(item.remainingPaymentRequired)}
-                            </span>
-                          </div>
-                        </>
-                      )}
-
-                      {isSeller && (
-                        <>
-                          <div className="flex justify-between text-slate-600">
-                            <span>Giá chốt ban đầu (Winner đã vi phạm):</span>
-                            <span className="font-mono line-through text-slate-400 tabular-nums">
-                              {formatVND(item.finalPrice)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between pt-1.5 border-t border-slate-200 font-bold text-[#001743]">
-                            <span>Giá Á Quân sẵn sàng mua ngay:</span>
-                            <span className="font-mono text-sm text-emerald-700 tabular-nums">
-                              {formatVND(item.runnerUpFinalPrice || 0)}
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Deficit Warning with Instant Deposit Action */}
-                    {hasDeficit && (isWinner || isRunnerUp) && (
-                      <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center justify-between text-xs text-rose-900">
-                        <div className="flex items-center gap-2 font-medium">
-                          <AlertTriangle size={15} className="text-rose-600 shrink-0" />
-                          <span>
-                            Số dư ví thiếu <strong className="tabular-nums font-bold">{formatVND(item.deficitAmount)}</strong>
-                          </span>
-                        </div>
-                        {onOpenDeposit && (
-                          <button
-                            type="button"
-                            onClick={onOpenDeposit}
-                            className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-2xs transition-colors shrink-0"
-                          >
-                            Nạp ví ngay
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions & Countdown Footer */}
-                  <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-1.5 text-xs font-mono text-amber-900 tabular-nums">
-                      <Clock size={13} className="text-amber-600" />
-                      <span className="font-semibold">{remainingInfo.text}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2 justify-end">
-                      {isWinner && (
-                        <>
-                          <button
-                            type="button"
-                            disabled={actionLoadingId === item.auctionId}
-                            onClick={() => setActiveActionModal({ item, type: "FORFEIT" })}
-                            className="px-3 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
-                          >
-                            Bỏ quyền mua
-                          </button>
-                          <button
-                            type="button"
-                            disabled={actionLoadingId === item.auctionId || hasDeficit}
-                            onClick={() => setActiveActionModal({ item, type: "PAY" })}
-                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-2xs transition-all active:scale-[0.99] disabled:opacity-50"
-                          >
-                            {actionLoadingId === item.auctionId ? "Đang xử lý…" : "Thanh toán ngay"}
-                          </button>
-                        </>
-                      )}
-
-                      {isRunnerUp && (
-                        <>
-                          <button
-                            type="button"
-                            disabled={actionLoadingId === item.auctionId}
-                            onClick={() => setActiveActionModal({ item, type: "REJECT_RUNNER_UP" })}
-                            className="px-3 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
-                          >
-                            Từ chối nhận
-                          </button>
-                          <button
-                            type="button"
-                            disabled={actionLoadingId === item.auctionId || hasDeficit}
-                            onClick={() => setActiveActionModal({ item, type: "ACCEPT_RUNNER_UP" })}
-                            className="px-4 py-2 bg-[#001743] hover:bg-[#00266B] text-white rounded-xl text-xs font-bold shadow-2xs transition-all active:scale-[0.99] disabled:opacity-50"
-                          >
-                            {actionLoadingId === item.auctionId ? "Đang xử lý…" : "Nhận quyền mua"}
-                          </button>
-                        </>
-                      )}
-
-                      {isSeller && (
-                        <>
-                          <button
-                            type="button"
-                            disabled={actionLoadingId === item.auctionId}
-                            onClick={() => setActiveActionModal({ item, type: "SELLER_REJECT" })}
-                            className="px-3 py-2 border border-slate-200 hover:bg-slate-50 text-rose-700 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
-                          >
-                            Từ chối &amp; nhận cọc
-                          </button>
-                          <button
-                            type="button"
-                            disabled={actionLoadingId === item.auctionId}
-                            onClick={() => setActiveActionModal({ item, type: "SELLER_APPROVE" })}
-                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-2xs transition-all active:scale-[0.99] disabled:opacity-50"
-                          >
-                            {actionLoadingId === item.auctionId ? "Đang xử lý…" : "Duyệt bán Á Quân"}
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
 
       {/* ── SECTION 4: Dual-Role Switcher & Interactive Control Console ── */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs space-y-4">
@@ -1102,129 +740,6 @@ export default function BidsTab({
         </div>
       )}
 
-      {/* ── SECTION 6: High-Trust Escrow Settlement Action Modal ── */}
-      {activeActionModal && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-fade-up">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <AlertCircle size={18} className="text-[#001743]" />
-                <h3 className="font-bold text-[#001743] text-sm">Xác Nhận Quyết Toán Ký Quỹ Đấu Giá</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveActionModal(null)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs text-slate-700 leading-relaxed">
-              <p>
-                Bạn đang thao tác trên hợp đồng đấu giá SIM{" "}
-                <strong className="text-[#001743] font-mono tabular-nums">
-                  {formatPhoneNumber(activeActionModal.item.simPhoneNumber)}
-                </strong>{" "}
-                (Mã phiên: {activeActionModal.item.auctionCode}).
-              </p>
-
-              {activeActionModal.type === "PAY" && (
-                <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-950 space-y-1.5">
-                  <div className="font-bold">Xác nhận thanh toán số tiền còn lại:</div>
-                  <div className="font-mono text-lg font-black text-emerald-700 tabular-nums">
-                    {formatVND(activeActionModal.item.remainingPaymentRequired)}
-                  </div>
-                  <p className="text-[11px] text-emerald-800">
-                    Số tiền này sẽ được khấu trừ từ ví khả dụng để đưa vào tài khoản ký quỹ bảo đảm. Hợp đồng chuyển nhượng
-                    sẽ được khởi tạo ngay lập tức.
-                  </p>
-                </div>
-              )}
-
-              {activeActionModal.type === "FORFEIT" && (
-                <div className="p-3.5 bg-rose-50 rounded-xl border border-rose-200 text-rose-950 space-y-1.5">
-                  <div className="font-bold text-rose-800">CẢNH BÁO TỊCH THU TIỀN CỌC:</div>
-                  <p className="text-[11px] leading-normal">
-                    Khi từ bỏ quyền mua, số tiền cọc{" "}
-                    <strong className="tabular-nums font-bold font-mono">
-                      {formatVND(activeActionModal.item.depositLocked)}
-                    </strong>{" "}
-                    sẽ bị tịch thu để bồi thường cho bên bán và sàn giao dịch theo Quy chế hoạt động TrustSim.
-                  </p>
-                </div>
-              )}
-
-              {activeActionModal.type === "ACCEPT_RUNNER_UP" && (
-                <div className="p-3.5 bg-blue-50 rounded-xl border border-blue-200 text-blue-950 space-y-1.5">
-                  <div className="font-bold">Chấp nhận nhận quyền mua Á Quân:</div>
-                  <p className="text-[11px]">
-                    Bạn sẽ trở thành người trúng đấu giá chính thức với mức giá đề xuất{" "}
-                    <strong className="tabular-nums font-bold font-mono">
-                      {formatVND(activeActionModal.item.finalPrice)}
-                    </strong>
-                    .
-                  </p>
-                </div>
-              )}
-
-              {activeActionModal.type === "REJECT_RUNNER_UP" && (
-                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-slate-800 space-y-1.5">
-                  <div className="font-bold">Từ chối nhận mua:</div>
-                  <p className="text-[11px]">
-                    Hệ thống sẽ hoàn trả 100% tiền cọc về ví khả dụng của bạn ngay sau khi xác nhận thao tác.
-                  </p>
-                </div>
-              )}
-
-              {activeActionModal.type === "SELLER_APPROVE" && (
-                <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-950 space-y-1.5">
-                  <div className="font-bold">Đồng ý chuyển nhượng cho Á Quân:</div>
-                  <p className="text-[11px]">
-                    SIM sẽ được chuyển nhượng cho Á Quân với giá{" "}
-                    <strong className="tabular-nums font-bold font-mono">
-                      {formatVND(activeActionModal.item.runnerUpFinalPrice || 0)}
-                    </strong>
-                    .
-                  </p>
-                </div>
-              )}
-
-              {activeActionModal.type === "SELLER_REJECT" && (
-                <div className="p-3.5 bg-amber-50 rounded-xl border border-amber-200 text-amber-950 space-y-1.5">
-                  <div className="font-bold">Từ chối bán cho Á Quân:</div>
-                  <p className="text-[11px]">
-                    Phiên đấu giá sẽ kết thúc. Bạn nhận được khoản bồi thường thiệt hại trích từ tiền phạt cọc của Winner ban đầu.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="pt-2 flex items-center justify-end gap-2.5">
-              <button
-                type="button"
-                onClick={() => setActiveActionModal(null)}
-                disabled={actionLoadingId !== null}
-                className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold transition-colors"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmAction}
-                disabled={actionLoadingId !== null}
-                className={`px-5 py-2 text-white rounded-xl text-xs font-bold transition-all shadow-2xs active:scale-[0.99] ${
-                  activeActionModal.type === "FORFEIT" || activeActionModal.type === "SELLER_REJECT"
-                    ? "bg-rose-600 hover:bg-rose-700"
-                    : "bg-[#001743] hover:bg-[#00266B]"
-                }`}
-              >
-                {actionLoadingId ? "Đang xử lý…" : "Xác nhận thực hiện"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@ export type ProfileTab =
   | "ekyc"
   | "auctions"
   | "bids"
+  | "settlements"
   | "transactions"
   | "contracts"
   | "settings";
