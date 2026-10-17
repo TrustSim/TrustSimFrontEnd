@@ -53,6 +53,12 @@ function toCardData(item: AuctionDto): SimAuctionCardData {
     startPrice: item.startingPrice,
     bidCount: item.totalBids ?? 0,
     endTime: item.endAt,
+    minBidStep: item.minBidStep,
+    maxStepMultiplier: item.maxStepMultiplier,
+    extensionDurationSeconds: item.extensionDurationSeconds,
+    dutchDecreaseAmount: item.dutchDecreaseAmount,
+    dutchDecreaseIntervalSeconds: item.dutchDecreaseIntervalSeconds,
+    reservePrice: item.reservePrice,
     category: item.formatRhythmName || `Mã: ${item.auctionCode}`,
     seller: item.authorName || "TrustSim Đấu Giá",
   };

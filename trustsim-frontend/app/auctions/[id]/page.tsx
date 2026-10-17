@@ -12,6 +12,7 @@ import { AuthResponseDto } from "@/types/auth";
 import { walletService } from "@/services/walletService";
 import type { WalletDto } from "@/types/wallet";
 import { ToastContainer, ToastMessage } from "@/components/ui/Toast";
+import AuctionHelpPopover from "@/components/ui/AuctionHelpPopover";
 import { DepositModal } from "@/components/wallet/DepositModal";
 import PostAuctionSettlementTerminal from "@/components/auction/PostAuctionSettlementTerminal";
 import { formatPhoneNumber, getCarrierColor } from "@/services/simService";
@@ -1216,16 +1217,20 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                       )}
 
                       {/* Quick Rules Strip */}
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                        <span>Thông tin nhanh của phiên</span>
+                        <AuctionHelpPopover topic={isDutch ? "dutch" : "english"} />
+                      </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
                         {!isDutch ? (
                           <>
                             <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
                               <span className="text-[10px] text-slate-400 block font-medium">Bước giá tối thiểu</span>
-                              <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">+{formatPrice(auction.minBidStep || 500_000)}</span>
+                              <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">+{formatPrice(auction.minBidStep || 500_000)} <AuctionHelpPopover topic="min-step" value={formatPrice(auction.minBidStep || 500_000)} /></span>
                             </div>
                             <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
                               <span className="text-[10px] text-slate-400 block font-medium">Tăng tối đa 1 lượt</span>
-                              <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">+{formatPrice((auction.maxStepMultiplier || 10) * (auction.minBidStep || 500_000))}</span>
+                              <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">+{formatPrice((auction.maxStepMultiplier || 10) * (auction.minBidStep || 500_000))} <AuctionHelpPopover topic="max-step" value={(auction.maxStepMultiplier || 10) + " bước"} /></span>
                             </div>
                             <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
                               <span className="text-[10px] text-slate-400 block font-medium">Tiền đặt cọc</span>
@@ -1240,7 +1245,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                           <>
                             <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
                               <span className="text-[10px] text-slate-400 block font-medium">Mức giảm định kỳ</span>
-                              <span className="font-mono font-bold text-rose-600 tabular-nums mt-0.5 block">-{formatPrice(auction.dutchDecreaseAmount || 0)}</span>
+                              <span className="font-mono font-bold text-rose-600 tabular-nums mt-0.5 block">-{formatPrice(auction.dutchDecreaseAmount || 0)} <AuctionHelpPopover topic="dutch-decrease" value={formatPrice(auction.dutchDecreaseAmount || 0)} /></span>
                             </div>
                             <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
                               <span className="text-[10px] text-slate-400 block font-medium">Chu kỳ hạ giá</span>
@@ -1248,7 +1253,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                             </div>
                             <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
                               <span className="text-[10px] text-slate-400 block font-medium">Giá sàn bảo lưu</span>
-                              <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">{formatPrice(auction.reservePrice)}</span>
+                              <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">{formatPrice(auction.reservePrice)} <AuctionHelpPopover topic="reserve-price" value={formatPrice(auction.reservePrice)} /></span>
                             </div>
                             <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
                               <span className="text-[10px] text-slate-400 block font-medium">Tiền đặt cọc</span>

@@ -6,3 +6,5 @@ export * from "./CountdownTimer";
 export { default as CountdownTimer } from "./CountdownTimer";
 export * from "./Toast";
 export { default as ToastContainer } from "./Toast";
+export * from "./AuctionHelpPopover";
+export { default as AuctionHelpPopover } from "./AuctionHelpPopover";

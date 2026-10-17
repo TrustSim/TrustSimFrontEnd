@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import AuctionHelpPopover from "./AuctionHelpPopover";
 
 export interface SimAuctionCardData {
   id: string;
@@ -16,6 +17,12 @@ export interface SimAuctionCardData {
   category?: string;
   featuredReason?: string;
   seller?: string;
+  minBidStep?: number;
+  maxStepMultiplier?: number;
+  extensionDurationSeconds?: number;
+  dutchDecreaseAmount?: number;
+  dutchDecreaseIntervalSeconds?: number;
+  reservePrice?: number;
 }
 
 interface SimAuctionCardProps {
@@ -179,6 +186,7 @@ export const SimAuctionCard: React.FC<SimAuctionCardProps> = ({ data, featured =
               </span>
 
               {data.type && (
+                <>
                 <span
                   style={{
                     fontSize: 11,
@@ -192,6 +200,10 @@ export const SimAuctionCard: React.FC<SimAuctionCardProps> = ({ data, featured =
                 >
                   {data.type === "english" ? "Đấu giá Anh" : data.type === "dutch" ? "Đấu giá Hà Lan" : "Bí mật"}
                 </span>
+                {(data.type === "english" || data.type === "dutch") && (
+                  <AuctionHelpPopover topic={data.type === "dutch" ? "dutch" : "english"} />
+                )}
+                </>
               )}
             </div>
 
