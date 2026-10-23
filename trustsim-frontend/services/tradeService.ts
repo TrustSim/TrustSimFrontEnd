@@ -1,10 +1,13 @@
-import { apiFetch } from "./apiClient";
+import { apiClient, apiFetch } from "./apiClient";
 import type {
   TradeTransactionDto,
   CreateTradeTransactionRequest,
   TradeFilter,
   ContractPreviewDto,
+  LiquidationPreviewDto,
+  SignContractResultDto,
   SimTransferDetailsDto,
+  VerifyContractIntegrityResponse,
 } from "@/types/trade";
 import type { PagedResult } from "@/types/common";
 import { withQuery } from "./queryParams";
@@ -96,12 +99,12 @@ export const tradeService = {
   },
 
   /** Ký hợp đồng bằng mã OTP Email */
-  async signContract(tradeId: string, otpCode: string): Promise<any> {
-    const res = await apiFetch<any>(`/Contracts/${tradeId}/sign`, {
+  async signContract(tradeId: string, otpCode: string): Promise<SignContractResultDto> {
+    const res = await apiFetch<SignContractResultDto>(`/Contracts/${tradeId}/sign`, {
       method: "POST",
       body: JSON.stringify({ otpCode }),
     });
-    if (res.success) return res.data;
+    if (res.data) return res.data;
     throw new Error(res.message || "Ký hợp đồng thất bại");
   },
 
@@ -113,21 +116,65 @@ export const tradeService = {
   },
 
   /** Người bán nộp biên bản / bằng chứng sang tên SIM */
-  async submitTransferProof(tradeId: string, proofDocumentUrl: string): Promise<any> {
-    const res = await apiFetch<any>(`/SimTransfers/${tradeId}/submit-proof`, {
+  async submitTransferProof(
+    tradeId: string,
+    imageUrl: string,
+    description?: string
+  ): Promise<SimTransferDetailsDto> {
+    const res = await apiFetch<SimTransferDetailsDto>(`/SimTransfers/${tradeId}/proof`, {
       method: "POST",
-      body: JSON.stringify({ proofDocumentUrl }),
+      body: JSON.stringify({ imageUrl, description }),
     });
-    if (res.success) return res.data;
+    if (res.data) return res.data;
     throw new Error(res.message || "Không thể gửi biên bản sang tên");
   },
 
   /** Người mua xác nhận đã nhận SIM chính chủ, hoàn tất giải ngân tiền ký quỹ */
-  async confirmTransfer(tradeId: string): Promise<any> {
-    const res = await apiFetch<any>(`/SimTransfers/${tradeId}/confirm`, {
+  async confirmTransfer(tradeId: string): Promise<SimTransferDetailsDto> {
+    const res = await apiFetch<SimTransferDetailsDto>(`/SimTransfers/${tradeId}/confirm`, {
       method: "POST",
     });
-    if (res.success) return res.data;
+    if (res.data) return res.data;
     throw new Error(res.message || "Xác nhận nhận SIM thất bại");
+  },
+
+  /** Xem trước biên bản nghiệm thu và thanh lý. */
+  async getLiquidationPreview(tradeId: string): Promise<LiquidationPreviewDto> {
+    const res = await apiFetch<LiquidationPreviewDto>(
+      `/Contracts/${tradeId}/liquidation/preview`
+    );
+    if (res.data) return res.data;
+    throw new Error(res.message || "Không thể tải biên bản nghiệm thu và thanh lý");
+  },
+
+  /** Tải tài liệu qua API có xác thực; axios theo redirect CDN và trả về blob. */
+  async getDocumentBlob(
+    tradeId: string,
+    document: "winning-notice" | "contract" | "liquidation"
+  ): Promise<Blob> {
+    const path =
+      document === "winning-notice"
+        ? `/api/Contracts/${tradeId}/winning-notice`
+        : document === "liquidation"
+          ? `/api/Contracts/${tradeId}/liquidation/download`
+          : `/api/Contracts/${tradeId}/download`;
+    const response = await apiClient.get(path, { responseType: "blob" });
+    return response.data;
+  },
+
+  /** Đối chiếu SHA-256 của PDF đã tải với bản niêm phong trong backend. */
+  async verifyContractIntegrity(
+    tradeId: string,
+    clientSha256: string
+  ): Promise<VerifyContractIntegrityResponse> {
+    const res = await apiFetch<VerifyContractIntegrityResponse>(
+      `/Contracts/${tradeId}/verify-integrity`,
+      {
+        method: "POST",
+        body: JSON.stringify({ clientSha256 }),
+      }
+    );
+    if (res.data) return res.data;
+    throw new Error(res.message || "Không thể kiểm tra tính toàn vẹn hợp đồng");
   },
 };
