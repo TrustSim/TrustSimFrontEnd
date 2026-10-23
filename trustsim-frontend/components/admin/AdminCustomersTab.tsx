@@ -43,6 +43,7 @@ import { Pagination } from "@/components/ui/Pagination";
 import { AdminSortButton, toggleSort, type SortDirection } from "@/components/admin/AdminPrimitives";
 import ImportExportBar from "@/components/admin/ImportExportBar";
 import { ExcelColumnDef } from "@/services/excelService";
+import { SortOrder, UserAccountSortBy } from "@/types/common";
 
 // Format currency
 const formatVND = (value: number) =>
@@ -201,24 +202,20 @@ export function AdminCustomersTab() {
         keyword: debouncedSearch,
         role: UserRoleEnum.USER,
         isActive: selectedStatus !== "" ? selectedStatus === "active" : undefined,
+        kycStatus: selectedKyc !== "" ? selectedKyc : undefined,
+        sortBy: sortKey === "wallet" ? UserAccountSortBy.WalletBalance : UserAccountSortBy.FullName,
+        sortOrder: sortDirection === "asc" ? SortOrder.Asc : SortOrder.Desc,
         pageIndex,
         pageSize,
       });
-
-      let items = res.items;
-      if (selectedKyc !== "") {
-        const kycNum = Number(selectedKyc);
-        items = items.filter((u) => Number(u.verificationStatus) === kycNum || String(u.verificationStatus) === selectedKyc);
-      }
-
-      setCustomers(items);
+      setCustomers(res.items);
       setTotalCount(res.totalCount);
     } catch (err: any) {
       setError(err.message || "Không thể tải danh sách kiểm toán khách hàng.");
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, selectedKyc, selectedStatus, pageIndex, pageSize]);
+  }, [debouncedSearch, selectedKyc, selectedStatus, sortKey, sortDirection, pageIndex, pageSize]);
 
   useEffect(() => {
     fetchCustomers();
@@ -254,17 +251,7 @@ export function AdminCustomersTab() {
   };
 
   const hasActiveFilters = debouncedSearch || selectedKyc !== "" || selectedStatus !== "";
-  const displayCustomers = useMemo(() => {
-    return [...customers].sort((a, b) => {
-      const left = sortKey === "name" ? (a.fullName || a.userName || "") : Number(a.availableBalance ?? 0);
-      const right = sortKey === "name" ? (b.fullName || b.userName || "") : Number(b.availableBalance ?? 0);
-      const result =
-        typeof left === "number" && typeof right === "number"
-          ? left - right
-          : String(left).localeCompare(String(right), "vi");
-      return sortDirection === "asc" ? result : -result;
-    });
-  }, [customers, sortKey, sortDirection]);
+  const displayCustomers = customers;
 
   const changeSort = (key: "name" | "wallet") => {
     const next = toggleSort(sortKey, sortDirection, key);

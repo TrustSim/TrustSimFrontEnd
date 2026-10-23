@@ -1,4 +1,6 @@
 import { apiFetch } from "./apiClient";
+import { withQuery } from "./queryParams";
+import type { BaseQueryFilter, SimOwnershipSortBy, SimSortBy } from "@/types/common";
 
 // ─── Enums (mirror của SimStatus trong Backend) ───────────────────────────────
 export type SimStatus =
@@ -35,31 +37,37 @@ export interface PagedResult<T> {
 }
 
 // ─── Request params ───────────────────────────────────────────────────────────
-export interface GetSimsParams {
-  keyword?: string;
+export interface GetSimsParams extends BaseQueryFilter<SimSortBy> {
   carrierId?: string;
   categoryId?: string;
   prefixId?: string;
+  formatRhythmId?: string;
   status?: SimStatus;
-  pageIndex?: number;
-  pageSize?: number;
+  minPrice?: number;
+  maxPrice?: number;
 }
 
 // ─── API calls ────────────────────────────────────────────────────────────────
 export async function getSims(
   params: GetSimsParams = {}
 ): Promise<PagedResult<SimNumberDto>> {
-  const query = new URLSearchParams();
-  if (params.keyword) query.set("keyword", params.keyword);
-  if (params.carrierId) query.set("carrierId", params.carrierId);
-  if (params.categoryId) query.set("categoryId", params.categoryId);
-  if (params.prefixId) query.set("prefixId", params.prefixId);
-  if (params.status) query.set("status", params.status);
-  query.set("pageIndex", String(params.pageIndex ?? 1));
-  query.set("pageSize", String(params.pageSize ?? 20));
-
   const res = await apiFetch<PagedResult<SimNumberDto>>(
-    `/Sims?${query.toString()}`
+    withQuery("/Sims", {
+      keyword: params.keyword,
+      carrierId: params.carrierId,
+      categoryId: params.categoryId,
+      prefixId: params.prefixId,
+      formatRhythmId: params.formatRhythmId,
+      status: params.status,
+      minPrice: params.minPrice,
+      maxPrice: params.maxPrice,
+      fromDate: params.fromDate,
+      toDate: params.toDate,
+      sortBy: params.sortBy,
+      sortOrder: params.sortOrder,
+      pageIndex: params.pageIndex ?? 1,
+      pageSize: params.pageSize ?? 20,
+    })
   );
   if (!res.data) {
     throw new Error(res.message || "Không thể tải danh sách SIM.");
@@ -157,19 +165,29 @@ export interface FormatRhythmItemDto {
 /**
  * Lấy danh sách SIM thuộc quyền sở hữu của người dùng hiện tại từ Database
  */
-export async function getMySims(params: {
-  pageIndex?: number;
-  pageSize?: number;
+export async function getMySims(params: BaseQueryFilter<SimOwnershipSortBy> & {
   status?: SimStatus;
+  carrierId?: string;
+  categoryId?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  /** @deprecated Dùng keyword. */
   search?: string;
 } = {}): Promise<PagedResult<MySimItemDto>> {
-  const query = new URLSearchParams();
-  if (params.pageIndex) query.set("pageIndex", String(params.pageIndex));
-  if (params.pageSize) query.set("pageSize", String(params.pageSize));
-  if (params.status) query.set("status", params.status);
-  if (params.search) query.set("search", params.search);
-
-  const res = await apiFetch<PagedResult<MySimItemDto>>(`/sims/my-sims?${query.toString()}`);
+  const res = await apiFetch<PagedResult<MySimItemDto>>(withQuery("/Sims/my-sims", {
+    pageIndex: params.pageIndex ?? 1,
+    pageSize: params.pageSize ?? 10,
+    keyword: params.keyword ?? params.search,
+    status: params.status,
+    carrierId: params.carrierId,
+    categoryId: params.categoryId,
+    minPrice: params.minPrice,
+    maxPrice: params.maxPrice,
+    fromDate: params.fromDate,
+    toDate: params.toDate,
+    sortBy: params.sortBy,
+    sortOrder: params.sortOrder,
+  }));
   if (!res.data) {
     return {
       items: [],
@@ -228,12 +246,15 @@ export interface AdminSimItemDto {
   createdDate: string;
 }
 
-export interface GetAdminSimsParams {
-  pageIndex?: number;
-  pageSize?: number;
+export interface GetAdminSimsParams extends BaseQueryFilter<SimSortBy> {
   status?: SimStatus;
   carrierId?: string;
   categoryId?: string;
+  prefixId?: string;
+  formatRhythmId?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  /** @deprecated Dùng keyword. */
   search?: string;
 }
 
@@ -257,16 +278,23 @@ export interface UpdateAdminSimPayload {
 export async function getAdminSims(
   params: GetAdminSimsParams = {}
 ): Promise<PagedResult<AdminSimItemDto>> {
-  const query = new URLSearchParams();
-  if (params.pageIndex) query.set("pageIndex", String(params.pageIndex));
-  if (params.pageSize) query.set("pageSize", String(params.pageSize));
-  if (params.status) query.set("status", params.status);
-  if (params.carrierId) query.set("carrierId", params.carrierId);
-  if (params.categoryId) query.set("categoryId", params.categoryId);
-  if (params.search) query.set("search", params.search);
-
   const res = await apiFetch<PagedResult<AdminSimItemDto>>(
-    `/sims/admin?${query.toString()}`
+    withQuery("/Sims/admin", {
+      pageIndex: params.pageIndex ?? 1,
+      pageSize: params.pageSize ?? 10,
+      keyword: params.keyword ?? params.search,
+      status: params.status,
+      carrierId: params.carrierId,
+      categoryId: params.categoryId,
+      prefixId: params.prefixId,
+      formatRhythmId: params.formatRhythmId,
+      minPrice: params.minPrice,
+      maxPrice: params.maxPrice,
+      fromDate: params.fromDate,
+      toDate: params.toDate,
+      sortBy: params.sortBy,
+      sortOrder: params.sortOrder,
+    })
   );
   if (!res.data) {
     return {
@@ -456,9 +484,28 @@ export async function verifySimOwnership(phoneNumber: string, otpCode: string): 
 /**
  * Lấy danh sách các số SIM đang thuộc quyền sở hữu của người dùng hiện tại kèm trạng thái xác minh.
  */
+export async function getMyOwnershipsPaged(
+  params: BaseQueryFilter<SimOwnershipSortBy> & { status?: string; simId?: string; userId?: string } = {}
+): Promise<PagedResult<SimOwnershipDto>> {
+  const res = await apiFetch<PagedResult<SimOwnershipDto>>(withQuery("/Sims/my-ownerships", {
+    ...params,
+    pageIndex: params.pageIndex ?? 1,
+    pageSize: params.pageSize ?? 100,
+  }));
+  return res.data || {
+    items: [],
+    totalCount: 0,
+    pageIndex: params.pageIndex ?? 1,
+    pageSize: params.pageSize ?? 100,
+    totalPages: 0,
+    hasPreviousPage: false,
+    hasNextPage: false,
+  };
+}
+
 export async function getMyOwnerships(): Promise<SimOwnershipDto[]> {
-  const res = await apiFetch<SimOwnershipDto[]>("/Sims/my-ownerships");
-  return res.data || [];
+  const result = await getMyOwnershipsPaged();
+  return result.items;
 }
 
 /**
@@ -495,5 +542,3 @@ export async function deleteSim(id: string): Promise<boolean> {
   });
   return res.data ?? res.success ?? false;
 }
-
-

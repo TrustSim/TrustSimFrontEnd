@@ -1,3 +1,5 @@
+import type { BaseQueryFilter, DisputeTicketSortBy } from "./common";
+
 export type DisputeStatus =
   | "OPEN"
   | "INVESTIGATING"
@@ -26,8 +28,7 @@ export interface ResolveDisputeRequest {
   resolutionNotes: string;
 }
 
-export interface DisputeFilter {
+export interface DisputeFilter extends BaseQueryFilter<DisputeTicketSortBy> {
   status?: DisputeStatus | string;
-  pageIndex?: number;
-  pageSize?: number;
+  tradeId?: string;
 }

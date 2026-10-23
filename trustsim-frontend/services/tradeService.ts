@@ -7,17 +7,33 @@ import type {
   SimTransferDetailsDto,
 } from "@/types/trade";
 import type { PagedResult } from "@/types/common";
+import { withQuery } from "./queryParams";
+
+const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function getTradeFilterQuery(filter: TradeFilter) {
+  return {
+    status: filter.status,
+    role: filter.role === "all" ? undefined : filter.role,
+    buyerId: filter.buyerId,
+    sellerId: filter.sellerId,
+    minAmount: filter.minAmount,
+    maxAmount: filter.maxAmount,
+    keyword: filter.keyword,
+    fromDate: filter.fromDate,
+    toDate: filter.toDate,
+    sortBy: filter.sortBy,
+    sortOrder: filter.sortOrder,
+    pageIndex: filter.pageIndex ?? 1,
+    pageSize: filter.pageSize ?? 10,
+  };
+}
 
 export const tradeService = {
   /** Lấy danh sách giao dịch chuyển nhượng / ký quỹ của tôi */
   async getMyTrades(filter: TradeFilter = {}): Promise<PagedResult<TradeTransactionDto>> {
-    const params = new URLSearchParams();
-    if (filter.status) params.set("status", filter.status);
-    if (filter.pageIndex) params.set("pageIndex", String(filter.pageIndex));
-    if (filter.pageSize) params.set("pageSize", String(filter.pageSize));
-
     const res = await apiFetch<PagedResult<TradeTransactionDto>>(
-      `/TradeTransactions?${params.toString()}`
+      withQuery("/TradeTransactions", getTradeFilterQuery(filter))
     );
     if (res.data) return res.data;
     throw new Error(res.message || "Không thể tải danh sách giao dịch");
@@ -28,6 +44,22 @@ export const tradeService = {
     const res = await apiFetch<TradeTransactionDto>(`/TradeTransactions/${id}`);
     if (res.data) return res.data;
     throw new Error(res.message || "Không tìm thấy thông tin giao dịch");
+  },
+
+  /** Xem chi tiết giao dịch bằng mã nghiệp vụ (VD: TRD-...). */
+  async getTradeByCode(tradeCode: string): Promise<TradeTransactionDto> {
+    const res = await apiFetch<TradeTransactionDto>(
+      `/TradeTransactions/code/${encodeURIComponent(tradeCode)}`
+    );
+    if (res.data) return res.data;
+    throw new Error(res.message || "Không tìm thấy giao dịch theo mã");
+  },
+
+  /** Chấp nhận cả UUID hoặc tradeCode để dùng trực tiếp cho route chi tiết. */
+  async getTradeByIdentifier(identifier: string): Promise<TradeTransactionDto> {
+    return GUID_PATTERN.test(identifier)
+      ? this.getTradeById(identifier)
+      : this.getTradeByCode(identifier);
   },
 
   /** Khởi tạo giao dịch chuyển nhượng SIM (tạo tài khoản ký quỹ bảo đảm) */
@@ -42,13 +74,8 @@ export const tradeService = {
 
   /** [Admin] Lấy danh sách tất cả giao dịch chuyển nhượng trên toàn sàn */
   async adminGetAllTrades(filter: TradeFilter = {}): Promise<PagedResult<TradeTransactionDto>> {
-    const params = new URLSearchParams();
-    if (filter.status) params.set("status", filter.status);
-    if (filter.pageIndex) params.set("pageIndex", String(filter.pageIndex));
-    if (filter.pageSize) params.set("pageSize", String(filter.pageSize));
-
     const res = await apiFetch<PagedResult<TradeTransactionDto>>(
-      `/TradeTransactions/admin?${params.toString()}`
+      withQuery("/TradeTransactions/admin", getTradeFilterQuery(filter))
     );
     if (res.data) return res.data;
     throw new Error(res.message || "Không thể tải danh sách giao dịch toàn sàn");
@@ -104,4 +131,3 @@ export const tradeService = {
     throw new Error(res.message || "Xác nhận nhận SIM thất bại");
   },
 };
-

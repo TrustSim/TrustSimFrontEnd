@@ -239,8 +239,8 @@ export default function RegisterPage() {
                 <form onSubmit={handleFormSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                   <div>
                     <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#001743", marginBottom: 5 }}>Tên đăng nhập (Username) <span style={{ color: "#E4011E" }}>*</span></label>
-                    <input type="text" placeholder="VD: nguyenan99" value={userName} onChange={(e) => setUserName(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))} required autoComplete="username" className="form-input" />
-                    <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 3 }}>Chỉ dùng chữ thường a–z, số 0–9 và dấu gạch dưới (_). Tối thiểu 3 ký tự.</div>
+                    <input type="text" placeholder="VD: Nguyễn An 99" value={userName} onChange={(e) => setUserName(e.target.value)} required autoComplete="username" className="form-input" />
+                    <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 3 }}>Hỗ trợ chữ tiếng Việt, số, khoảng trắng, dấu chấm và gạch dưới. Từ 3–50 ký tự.</div>
                   </div>
                   <div>
                     <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#001743", marginBottom: 5 }}>Địa chỉ Email <span style={{ color: "#E4011E" }}>*</span></label>

@@ -88,6 +88,7 @@ export default function AdminDisputesTab() {
   const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [pageIndex, setPageIndex] = useState(1);
   const pageSize = 15;
@@ -117,12 +118,21 @@ export default function AdminDisputesTab() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPageIndex(1);
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
   // 1. Fetch live disputes from API
   const fetchDisputes = useCallback(async () => {
     setLoading(true);
     try {
       const res = await disputeService.getDisputes({
         status: statusFilter === "all" ? undefined : statusFilter,
+        keyword: debouncedSearch || undefined,
         pageIndex,
         pageSize,
       });
@@ -133,25 +143,13 @@ export default function AdminDisputesTab() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, pageIndex, pageSize]);
+  }, [statusFilter, debouncedSearch, pageIndex, pageSize]);
 
   useEffect(() => {
     fetchDisputes();
   }, [fetchDisputes]);
 
-  // Client search filter across current batch
-  const filteredDisputes = useMemo(() => {
-    if (!search.trim()) return disputes;
-    const q = search.toLowerCase().trim();
-    return disputes.filter((item) => {
-      const idMatch = item.id.toLowerCase().includes(q);
-      const tradeMatch = item.tradeTransactionId.toLowerCase().includes(q);
-      const complainantMatch = (item.complainantName || "").toLowerCase().includes(q);
-      const reasonMatch = (item.reason || "").toLowerCase().includes(q);
-      const notesMatch = (item.adminResolutionNotes || "").toLowerCase().includes(q);
-      return idMatch || tradeMatch || complainantMatch || reasonMatch || notesMatch;
-    });
-  }, [disputes, search]);
+  const filteredDisputes = disputes;
 
   // KPIs
   const openCount = useMemo(

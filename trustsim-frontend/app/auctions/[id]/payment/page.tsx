@@ -140,6 +140,7 @@ export default function AuctionPaymentTerminalPage({
   // ─── Action & Modal States ─────────────────────────────────────────────────
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [depositModalOpen, setDepositModalOpen] = useState(false);
+  const [depositInitialAmount, setDepositInitialAmount] = useState(0);
   const [forfeitModalOpen, setForfeitModalOpen] = useState(false);
   const [forfeitReason, setForfeitReason] = useState("");
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -310,6 +311,7 @@ export default function AuctionPaymentTerminalPage({
   const handleConfirmPayment = async () => {
     if (!auction) return;
     if (!canPay) {
+      setDepositInitialAmount(deficitAmount);
       setDepositModalOpen(true);
       return;
     }
@@ -575,13 +577,12 @@ export default function AuctionPaymentTerminalPage({
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                          isAlreadyPaid
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isAlreadyPaid
                             ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                             : isRunnerUp
-                            ? "bg-purple-50 text-purple-700 border border-purple-200"
-                            : "bg-amber-50 text-amber-700 border border-amber-200"
-                        }`}
+                              ? "bg-purple-50 text-purple-700 border border-purple-200"
+                              : "bg-amber-50 text-amber-700 border border-amber-200"
+                          }`}
                       >
                         {isAlreadyPaid ? (
                           <CheckCircle2 size={20} />
@@ -597,23 +598,22 @@ export default function AuctionPaymentTerminalPage({
                             {isAlreadyPaid
                               ? "Quyết toán hoàn tất (Đã ký quỹ)"
                               : isRunnerUp
-                              ? "Quyết toán tiếp quản SIM (Á Quân)"
-                              : "Quyết toán trúng đấu giá SIM"}
+                                ? "Quyết toán tiếp quản SIM (Á Quân)"
+                                : "Quyết toán trúng đấu giá SIM"}
                           </h2>
                           <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              isAlreadyPaid
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${isAlreadyPaid
                                 ? "bg-emerald-100 text-emerald-900 border border-emerald-200"
                                 : isRunnerUp
-                                ? "bg-purple-100 text-purple-900 border border-purple-200"
-                                : "bg-emerald-100 text-emerald-900 border border-emerald-200"
-                            }`}
+                                  ? "bg-purple-100 text-purple-900 border border-purple-200"
+                                  : "bg-emerald-100 text-emerald-900 border border-emerald-200"
+                              }`}
                           >
                             {isAlreadyPaid
                               ? "Đã nộp tiền bảo chứng"
                               : isRunnerUp
-                              ? "Chuyển giao quyền mua"
-                              : "Quán quân"}
+                                ? "Chuyển giao quyền mua"
+                                : "Quán quân"}
                           </span>
                         </div>
                         <p className="text-xs text-slate-500 m-0 mt-0.5">
@@ -625,11 +625,10 @@ export default function AuctionPaymentTerminalPage({
                     {/* Countdown Timer */}
                     {formattedCountdown && !isAlreadyPaid && (
                       <div
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono font-bold shrink-0 ${
-                          isExpired
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono font-bold shrink-0 ${isExpired
                             ? "bg-rose-50 border-rose-200 text-rose-700"
                             : "bg-blue-50 border-blue-200 text-blue-900"
-                        }`}
+                          }`}
                       >
                         <Clock size={13} className="text-blue-700" />
                         <span>{formattedCountdown}</span>
@@ -760,7 +759,10 @@ export default function AuctionPaymentTerminalPage({
 
                         <button
                           type="button"
-                          onClick={() => setDepositModalOpen(true)}
+                          onClick={() => {
+                            setDepositInitialAmount(deficitAmount);
+                            setDepositModalOpen(true);
+                          }}
                           className="px-3.5 py-2 rounded-lg bg-[#E4011E] hover:bg-[#C90019] text-white font-bold transition-colors shadow-xs shrink-0 flex items-center justify-center gap-1.5 cursor-pointer"
                         >
                           <CreditCard size={14} />
@@ -771,46 +773,7 @@ export default function AuctionPaymentTerminalPage({
                   </div>
 
                   {/* ── ACTION BUTTONS ── */}
-                  {isAlreadyPaid ? (
-                    <div className="p-5 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-200 rounded-2xl space-y-3">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 size={20} className="text-emerald-600 shrink-0" />
-                        <h4 className="font-black text-sm text-emerald-950 m-0">
-                          Thanh toán bảo chứng hoàn tất thành công! 🎉
-                        </h4>
-                      </div>
-                      <p className="text-xs text-slate-600 leading-relaxed">
-                        Số tiền <strong>{formatVND(trade?.escrowAmount || purchasePrice)}</strong> đã được phong toả an toàn vào tài khoản ký quỹ của sàn. Hợp đồng chuyển nhượng SIM số hoá đã sẵn sàng để bạn ký xác nhận.
-                      </p>
-                      <div className="pt-2 flex items-center gap-3 flex-wrap">
-                        {trade ? (
-                          <Link
-                            href={`/trades/${trade.id}`}
-                            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold shadow-md transition-all cursor-pointer"
-                          >
-                            <FileCheck2 size={16} />
-                            <span>Vào trang giao dịch & Ký hợp đồng #{trade.tradeTransactionCode}</span>
-                            <ArrowRight size={14} />
-                          </Link>
-                        ) : (
-                          <Link
-                            href="/profile?tab=contracts"
-                            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold shadow-md transition-all cursor-pointer"
-                          >
-                            <FileCheck2 size={16} />
-                            <span>Xem danh sách hợp đồng & giao dịch</span>
-                            <ArrowRight size={14} />
-                          </Link>
-                        )}
-                        <Link
-                          href={`/auctions/${auctionId}`}
-                          className="px-4 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors"
-                        >
-                          Về phòng đấu giá
-                        </Link>
-                      </div>
-                    </div>
-                  ) : !runnerUpRejected ? (
+                  {!isAlreadyPaid && !runnerUpRejected ? (
                     <div className="space-y-3 pt-2">
                       {isRunnerUp && settlement?.actionRequired === "RESPOND_RUNNER_UP_OFFER" ? (
                         /* Trường hợp Á Quân được mời: Chấp thuận hoặc Từ chối */
@@ -832,11 +795,10 @@ export default function AuctionPaymentTerminalPage({
                             type="button"
                             disabled={actionLoading !== null || isExpired || !canPay}
                             onClick={handleAcceptRunnerUp}
-                            className={`w-full sm:w-1/2 py-3 px-4 rounded-xl text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 ${
-                              canPay
+                            className={`w-full sm:w-1/2 py-3 px-4 rounded-xl text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 ${canPay
                                 ? "bg-purple-700 hover:bg-purple-800 active:scale-[0.99]"
                                 : "bg-slate-400 cursor-not-allowed"
-                            }`}
+                              }`}
                           >
                             {actionLoading === "ACCEPT_RUNNER_UP" ? (
                               <RefreshCw size={14} className="animate-spin" />
@@ -866,11 +828,10 @@ export default function AuctionPaymentTerminalPage({
                             type="button"
                             disabled={actionLoading !== null || !canPay || isExpired}
                             onClick={handleConfirmPayment}
-                            className={`w-full sm:w-2/3 py-3.5 px-4 rounded-xl text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 ${
-                              canPay
+                            className={`w-full sm:w-2/3 py-3.5 px-4 rounded-xl text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 ${canPay
                                 ? "bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99]"
                                 : "bg-slate-400 cursor-not-allowed"
-                            }`}
+                              }`}
                           >
                             {actionLoading === "PAY" ? (
                               <RefreshCw size={15} className="animate-spin" />
@@ -924,8 +885,8 @@ export default function AuctionPaymentTerminalPage({
                         {isAlreadyPaid
                           ? "Số tiền bảo chứng ký quỹ"
                           : isRunnerUp
-                          ? "Giá tiếp quản Á Quân"
-                          : "Giá trúng đấu giá"}
+                            ? "Giá tiếp quản Á Quân"
+                            : "Giá trúng đấu giá"}
                       </span>
                       <span className="font-mono font-black text-amber-300 text-sm">
                         {formatVND(purchasePrice)}
@@ -1071,6 +1032,7 @@ export default function AuctionPaymentTerminalPage({
       {/* ── MODAL NẠP TIỀN VIETQR SEPAY NHANH ── */}
       <DepositModal
         isOpen={depositModalOpen}
+        initialAmount={depositInitialAmount}
         onClose={() => {
           setDepositModalOpen(false);
           fetchData(true);
@@ -1086,7 +1048,6 @@ export default function AuctionPaymentTerminalPage({
         }}
       />
 
-      <Footer />
       <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );

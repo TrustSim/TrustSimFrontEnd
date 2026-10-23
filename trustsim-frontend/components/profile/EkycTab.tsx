@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { ekycService, IdentityVerificationDto } from "@/services/ekycService";
+import { ekycService, EkycVerificationResultDto, IdentityVerificationDto } from "@/services/ekycService";
 import { ToastMessage } from "@/components/ui/Toast";
 import { ProfileIcons as Icons } from "./ProfileIcons";
 
@@ -761,6 +761,8 @@ function EkycWizardModal({
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<EkycVerificationResultDto | null>(null);
   const [errorDetails, setErrorDetails] = useState<{
     title: string;
     message: string;
@@ -836,13 +838,12 @@ function EkycWizardModal({
 
       const result = await ekycService.submitEkyc(formData);
 
+      setAnalysisResult(result);
       addToast({
-        type: "success",
-        title: "Nộp hồ sơ eKYC thành công",
-        message: result.message || "Hệ thống đang tiến hành đối soát và xác thực hồ sơ của bạn.",
+        type: "info",
+        title: "Phân tích eKYC hoàn tất",
+        message: "Vui lòng kiểm tra dữ liệu trích xuất và xác nhận để hoàn tất định danh.",
       });
-
-      onSuccess();
     } catch (err: any) {
       console.error("eKYC submit error:", err);
       let title = "Xác thực eKYC không thành công";
@@ -958,6 +959,28 @@ function EkycWizardModal({
       });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleConfirmEkyc = async () => {
+    if (!analysisResult?.verificationId) return;
+    setConfirming(true);
+    setErrorDetails(null);
+    try {
+      await ekycService.confirmEkyc(analysisResult.verificationId);
+      addToast({
+        type: "success",
+        title: "Xác thực eKYC thành công",
+        message: "Hồ sơ định danh và chữ ký số của bạn đã được kích hoạt.",
+      });
+      onSuccess();
+    } catch (err: any) {
+      setErrorDetails({
+        title: "Không thể xác nhận eKYC",
+        message: err?.message || "Yêu cầu xác nhận không thành công. Vui lòng thử lại.",
+      });
+    } finally {
+      setConfirming(false);
     }
   };
 
@@ -1299,7 +1322,39 @@ function EkycWizardModal({
             </div>
           )}
 
-          {step === 1 && (
+          {analysisResult && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ padding: 16, borderRadius: 8, background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
+                <h4 style={{ margin: 0, color: "#166534", fontSize: 15, fontWeight: 800 }}>
+                  AI đã phân tích hồ sơ — vui lòng kiểm tra trước khi xác nhận
+                </h4>
+                <p style={{ margin: "6px 0 0", color: "#4B5563", fontSize: 12.5, lineHeight: 1.6 }}>
+                  Bước xác nhận chỉ gửi mã hồ sơ <strong>{analysisResult.verificationId}</strong>. Dữ liệu cá nhân bên dưới được backend đọc từ kết quả OCR đã lưu và không thể bị sửa trên trình duyệt.
+                </p>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 }}>
+                {[
+                  ["Họ và tên", analysisResult.extractedFullName || "Chưa nhận diện"],
+                  ["Số CCCD", analysisResult.extractedIdentityNumber || "Chưa nhận diện"],
+                  ["Ngày sinh", analysisResult.extractedDateOfBirth ? new Date(analysisResult.extractedDateOfBirth).toLocaleDateString("vi-VN") : "Chưa nhận diện"],
+                  ["Độ tương đồng khuôn mặt", `${Number(analysisResult.faceSimilarityScore || 0).toFixed(2)}%`],
+                ].map(([label, value]) => (
+                  <div key={label} style={{ padding: "12px 14px", border: "1px solid #E5E7EB", borderRadius: 8, background: "#FFFFFF" }}>
+                    <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 700, textTransform: "uppercase" }}>{label}</div>
+                    <div style={{ marginTop: 5, fontSize: 14, color: "#001743", fontWeight: 800 }}>{value}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ padding: "12px 14px", border: "1px solid #E5E7EB", borderRadius: 8, background: "#F8FAFC" }}>
+                <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 700, textTransform: "uppercase" }}>Địa chỉ thường trú</div>
+                <div style={{ marginTop: 5, fontSize: 13, color: "#001743", fontWeight: 700 }}>{analysisResult.extractedAddress || "Chưa nhận diện"}</div>
+              </div>
+            </div>
+          )}
+
+          {!analysisResult && step === 1 && (
             <div>
               <div style={{ marginBottom: 12 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
@@ -1450,7 +1505,7 @@ function EkycWizardModal({
             </div>
           )}
 
-          {step === 2 && (
+          {!analysisResult && step === 2 && (
             <div>
               <div style={{ marginBottom: 12 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
@@ -1601,7 +1656,7 @@ function EkycWizardModal({
             </div>
           )}
 
-          {step === 3 && (
+          {!analysisResult && step === 3 && (
             <div>
               <div style={{ marginBottom: 12 }}>
                 <h4 style={{ fontSize: 14.5, fontWeight: 800, color: "#001743", margin: 0 }}>
@@ -1744,7 +1799,31 @@ function EkycWizardModal({
               width: "100%",
             }}
           >
-          {step === 1 && (
+          {analysisResult && (
+            <>
+              <button
+                type="button"
+                disabled={confirming}
+                onClick={() => setAnalysisResult(null)}
+                className="btn-outline"
+                style={{ padding: "8px 16px", fontSize: 12.5, borderRadius: 6 }}
+              >
+                ← Kiểm tra lại ảnh
+              </button>
+              <button
+                type="button"
+                disabled={confirming}
+                onClick={handleConfirmEkyc}
+                className="btn-red"
+                style={{ padding: "9px 24px", fontSize: 13, fontWeight: 700, borderRadius: 6, display: "flex", alignItems: "center", gap: 6, opacity: confirming ? 0.6 : 1 }}
+              >
+                <Icons.ShieldCheck size={16} />
+                {confirming ? "Đang xác nhận..." : "Thông tin chính xác — Xác nhận eKYC"}
+              </button>
+            </>
+          )}
+
+          {!analysisResult && step === 1 && (
             <>
               <button
                 type="button"
@@ -1776,7 +1855,7 @@ function EkycWizardModal({
             </>
           )}
 
-          {step === 2 && (
+          {!analysisResult && step === 2 && (
             <>
               <button
                 type="button"
@@ -1808,7 +1887,7 @@ function EkycWizardModal({
             </>
           )}
 
-          {step === 3 && (
+          {!analysisResult && step === 3 && (
             <>
               <button
                 type="button"

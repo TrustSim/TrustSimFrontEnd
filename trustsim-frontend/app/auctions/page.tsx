@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -8,6 +8,9 @@ import SimAuctionCard, { SimAuctionCardData } from "@/components/ui/SimAuctionCa
 import { AuctionGuideModal } from "@/components/auction/AuctionGuide";
 import { auctionService, AuctionDto } from "@/services/auctionService";
 import { auctionHubService } from "@/services/auctionHubService";
+import { getCarriers } from "@/services/carrierService";
+import { getCategories } from "@/services/categoryService";
+import { AuctionSortBy, SortOrder } from "@/types/common";
 import {
   Search, X, Gavel, Eye, Clock, ChevronLeft, ChevronRight,
   Tag, SlidersHorizontal, ArrowUpDown, RotateCcw, ChevronDown,
@@ -74,14 +77,8 @@ function toCardData(item: AuctionDto): SimAuctionCardData {
 /* ─── Filter Options ─────────────────────────────────────── */
 interface CarrierOption { key: string; name: string; code: string; color: string; }
 
-const CARRIER_OPTIONS: CarrierOption[] = [
+const DEFAULT_CARRIER_OPTIONS: CarrierOption[] = [
   { key: "all", name: "Tất cả nhà mạng", code: "ALL", color: "#64748B" },
-  { key: "viettel", name: "Viettel", code: "VTL", color: "#E4011E" },
-  { key: "mobifone", name: "MobiFone", code: "MBF", color: "#005BAA" },
-  { key: "vinaphone", name: "VinaPhone", code: "VNP", color: "#00A3E0" },
-  { key: "vietnamobile", name: "Vietnamobile", code: "VNM", color: "#FF6600" },
-  { key: "wintel", name: "Wintel", code: "WTL", color: "#7C3AED" },
-  { key: "itelecom", name: "Itelecom", code: "ITL", color: "#DC2626" },
 ];
 
 interface PriceOption { key: string; label: string; desc?: string; min?: number; max?: number; }
@@ -96,17 +93,8 @@ const PRICE_OPTIONS: PriceOption[] = [
 
 interface CategoryOption { key: string; label: string; tag?: string; }
 
-const CATEGORY_OPTIONS: CategoryOption[] = [
+const DEFAULT_CATEGORY_OPTIONS: CategoryOption[] = [
   { key: "all", label: "Tất cả danh mục" },
-  { key: "tu-quy", label: "Tứ quý / Ngũ quý", tag: "8888, 9999..." },
-  { key: "tam-hoa", label: "Tam hoa", tag: "666, 888..." },
-  { key: "loc-phat", label: "Lộc phát", tag: "68, 86, 6868" },
-  { key: "than-tai", label: "Thần tài", tag: "39, 79, 7979" },
-  { key: "ong-dia", label: "Ông địa", tag: "38, 78" },
-  { key: "so-tien", label: "Số tiến / Sảnh", tag: "5678, 6789..." },
-  { key: "taxi", label: "SIM Taxi / Cặp đôi", tag: "7878, 8989..." },
-  { key: "nam-sinh", label: "SIM Năm sinh", tag: "19xx, 20xx" },
-  { key: "phong-thuy", label: "SIM Phong thủy", tag: "Hợp mệnh, đại cát" },
 ];
 
 interface SortOption { key: string; label: string; icon?: string; }
@@ -118,54 +106,6 @@ const SORT_OPTIONS: SortOption[] = [
   { key: "ending-soon", label: "Sắp kết thúc" },
   { key: "bids-desc", label: "Nhiều lượt trả giá nhất" },
 ];
-
-/* ─── Client-side filter/sort functions ──────────────────── */
-function matchPrice(sim: AuctionDto, priceKey: string): boolean {
-  if (priceKey === "all") return true;
-  const price = sim.currentPrice ?? sim.startingPrice ?? 0;
-  switch (priceKey) {
-    case "under-10m": return price < 10_000_000;
-    case "10m-50m": return price >= 10_000_000 && price <= 50_000_000;
-    case "50m-100m": return price >= 50_000_000 && price <= 100_000_000;
-    case "above-100m": return price > 100_000_000;
-    default: return true;
-  }
-}
-
-function matchCategory(sim: AuctionDto, catKey: string): boolean {
-  if (catKey === "all") return true;
-  const rawNum = (sim.simPhoneNumber || "").replace(/\D/g, "");
-  const rhythm = (sim.formatRhythmName || "").toLowerCase();
-  const cats = (sim.categories || []).map((c) => c.toLowerCase());
-  const hasInMeta = (kw: string) => rhythm.includes(kw) || cats.some((c) => c.includes(kw));
-
-  switch (catKey) {
-    case "tu-quy": return /(.)\1{3}/.test(rawNum) || hasInMeta("tứ quý") || hasInMeta("ngũ quý") || hasInMeta("lục quý");
-    case "tam-hoa": return /(.)\1{2}/.test(rawNum) || hasInMeta("tam hoa");
-    case "loc-phat": return /68|86/.test(rawNum) || hasInMeta("lộc phát");
-    case "than-tai": return /39|79/.test(rawNum) || hasInMeta("thần tài");
-    case "ong-dia": return /38|78/.test(rawNum) || hasInMeta("ông địa");
-    case "so-tien": {
-      const isSequential = /(?:0123|1234|2345|3456|4567|5678|6789|123|234|345|456|567|678|789)/.test(rawNum);
-      return isSequential || hasInMeta("tiến") || hasInMeta("sảnh");
-    }
-    case "taxi": return /(\d{2})\1$/.test(rawNum) || /(\d{3})\1$/.test(rawNum) || hasInMeta("taxi") || hasInMeta("cặp");
-    case "nam-sinh": return /(?:19[6-9]\d|20[0-2]\d)$/.test(rawNum) || hasInMeta("năm sinh");
-    case "phong-thuy": return hasInMeta("phong thủy") || hasInMeta("đại cát") || /(?:68|86|39|79|88|99)$/.test(rawNum);
-    default: return true;
-  }
-}
-
-function sortAuctions(list: AuctionDto[], sortKey: string): AuctionDto[] {
-  const arr = [...list];
-  switch (sortKey) {
-    case "price-asc": return arr.sort((a, b) => (a.currentPrice ?? a.startingPrice) - (b.currentPrice ?? b.startingPrice));
-    case "price-desc": return arr.sort((a, b) => (b.currentPrice ?? b.startingPrice) - (a.currentPrice ?? a.startingPrice));
-    case "ending-soon": return arr.sort((a, b) => new Date(a.endAt).getTime() - new Date(b.endAt).getTime());
-    case "bids-desc": return arr.sort((a, b) => (b.totalBids || 0) - (a.totalBids || 0));
-    default: return arr;
-  }
-}
 
 /* ─── Custom Dropdown Component ──────────────────────────── */
 function FilterDropdown<T extends { key: string }>({
@@ -251,6 +191,8 @@ export default function AuctionsPage() {
   const [priceFilter, setPriceFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("default");
+  const [carrierOptions, setCarrierOptions] = useState<CarrierOption[]>(DEFAULT_CARRIER_OPTIONS);
+  const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>(DEFAULT_CATEGORY_OPTIONS);
   const [openDropdown, setOpenDropdown] = useState<"carrier" | "price" | "category" | "sort" | null>(null);
   const filterToolbarRef = useRef<HTMLDivElement>(null);
 
@@ -278,6 +220,29 @@ export default function AuctionsPage() {
     }, 350);
     return () => clearTimeout(timer);
   }, [searchInput]);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([getCarriers(), getCategories()])
+      .then(([carriers, categories]) => {
+        if (!active) return;
+        setCarrierOptions([
+          DEFAULT_CARRIER_OPTIONS[0],
+          ...carriers.map((carrier) => ({
+            key: carrier.id,
+            name: carrier.carrierName,
+            code: carrier.carrierCode,
+            color: carrier.carrierName.toLowerCase().includes("viettel") ? "#E4011E" : carrier.carrierName.toLowerCase().includes("mobi") ? "#005BAA" : carrier.carrierName.toLowerCase().includes("vina") ? "#00A3E0" : "#64748B",
+          })),
+        ]);
+        setCategoryOptions([
+          DEFAULT_CATEGORY_OPTIONS[0],
+          ...categories.map((category) => ({ key: category.id, label: category.categoryName, tag: category.description })),
+        ]);
+      })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, []);
 
   /* ─── Hero Spotlight ─────────────────────────────────────── */
   useEffect(() => {
@@ -364,10 +329,26 @@ export default function AuctionsPage() {
       if (typeFilter === "english") typeParam = "ENGLISH";
       else if (typeFilter === "dutch") typeParam = "DUTCH";
 
+      const selectedPrice = PRICE_OPTIONS.find((option) => option.key === priceFilter);
+      const sortConfig = sortBy === "price-asc"
+        ? { sortBy: AuctionSortBy.CurrentPrice, sortOrder: SortOrder.Asc }
+        : sortBy === "price-desc"
+          ? { sortBy: AuctionSortBy.CurrentPrice, sortOrder: SortOrder.Desc }
+          : sortBy === "ending-soon"
+            ? { sortBy: AuctionSortBy.EndAt, sortOrder: SortOrder.Asc }
+            : sortBy === "bids-desc"
+              ? { sortBy: AuctionSortBy.BidCount, sortOrder: SortOrder.Desc }
+              : { sortBy: AuctionSortBy.CreatedDate, sortOrder: SortOrder.Desc };
+
       const res = await auctionService.getAuctions({
         keyword: debouncedKeyword.trim() || undefined,
         status: statusParam,
         type: typeParam,
+        carrierId: carrierFilter !== "all" ? carrierFilter : undefined,
+        categoryId: categoryFilter !== "all" ? categoryFilter : undefined,
+        minPrice: selectedPrice?.min,
+        maxPrice: selectedPrice?.max,
+        ...sortConfig,
         pageIndex,
         pageSize,
       });
@@ -389,7 +370,7 @@ export default function AuctionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedKeyword, statusTab, typeFilter, pageIndex, pageSize]);
+  }, [debouncedKeyword, statusTab, typeFilter, carrierFilter, categoryFilter, priceFilter, sortBy, pageIndex, pageSize]);
 
   useEffect(() => { loadAuctions(); }, [loadAuctions]);
 
@@ -404,20 +385,7 @@ export default function AuctionsPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  /* ─── Client-side Filtering & Sorting ────────────────────── */
-  const displayAuctions = useMemo(() => {
-    let list = auctions;
-    if (carrierFilter !== "all") {
-      list = list.filter((a) => formatCarrier(a.carrierName).toLowerCase() === carrierFilter.toLowerCase());
-    }
-    if (priceFilter !== "all") {
-      list = list.filter((a) => matchPrice(a, priceFilter));
-    }
-    if (categoryFilter !== "all") {
-      list = list.filter((a) => matchCategory(a, categoryFilter));
-    }
-    return sortAuctions(list, sortBy);
-  }, [auctions, carrierFilter, priceFilter, categoryFilter, sortBy]);
+  const displayAuctions = auctions;
 
   /* ─── Derived State ──────────────────────────────────────── */
   const activeFilterCount = [
@@ -432,8 +400,8 @@ export default function AuctionsPage() {
     searchInput.trim() || debouncedKeyword.trim() || activeFilterCount > 0 || statusTab !== "live"
   );
 
-  const selectedCarrier = CARRIER_OPTIONS.find((c) => c.key === carrierFilter) || CARRIER_OPTIONS[0];
-  const selectedCategory = CATEGORY_OPTIONS.find((c) => c.key === categoryFilter) || CATEGORY_OPTIONS[0];
+  const selectedCarrier = carrierOptions.find((c) => c.key === carrierFilter) || carrierOptions[0];
+  const selectedCategory = categoryOptions.find((c) => c.key === categoryFilter) || categoryOptions[0];
   const selectedPrice = PRICE_OPTIONS.find((p) => p.key === priceFilter) || PRICE_OPTIONS[0];
   const selectedSort = SORT_OPTIONS.find((s) => s.key === sortBy) || SORT_OPTIONS[0];
 
@@ -669,9 +637,9 @@ export default function AuctionsPage() {
                 <FilterDropdown
                   label={carrierFilter === "all" ? "Nhà mạng" : selectedCarrier.name}
                   icon={<span className="w-3 h-3 rounded-full shrink-0" style={{ background: selectedCarrier.color }} />}
-                  options={CARRIER_OPTIONS}
+                  options={carrierOptions}
                   value={carrierFilter}
-                  onChange={(key) => { setCarrierFilter(key); setOpenDropdown(null); }}
+                  onChange={(key) => { setCarrierFilter(key); setPageIndex(1); setOpenDropdown(null); }}
                   isOpen={openDropdown === "carrier"}
                   onToggle={() => setOpenDropdown(openDropdown === "carrier" ? null : "carrier")}
                   width={220}
@@ -689,9 +657,9 @@ export default function AuctionsPage() {
                 <FilterDropdown
                   label={categoryFilter === "all" ? "Danh mục" : selectedCategory.label}
                   icon={<SlidersHorizontal size={14} />}
-                  options={CATEGORY_OPTIONS}
+                  options={categoryOptions}
                   value={categoryFilter}
-                  onChange={(key) => { setCategoryFilter(key); setOpenDropdown(null); }}
+                  onChange={(key) => { setCategoryFilter(key); setPageIndex(1); setOpenDropdown(null); }}
                   isOpen={openDropdown === "category"}
                   onToggle={() => setOpenDropdown(openDropdown === "category" ? null : "category")}
                   width={260}
@@ -711,7 +679,7 @@ export default function AuctionsPage() {
                   icon={<span className="text-[13px] font-bold">₫</span>}
                   options={PRICE_OPTIONS}
                   value={priceFilter}
-                  onChange={(key) => { setPriceFilter(key); setOpenDropdown(null); }}
+                  onChange={(key) => { setPriceFilter(key); setPageIndex(1); setOpenDropdown(null); }}
                   isOpen={openDropdown === "price"}
                   onToggle={() => setOpenDropdown(openDropdown === "price" ? null : "price")}
                   width={240}
@@ -731,7 +699,7 @@ export default function AuctionsPage() {
                   icon={<ArrowUpDown size={14} />}
                   options={SORT_OPTIONS}
                   value={sortBy}
-                  onChange={(key) => { setSortBy(key); setOpenDropdown(null); }}
+                  onChange={(key) => { setSortBy(key); setPageIndex(1); setOpenDropdown(null); }}
                   isOpen={openDropdown === "sort"}
                   onToggle={() => setOpenDropdown(openDropdown === "sort" ? null : "sort")}
                   width={250}

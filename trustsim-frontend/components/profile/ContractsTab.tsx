@@ -38,7 +38,16 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
 
   // Filters & Search
   const [searchKeyword, setSearchKeyword] = useState<string>("");
+  const [debouncedKeyword, setDebouncedKeyword] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedKeyword(searchKeyword.trim());
+      setPageIndex(1);
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [searchKeyword]);
 
   const fetchTrades = useCallback(async () => {
     setLoading(true);
@@ -50,6 +59,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
 
       const res = await tradeService.getMyTrades({
         status: statusParam,
+        keyword: debouncedKeyword || undefined,
         pageIndex,
         pageSize: 15,
       });
@@ -67,7 +77,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [statusFilter, pageIndex, addToast]);
+  }, [statusFilter, debouncedKeyword, pageIndex, addToast]);
 
   useEffect(() => {
     fetchTrades();
@@ -94,18 +104,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
     });
   };
 
-  // Filtered by search keyword on client side
-  const filteredTrades = useMemo(() => {
-    if (!searchKeyword.trim()) return trades;
-    const kw = searchKeyword.trim().toLowerCase();
-    return trades.filter(
-      (t) =>
-        t.tradeTransactionCode.toLowerCase().includes(kw) ||
-        t.simPhoneNumber.replace(/\D/g, "").includes(kw.replace(/\D/g, "")) ||
-        t.buyerName?.toLowerCase().includes(kw) ||
-        t.sellerName?.toLowerCase().includes(kw)
-    );
-  }, [trades, searchKeyword]);
+  const filteredTrades = trades;
 
   // Compute summary stats from current trade list
   const summaryStats = useMemo(() => {

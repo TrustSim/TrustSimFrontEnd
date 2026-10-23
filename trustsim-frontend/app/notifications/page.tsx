@@ -78,8 +78,17 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+      setPageIndex(1);
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
 
   // Sync Auth
   useEffect(() => {
@@ -119,6 +128,7 @@ export default function NotificationsPage() {
         const [res, unread] = await Promise.all([
           getMyNotifications({
             isRead: isReadParam,
+            keyword: debouncedSearch || undefined,
             pageIndex,
             pageSize,
           }),
@@ -136,7 +146,7 @@ export default function NotificationsPage() {
         setRefreshing(false);
       }
     },
-    [pageIndex, statusFilter]
+    [pageIndex, statusFilter, debouncedSearch]
   );
 
   useEffect(() => {
@@ -184,7 +194,7 @@ export default function NotificationsPage() {
     await markNotificationAsRead(id).catch(() => {});
   };
 
-  // Filtered by Search & Category
+  // Keyword được lọc ở backend; category hiện là metadata UI nên lọc trên trang hiện tại.
   const displayedNotifications = useMemo(() => {
     return notifications.filter((n) => {
       // Category filter
@@ -192,16 +202,9 @@ export default function NotificationsPage() {
         const meta = getNotificationVisualMeta(n.notificationType);
         if (meta.category !== categoryFilter) return false;
       }
-      // Search filter
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        const matchTitle = n.title?.toLowerCase().includes(query);
-        const matchContent = n.content?.toLowerCase().includes(query);
-        return matchTitle || matchContent;
-      }
       return true;
     });
-  }, [notifications, categoryFilter, searchQuery]);
+  }, [notifications, categoryFilter]);
 
   return (
     <div className="min-h-screen bg-[#F1F5F9] text-slate-900 flex flex-col">

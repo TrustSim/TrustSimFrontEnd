@@ -1,4 +1,4 @@
-
+import type { BaseQueryFilter, TradeTransactionSortBy } from "./common";
 export type TradeTransactionStatus =
   | "PendingEscrow"
   | "PendingSignature"
@@ -52,10 +52,13 @@ export interface CreateTradeTransactionRequest {
   auctionId?: string;
 }
 
-export interface TradeFilter {
+export interface TradeFilter extends BaseQueryFilter<TradeTransactionSortBy> {
   status?: TradeTransactionStatus;
-  pageIndex?: number;
-  pageSize?: number;
+  role?: "buyer" | "seller" | "all";
+  buyerId?: string;
+  sellerId?: string;
+  minAmount?: number;
+  maxAmount?: number;
 }
 
 export interface ContractPreviewDto {
@@ -113,4 +116,3 @@ export interface SimTransferDetailsDto {
   completedAt?: string;
   message?: string;
 }
-

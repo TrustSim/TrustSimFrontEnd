@@ -455,11 +455,10 @@ export default function SellerConfirmRunnerUpPage({
                     {/* Countdown Badge */}
                     {formattedCountdown && (
                       <div
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono font-bold shrink-0 ${
-                          isExpired
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono font-bold shrink-0 ${isExpired
                             ? "bg-rose-50 border-rose-200 text-rose-700"
                             : "bg-amber-50 border-amber-200 text-amber-900"
-                        }`}
+                          }`}
                       >
                         <Clock size={13} />
                         <span>{formattedCountdown}</span>
@@ -534,11 +533,10 @@ export default function SellerConfirmRunnerUpPage({
                             {formatVND(totalSellerRevenue)}
                           </div>
                           <div
-                            className={`text-[11px] font-bold ${
-                              netDiff >= 0
+                            className={`text-[11px] font-bold ${netDiff >= 0
                                 ? "text-emerald-700"
                                 : "text-slate-500"
-                            }`}
+                              }`}
                           >
                             {netDiff >= 0
                               ? `(+${formatVND(netDiff)} cao hơn giá thắng ban đầu)`
@@ -689,13 +687,12 @@ export default function SellerConfirmRunnerUpPage({
                         {bids.slice(0, 5).map((b, idx) => (
                           <div
                             key={b.id || idx}
-                            className={`p-2 rounded-lg border text-xs flex items-center justify-between ${
-                              idx === 0
+                            className={`p-2 rounded-lg border text-xs flex items-center justify-between ${idx === 0
                                 ? "bg-rose-50/50 border-rose-200 text-rose-900"
                                 : idx === 1
-                                ? "bg-purple-50/50 border-purple-200 text-purple-900"
-                                : "bg-slate-50 border-slate-100 text-slate-600"
-                            }`}
+                                  ? "bg-purple-50/50 border-purple-200 text-purple-900"
+                                  : "bg-slate-50 border-slate-100 text-slate-600"
+                              }`}
                           >
                             <div className="flex items-center gap-1.5 min-w-0">
                               <span className="font-bold text-[10px] px-1 py-0.2 rounded bg-white border border-slate-200 shrink-0">
@@ -797,7 +794,6 @@ export default function SellerConfirmRunnerUpPage({
         </div>
       )}
 
-      <Footer />
       <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );

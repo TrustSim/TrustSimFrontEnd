@@ -45,6 +45,7 @@ import {
   CreateAuctionPayload,
 } from "@/services/auctionService";
 import { getSims, SimNumberDto } from "@/services/simService";
+import { AuctionSortBy, SortOrder } from "@/types/common";
 
 // Helper định dạng tiền tệ VNĐ
 const formatVND = (value: number) =>
@@ -232,7 +233,9 @@ export function AdminAuctionsTab() {
         pageSize,
         auctionType: typeParam,
         status: statusParam,
-        search: search.trim() || undefined,
+        keyword: search.trim() || undefined,
+        sortBy: sortKey === "start" ? AuctionSortBy.StartingPrice : sortKey === "current" ? AuctionSortBy.CurrentPrice : AuctionSortBy.CreatedDate,
+        sortOrder: sortDirection === "asc" ? SortOrder.Asc : SortOrder.Desc,
       });
 
       if (res.items && res.items.length > 0) {
@@ -267,7 +270,7 @@ export function AdminAuctionsTab() {
     } finally {
       setLoading(false);
     }
-  }, [pageIndex, pageSize, search, typeFilter, statusFilter]);
+  }, [pageIndex, pageSize, search, typeFilter, statusFilter, sortKey, sortDirection]);
 
   useEffect(() => {
     loadAuctions();
@@ -356,12 +359,7 @@ export function AdminAuctionsTab() {
     return { active, schedule, draft, end, cancelled };
   }, [auctions]);
 
-  const displayAuctions = [...auctions].sort((a, b) => {
-    const left = sortKey === "code" ? a.auctionCode : sortKey === "start" ? a.startingPrice : a.currentPrice;
-    const right = sortKey === "code" ? b.auctionCode : sortKey === "start" ? b.startingPrice : b.currentPrice;
-    const result = typeof left === "number" && typeof right === "number" ? left - right : String(left).localeCompare(String(right), "vi");
-    return sortDirection === "asc" ? result : -result;
-  });
+  const displayAuctions = auctions;
   const changeSort = (key: "code" | "start" | "current") => {
     const next = toggleSort(sortKey, sortDirection, key);
     setSortKey(next.key); setSortDirection(next.direction);

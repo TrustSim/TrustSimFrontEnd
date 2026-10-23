@@ -1,5 +1,6 @@
 import { apiFetch } from "./apiClient";
-import { PagedResult } from "./simService";
+import type { BaseQueryFilter, NotificationSortBy, PagedResult } from "@/types/common";
+import { withQuery } from "./queryParams";
 
 export enum NotificationTypeEnum {
   SYSTEM_ALERT = 0,
@@ -33,10 +34,8 @@ export interface NotificationItemDto {
   createdDate: string;
 }
 
-export interface GetNotificationsParams {
+export interface GetNotificationsParams extends BaseQueryFilter<NotificationSortBy> {
   isRead?: boolean;
-  pageIndex?: number;
-  pageSize?: number;
 }
 
 export interface BroadcastNotificationPayload {
@@ -52,13 +51,12 @@ export interface BroadcastNotificationPayload {
 export async function getMyNotifications(
   params: GetNotificationsParams = {}
 ): Promise<PagedResult<NotificationItemDto>> {
-  const query = new URLSearchParams();
-  if (params.isRead !== undefined) query.set("isRead", String(params.isRead));
-  query.set("pageIndex", String(params.pageIndex ?? 1));
-  query.set("pageSize", String(params.pageSize ?? 20));
-
   const res = await apiFetch<PagedResult<NotificationItemDto>>(
-    `/notifications?${query.toString()}`
+    withQuery("/notifications", {
+      ...params,
+      pageIndex: params.pageIndex ?? 1,
+      pageSize: params.pageSize ?? 20,
+    })
   );
   if (!res.data) {
     return {

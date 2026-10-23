@@ -1,4 +1,6 @@
 import { apiFetch } from "./apiClient";
+import { withQuery } from "./queryParams";
+import type { AuctionSortBy, BaseQueryFilter } from "@/types/common";
 
 export interface PagedResult<T> {
   items: T[];
@@ -134,15 +136,17 @@ export interface AuctionDetailDto extends AuctionListItemDto {
   updatedDate?: string;
 }
 
-export interface GetAdminAuctionsParams {
-  pageIndex?: number;
-  pageSize?: number;
+export interface GetAdminAuctionsParams extends BaseQueryFilter<AuctionSortBy> {
   auctionType?: number;
   status?: number;
   authorId?: string;
+  keyword?: string;
+  /** @deprecated Dùng keyword. */
   search?: string;
-  startFrom?: string;
-  startTo?: string;
+  carrierId?: string;
+  categoryId?: string;
+  minPrice?: number;
+  maxPrice?: number;
 }
 
 export interface PendingSettlementDto {
@@ -167,15 +171,20 @@ export interface PendingSettlementDto {
   runnerUpParticipantId?: string;
 }
 
-export interface GetAuctionsParams {
-  keyword?: string;
+export interface GetAuctionsParams extends BaseQueryFilter<AuctionSortBy> {
   status?: string | number;
   type?: string | number;
   authorId?: string;
+  participantId?: string;
+  carrierId?: string;
+  categoryId?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  role?: "author" | "participant";
+  /** @deprecated Dùng role: "participant". */
   myParticipations?: boolean;
+  /** @deprecated Dùng role: "author". */
   myAuctions?: boolean;
-  pageIndex?: number;
-  pageSize?: number;
 }
 
 export interface CalculateSellerDepositResultDto {
@@ -232,22 +241,25 @@ export const auctionService = {
    * Lấy danh sách các phiên đấu giá công khai từ Backend (hỗ trợ search mã phiên, số sim, lọc trạng thái, loại hình, phiên tôi tạo, phiên tôi tham gia)
    */
   async getAuctions(params: GetAuctionsParams = {}): Promise<PagedResult<AuctionDto>> {
-    const query = new URLSearchParams();
-    if (params.keyword) query.append("keyword", params.keyword.trim());
-    if (params.status !== undefined && params.status !== null && params.status !== "") {
-      query.append("status", params.status.toString());
-    }
-    if (params.type !== undefined && params.type !== null && params.type !== "") {
-      query.append("type", params.type.toString());
-    }
-    if (params.authorId) query.append("authorId", params.authorId);
-    if (params.myParticipations) query.append("myParticipations", "true");
-    if (params.myAuctions) query.append("myAuctions", "true");
-    if (params.pageIndex) query.append("pageIndex", params.pageIndex.toString());
-    if (params.pageSize) query.append("pageSize", params.pageSize.toString());
-
-    const queryString = query.toString();
-    const endpoint = `/Auctions${queryString ? `?${queryString}` : ""}`;
+    const role = params.role ?? (params.myParticipations ? "participant" : params.myAuctions ? "author" : undefined);
+    const endpoint = withQuery("/Auctions", {
+      keyword: params.keyword,
+      status: params.status,
+      type: params.type,
+      authorId: params.authorId,
+      participantId: params.participantId,
+      carrierId: params.carrierId,
+      categoryId: params.categoryId,
+      minPrice: params.minPrice,
+      maxPrice: params.maxPrice,
+      role,
+      fromDate: params.fromDate,
+      toDate: params.toDate,
+      sortBy: params.sortBy,
+      sortOrder: params.sortOrder,
+      pageIndex: params.pageIndex ?? 1,
+      pageSize: params.pageSize ?? 10,
+    });
     const res = await apiFetch<PagedResult<AuctionDto>>(endpoint);
 
     if (res.data) {
@@ -269,20 +281,25 @@ export const auctionService = {
    * [ADMIN] Lấy danh sách phiên đấu giá có phân trang và bộ lọc từ Backend
    */
   async getAdminAuctions(params: GetAdminAuctionsParams = {}): Promise<PagedResult<AuctionListItemDto>> {
-    const query = new URLSearchParams();
-    if (params.pageIndex) query.append("pageIndex", params.pageIndex.toString());
-    if (params.pageSize) query.append("pageSize", params.pageSize.toString());
-    if (params.auctionType !== undefined && params.auctionType !== null) {
-      query.append("type", params.auctionType.toString());
-    }
-    if (params.status !== undefined && params.status !== null) {
-      query.append("status", params.status.toString());
-    }
-    if (params.search) query.append("keyword", params.search);
-    if (params.authorId) query.append("authorId", params.authorId);
+    const query = withQuery("", {
+      pageIndex: params.pageIndex ?? 1,
+      pageSize: params.pageSize ?? 10,
+      type: params.auctionType,
+      status: params.status,
+      keyword: params.keyword ?? params.search,
+      authorId: params.authorId,
+      carrierId: params.carrierId,
+      categoryId: params.categoryId,
+      minPrice: params.minPrice,
+      maxPrice: params.maxPrice,
+      fromDate: params.fromDate,
+      toDate: params.toDate,
+      sortBy: params.sortBy,
+      sortOrder: params.sortOrder,
+    }).replace(/^\?/, "");
 
     try {
-      const endpoint = `/admin/auctions?${query.toString()}`;
+      const endpoint = `/admin/auctions${query ? `?${query}` : ""}`;
       const res = await apiFetch<PagedResult<AuctionListItemDto>>(endpoint);
       if (res.data) {
         return res.data;
@@ -290,7 +307,7 @@ export const auctionService = {
     } catch {
       // Backend chưa có route /admin/auctions riêng -> truy vấn endpoint /Auctions chính thức
       try {
-        const res = await apiFetch<PagedResult<AuctionDto>>(`/Auctions?${query.toString()}`);
+        const res = await apiFetch<PagedResult<AuctionDto>>(`/Auctions${query ? `?${query}` : ""}`);
         if (res.data) {
           return {
             pageIndex: res.data.pageIndex,
@@ -521,4 +538,3 @@ export const auctionService = {
     return res.data;
   },
 };
-

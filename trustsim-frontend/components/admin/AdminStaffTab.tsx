@@ -50,6 +50,7 @@ import { Pagination } from "@/components/ui/Pagination";
 import { AdminSortButton, toggleSort, type SortDirection } from "@/components/admin/AdminPrimitives";
 import ImportExportBar from "@/components/admin/ImportExportBar";
 import { ExcelColumnDef } from "@/services/excelService";
+import { SortOrder, UserAccountSortBy } from "@/types/common";
 
 const STAFF_EXPORT_COLUMNS: ExcelColumnDef<AdminUserDetailDto>[] = [
   { header: "Mã nhân sự", key: "id", width: 15 },
@@ -175,14 +176,7 @@ export function AdminStaffTab() {
   const targetRole = activeSegment === "admins" ? UserRoleEnum.ADMIN : UserRoleEnum.CONSULTANT;
 
   // Sorting
-  const displayStaff = useMemo(() => {
-    return [...staffList].sort((a, b) => {
-      const left = sortKey === "name" ? (a.fullName || a.userName || "") : String(a.createdDate || "");
-      const right = sortKey === "name" ? (b.fullName || b.userName || "") : String(b.createdDate || "");
-      const result = String(left).localeCompare(String(right), "vi");
-      return sortDirection === "asc" ? result : -result;
-    });
-  }, [staffList, sortKey, sortDirection]);
+  const displayStaff = staffList;
 
   const changeSort = (key: "name" | "date") => {
     const next = toggleSort(sortKey, sortDirection, key);
@@ -198,6 +192,8 @@ export function AdminStaffTab() {
         keyword: debouncedSearch,
         role: targetRole,
         isActive: selectedStatus !== "" ? selectedStatus === "active" : undefined,
+        sortBy: sortKey === "date" ? UserAccountSortBy.CreatedDate : UserAccountSortBy.FullName,
+        sortOrder: sortDirection === "asc" ? SortOrder.Asc : SortOrder.Desc,
         pageIndex,
         pageSize,
       });
@@ -208,7 +204,7 @@ export function AdminStaffTab() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, targetRole, selectedStatus, pageIndex, pageSize]);
+  }, [debouncedSearch, targetRole, selectedStatus, sortKey, sortDirection, pageIndex, pageSize]);
 
   useEffect(() => {
     fetchStaff();

@@ -217,7 +217,7 @@ export const financialValidators = {
 export const identityValidators = {
   /**
    * RegisterUserCommandValidator
-   * - UserName: 3 - 50 chars, ^[a-zA-Z0-9_.]+$
+   * - UserName: 3 - 50 ký tự, hỗ trợ Unicode, chữ số, dấu chấm, gạch dưới và khoảng trắng
    * - Email: valid email, max 255 chars
    * - Password: min 8 chars, uppercase, lowercase, digit, special char [!?*@#$%^&+=]
    */
@@ -230,8 +230,8 @@ export const identityValidators = {
     if (cleanUser.length < 3 || cleanUser.length > 50) {
       return { isValid: false, error: "Tên đăng nhập phải từ 3 đến 50 ký tự." };
     }
-    if (!/^[a-zA-Z0-9_.]+$/.test(cleanUser)) {
-      return { isValid: false, error: "Tên đăng nhập chỉ chứa chữ cái, chữ số, dấu gạch dưới và dấu chấm." };
+    if (!/^[\p{L}0-9_.\s]+$/u.test(cleanUser)) {
+      return { isValid: false, error: "Tên đăng nhập chỉ chứa chữ cái, chữ số, khoảng trắng, dấu gạch dưới và dấu chấm." };
     }
 
     const cleanEmail = email?.trim() || "";

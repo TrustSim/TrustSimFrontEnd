@@ -12,8 +12,11 @@ import type {
   LedgerJournalFilter,
   LedgerIntegrityReportDto,
   PaymentIntentDto,
+  UnifiedStatementFilter,
+  UnifiedWalletTransactionDto,
 } from "@/types/wallet";
 import type { PagedResult } from "@/types/common";
+import { withQuery } from "./queryParams";
 
 const DEMO_DEPOSIT_STORAGE_KEY = "trustsim_demo_deposit_total";
 
@@ -55,17 +58,30 @@ export const walletService = {
   async getTransactions(
     filter: WalletTransactionFilter = {}
   ): Promise<PagedResult<WalletTransactionDto>> {
-    const params = new URLSearchParams();
-    if (filter.type) params.set("type", filter.type);
-    if (filter.status) params.set("status", filter.status);
-    if (filter.pageIndex) params.set("pageIndex", String(filter.pageIndex));
-    if (filter.pageSize) params.set("pageSize", String(filter.pageSize));
-
     const res = await apiFetch<PagedResult<WalletTransactionDto>>(
-      `/Wallets/transactions?${params.toString()}`
+      withQuery("/Wallets/transactions", {
+        ...filter,
+        pageIndex: filter.pageIndex ?? 1,
+        pageSize: filter.pageSize ?? 10,
+      })
     );
     if (res.data) return res.data;
     throw new Error(res.message || "Không thể tải lịch sử giao dịch");
+  },
+
+  /** Sao kê hợp nhất giữa nạp/rút ví và toàn bộ biến động đấu giá, Escrow, bồi thường. */
+  async getStatement(
+    filter: UnifiedStatementFilter = {}
+  ): Promise<PagedResult<UnifiedWalletTransactionDto>> {
+    const res = await apiFetch<PagedResult<UnifiedWalletTransactionDto>>(
+      withQuery("/Wallets/statement", {
+        ...filter,
+        pageIndex: filter.pageIndex ?? 1,
+        pageSize: filter.pageSize ?? 10,
+      })
+    );
+    if (res.data) return res.data;
+    throw new Error(res.message || "Không thể tải sao kê ví hợp nhất");
   },
 
   /** Chi tiết một giao dịch ví */
@@ -128,14 +144,19 @@ export const walletService = {
   async adminGetWallets(
     filter: AdminWalletFilter = {}
   ): Promise<PagedResult<AdminWalletDetailDto>> {
-    const params = new URLSearchParams();
-    if (filter.keyword) params.set("keyword", filter.keyword);
-    if (filter.walletStatus) params.set("status", filter.walletStatus);
-    if (filter.pageIndex) params.set("pageIndex", String(filter.pageIndex));
-    if (filter.pageSize) params.set("pageSize", String(filter.pageSize));
-
     const res = await apiFetch<PagedResult<AdminWalletDetailDto>>(
-      `/Wallets/admin?${params.toString()}`
+      withQuery("/Wallets/admin", {
+        keyword: filter.keyword,
+        status: filter.walletStatus,
+        minBalance: filter.minBalance,
+        maxBalance: filter.maxBalance,
+        fromDate: filter.fromDate,
+        toDate: filter.toDate,
+        sortBy: filter.sortBy,
+        sortOrder: filter.sortOrder,
+        pageIndex: filter.pageIndex ?? 1,
+        pageSize: filter.pageSize ?? 10,
+      })
     );
     if (res.data) return res.data;
     throw new Error(res.message || "Không thể tải danh sách ví");
@@ -145,15 +166,13 @@ export const walletService = {
   async adminGetAllTransactions(
     filter: AdminWalletFilter = {}
   ): Promise<PagedResult<WalletTransactionDto>> {
-    const params = new URLSearchParams();
-    if (filter.userId) params.set("userId", filter.userId);
-    if (filter.type) params.set("type", filter.type);
-    if (filter.status) params.set("status", filter.status);
-    if (filter.pageIndex) params.set("pageIndex", String(filter.pageIndex));
-    if (filter.pageSize) params.set("pageSize", String(filter.pageSize));
-
     const res = await apiFetch<PagedResult<WalletTransactionDto>>(
-      `/Wallets/admin/transactions?${params.toString()}`
+      withQuery("/Wallets/admin/transactions", {
+        ...filter,
+        status: filter.status,
+        pageIndex: filter.pageIndex ?? 1,
+        pageSize: filter.pageSize ?? 10,
+      })
     );
     if (res.data) return res.data;
     throw new Error(res.message || "Không thể tải lịch sử giao dịch");
@@ -190,15 +209,12 @@ export const walletService = {
   async adminGetLedgerJournals(
     filter: LedgerJournalFilter = {}
   ): Promise<PagedResult<LedgerJournalDto>> {
-    const params = new URLSearchParams();
-    if (filter.transactionType) params.set("transactionType", filter.transactionType);
-    if (filter.fromDate) params.set("fromDate", filter.fromDate);
-    if (filter.toDate) params.set("toDate", filter.toDate);
-    if (filter.pageIndex) params.set("pageIndex", String(filter.pageIndex));
-    if (filter.pageSize) params.set("pageSize", String(filter.pageSize));
-
     const res = await apiFetch<PagedResult<LedgerJournalDto>>(
-      `/Wallets/admin/ledger/journals?${params.toString()}`
+      withQuery("/Wallets/admin/ledger/journals", {
+        ...filter,
+        pageIndex: filter.pageIndex ?? 1,
+        pageSize: filter.pageSize ?? 10,
+      })
     );
     if (res.data) return res.data;
     throw new Error(res.message || "Không thể tải danh sách chứng từ");

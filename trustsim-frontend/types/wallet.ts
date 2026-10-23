@@ -1,3 +1,5 @@
+import type { BaseQueryFilter, LedgerJournalSortBy, WalletTransactionSortBy } from "./common";
+
 // ─── Wallet DTOs ──────────────────────────────────────────────────────────────
 
 export interface WalletDto {
@@ -78,17 +80,39 @@ export interface AdminWalletDetailDto {
   createdAt: string;
 }
 
-export interface WalletTransactionFilter {
+export interface WalletTransactionFilter extends BaseQueryFilter<WalletTransactionSortBy> {
   type?: WalletTransactionType;
   status?: TransactionStatus;
-  pageIndex?: number;
-  pageSize?: number;
+  minAmount?: number;
+  maxAmount?: number;
 }
 
 export interface AdminWalletFilter extends WalletTransactionFilter {
   keyword?: string;
   userId?: string;
   walletStatus?: "ACTIVE" | "FROZEN" | "SUSPENDED";
+  minBalance?: number;
+  maxBalance?: number;
+}
+
+export interface UnifiedWalletTransactionDto {
+  id: string;
+  source: "WALLET" | "AUCTION" | string;
+  transactionType: string;
+  direction: "CREDIT" | "DEBIT" | "LOCK" | string;
+  amount: number;
+  balanceBefore: number;
+  balanceAfter: number;
+  status: string;
+  referenceCode?: string;
+  description?: string;
+  createdAt: string;
+}
+
+export interface UnifiedStatementFilter extends BaseQueryFilter<WalletTransactionSortBy> {
+  sourceType?: "WALLET" | "AUCTION";
+  minAmount?: number;
+  maxAmount?: number;
 }
 
 // ─── Ledger DTOs (aligned with backend response) ─────────────────────────────
@@ -174,12 +198,10 @@ export interface LedgerIntegrityReportDto {
   reconciliations: AccountReconciliationDetail[];
 }
 
-export interface LedgerJournalFilter {
+export interface LedgerJournalFilter extends BaseQueryFilter<LedgerJournalSortBy> {
   transactionType?: string;
-  fromDate?: string;
-  toDate?: string;
-  pageIndex?: number;
-  pageSize?: number;
+  minAmount?: number;
+  maxAmount?: number;
 }
 
 // ─── Payment Intent ──────────────────────────────────────────────────────────

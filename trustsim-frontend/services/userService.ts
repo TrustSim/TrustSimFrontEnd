@@ -1,4 +1,6 @@
 import { apiFetch } from "./apiClient";
+import { withQuery } from "./queryParams";
+import type { BaseQueryFilter, UserAccountSortBy } from "@/types/common";
 
 export enum UserRoleEnum {
   USER = 0,
@@ -64,12 +66,12 @@ export interface AdminUpdateUserPayload {
   address?: string;
 }
 
-export interface GetAdminUsersParams {
-  keyword?: string;
+export interface GetAdminUsersParams extends BaseQueryFilter<UserAccountSortBy> {
   role?: number | UserRoleEnum | string;
   isActive?: boolean;
-  pageIndex?: number;
-  pageSize?: number;
+  kycStatus?: number | VerificationStatusEnum | string;
+  minWalletBalance?: number;
+  maxWalletBalance?: number;
 }
 
 export const userService = {
@@ -77,20 +79,11 @@ export const userService = {
    * Lấy danh sách tài khoản thành viên hệ thống (có phân trang, tìm kiếm, lọc)
    */
   async getAdminUsers(params: GetAdminUsersParams = {}): Promise<PagedResult<AdminUserDetailDto>> {
-    const query = new URLSearchParams();
-    if (params.keyword && params.keyword.trim()) {
-      query.set("keyword", params.keyword.trim());
-    }
-    if (params.role !== undefined && params.role !== "") {
-      query.set("role", String(params.role));
-    }
-    if (params.isActive !== undefined) {
-      query.set("isActive", String(params.isActive));
-    }
-    query.set("pageIndex", String(params.pageIndex || 1));
-    query.set("pageSize", String(params.pageSize || 10));
-
-    const res = await apiFetch<PagedResult<AdminUserDetailDto>>(`/Users/admin?${query.toString()}`);
+    const res = await apiFetch<PagedResult<AdminUserDetailDto>>(withQuery("/Users/admin", {
+      ...params,
+      pageIndex: params.pageIndex ?? 1,
+      pageSize: params.pageSize ?? 10,
+    }));
     return (
       res.data || {
         items: [],

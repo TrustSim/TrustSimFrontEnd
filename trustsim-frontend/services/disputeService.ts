@@ -6,17 +6,18 @@ import type {
   DisputeFilter,
 } from "@/types/dispute";
 import type { PagedResult } from "@/types/common";
+import { withQuery } from "./queryParams";
 
 export const disputeService = {
   /** Lấy danh sách khiếu nại tranh chấp (có phân trang và lọc theo trạng thái) */
   async getDisputes(filter: DisputeFilter = {}): Promise<PagedResult<DisputeTicketDto>> {
-    const params = new URLSearchParams();
-    if (filter.status && filter.status !== "all") params.set("status", filter.status);
-    if (filter.pageIndex) params.set("pageIndex", String(filter.pageIndex));
-    if (filter.pageSize) params.set("pageSize", String(filter.pageSize));
-
     const res = await apiFetch<PagedResult<DisputeTicketDto>>(
-      `/Disputes?${params.toString()}`
+      withQuery("/Disputes", {
+        ...filter,
+        status: filter.status === "all" ? undefined : filter.status,
+        pageIndex: filter.pageIndex ?? 1,
+        pageSize: filter.pageSize ?? 10,
+      })
     );
     if (res.data) return res.data;
     throw new Error(res.message || "Không thể tải danh sách khiếu nại.");

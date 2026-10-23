@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { FileText } from "lucide-react";
 import { walletService } from "@/services/walletService";
-import { WalletTransactionDto, WalletTransactionType, TransactionStatus } from "@/types/wallet";
+import { UnifiedWalletTransactionDto } from "@/types/wallet";
+import { SortOrder, WalletTransactionSortBy } from "@/types/common";
 import { ToastMessage } from "@/components/ui/Toast";
 import { ProfileIcons as Icons } from "./ProfileIcons";
 
@@ -19,23 +20,22 @@ export default function TransactionsTab({
   addToast,
   refreshTrigger,
 }: TransactionsTabProps) {
-  const [transactions, setTransactions] = useState<WalletTransactionDto[]>([]);
+  const [transactions, setTransactions] = useState<UnifiedWalletTransactionDto[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [pageIndex, setPageIndex] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
-  const [filterType, setFilterType] = useState<string>("ALL");
-  const [filterStatus, setFilterStatus] = useState<string>("ALL");
+  const [sourceFilter, setSourceFilter] = useState<"ALL" | "WALLET" | "AUCTION">("ALL");
+  const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.Desc);
 
   const loadTransactions = useCallback(async () => {
     setLoading(true);
     try {
-      const typeParam = filterType !== "ALL" ? (filterType as WalletTransactionType) : undefined;
-      const statusParam = filterStatus !== "ALL" ? (filterStatus as TransactionStatus) : undefined;
-      const res = await walletService.getTransactions({
+      const res = await walletService.getStatement({
         pageIndex,
         pageSize: 15,
-        type: typeParam,
-        status: statusParam,
+        sourceType: sourceFilter !== "ALL" ? sourceFilter : undefined,
+        sortBy: WalletTransactionSortBy.CreatedAt,
+        sortOrder,
       });
       setTransactions(res.items || []);
       setTotalPages(res.totalPages || 1);
@@ -48,13 +48,13 @@ export default function TransactionsTab({
     } finally {
       setLoading(false);
     }
-  }, [filterType, filterStatus, pageIndex, addToast]);
+  }, [sourceFilter, sortOrder, pageIndex, addToast]);
 
   useEffect(() => {
     loadTransactions();
   }, [loadTransactions, refreshTrigger]);
 
-  const getStatusBadge = (status: TransactionStatus) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case "COMPLETED":
         return { text: "Hoàn tất", bg: "#F0FDF4", color: "#16A34A", border: "#BBF7D0" };
@@ -69,12 +69,30 @@ export default function TransactionsTab({
     }
   };
 
-  const getTypeLabel = (type: WalletTransactionType) => {
+  const getTypeLabel = (type: string) => {
     switch (type) {
       case "TOP_UP":
         return "Nạp tiền VietQR SePay";
       case "WITHDRAW":
         return "Rút tiền về ngân hàng";
+      case "AUCTION_DEPOSIT_LOCK":
+        return "Khóa cọc đấu giá";
+      case "AUCTION_PROGRESSIVE_DEPOSIT_LOCK":
+        return "Khóa cọc bổ sung";
+      case "AUCTION_DEPOSIT_RELEASED":
+        return "Hoàn cọc đấu giá";
+      case "AUCTION_DEPOSIT_FORFEITED":
+        return "Tịch thu cọc vi phạm";
+      case "AUCTION_COMPENSATION":
+        return "Tiền bồi thường đấu giá";
+      case "ESCROW_HOLD":
+        return "Tạm giữ tiền Escrow";
+      case "ESCROW_REFUNDED":
+        return "Hoàn tiền Escrow";
+      case "SELLER_PAYOUT":
+        return "Thanh toán cho người bán";
+      case "PENALTY":
+        return "Khấu trừ tiền phạt";
       default:
         return type;
     }
@@ -96,9 +114,9 @@ export default function TransactionsTab({
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           {/* Filter Type */}
           <select
-            value={filterType}
+            value={sourceFilter}
             onChange={(e) => {
-              setFilterType(e.target.value);
+              setSourceFilter(e.target.value as "ALL" | "WALLET" | "AUCTION");
               setPageIndex(1);
             }}
             style={{
@@ -112,16 +130,16 @@ export default function TransactionsTab({
               outline: "none",
             }}
           >
-            <option value="ALL">Tất cả loại giao dịch</option>
-            <option value="TOP_UP">Nạp tiền</option>
-            <option value="WITHDRAW">Rút tiền</option>
+            <option value="ALL">Tất cả nguồn giao dịch</option>
+            <option value="WALLET">Nạp/rút ngân hàng</option>
+            <option value="AUCTION">Đấu giá và Escrow</option>
           </select>
 
           {/* Filter Status */}
           <select
-            value={filterStatus}
+            value={sortOrder}
             onChange={(e) => {
-              setFilterStatus(e.target.value);
+              setSortOrder(Number(e.target.value) as SortOrder);
               setPageIndex(1);
             }}
             style={{
@@ -135,11 +153,8 @@ export default function TransactionsTab({
               outline: "none",
             }}
           >
-            <option value="ALL">Tất cả trạng thái</option>
-            <option value="COMPLETED">Hoàn tất</option>
-            <option value="PENDING">Đang xử lý</option>
-            <option value="FAILED">Thất bại</option>
-            <option value="CANCELLED">Đã hủy</option>
+            <option value={SortOrder.Desc}>Mới nhất trước</option>
+            <option value={SortOrder.Asc}>Cũ nhất trước</option>
           </select>
 
           {/* Action Buttons */}
@@ -182,8 +197,9 @@ export default function TransactionsTab({
         ) : (
           <div>
             {transactions.map((tx) => {
-              const isPlus = tx.walletTransactionType === "TOP_UP" || tx.amount > 0 && tx.walletTransactionType !== "WITHDRAW";
-              const badge = getStatusBadge(tx.transactionStatus);
+              const isPlus = tx.direction === "CREDIT";
+              const isLock = tx.direction === "LOCK";
+              const badge = getStatusBadge(tx.status);
               const formattedDate = new Date(tx.createdAt).toLocaleString("vi-VN", {
                 day: "2-digit",
                 month: "2-digit",
@@ -215,8 +231,8 @@ export default function TransactionsTab({
                         width: 38,
                         height: 38,
                         borderRadius: 8,
-                        background: isPlus ? "#F0FDF4" : "#EFF6FF",
-                        color: isPlus ? "#16A34A" : "#2563EB",
+                        background: isPlus ? "#F0FDF4" : isLock ? "#FFFBEB" : "#FEF2F2",
+                        color: isPlus ? "#16A34A" : isLock ? "#D97706" : "#DC2626",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -230,7 +246,7 @@ export default function TransactionsTab({
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 14, fontWeight: 800, color: "#001743" }}>
-                          {getTypeLabel(tx.walletTransactionType)}
+                          {getTypeLabel(tx.transactionType)}
                         </span>
                         <span
                           style={{
@@ -248,17 +264,11 @@ export default function TransactionsTab({
                       </div>
 
                       <div style={{ fontSize: 12, color: "#6B7280", marginTop: 3 }}>
-                        {tx.description || `Mã giao dịch: ${tx.transactionCode}`}
+                        {tx.description || `Mã giao dịch: ${tx.referenceCode || tx.id}`}
                       </div>
 
-                      {tx.destinationBankName && (
-                        <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>
-                          Ngân hàng: <strong>{tx.destinationBankName}</strong> · Số TK: <strong>{tx.destinationAccountNumberMasked}</strong> ({tx.destinationAccountHolderName})
-                        </div>
-                      )}
-
                       <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>
-                        Mã: <strong style={{ fontFamily: "monospace" }}>{tx.transactionCode}</strong> · {formattedDate}
+                        Mã: <strong style={{ fontFamily: "monospace" }}>{tx.referenceCode || tx.id}</strong> · {formattedDate}
                       </div>
                     </div>
                   </div>
@@ -269,11 +279,11 @@ export default function TransactionsTab({
                       style={{
                         fontSize: 17,
                         fontWeight: 900,
-                        color: isPlus ? "#16A34A" : "#DC2626",
+                        color: isPlus ? "#16A34A" : isLock ? "#D97706" : "#DC2626",
                         fontVariantNumeric: "tabular-nums",
                       }}
                     >
-                      {isPlus ? "+" : "-"}{tx.amount.toLocaleString("vi-VN")} ₫
+                      {isPlus ? "+" : isLock ? "🔒 " : "-"}{tx.amount.toLocaleString("vi-VN")} ₫
                     </div>
 
                     {tx.balanceAfter !== undefined && (

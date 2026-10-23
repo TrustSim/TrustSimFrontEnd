@@ -347,6 +347,7 @@ export default function TradeDetailPage({
   const router = useRouter();
 
   const [trade, setTrade] = useState<TradeTransactionDto | null>(null);
+  const effectiveTradeId = trade?.id ?? tradeId;
   const [contractPreview, setContractPreview] = useState<ContractPreviewDto | null>(null);
   const [transferDetails, setTransferDetails] = useState<SimTransferDetailsDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -387,16 +388,16 @@ export default function TradeDetailPage({
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await tradeService.getTradeById(tradeId);
+      const data = await tradeService.getTradeByIdentifier(tradeId);
       setTrade(data);
 
       await Promise.allSettled([
         tradeService
-          .getContractPreview(tradeId)
+          .getContractPreview(data.id)
           .then((cp) => setContractPreview(cp))
           .catch(() => {}),
         tradeService
-          .getSimTransferDetails(tradeId)
+          .getSimTransferDetails(data.id)
           .then((td) => setTransferDetails(td))
           .catch(() => {}),
       ]);
@@ -470,7 +471,7 @@ export default function TradeDetailPage({
     if (resendCooldown > 0) return;
     setSendingOtp(true);
     try {
-      const res = await tradeService.sendSigningOtp(tradeId);
+      const res = await tradeService.sendSigningOtp(effectiveTradeId);
       addToast({
         type: "success",
         title: "Đã gửi mã xác thực",
@@ -500,7 +501,7 @@ export default function TradeDetailPage({
 
     setSigningContract(true);
     try {
-      await tradeService.signContract(tradeId, otpCode.trim());
+      await tradeService.signContract(effectiveTradeId, otpCode.trim());
       addToast({
         type: "success",
         title: "Ký hợp đồng thành công",
@@ -555,7 +556,7 @@ export default function TradeDetailPage({
       }
 
       // 2. Gửi API sang backend
-      await tradeService.submitTransferProof(tradeId, uploadRes.url);
+      await tradeService.submitTransferProof(effectiveTradeId, uploadRes.url);
 
       addToast({
         type: "success",
@@ -580,7 +581,7 @@ export default function TradeDetailPage({
   const handleConfirmTransfer = async () => {
     setConfirmingTransfer(true);
     try {
-      await tradeService.confirmTransfer(tradeId);
+      await tradeService.confirmTransfer(effectiveTradeId);
       addToast({
         type: "success",
         title: "Giao dịch hoàn tất thành công!",
