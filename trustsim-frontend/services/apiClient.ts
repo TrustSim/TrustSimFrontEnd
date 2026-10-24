@@ -1,5 +1,12 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { ApiResponse } from "@/types/auth";
+import { getApiBaseUrl } from "./apiConfig";
+import {
+  expireStoredSession,
+  getStoredAccessToken,
+  isTerminalRefreshError,
+  refreshAuthSession,
+} from "./authSession";
 
 export class ApiError extends Error {
   public status: number;
@@ -13,47 +20,16 @@ export class ApiError extends Error {
   }
 }
 
-// Xác định Base URL linh hoạt: ưu tiên NEXT_PUBLIC_API_URL trong môi trường dev/production
-const getBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (envUrl) {
-    return envUrl.replace(/\/api\/?$/, "");
-  }
-  return typeof window !== "undefined" && window.location.protocol === "https:"
-    ? "https://localhost:7120"
-    : "http://localhost:5130";
-};
-
 export const apiClient = axios.create({
-  baseURL: getBaseUrl(),
+  baseURL: getApiBaseUrl(),
   withCredentials: true, // BẮT BUỘC: để tự động gửi HttpOnly Cookie chứa refreshToken
 });
 
-let isRefreshing = false;
-let failedQueue: Array<{
-  resolve: (token: string) => void;
-  reject: (error: any) => void;
-}> = [];
-
-const processQueue = (error: any, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token!);
-    }
-  });
-  failedQueue = [];
-};
-
 // 1. Request Interceptor: Tự động đính kèm Access Token vào Header
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  if (typeof window !== "undefined") {
-    const token =
-      localStorage.getItem("accessToken") || localStorage.getItem("trustsim_token");
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+  const token = getStoredAccessToken();
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
@@ -73,73 +49,22 @@ apiClient.interceptors.response.use(
       requestUrl.includes("/auth/register") ||
       requestUrl.includes("/auth/logout");
 
-    // Nếu gặp lỗi 401 và không phải là request đăng nhập/refresh-token
+    // Mọi request 401 trong cùng tab cùng chờ một refresh Promise trong authSession.
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry && !isAuthEndpoint) {
-      if (isRefreshing) {
-        // Nếu đang có 1 tiến trình refresh token khác đang chạy, đưa request này vào hàng đợi chờ
-        return new Promise<string>((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return apiClient(originalRequest);
-          })
-          .catch((err) => Promise.reject(err));
-      }
-
       originalRequest._retry = true;
-      isRefreshing = true;
 
       try {
-        // Gọi API refresh token của backend (BE tự lấy từ HttpOnly Cookie)
-        const response = await apiClient.post("/api/Auth/refresh-token", {});
-        const newAccessToken =
-          response.data?.data?.token || response.data?.token;
-
-        if (!newAccessToken) {
-          throw new Error("Không nhận được token mới từ máy chủ");
-        }
-
-        if (typeof window !== "undefined") {
-          localStorage.setItem("accessToken", newAccessToken);
-          localStorage.setItem("trustsim_token", newAccessToken);
-        }
-
-        apiClient.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
-
-        // Xử lý lại toàn bộ các request bị nghẽn trong hàng đợi
-        processQueue(null, newAccessToken);
-
-        // Gọi lại request ban đầu với token mới
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        const refreshedSession = await refreshAuthSession();
+        originalRequest.headers.Authorization = `Bearer ${refreshedSession.token}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
-        // Khi Refresh Token cũng đã hết hạn (ví dụ quá 7 ngày) -> Lúc này mới buộc điều hướng về Login
-        processQueue(refreshError, null);
-
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("trustsim_token");
-          localStorage.removeItem("trustsim_user");
-
-          window.dispatchEvent(new Event("trustsim_auth_change"));
-          window.dispatchEvent(
-            new CustomEvent("trustsim_session_expired", {
-              detail: { message: "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại." },
-            })
+        // Lỗi mạng chỉ làm request thất bại; chỉ logout khi refresh token thực sự vô hiệu.
+        if (isTerminalRefreshError(refreshError)) {
+          expireStoredSession(
+            refreshError instanceof Error ? refreshError.message : undefined
           );
-
-          if (
-            !window.location.pathname.startsWith("/login") &&
-            !window.location.pathname.startsWith("/register")
-          ) {
-            window.location.href = "/login?session_expired=true";
-          }
         }
-
         return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
       }
     }
 

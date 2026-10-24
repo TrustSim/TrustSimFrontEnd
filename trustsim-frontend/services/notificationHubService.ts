@@ -1,5 +1,6 @@
 import * as signalR from "@microsoft/signalr";
 import { authService } from "./authService";
+import { ensureFreshAccessToken } from "./authSession";
 import { NotificationItemDto } from "./notificationService";
 
 const HUB_URL =
@@ -53,7 +54,8 @@ class NotificationHubService {
         if (!this.connection) {
           this.connection = new signalR.HubConnectionBuilder()
             .withUrl(HUB_URL, {
-              accessTokenFactory: () => authService.getToken() || "",
+              accessTokenFactory: async () =>
+                (await ensureFreshAccessToken(60)) || "",
               transport:
                 signalR.HttpTransportType.WebSockets |
                 signalR.HttpTransportType.LongPolling,

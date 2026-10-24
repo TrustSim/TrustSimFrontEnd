@@ -1,4 +1,4 @@
-import { apiFetch } from "./apiClient";
+import { apiClient, apiFetch } from "./apiClient";
 import type {
   WalletDto,
   WalletTransactionDto,
@@ -257,23 +257,11 @@ export const walletService = {
     if (type) params.set("type", type);
     if (status) params.set("status", status);
 
-    const token =
-      typeof window !== "undefined"
-        ? localStorage.getItem("accessToken") ||
-          localStorage.getItem("trustsim_token")
-        : null;
-
-    const baseUrl =
-      process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/?$/, "") ||
-      "http://localhost:5130";
-
-    const response = await fetch(
-      `${baseUrl}/api/Wallets/admin/transactions/export?${params.toString()}`,
-      {
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
-      }
+    const query = params.toString();
+    const response = await apiClient.get<Blob>(
+      `/api/Wallets/admin/transactions/export${query ? `?${query}` : ""}`,
+      { responseType: "blob" }
     );
-    if (!response.ok) throw new Error("Không thể xuất file Excel");
-    return response.blob();
+    return response.data;
   },
 };

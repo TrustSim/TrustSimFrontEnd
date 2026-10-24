@@ -1,5 +1,14 @@
 import { apiFetch } from "./apiClient";
 import {
+  clearStoredSession,
+  ensureFreshAccessToken,
+  getAccessTokenRemainingSeconds,
+  getStoredAccessToken,
+  persistAuthSession,
+  refreshAuthSession,
+  USER_SESSION_KEY,
+} from "./authSession";
+import {
   AuthResponseDto,
   LoginRequest,
   RegisterRequest,
@@ -9,16 +18,13 @@ import {
 } from "@/types/auth";
 import type { SendOtpResponseDto, VerifyOtpResponseDto } from "@/types/common";
 
-const TOKEN_KEY = "trustsim_token";
-const USER_KEY = "trustsim_user";
-
 export const authService = {
   /**
    * Bước 1 Đăng ký: Gửi thông tin (userName, email, password), hệ thống lưu tạm và gửi Email OTP.
    * Chưa tạo tài khoản vào DB ở bước này.
    */
   async register(data: RegisterRequest): Promise<RegisterInitiatedDto> {
-    const res = await apiFetch<RegisterInitiatedDto>("/Auth/register", {
+    const res = await apiFetch<RegisterInitiatedDto>("/auth/register", {
       method: "POST",
       body: JSON.stringify(data),
     });
@@ -31,7 +37,7 @@ export const authService = {
    * Bước 2 Đăng ký: Xác thực Email OTP. Hệ thống tạo tài khoản, Wallet, thiết lập HttpOnly Cookies và tự động đăng nhập.
    */
   async verifyEmail(data: VerifyEmailRequest): Promise<AuthResponseDto> {
-    const res = await apiFetch<AuthResponseDto>("/Auth/verify-email", {
+    const res = await apiFetch<AuthResponseDto>("/auth/verify-email", {
       method: "POST",
       body: JSON.stringify(data),
     });
@@ -47,7 +53,7 @@ export const authService = {
    * Đăng nhập hệ thống (Backend tự động ghi HttpOnly Cookies accessToken & refreshToken)
    */
   async login(data: LoginRequest): Promise<AuthResponseDto> {
-    const res = await apiFetch<AuthResponseDto>("/Auth/login", {
+    const res = await apiFetch<AuthResponseDto>("/auth/login", {
       method: "POST",
       body: JSON.stringify(data),
     });
@@ -63,16 +69,7 @@ export const authService = {
    * Làm mới Access Token thủ công qua Refresh Token Cookie
    */
   async refreshToken(): Promise<AuthResponseDto> {
-    const res = await apiFetch<AuthResponseDto>("/Auth/refresh-token", {
-      method: "POST",
-      body: JSON.stringify({}),
-    });
-
-    if (res.data) {
-      this.saveSession(res.data);
-      return res.data;
-    }
-    throw new Error(res.message || "Làm mới phiên đăng nhập thất bại");
+    return refreshAuthSession();
   },
 
   /**
@@ -80,7 +77,7 @@ export const authService = {
    */
   async logout(): Promise<void> {
     try {
-      await apiFetch("/Auth/logout", {
+      await apiFetch("/auth/logout", {
         method: "POST",
         body: JSON.stringify({}),
       });
@@ -95,7 +92,7 @@ export const authService = {
    * Lấy thông tin hồ sơ của người dùng đang đăng nhập qua HttpOnly Cookie
    */
   async getProfile(): Promise<UserProfileDto> {
-    const res = await apiFetch<UserProfileDto>("/Auth/profile", {
+    const res = await apiFetch<UserProfileDto>("/auth/profile", {
       method: "GET",
     });
 
@@ -115,7 +112,7 @@ export const authService = {
     identityNumber: string;
     phoneNumber: string;
   }): Promise<UserProfileDto> {
-    const res = await apiFetch<UserProfileDto>("/Auth/profile", {
+    const res = await apiFetch<UserProfileDto>("/auth/profile", {
       method: "PUT",
       body: JSON.stringify(data),
     });
@@ -138,7 +135,7 @@ export const authService = {
    * Cập nhật ảnh đại diện Avatar qua Backend API và đồng bộ session
    */
   async updateAvatar(avatarUrl: string): Promise<string> {
-    const res = await apiFetch<string>("/Auth/avatar", {
+    const res = await apiFetch<string>("/auth/avatar", {
       method: "PUT",
       body: JSON.stringify({ avatarUrl }),
     });
@@ -164,7 +161,7 @@ export const authService = {
     newPassword: string;
     confirmNewPassword: string;
   }): Promise<boolean> {
-    const res = await apiFetch<boolean>("/Auth/change-password", {
+    const res = await apiFetch<boolean>("/auth/change-password", {
       method: "PUT",
       body: JSON.stringify(data),
     });
@@ -175,27 +172,14 @@ export const authService = {
    * Lưu phiên đăng nhập người dùng vào LocalStorage (Token dự phòng + Thông tin hiển thị)
    */
   saveSession(authData: AuthResponseDto) {
-    if (typeof window === "undefined") return;
-    if (authData.token) {
-      localStorage.setItem(TOKEN_KEY, authData.token);
-      localStorage.setItem("accessToken", authData.token);
-    }
-    localStorage.setItem(USER_KEY, JSON.stringify(authData));
-
-    // Bắn sự kiện để Navbar và các component đồng bộ giao diện
-    window.dispatchEvent(new Event("trustsim_auth_change"));
+    persistAuthSession(authData);
   },
 
   /**
    * Xóa phiên đăng nhập ở LocalStorage
    */
   clearSession() {
-    if (typeof window === "undefined") return;
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem(USER_KEY);
-
-    window.dispatchEvent(new Event("trustsim_auth_change"));
+    clearStoredSession();
   },
 
   /**
@@ -203,7 +187,7 @@ export const authService = {
    */
   getUser(): AuthResponseDto | null {
     if (typeof window === "undefined") return null;
-    const json = localStorage.getItem(USER_KEY);
+    const json = localStorage.getItem(USER_SESSION_KEY);
     if (!json) return null;
     try {
       return JSON.parse(json) as AuthResponseDto;
@@ -216,8 +200,7 @@ export const authService = {
    * Lấy JWT Token dự phòng
    */
   getToken(): string | null {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("accessToken") || localStorage.getItem(TOKEN_KEY);
+    return getStoredAccessToken();
   },
 
   /**
@@ -260,14 +243,12 @@ export const authService = {
    * Lấy số giây còn lại của phiên làm việc
    */
   getTokenRemainingSeconds(token?: string): number {
-    const payload = this.parseJwt(token);
-    if (!payload || !payload.exp) return 0;
-    const remaining = payload.exp - Math.floor(Date.now() / 1000);
-    return Math.max(0, remaining);
+    return getAccessTokenRemainingSeconds(token || this.getToken());
   },
 
   /**
-   * Kiểm tra phiên đăng nhập hiện tại; nếu hết hạn thì tự động xóa và logout
+   * @deprecated SessionRefreshManager đã quản lý vòng đời token toàn cục.
+   * Giữ hàm đồng bộ để tương thích code cũ nhưng không logout chỉ vì access token hết hạn.
    */
   checkSessionAndAutoLogout(autoRedirect: boolean = true): boolean {
     if (typeof window === "undefined") return true;
@@ -278,28 +259,14 @@ export const authService = {
     // Không có user đăng nhập
     if (!token && !user) return false;
 
-    // Token đã hết hạn và không có user hợp lệ
+    // Refresh chạy nền; chỉ SessionRefreshManager mới điều hướng khi refresh token vô hiệu.
     if (this.isTokenExpired(token || undefined)) {
-      this.clearSession();
-
-      // Bắn event chuyên biệt cho toàn ứng dụng
-      window.dispatchEvent(
-        new CustomEvent("trustsim_session_expired", {
-          detail: { message: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại." },
-        })
-      );
-
-      if (
-        autoRedirect &&
-        !window.location.pathname.startsWith("/login") &&
-        !window.location.pathname.startsWith("/register")
-      ) {
-        const currentPath = window.location.pathname + window.location.search;
-        window.location.href = `/login?expired=1&redirect=${encodeURIComponent(currentPath)}`;
-      }
-      return false;
+      void ensureFreshAccessToken(0).catch(() => {
+        // ensureFreshAccessToken phát sự kiện hết phiên nếu refresh token không còn hợp lệ.
+      });
     }
 
+    void autoRedirect;
     return true;
   },
 
@@ -330,7 +297,7 @@ export const authService = {
     email: string,
     purpose: string = "đăng ký tài khoản"
   ): Promise<SendOtpResponseDto> {
-    const res = await apiFetch<SendOtpResponseDto>("/Auth/send-email-otp", {
+    const res = await apiFetch<SendOtpResponseDto>("/auth/send-email-otp", {
       method: "POST",
       body: JSON.stringify({ email, purpose }),
     });
@@ -376,4 +343,3 @@ export const authService = {
     throw new Error(res.message || "Xác thực mã OTP thất bại");
   },
 };
-

@@ -1,5 +1,6 @@
 import * as signalR from "@microsoft/signalr";
 import { authService } from "./authService";
+import { ensureFreshAccessToken } from "./authSession";
 import { BidDto, AuctionDto } from "./auctionService";
 
 const HUB_URL =
@@ -22,7 +23,8 @@ class AuctionHubService {
     if (!this.connection) {
       this.connection = new signalR.HubConnectionBuilder()
         .withUrl(HUB_URL, {
-          accessTokenFactory: () => authService.getToken() || "",
+          accessTokenFactory: async () =>
+            (await ensureFreshAccessToken(60)) || "",
           transport:
             signalR.HttpTransportType.WebSockets |
             signalR.HttpTransportType.LongPolling,

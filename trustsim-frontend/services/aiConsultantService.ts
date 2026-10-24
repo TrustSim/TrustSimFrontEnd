@@ -1,4 +1,5 @@
 import { apiFetch } from "./apiClient";
+import { ensureFreshAccessToken } from "./authSession";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -74,11 +75,9 @@ export async function streamChatConsultation(
     "Content-Type": "application/json",
   };
 
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("trustsim_token");
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
+  const token = await ensureFreshAccessToken(60);
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
 
   const response = await fetch(url, {
@@ -86,6 +85,7 @@ export async function streamChatConsultation(
     headers,
     body: JSON.stringify(request),
     signal,
+    credentials: "include",
   });
 
   if (!response.ok) {

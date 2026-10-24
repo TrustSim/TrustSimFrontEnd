@@ -1,4 +1,4 @@
-import { apiFetch } from "./apiClient";
+import { apiClient, apiFetch } from "./apiClient";
 import type {
   DisputeTicketDto,
   CreateDisputeRequest,
@@ -55,26 +55,11 @@ export const disputeService = {
     const params = new URLSearchParams();
     if (status && status !== "all") params.set("status", status);
 
-    const token =
-      typeof window !== "undefined"
-        ? localStorage.getItem("accessToken") ||
-          localStorage.getItem("trustsim_token")
-        : null;
-
-    const baseUrl =
-      process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/?$/, "") ||
-      "http://localhost:5130";
-
-    const response = await fetch(
-      `${baseUrl}/api/Disputes/export?${params.toString()}`,
-      {
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
-      }
+    const query = params.toString();
+    const response = await apiClient.get<Blob>(
+      `/api/Disputes/export${query ? `?${query}` : ""}`,
+      { responseType: "blob" }
     );
-
-    if (!response.ok) {
-      throw new Error("Không thể tải file xuất Excel khiếu nại.");
-    }
-    return response.blob();
+    return response.data;
   },
 };
