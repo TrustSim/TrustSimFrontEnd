@@ -63,7 +63,7 @@ export default function AdminSettingsTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="admin-tab admin-tab-settings space-y-4">
       {/* Toast */}
       {toastMessage && (
         <div className="fixed bottom-5 right-5 z-50 bg-[#001743] text-white text-xs px-4 py-2.5 rounded-xl shadow-lg border border-slate-700 animate-fade-in flex items-center gap-2">

@@ -77,6 +77,12 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const currentTab = searchParams?.get("tab") || "dashboard";
 
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      setCollapsed(true);
+    }
+  }, []);
+
   // User & Wallet from session
   const [user, setUser] = useState<AuthResponseDto | null>(null);
   const [wallet, setWallet] = useState<WalletDto | null>(null);
@@ -231,7 +237,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         }`}
       >
         {/* Top Header */}
-        <header className="admin-topbar sticky top-0 z-30 h-[60px] bg-white border-b border-[#e4e7ec] px-6 flex items-center justify-between shadow-xs">
+        <header className="admin-topbar sticky top-0 z-30 h-[60px] bg-white border-b border-[#e4e7ec] px-3 sm:px-6 flex items-center justify-between shadow-xs">
           {/* Breadcrumb / Title */}
           <div className="flex items-center gap-2 text-[13px]">
             <span className="text-slate-400 font-medium">Bàn làm việc</span>
@@ -488,7 +494,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Content View */}
-        <main className="admin-content flex-1 px-7 py-7 max-w-[1680px] w-full mx-auto">
+        <main className="admin-content flex-1 px-3 py-4 sm:px-5 sm:py-5 lg:px-7 lg:py-7 max-w-[1680px] w-full mx-auto">
           {children}
         </main>
       </div>

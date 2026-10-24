@@ -286,7 +286,7 @@ export function AdminCustomersTab() {
   }, [customers]);
 
   return (
-    <div className="admin-tab-customers space-y-6">
+    <div className="admin-tab admin-tab-customers space-y-4">
       {/* ── SECTION 1: Institutional Context Header & Master Action Bar ── */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs relative overflow-hidden">
         <div className="absolute right-0 top-0 w-80 h-full opacity-[0.03] pointer-events-none bg-[radial-gradient(#001743_1px,transparent_1px)] [background-size:12px_12px]" />

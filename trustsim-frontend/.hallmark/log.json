@@ -129,6 +129,24 @@
       "filesPreserved": [
         "components/home/LegacyHomepage.tsx"
       ]
+    },
+    {
+      "timestamp": "2026-10-24T17:20:00+07:00",
+      "scope": "wireframe",
+      "target": ".tmp/evon-design/admin-management-wireframe.html",
+      "verb": "redesign",
+      "genre": "modern-minimal",
+      "style": "TrustSim Operations · table-first management console",
+      "macrostructure": "Index-First",
+      "theme": "TrustSim Brand (Navy + Crimson Red)",
+      "enrichment": "none",
+      "filesModified": [
+        ".tmp/evon-design/admin-management-wireframe.html"
+      ],
+      "filesPreserved": [
+        "app/admin",
+        "components/admin"
+      ]
     }
   ]
 }

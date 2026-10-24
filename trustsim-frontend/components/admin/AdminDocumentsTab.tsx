@@ -103,7 +103,7 @@ export function AdminDocumentsTab() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 8;
+  const [pageSize, setPageSize] = useState(10);
 
   // Drawer Modes: "upload" (file) | "ingest" (url) | "create" (manual) | "edit"
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -785,12 +785,16 @@ export function AdminDocumentsTab() {
 
             {/* Pagination */}
             {filteredDocs.length > pageSize && (
-              <Pagination
-                pageIndex={currentPage}
-                pageSize={pageSize}
-                totalCount={filteredDocs.length}
-                onPageChange={setCurrentPage}
-              />
+            <Pagination
+              pageIndex={currentPage}
+              pageSize={pageSize}
+              totalCount={filteredDocs.length}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setCurrentPage(1);
+              }}
+            />
             )}
           </>
         )}

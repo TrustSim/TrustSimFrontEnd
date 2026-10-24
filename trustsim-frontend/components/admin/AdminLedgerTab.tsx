@@ -14,6 +14,8 @@ import {
   TrendingUp,
   Scale,
   FileSearch,
+  Search,
+  X,
 } from "lucide-react";
 import { walletService } from "@/services/walletService";
 import type {
@@ -22,7 +24,8 @@ import type {
   LedgerEntryDto,
   AccountReconciliationDetail,
 } from "@/types/wallet";
-import type { PagedResult } from "@/types/common";
+import { LedgerJournalSortBy, SortOrder, type PagedResult } from "@/types/common";
+import { Pagination } from "@/components/ui/Pagination";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 /** Safe formatVND — returns "—" for NaN/undefined/null */
@@ -597,9 +600,15 @@ export default function AdminLedgerTab() {
   const [journalError, setJournalError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [pageIndex, setPageIndex] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [minAmount, setMinAmount] = useState("");
+  const [maxAmount, setMaxAmount] = useState("");
+  const [sortBy, setSortBy] = useState<LedgerJournalSortBy>(LedgerJournalSortBy.PostedAt);
 
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedJournal, setSelectedJournal] = useState<LedgerJournalDto | null>(null);
@@ -621,17 +630,30 @@ export default function AdminLedgerTab() {
     setTimeout(() => setToast(null), 3500);
   };
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPageIndex(1);
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
   const fetchJournals = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setJournalLoading(true);
     setJournalError("");
     try {
       const res = await walletService.adminGetLedgerJournals({
+        keyword: debouncedSearch || undefined,
         transactionType: typeFilter || undefined,
+        minAmount: minAmount ? Number(minAmount) : undefined,
+        maxAmount: maxAmount ? Number(maxAmount) : undefined,
         fromDate: fromDate || undefined,
         toDate: toDate || undefined,
+        sortBy,
+        sortOrder: SortOrder.Desc,
         pageIndex,
-        pageSize: 20,
+        pageSize,
       });
       setJournals(res);
     } catch (e: any) {
@@ -640,7 +662,7 @@ export default function AdminLedgerTab() {
       setJournalLoading(false);
       setRefreshing(false);
     }
-  }, [typeFilter, fromDate, toDate, pageIndex]);
+  }, [debouncedSearch, typeFilter, minAmount, maxAmount, fromDate, toDate, sortBy, pageIndex, pageSize]);
 
   useEffect(() => { fetchJournals(); }, [fetchJournals]);
 
@@ -710,7 +732,6 @@ export default function AdminLedgerTab() {
     }
   };
 
-  const totalPages = journals ? Math.ceil(journals.totalCount / 20) : 0;
   const totalJournals = journals?.totalCount ?? 0;
 
   return (
@@ -927,7 +948,24 @@ export default function AdminLedgerTab() {
 
       {/* ── 5. Bộ lọc ── */}
       <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs">
-        <div className="flex flex-col sm:flex-row gap-3 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8 gap-3 items-end">
+          <div className="relative sm:col-span-2 xl:col-span-1">
+            <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+              Tìm kiếm
+            </label>
+            <Search size={13} className="absolute left-3 bottom-2 text-slate-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Mã phiếu, mô tả…"
+              className="w-full text-xs pl-8 pr-8 py-1.5 border border-[#D1D5DB] rounded-[6px] focus:outline-none focus:border-[#001743] bg-white"
+            />
+            {search && (
+              <button type="button" onClick={() => setSearch("")} aria-label="Xóa từ khóa" className="absolute right-2.5 bottom-2 text-slate-400 hover:text-slate-700">
+                <X size={12} />
+              </button>
+            )}
+          </div>
           <div className="flex-1">
             <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
               Loại giao dịch
@@ -942,6 +980,14 @@ export default function AdminLedgerTab() {
                 <option key={k} value={k}>{v}</option>
               ))}
             </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Giá trị từ</label>
+            <input type="number" min="0" value={minAmount} onChange={(e) => { setMinAmount(e.target.value); setPageIndex(1); }} placeholder="0" className="w-full text-xs px-3 py-1.5 border border-[#D1D5DB] rounded-[6px] focus:outline-none focus:border-[#001743] bg-white" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Giá trị đến</label>
+            <input type="number" min="0" value={maxAmount} onChange={(e) => { setMaxAmount(e.target.value); setPageIndex(1); }} placeholder="Không giới hạn" className="w-full text-xs px-3 py-1.5 border border-[#D1D5DB] rounded-[6px] focus:outline-none focus:border-[#001743] bg-white" />
           </div>
           <div>
             <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Từ ngày</label>
@@ -961,8 +1007,17 @@ export default function AdminLedgerTab() {
               className="text-xs px-3 py-1.5 border border-[#D1D5DB] rounded-[6px] focus:outline-none focus:border-[#001743] bg-white"
             />
           </div>
+          <div>
+            <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Sắp xếp</label>
+            <select value={sortBy} onChange={(e) => { setSortBy(Number(e.target.value) as LedgerJournalSortBy); setPageIndex(1); }} className="w-full text-xs px-3 py-1.5 border border-[#D1D5DB] rounded-[6px] focus:outline-none focus:border-[#001743] bg-white text-slate-700">
+              <option value={LedgerJournalSortBy.PostedAt}>Mới ghi sổ</option>
+              <option value={LedgerJournalSortBy.CreatedDate}>Mới tạo</option>
+              <option value={LedgerJournalSortBy.JournalCode}>Mã phiếu</option>
+              <option value={LedgerJournalSortBy.TransactionType}>Loại nghiệp vụ</option>
+            </select>
+          </div>
           <button
-            onClick={() => { setTypeFilter(""); setFromDate(""); setToDate(""); setPageIndex(1); }}
+            onClick={() => { setSearch(""); setDebouncedSearch(""); setTypeFilter(""); setMinAmount(""); setMaxAmount(""); setFromDate(""); setToDate(""); setSortBy(LedgerJournalSortBy.PostedAt); setPageIndex(1); }}
             className="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 border border-[#D1D5DB] rounded-[6px] hover:bg-slate-50 transition-colors"
           >
             Xóa lọc
@@ -1077,27 +1132,19 @@ export default function AdminLedgerTab() {
           </table>
         </div>
 
-        {/* Phân trang */}
-        {totalPages > 1 && (
-          <div className="px-5 py-3.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Trang {pageIndex}/{totalPages} · {journals?.totalCount.toLocaleString()} phiếu</span>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setPageIndex((p) => Math.max(1, p - 1))}
-                disabled={pageIndex <= 1}
-                className="px-3 py-1.5 border border-[#D1D5DB] rounded-[6px] hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-xs font-medium"
-              >
-                ← Trước
-              </button>
-              <button
-                onClick={() => setPageIndex((p) => Math.min(totalPages, p + 1))}
-                disabled={pageIndex >= totalPages}
-                className="px-3 py-1.5 border border-[#D1D5DB] rounded-[6px] hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-xs font-medium"
-              >
-                Sau →
-              </button>
-            </div>
-          </div>
+        {!journalLoading && totalJournals > 0 && (
+          <Pagination
+            pageIndex={pageIndex}
+            pageSize={pageSize}
+            totalCount={totalJournals}
+            loading={journalLoading}
+            onPageChange={setPageIndex}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPageIndex(1);
+            }}
+            pageSizeOptions={[20, 50, 100]}
+          />
         )}
       </div>
     </div>

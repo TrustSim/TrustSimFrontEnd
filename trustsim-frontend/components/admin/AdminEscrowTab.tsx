@@ -1,834 +1,324 @@
-/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · designed-as-app */
 "use client";
-import React, { useState, useMemo } from "react";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Search,
-  RefreshCw,
-  X,
-  Eye,
-  MoreVertical,
-  CheckCircle2,
-  Clock,
   AlertTriangle,
   ArrowRight,
+  CheckCircle2,
+  Clock3,
+  Download,
+  Eye,
+  Loader2,
+  RefreshCw,
+  Search,
   ShieldCheck,
-  RotateCcw,
-  DollarSign,
-  User,
-  Phone,
-  Calendar,
-  Layers,
+  X,
 } from "lucide-react";
+import { AdminSortButton, type SortDirection } from "@/components/admin/AdminPrimitives";
+import { Pagination } from "@/components/ui/Pagination";
 import {
-  RightDrawer,
   DrawerBody,
   DrawerFooter,
   DrawerSection,
-  BtnPrimary,
-  BtnSecondary,
+  RightDrawer,
 } from "@/components/ui/RightDrawer";
-import ImportExportBar from "@/components/admin/ImportExportBar";
-import { ExcelColumnDef } from "@/services/excelService";
-import { AdminSortButton, toggleSort, type SortDirection } from "@/components/admin/AdminPrimitives";
+import { tradeService } from "@/services/tradeService";
+import { SortOrder, TradeTransactionSortBy } from "@/types/common";
+import type { TradeTransactionDto, TradeTransactionStatus } from "@/types/trade";
 
-// Helper định dạng tiền tệ VNĐ
+const STATUS_OPTIONS: Array<{ value: TradeTransactionStatus; label: string }> = [
+  { value: "PendingEscrow", label: "Chờ ký quỹ" },
+  { value: "PendingSignature", label: "Chờ ký hợp đồng" },
+  { value: "PendingTransfer", label: "Đang sang tên" },
+  { value: "Completed", label: "Hoàn tất" },
+  { value: "Disputed", label: "Tranh chấp" },
+  { value: "Cancelled_EscrowTimeout", label: "Hủy do quá hạn ký quỹ" },
+  { value: "Cancelled_SigningTimeout", label: "Hủy do quá hạn ký" },
+  { value: "Cancelled_TransferTimeout", label: "Hủy do quá hạn sang tên" },
+  { value: "Cancelled_ByAdmin", label: "Admin đã hủy" },
+];
+
 const formatVND = (value: number) =>
-  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(value);
+  new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
+  }).format(value);
 
-// Helper định dạng số điện thoại đẹp
 const formatPhone = (phone: string) => {
-  const cleaned = (phone || "").replace(/\D/g, "");
-  if (cleaned.length === 10) {
-    return `${cleaned.slice(0, 4)} ${cleaned.slice(4, 7)} ${cleaned.slice(7)}`;
-  }
-  return phone;
+  const value = (phone || "").replace(/\D/g, "");
+  return value.length === 10
+    ? `${value.slice(0, 4)} ${value.slice(4, 7)} ${value.slice(7)}`
+    : phone || "—";
 };
 
-export type EscrowStatus = "Held" | "Released" | "Disputed" | "Refunded";
+const formatDateTime = (value?: string | null) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleString("vi-VN", { hour12: false });
+};
 
-export interface EscrowTransaction {
-  id: string;
-  orderCode: string;
-  sim: string;
-  buyer: string;
-  seller: string;
-  amount: number;
-  fee: number;
-  status: EscrowStatus;
-  time: string;
-  deadline: string;
-  pipelineStep: number; // 1 to 5
-  conditionsMet: boolean;
-  missingReason: string;
+function getStatusMeta(status: TradeTransactionStatus) {
+  if (status === "Completed") {
+    return { label: "Hoàn tất", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+  }
+  if (status === "Disputed") {
+    return { label: "Tranh chấp", cls: "bg-rose-50 text-rose-700 border-rose-200" };
+  }
+  if (String(status).startsWith("Cancelled")) {
+    return { label: "Đã hủy", cls: "bg-slate-100 text-slate-700 border-slate-200" };
+  }
+  if (status === "PendingSignature") {
+    return { label: "Chờ ký hợp đồng", cls: "bg-violet-50 text-violet-700 border-violet-200" };
+  }
+  if (status === "PendingTransfer") {
+    return { label: "Đang sang tên", cls: "bg-blue-50 text-blue-700 border-blue-200" };
+  }
+  return { label: "Chờ ký quỹ", cls: "bg-amber-50 text-amber-800 border-amber-200" };
 }
 
-const INITIAL_TRANSACTIONS: EscrowTransaction[] = [
-  {
-    id: "TX-901",
-    orderCode: "ORD-8821",
-    sim: "0901234567",
-    buyer: "Hoàng Minh Tuấn",
-    seller: "TrustSim Official",
-    amount: 15800000,
-    fee: 474000,
-    status: "Held",
-    time: "11/09/2026 10:30",
-    deadline: "13/09/2026 10:30 (Còn 22h)",
-    pipelineStep: 4,
-    conditionsMet: false,
-    missingReason: "Chờ người mua xác nhận đã nhận bàn giao SIM vật lý",
-  },
-  {
-    id: "TX-902",
-    orderCode: "ORD-8819",
-    sim: "0352468024",
-    buyer: "Trần Văn Bình",
-    seller: "TrungPT",
-    amount: 8500000,
-    fee: 255000,
-    status: "Released",
-    time: "10/09/2026 16:45",
-    deadline: "Đã hoàn tất giải ngân",
-    pipelineStep: 5,
-    conditionsMet: true,
-    missingReason: "",
-  },
-  {
-    id: "TX-903",
-    orderCode: "ORD-8815",
-    sim: "0987654321",
-    buyer: "Nguyễn Bảo Long",
-    seller: "LuckyNum",
-    amount: 35000000,
-    fee: 1050000,
-    status: "Disputed",
-    time: "09/09/2026 14:15",
-    deadline: "Đang đóng băng ký quỹ chờ trọng tài",
-    pipelineStep: 3,
-    conditionsMet: false,
-    missingReason: "Khiếu nại: Bên bán chậm bàn giao mã ủy quyền chuyển nhượng",
-  },
-  {
-    id: "TX-904",
-    orderCode: "ORD-8810",
-    sim: "0909090909",
-    buyer: "Đặng Thị Mai",
-    seller: "SimVIP",
-    amount: 850000000,
-    fee: 25500000,
-    status: "Refunded",
-    time: "08/09/2026 09:10",
-    deadline: "Đã hoàn tiền cho người mua",
-    pipelineStep: 5,
-    conditionsMet: false,
-    missingReason: "Hủy giao dịch theo thỏa thuận trọng tài",
-  },
-  {
-    id: "TX-905",
-    orderCode: "ORD-8805",
-    sim: "0777777777",
-    buyer: "Vũ Đình Trọng",
-    seller: "SimSoVip_HN",
-    amount: 420000000,
-    fee: 12600000,
-    status: "Held",
-    time: "12/09/2026 08:00",
-    deadline: "14/09/2026 08:00 (Còn 36h)",
-    pipelineStep: 2,
-    conditionsMet: false,
-    missingReason: "Người bán đang lập thủ tục cấp mã ủy quyền chuyển mạng/sang tên",
-  },
-];
+function getPipelineStep(status: TradeTransactionStatus) {
+  if (status === "PendingEscrow") return 1;
+  if (status === "PendingSignature") return 2;
+  if (status === "PendingTransfer" || status === "Disputed") return 3;
+  return 5;
+}
 
-const PIPELINE_STEPS = [
-  { step: 1, name: "Đặt cọc & Nạp ký quỹ 100%", desc: "Người mua đã chuyển tiền vào tài khoản Escrow TrustSim" },
-  { step: 2, name: "Xác nhận & Khóa cọc người bán", desc: "Bên bán đồng ý chuyển giao và ký quỹ bảo đảm" },
-  { step: 3, name: "Bàn giao SIM & Mã ủy quyền", desc: "Hai bên thực hiện thủ tục sang tên tại điểm giao dịch nhà mạng" },
-  { step: 4, name: "Đối soát thông tin chính chủ", desc: "Kiểm tra SIM đã đứng tên người mua trên hệ thống viễn thông" },
-  { step: 5, name: "Giải ngân & Quyết toán", desc: "Sàn giải ngân tiền cho người bán sau khi trừ 3% phí dịch vụ" },
-];
+function getDeadline(trade: TradeTransactionDto) {
+  if (trade.status === "PendingEscrow") return trade.escrowDeadline;
+  if (trade.status === "PendingSignature") return trade.signingDeadline;
+  if (trade.status === "PendingTransfer" || trade.status === "Disputed") {
+    return trade.transferDeadline;
+  }
+  return trade.completedAt || trade.liquidationDeadline;
+}
 
-const ESCROW_EXPORT_COLUMNS: ExcelColumnDef<EscrowTransaction>[] = [
-  { header: "Mã giao dịch", key: "id", width: 14 },
-  { header: "Mã đơn hàng", key: "orderCode", width: 14 },
-  { header: "Số SIM", key: "sim", width: 16, formatter: (v) => formatPhone(String(v)) },
-  { header: "Người mua", key: "buyer", width: 20 },
-  { header: "Người bán", key: "seller", width: 20 },
-  { header: "Giá trị ký quỹ (VNĐ)", key: "amount", width: 22, formatter: (v) => formatVND(Number(v)) },
-  { header: "Phí sàn (3%)", key: "fee", width: 18, formatter: (v) => formatVND(Number(v)) },
-  {
-    header: "Trạng thái",
-    key: "status",
-    width: 18,
-    formatter: (v) =>
-      v === "Held"
-        ? "Đang giữ ký quỹ"
-        : v === "Released"
-        ? "Đã giải ngân"
-        : v === "Disputed"
-        ? "Đang tranh chấp"
-        : "Đã hoàn tiền",
-  },
-  { header: "Thời gian", key: "time", width: 20 },
-  { header: "Hạn xử lý", key: "deadline", width: 30 },
+const PIPELINE = [
+  "Ký quỹ giao dịch",
+  "Ký hợp đồng điện tử",
+  "Sang tên thuê bao",
+  "Nghiệm thu bàn giao",
+  "Giải ngân & hoàn tất",
 ];
 
 export default function AdminEscrowTab() {
-  const [transactions, setTransactions] = useState<EscrowTransaction[]>(INITIAL_TRANSACTIONS);
+  const [trades, setTrades] = useState<TradeTransactionDto[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [minAmount, setMinAmount] = useState("");
+  const [maxAmount, setMaxAmount] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [sortBy, setSortBy] = useState<TradeTransactionSortBy>(TradeTransactionSortBy.CreatedDate);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [pageIndex, setPageIndex] = useState(1);
-  const pageSize = 10;
-  const [sortKey, setSortKey] = useState<"order" | "amount" | "deadline">("order");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [pageSize, setPageSize] = useState(10);
+  const [selectedTrade, setSelectedTrade] = useState<TradeTransactionDto | null>(null);
+  const [exporting, setExporting] = useState(false);
 
-  // Drawer detail state
-  const [selectedTx, setSelectedTx] = useState<EscrowTransaction | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPageIndex(1);
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [search]);
 
-  // Active action menu row id
-  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const currentFilter = useMemo(
+    () => ({
+      keyword: debouncedSearch || undefined,
+      status: status || undefined,
+      minAmount: minAmount ? Number(minAmount) : undefined,
+      maxAmount: maxAmount ? Number(maxAmount) : undefined,
+      fromDate: fromDate || undefined,
+      toDate: toDate || undefined,
+      sortBy,
+      sortOrder: sortDirection === "asc" ? SortOrder.Asc : SortOrder.Desc,
+      pageIndex,
+      pageSize,
+    }),
+    [debouncedSearch, status, minAmount, maxAmount, fromDate, toDate, sortBy, sortDirection, pageIndex, pageSize]
+  );
 
-  // Confirm Modal state for manual release / refund
-  const [confirmAction, setConfirmAction] = useState<{
-    tx: EscrowTransaction;
-    type: "release" | "refund";
-  } | null>(null);
-  const [actionReason, setActionReason] = useState("");
-  const [actionLoading, setActionLoading] = useState(false);
+  const fetchTrades = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const result = await tradeService.adminGetAllTrades(currentFilter);
+      setTrades(result.items || []);
+      setTotalCount(result.totalCount || 0);
+    } catch (fetchError) {
+      setTrades([]);
+      setTotalCount(0);
+      setError(fetchError instanceof Error ? fetchError.message : "Không thể tải giao dịch ký quỹ.");
+    } finally {
+      setLoading(false);
+    }
+  }, [currentFilter]);
 
-  // Toast notification
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3200);
-  };
+  useEffect(() => {
+    fetchTrades();
+  }, [fetchTrades]);
 
-  // KPIs
-  const heldTxs = useMemo(() => transactions.filter((t) => t.status === "Held"), [transactions]);
-  const disputedTxs = useMemo(() => transactions.filter((t) => t.status === "Disputed"), [transactions]);
-  const releasedTxs = useMemo(() => transactions.filter((t) => t.status === "Released"), [transactions]);
-
-  const heldAmount = useMemo(() => heldTxs.reduce((sum, t) => sum + t.amount, 0), [heldTxs]);
-  const disputedAmount = useMemo(() => disputedTxs.reduce((sum, t) => sum + t.amount, 0), [disputedTxs]);
-  const releasedAmount = useMemo(() => releasedTxs.reduce((sum, t) => sum + t.amount, 0), [releasedTxs]);
-  const totalAmount = useMemo(() => transactions.reduce((sum, t) => sum + t.amount, 0), [transactions]);
-
-  // Filtered transactions
-  const filtered = useMemo(() => {
-    return transactions.filter((tx) => {
-      const q = search.toLowerCase().trim();
-      const matchSearch =
-        !q ||
-        tx.orderCode.toLowerCase().includes(q) ||
-        tx.id.toLowerCase().includes(q) ||
-        tx.sim.includes(q) ||
-        tx.buyer.toLowerCase().includes(q) ||
-        tx.seller.toLowerCase().includes(q);
-
-      const matchStatus = statusFilter === "all" || tx.status === statusFilter;
-      return matchSearch && matchStatus;
-    });
-  }, [transactions, search, statusFilter]);
-
-  const sorted = [...filtered].sort((a, b) => {
-    const left = sortKey === "order" ? a.orderCode : sortKey === "amount" ? a.amount : a.deadline;
-    const right = sortKey === "order" ? b.orderCode : sortKey === "amount" ? b.amount : b.deadline;
-    const result = typeof left === "number" && typeof right === "number" ? left - right : String(left).localeCompare(String(right), "vi");
-    return sortDirection === "asc" ? result : -result;
-  });
-  const paged = sorted.slice((pageIndex - 1) * pageSize, pageIndex * pageSize);
-  const changeSort = (key: "order" | "amount" | "deadline") => {
-    const next = toggleSort(sortKey, sortDirection, key);
-    setSortKey(next.key);
-    setSortDirection(next.direction);
+  const resetFilters = () => {
+    setSearch("");
+    setDebouncedSearch("");
+    setStatus("");
+    setMinAmount("");
+    setMaxAmount("");
+    setFromDate("");
+    setToDate("");
     setPageIndex(1);
   };
 
-  const openDetail = (tx: EscrowTransaction) => {
-    setSelectedTx(tx);
-    setDrawerOpen(true);
-    setMenuOpenId(null);
+  const changeSort = (next: TradeTransactionSortBy) => {
+    setSortDirection((current) => (sortBy === next && current === "asc" ? "desc" : "asc"));
+    setSortBy(next);
+    setPageIndex(1);
   };
 
-  const handleActionConfirm = () => {
-    if (!confirmAction || !actionReason.trim()) return;
-    setActionLoading(true);
-
-    setTimeout(() => {
-      const { tx, type } = confirmAction;
-      const newStatus: EscrowStatus = type === "release" ? "Released" : "Refunded";
-      const newStep = 5;
-
-      setTransactions((prev) =>
-        prev.map((item) =>
-          item.id === tx.id
-            ? {
-                ...item,
-                status: newStatus,
-                pipelineStep: newStep,
-                conditionsMet: type === "release",
-                deadline:
-                  type === "release"
-                    ? "Đã giải ngân thủ công bởi Admin"
-                    : `Đã hoàn tiền cho người mua. Lý do: ${actionReason}`,
-              }
-            : item
-        )
-      );
-
-      if (selectedTx?.id === tx.id) {
-        setSelectedTx((prev) =>
-          prev
-            ? {
-                ...prev,
-                status: newStatus,
-                pipelineStep: newStep,
-                conditionsMet: type === "release",
-                deadline:
-                  type === "release"
-                    ? "Đã giải ngân thủ công bởi Admin"
-                    : `Đã hoàn tiền cho người mua. Lý do: ${actionReason}`,
-              }
-            : null
-        );
-      }
-
-      showToast(
-        type === "release"
-          ? `Đã giải ngân thành công giao dịch ${tx.orderCode} (${formatVND(tx.amount)}).`
-          : `Đã hoàn lại tiền giao dịch ${tx.orderCode} cho người mua (${formatVND(tx.amount)}).`
-      );
-
-      setActionLoading(false);
-      setConfirmAction(null);
-      setActionReason("");
-    }, 400);
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const blob = await tradeService.adminExportTrades({ ...currentFilter, pageIndex: 1 });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `TrustSim_GiaoDich_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (exportError) {
+      setError(exportError instanceof Error ? exportError.message : "Không thể xuất dữ liệu.");
+    } finally {
+      setExporting(false);
+    }
   };
+
+  const pageAmount = trades.reduce((sum, trade) => sum + Number(trade.escrowAmount || 0), 0);
+  const activeCount = trades.filter((trade) =>
+    ["PendingEscrow", "PendingSignature", "PendingTransfer"].includes(trade.status)
+  ).length;
+  const disputedCount = trades.filter((trade) => trade.status === "Disputed").length;
+  const hasFilters = Boolean(search || status || minAmount || maxAmount || fromDate || toDate);
 
   return (
     <div className="admin-tab admin-tab-escrow space-y-4">
-      {/* Toast */}
-      {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 bg-[#001743] text-white text-xs px-4 py-2.5 rounded-lg shadow-lg border border-slate-700 animate-fade-in flex items-center gap-2">
-          <CheckCircle2 size={14} className="text-emerald-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
-      {/* ── 1. Header Card (Matching Workbench Guidelines) ── */}
-      <div className="bg-white border border-[#e4e7ec] rounded-xl p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <section className="flex flex-col gap-4 rounded-xl border border-[#e4e7ec] bg-white p-4 shadow-xs md:flex-row md:items-center md:justify-between">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-base font-bold text-[#001743]">Quản Lý Giao Dịch Ký Quỹ</h1>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 font-mono">
-              {transactions.length} giao dịch
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="text-base font-bold text-[#001743]">Quản lý giao dịch ký quỹ</h1>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 font-mono text-[10px] font-bold text-slate-700">
+              {totalCount.toLocaleString("vi-VN")} giao dịch
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Giám sát tiền ký quỹ của người mua, tiền cọc người bán và quy trình giải ngân an toàn theo từng bước.
+          <p className="mt-1 text-xs text-slate-500">
+            Theo dõi tiền ký quỹ và toàn bộ vòng đời chuyển nhượng SIM từ dữ liệu vận hành thực tế.
           </p>
         </div>
-
         <div className="flex items-center gap-2">
-          <ImportExportBar
-            data={transactions}
-            columns={ESCROW_EXPORT_COLUMNS}
-            filename={`TrustSim_Escrow_${new Date().toISOString().slice(0, 10)}`}
-            entityName="giao dịch ký quỹ"
-            showImport={false}
-          />
+          <button type="button" onClick={handleExport} disabled={exporting || loading} className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+            {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+            Xuất Excel
+          </button>
+          <button type="button" onClick={fetchTrades} disabled={loading} aria-label="Làm mới dữ liệu" className="rounded-md border border-slate-300 p-2 text-slate-600 hover:bg-slate-50 disabled:opacity-50">
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+          </button>
         </div>
-      </div>
+      </section>
 
-      {/* ── 2. KPI Metrics Cards ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs">
-          <span className="text-[11px] font-medium text-slate-500 block">Đang giữ ký quỹ</span>
-          <div className="text-base font-bold text-amber-600 font-mono tabular-nums mt-0.5">
-            {formatVND(heldAmount)}
+      <section className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-[#e4e7ec] bg-[#e4e7ec] sm:grid-cols-3">
+        {[
+          { label: "Giá trị trên trang", value: formatVND(pageAmount), icon: ShieldCheck, tone: "text-[#001743]" },
+          { label: "Đang xử lý trên trang", value: `${activeCount} giao dịch`, icon: Clock3, tone: "text-amber-700" },
+          { label: "Tranh chấp trên trang", value: `${disputedCount} giao dịch`, icon: AlertTriangle, tone: "text-rose-700" },
+        ].map((item) => (
+          <div key={item.label} className="flex items-center justify-between bg-white px-4 py-3.5">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{item.label}</p>
+              <p className={`mt-1 text-sm font-bold tabular-nums ${item.tone}`}>{item.value}</p>
+            </div>
+            <item.icon size={18} className={item.tone} />
           </div>
-          <span className="text-[10px] text-slate-400 mt-0.5 block">{heldTxs.length} giao dịch</span>
-        </div>
+        ))}
+      </section>
 
-        <div className="bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs">
-          <span className="text-[11px] font-medium text-slate-500 block">Đang tranh chấp</span>
-          <div className="text-base font-bold text-[#E4011E] font-mono tabular-nums mt-0.5">
-            {formatVND(disputedAmount)}
+      <section className="rounded-xl border border-[#e4e7ec] bg-white p-3.5 shadow-xs">
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-[minmax(240px,1.5fr)_repeat(5,minmax(130px,1fr))_auto]">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Mã giao dịch, số SIM, người mua/bán…" className="h-9 w-full rounded-md border border-slate-300 bg-white pl-9 pr-8 text-xs outline-none focus:border-[#001743]" />
+            {search && <button type="button" onClick={() => setSearch("")} aria-label="Xóa từ khóa" className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"><X size={13} /></button>}
           </div>
-          <span className="text-[10px] text-slate-400 mt-0.5 block">{disputedTxs.length} vụ khiếu nại</span>
-        </div>
-
-        <div className="bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs">
-          <span className="text-[11px] font-medium text-slate-500 block">Đã giải ngân</span>
-          <div className="text-base font-bold text-emerald-600 font-mono tabular-nums mt-0.5">
-            {formatVND(releasedAmount)}
-          </div>
-          <span className="text-[10px] text-slate-400 mt-0.5 block">{releasedTxs.length} giao dịch</span>
-        </div>
-
-        <div className="bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs">
-          <span className="text-[11px] font-medium text-slate-500 block">Tổng giá trị quản lý</span>
-          <div className="text-base font-bold text-[#001743] font-mono tabular-nums mt-0.5">
-            {formatVND(totalAmount)}
-          </div>
-          <span className="text-[10px] text-slate-400 mt-0.5 block">{transactions.length} giao dịch ghi nhận</span>
-        </div>
-      </div>
-
-      {/* ── 3. Filter Toolbar Card ── */}
-      <div className="bg-white border border-[#e4e7ec] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
-        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
-          <div className="relative w-80">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPageIndex(1);
-              }}
-              placeholder="Tìm mã đơn, số SIM, tên người mua/bán…"
-              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none"
-            />
-            {search && (
-              <button
-                onClick={() => {
-                  setSearch("");
-                  setPageIndex(1);
-                }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X size={12} />
-              </button>
-            )}
-          </div>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPageIndex(1);
-            }}
-            className="text-xs py-1.5 px-3 bg-white border border-[#D1D5DB] rounded-[6px] text-slate-700 focus:border-[#001743] focus:outline-none"
-          >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="Held">Đang giữ ký quỹ</option>
-            <option value="Released">Đã giải ngân</option>
-            <option value="Disputed">Đang tranh chấp</option>
-            <option value="Refunded">Đã hoàn tiền</option>
+          <select value={status} onChange={(event) => { setStatus(event.target.value); setPageIndex(1); }} className="h-9 rounded-md border border-slate-300 bg-white px-2.5 text-xs text-slate-700 outline-none focus:border-[#001743]">
+            <option value="">Tất cả trạng thái</option>
+            {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
-
-          {(search || statusFilter !== "all") && (
-            <button
-              onClick={() => {
-                setSearch("");
-                setStatusFilter("all");
-                setPageIndex(1);
-              }}
-              className="text-xs text-[#E4011E] hover:underline px-1.5 py-1"
-            >
-              Xóa bộ lọc
-            </button>
-          )}
+          <input type="number" min="0" value={minAmount} onChange={(event) => { setMinAmount(event.target.value); setPageIndex(1); }} placeholder="Giá trị từ" className="h-9 rounded-md border border-slate-300 px-2.5 text-xs outline-none focus:border-[#001743]" />
+          <input type="number" min="0" value={maxAmount} onChange={(event) => { setMaxAmount(event.target.value); setPageIndex(1); }} placeholder="Giá trị đến" className="h-9 rounded-md border border-slate-300 px-2.5 text-xs outline-none focus:border-[#001743]" />
+          <input type="date" value={fromDate} onChange={(event) => { setFromDate(event.target.value); setPageIndex(1); }} aria-label="Từ ngày" className="h-9 rounded-md border border-slate-300 px-2.5 text-xs text-slate-600 outline-none focus:border-[#001743]" />
+          <input type="date" value={toDate} onChange={(event) => { setToDate(event.target.value); setPageIndex(1); }} aria-label="Đến ngày" className="h-9 rounded-md border border-slate-300 px-2.5 text-xs text-slate-600 outline-none focus:border-[#001743]" />
+          {hasFilters && <button type="button" onClick={resetFilters} className="h-9 whitespace-nowrap rounded-md border border-rose-200 px-3 text-xs font-semibold text-rose-600 hover:bg-rose-50">Xóa lọc</button>}
         </div>
+      </section>
 
-        <div className="text-xs text-[#6B7280]">
-          Hiển thị <strong className="text-[#001743]">{filtered.length}</strong> giao dịch
-        </div>
-      </div>
-
-      {/* ── 4. Table Card ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] overflow-hidden shadow-xs">
+      <section className="overflow-hidden rounded-xl border border-[#e4e7ec] bg-white shadow-xs">
+        {error && <div className="flex items-center justify-between gap-3 border-b border-rose-100 bg-rose-50 px-4 py-3 text-xs text-rose-700"><span className="flex items-center gap-2"><AlertTriangle size={14} />{error}</span><button type="button" onClick={fetchTrades} className="font-bold underline">Thử lại</button></div>}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
-                <th className="py-3 px-4"><AdminSortButton label="Đơn hàng / SIM" active={sortKey === "order"} direction={sortDirection} onClick={() => changeSort("order")} /></th>
-                <th className="py-3 px-4">Người mua – Người bán</th>
-                <th className="py-3 px-4 text-right"><AdminSortButton label="Giá trị ký quỹ" align="right" active={sortKey === "amount"} direction={sortDirection} onClick={() => changeSort("amount")} /></th>
-                <th className="py-3 px-4 text-center">Tiến độ</th>
-                <th className="py-3 px-4 text-center">Trạng thái</th>
-                <th className="py-3 px-4"><AdminSortButton label="Hạn xử lý" active={sortKey === "deadline"} direction={sortDirection} onClick={() => changeSort("deadline")} /></th>
-                <th className="py-3 px-4 text-right">Thao tác</th>
+          <table className="w-full min-w-[980px] border-collapse text-left text-xs">
+            <thead className="border-b border-slate-200 bg-slate-50/80">
+              <tr className="h-10">
+                <th className="px-4 py-2"><AdminSortButton label="Giao dịch / SIM" active={sortBy === TradeTransactionSortBy.TradeTransactionCode} direction={sortDirection} onClick={() => changeSort(TradeTransactionSortBy.TradeTransactionCode)} /></th>
+                <th className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Người mua → người bán</th>
+                <th className="px-4 py-2"><AdminSortButton label="Giá trị ký quỹ" align="right" active={sortBy === TradeTransactionSortBy.EscrowAmount} direction={sortDirection} onClick={() => changeSort(TradeTransactionSortBy.EscrowAmount)} /></th>
+                <th className="px-4 py-2 text-center"><AdminSortButton label="Trạng thái" align="center" active={sortBy === TradeTransactionSortBy.Status} direction={sortDirection} onClick={() => changeSort(TradeTransactionSortBy.Status)} /></th>
+                <th className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Hạn xử lý</th>
+                <th className="px-4 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-slate-500">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E2E8F0]">
-              {paged.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-400 text-xs">
-                    Không tìm thấy giao dịch ký quỹ nào phù hợp
-                  </td>
-                </tr>
-              ) : (
-                paged.map((tx) => (
-                  <tr
-                    key={tx.id}
-                    className={`hover:bg-slate-50/80 transition-colors h-14 ${
-                      tx.status === "Disputed" ? "border-l-4 border-l-[#E4011E] bg-rose-50/20" : ""
-                    }`}
-                  >
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-sm text-[#001743] tabular-nums font-mono">
-                        {formatPhone(tx.sim)}
-                      </div>
-                      <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                        {tx.orderCode} · {tx.id}
-                      </div>
-                    </td>
-
-                    <td className="py-3 px-4">
-                      <div className="font-medium text-slate-800">{tx.buyer}</div>
-                      <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
-                        <ArrowRight size={10} />
-                        <span>{tx.seller}</span>
-                      </div>
-                    </td>
-
-                    <td className="py-3 px-4 text-right">
-                      <div className="font-bold text-sm text-[#001743] tabular-nums font-mono">
-                        {formatVND(tx.amount)}
-                      </div>
-                      <div className="text-[10px] text-slate-400 tabular-nums">
-                        Phí: {formatVND(tx.fee)}
-                      </div>
-                    </td>
-
-                    <td className="py-3 px-4 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        {[1, 2, 3, 4, 5].map((step) => (
-                          <span
-                            key={step}
-                            className={`h-1.5 w-3 rounded-full transition-colors ${
-                              step <= tx.pipelineStep
-                                ? tx.status === "Disputed"
-                                  ? "bg-[#E4011E]"
-                                  : "bg-emerald-500"
-                                : "bg-slate-200"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-[10px] text-slate-400 mt-1 block">
-                        Bước {tx.pipelineStep}/5
-                      </span>
-                    </td>
-
-                    <td className="py-3 px-4 text-center">
-                      <span
-                        className={`inline-flex px-2 py-0.5 rounded-[4px] text-[10px] font-bold ${
-                          tx.status === "Held"
-                            ? "bg-amber-50 text-amber-800 border border-amber-200"
-                            : tx.status === "Released"
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            : tx.status === "Disputed"
-                            ? "bg-rose-50 text-rose-700 border border-rose-200"
-                            : "bg-slate-100 text-slate-700 border border-slate-200"
-                        }`}
-                      >
-                        {tx.status === "Held"
-                          ? "Đang giữ ký quỹ"
-                          : tx.status === "Released"
-                          ? "Đã giải ngân"
-                          : tx.status === "Disputed"
-                          ? "Đang tranh chấp"
-                          : "Đã hoàn tiền"}
-                      </span>
-                    </td>
-
-                    <td className="py-3 px-4 text-[#6B7280] text-[11px] max-w-[180px] truncate">
-                      {tx.deadline}
-                    </td>
-
-                    <td className="py-3 px-4 text-right">
-                      <div className="relative inline-flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => openDetail(tx)}
-                          className="p-1.5 text-slate-500 hover:text-[#001743] hover:bg-slate-100 rounded-[4px] transition-colors"
-                          title="Xem tiến độ & chi tiết"
-                        >
-                          <Eye size={15} strokeWidth={1.75} />
-                        </button>
-
-                        <button
-                          onClick={() => setMenuOpenId(menuOpenId === tx.id ? null : tx.id)}
-                          className="p-1.5 text-slate-500 hover:text-[#001743] hover:bg-slate-100 rounded-[4px] transition-colors"
-                          title="Thao tác"
-                        >
-                          <MoreVertical size={15} strokeWidth={1.75} />
-                        </button>
-
-                        {/* Dropdown Menu */}
-                        {menuOpenId === tx.id && (
-                          <div className="absolute right-0 top-8 z-30 w-44 bg-white border border-[#E2E8F0] rounded-[6px] shadow-lg py-1 animate-fade-in text-left">
-                            <button
-                              onClick={() => openDetail(tx)}
-                              className="w-full px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-                            >
-                              <Layers size={13} className="text-slate-400" />
-                              <span>Tiến độ 5 bước</span>
-                            </button>
-
-                            {tx.status === "Held" && (
-                              <button
-                                onClick={() => {
-                                  setMenuOpenId(null);
-                                  setConfirmAction({ tx, type: "release" });
-                                }}
-                                className="w-full px-3 py-1.5 text-xs text-emerald-700 hover:bg-emerald-50 flex items-center gap-2"
-                              >
-                                <ShieldCheck size={13} className="text-emerald-600" />
-                                <span>Giải ngân ngay</span>
-                              </button>
-                            )}
-
-                            {(tx.status === "Held" || tx.status === "Disputed") && (
-                              <button
-                                onClick={() => {
-                                  setMenuOpenId(null);
-                                  setConfirmAction({ tx, type: "refund" });
-                                }}
-                                className="w-full px-3 py-1.5 text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2"
-                              >
-                                <RotateCcw size={13} className="text-rose-500" />
-                                <span>Hoàn tiền cho mua</span>
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </td>
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
+                <tr><td colSpan={6} className="py-16 text-center text-slate-400"><Loader2 size={22} className="mx-auto mb-2 animate-spin" />Đang tải giao dịch…</td></tr>
+              ) : trades.length === 0 ? (
+                <tr><td colSpan={6} className="py-16 text-center"><ShieldCheck size={30} className="mx-auto mb-2 text-slate-300" /><p className="font-semibold text-slate-700">Không có giao dịch phù hợp</p><p className="mt-1 text-[11px] text-slate-400">Thử thay đổi hoặc xóa bộ lọc hiện tại.</p></td></tr>
+              ) : trades.map((trade) => {
+                const statusMeta = getStatusMeta(trade.status);
+                const step = getPipelineStep(trade.status);
+                return (
+                  <tr key={trade.id} onClick={() => setSelectedTrade(trade)} className={`h-16 cursor-pointer transition-colors hover:bg-slate-50/80 ${trade.status === "Disputed" ? "border-l-[3px] border-l-[#E4011E] bg-rose-50/20" : ""}`}>
+                    <td className="px-4 py-3"><p className="font-mono text-sm font-bold text-[#001743]">{formatPhone(trade.simPhoneNumber)}</p><p className="mt-0.5 font-mono text-[10px] text-slate-400">{trade.tradeTransactionCode}</p></td>
+                    <td className="px-4 py-3"><p className="font-medium text-slate-800">{trade.buyerName || trade.buyerId}</p><p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400"><ArrowRight size={10} />{trade.sellerName || trade.sellerId}</p></td>
+                    <td className="px-4 py-3 text-right font-mono text-sm font-bold tabular-nums text-[#001743]">{formatVND(Number(trade.escrowAmount))}</td>
+                    <td className="px-4 py-3 text-center"><span className={`inline-flex rounded border px-2 py-0.5 text-[10px] font-bold ${statusMeta.cls}`}>{statusMeta.label}</span><div className="mx-auto mt-2 flex w-20 gap-1">{[1,2,3,4,5].map((item) => <span key={item} className={`h-1 flex-1 rounded-full ${item <= step ? (trade.status === "Disputed" ? "bg-rose-500" : "bg-emerald-500") : "bg-slate-200"}`} />)}</div></td>
+                    <td className="px-4 py-3 text-[11px] text-slate-500">{formatDateTime(getDeadline(trade))}</td>
+                    <td className="px-4 py-3 text-right"><button type="button" onClick={(event) => { event.stopPropagation(); setSelectedTrade(trade); }} className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 font-semibold text-[#001743] hover:bg-slate-50"><Eye size={13} />Xem</button></td>
                   </tr>
-                ))
-              )}
+                );
+              })}
             </tbody>
           </table>
         </div>
-      </div>
+        {!loading && totalCount > 0 && <Pagination pageIndex={pageIndex} pageSize={pageSize} totalCount={totalCount} loading={loading} onPageChange={setPageIndex} onPageSizeChange={(size) => { setPageSize(size); setPageIndex(1); }} />}
+      </section>
 
-      {/* ── 5. RightDrawer: Pipeline & Escrow Detail ── */}
-      <RightDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        title={selectedTx ? `Giao dịch ký quỹ: ${formatPhone(selectedTx.sim)}` : "Chi tiết ký quỹ"}
-        badge={selectedTx ? selectedTx.orderCode : ""}
-        badgeCls="bg-[#001743] text-white"
-        size="lg"
-      >
-        {selectedTx && (
-          <>
-            <DrawerBody>
-              {/* Financial Snapshot */}
-              <div className="bg-slate-50 p-3.5 rounded-[8px] border border-slate-200 space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-500">Giá trị ký quỹ:</span>
-                  <span className="font-bold text-[#001743] text-sm tabular-nums font-mono">
-                    {formatVND(selectedTx.amount)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-500">Phí dịch vụ sàn (3%):</span>
-                  <span className="font-bold text-emerald-700 tabular-nums">
-                    +{formatVND(selectedTx.fee)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200">
-                  <span className="text-slate-600 font-medium">Bên bán thực nhận:</span>
-                  <span className="font-extrabold text-[#001743] tabular-nums font-mono">
-                    {formatVND(selectedTx.amount - selectedTx.fee)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Stakeholders Section */}
-              <DrawerSection title="Các bên tham gia giao dịch">
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 bg-white border border-slate-200 rounded-[6px]">
-                    <span className="text-[10px] text-slate-400 block uppercase font-semibold">Người mua</span>
-                    <span className="font-bold text-[#001743] mt-0.5 block">{selectedTx.buyer}</span>
-                    <span className="text-[11px] text-slate-500 mt-1 block">Đã nạp 100% tiền ký quỹ</span>
-                  </div>
-                  <div className="p-3 bg-white border border-slate-200 rounded-[6px]">
-                    <span className="text-[10px] text-slate-400 block uppercase font-semibold">Người bán</span>
-                    <span className="font-bold text-[#001743] mt-0.5 block">{selectedTx.seller}</span>
-                    <span className="text-[11px] text-slate-500 mt-1 block">Đã khóa tiền cọc bảo đảm</span>
-                  </div>
-                </div>
-              </DrawerSection>
-
-              {/* Status & Warning */}
-              {selectedTx.missingReason && (
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-[6px] text-xs flex items-start gap-2 text-amber-800">
-                  <AlertTriangle size={15} className="shrink-0 mt-0.5 text-amber-600" />
-                  <div>
-                    <span className="font-bold">Lưu ý tiến độ: </span>
-                    <span>{selectedTx.missingReason}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* 5-Step Pipeline Timeline */}
-              <DrawerSection title="Quy trình chuyển nhượng 5 bước">
-                <div className="space-y-3 relative pl-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
-                  {PIPELINE_STEPS.map((stepItem) => {
-                    const isPassed = stepItem.step <= selectedTx.pipelineStep;
-                    const isCurrent = stepItem.step === selectedTx.pipelineStep;
-
-                    return (
-                      <div key={stepItem.step} className="relative">
-                        {/* Dot indicator */}
-                        <div
-                          className={`absolute -left-6 top-0.5 w-4 h-4 rounded-full flex items-center justify-center border-2 ${
-                            isPassed
-                              ? selectedTx.status === "Disputed" && isCurrent
-                                ? "bg-[#E4011E] border-white text-white shadow-xs"
-                                : "bg-emerald-600 border-white text-white shadow-xs"
-                              : "bg-white border-slate-300 text-slate-400"
-                          }`}
-                        >
-                          {isPassed ? <CheckCircle2 size={10} strokeWidth={3} /> : <div className="w-1 h-1 rounded-full bg-slate-400" />}
-                        </div>
-
-                        <div className="bg-white border border-slate-100 rounded-[6px] p-2.5 shadow-2xs">
-                          <div className="flex items-center justify-between">
-                            <span
-                              className={`text-xs font-bold ${
-                                isCurrent
-                                  ? selectedTx.status === "Disputed"
-                                    ? "text-[#E4011E]"
-                                    : "text-emerald-700"
-                                  : isPassed
-                                  ? "text-slate-800"
-                                  : "text-slate-400"
-                              }`}
-                            >
-                              Bước {stepItem.step}: {stepItem.name}
-                            </span>
-                            {isCurrent && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-700">
-                                Hiện tại
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[11px] text-slate-500 mt-0.5">{stepItem.desc}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </DrawerSection>
-            </DrawerBody>
-
-            <DrawerFooter>
-              <div className="flex items-center justify-between w-full">
-                <BtnSecondary onClick={() => setDrawerOpen(false)}>Đóng</BtnSecondary>
-
-                <div className="flex items-center gap-2">
-                  {(selectedTx.status === "Held" || selectedTx.status === "Disputed") && (
-                    <button
-                      type="button"
-                      onClick={() => setConfirmAction({ tx: selectedTx, type: "refund" })}
-                      className="px-3.5 py-1.5 border border-rose-200 hover:bg-rose-50 text-rose-600 text-xs font-semibold rounded-[6px] transition-colors"
-                    >
-                      Hoàn tiền người mua
-                    </button>
-                  )}
-
-                  {selectedTx.status === "Held" && (
-                    <BtnPrimary
-                      type="button"
-                      onClick={() => setConfirmAction({ tx: selectedTx, type: "release" })}
-                    >
-                      Giải ngân cho người bán
-                    </BtnPrimary>
-                  )}
-                </div>
-              </div>
-            </DrawerFooter>
-          </>
-        )}
+      <RightDrawer open={Boolean(selectedTrade)} onClose={() => setSelectedTrade(null)} title="Chi tiết giao dịch ký quỹ" badge={selectedTrade?.tradeTransactionCode} badgeCls="bg-[#001743] text-white" size="lg">
+        {selectedTrade && <>
+          <DrawerBody>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Giá trị ký quỹ</p><p className="mt-1 font-mono text-xl font-bold text-[#001743]">{formatVND(Number(selectedTrade.escrowAmount))}</p><span className={`mt-3 inline-flex rounded border px-2 py-0.5 text-[10px] font-bold ${getStatusMeta(selectedTrade.status).cls}`}>{getStatusMeta(selectedTrade.status).label}</span></div>
+            <DrawerSection title="Các bên tham gia"><div className="grid gap-3 sm:grid-cols-2"><div className="rounded-lg border border-slate-200 p-3"><p className="text-[10px] font-semibold uppercase text-slate-400">Người mua</p><p className="mt-1 text-xs font-bold text-[#001743]">{selectedTrade.buyerName || "Chưa có tên hiển thị"}</p><p className="mt-1 break-all font-mono text-[10px] text-slate-400">{selectedTrade.buyerId}</p></div><div className="rounded-lg border border-slate-200 p-3"><p className="text-[10px] font-semibold uppercase text-slate-400">Người bán</p><p className="mt-1 text-xs font-bold text-[#001743]">{selectedTrade.sellerName || "Chưa có tên hiển thị"}</p><p className="mt-1 break-all font-mono text-[10px] text-slate-400">{selectedTrade.sellerId}</p></div></div></DrawerSection>
+            <DrawerSection title="Tiến độ nghiệp vụ"><div className="space-y-2">{PIPELINE.map((label, index) => { const itemStep = index + 1; const currentStep = getPipelineStep(selectedTrade.status); const done = itemStep <= currentStep; return <div key={label} className={`flex items-center gap-3 rounded-lg border p-3 ${done ? "border-emerald-200 bg-emerald-50/40" : "border-slate-200"}`}><span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${done ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400"}`}>{done ? <CheckCircle2 size={13} /> : itemStep}</span><span className={`text-xs font-semibold ${done ? "text-slate-800" : "text-slate-400"}`}>{label}</span></div>; })}</div></DrawerSection>
+            <DrawerSection title="Mốc thời gian"><dl className="grid grid-cols-[150px_1fr] gap-x-3 gap-y-2 text-xs"><dt className="text-slate-500">Khởi tạo</dt><dd className="font-medium text-slate-800">{formatDateTime(selectedTrade.createdDate)}</dd><dt className="text-slate-500">Hạn ký quỹ</dt><dd>{formatDateTime(selectedTrade.escrowDeadline)}</dd><dt className="text-slate-500">Hạn ký hợp đồng</dt><dd>{formatDateTime(selectedTrade.signingDeadline)}</dd><dt className="text-slate-500">Hạn sang tên</dt><dd>{formatDateTime(selectedTrade.transferDeadline)}</dd><dt className="text-slate-500">Hoàn tất</dt><dd>{formatDateTime(selectedTrade.completedAt)}</dd></dl></DrawerSection>
+            {selectedTrade.cancelledReason && <div className="flex gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700"><AlertTriangle size={15} className="shrink-0" />{selectedTrade.cancelledReason}</div>}
+          </DrawerBody>
+          <DrawerFooter><button type="button" onClick={() => setSelectedTrade(null)} className="rounded-md border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">Đóng</button></DrawerFooter>
+        </>}
       </RightDrawer>
-
-      {/* ── 6. Confirm Modal with Mandatory Reason ── */}
-      {confirmAction && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white border border-[#E2E8F0] rounded-[8px] w-full max-w-md shadow-xl p-5 animate-fade-up">
-            <div className="flex items-start gap-3 mb-3">
-              <div
-                className={`p-2 rounded-lg shrink-0 ${
-                  confirmAction.type === "release"
-                    ? "bg-emerald-50 text-emerald-600"
-                    : "bg-rose-50 text-rose-600"
-                }`}
-              >
-                {confirmAction.type === "release" ? (
-                  <ShieldCheck size={20} strokeWidth={2} />
-                ) : (
-                  <AlertTriangle size={20} strokeWidth={2} />
-                )}
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-[#001743]">
-                  {confirmAction.type === "release"
-                    ? "Xác nhận giải ngân tiền ký quỹ"
-                    : "Xác nhận hoàn tiền cho người mua"}
-                </h3>
-                <p className="text-xs text-[#6B7280] mt-1 leading-relaxed">
-                  Đơn hàng: <strong className="font-mono">{confirmAction.tx.orderCode}</strong> (SIM{" "}
-                  {formatPhone(confirmAction.tx.sim)}) — Số tiền:{" "}
-                  <strong className="text-[#001743]">{formatVND(confirmAction.tx.amount)}</strong>
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-[#001743] mb-1">
-                  Lý do phê duyệt giải ngân / hoàn trả <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  required
-                  rows={3}
-                  value={actionReason}
-                  onChange={(e) => setActionReason(e.target.value)}
-                  placeholder="Nhập căn cứ xử lý (VD: Đã kiểm tra biên bản bàn giao viễn thông thành công...)"
-                  className="w-full text-xs p-2.5 border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-[#E2E8F0]">
-                <button
-                  type="button"
-                  disabled={actionLoading}
-                  onClick={() => {
-                    setConfirmAction(null);
-                    setActionReason("");
-                  }}
-                  className="px-3.5 py-1.5 border border-[#D1D5DB] text-xs font-semibold text-[#4B5563] rounded-[6px] hover:bg-slate-50 transition-colors"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="button"
-                  disabled={actionLoading || !actionReason.trim()}
-                  onClick={handleActionConfirm}
-                  className={`px-4 py-1.5 text-white text-xs font-bold rounded-[6px] transition-colors disabled:opacity-50 ${
-                    confirmAction.type === "release"
-                      ? "bg-emerald-600 hover:bg-emerald-700"
-                      : "bg-rose-600 hover:bg-rose-700"
-                  }`}
-                >
-                  {actionLoading
-                    ? "Đang xử lý..."
-                    : confirmAction.type === "release"
-                    ? "Xác nhận giải ngân"
-                    : "Xác nhận hoàn tiền"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

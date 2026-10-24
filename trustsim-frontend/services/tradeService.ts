@@ -84,6 +84,16 @@ export const tradeService = {
     throw new Error(res.message || "Không thể tải danh sách giao dịch toàn sàn");
   },
 
+  /** [Admin] Xuất toàn bộ giao dịch theo đúng bộ lọc hiện tại. */
+  async adminExportTrades(filter: TradeFilter = {}): Promise<Blob> {
+    const query = withQuery("", getTradeFilterQuery(filter)).replace(/^\?/, "");
+    const response = await apiClient.get<Blob>(
+      `/api/TradeTransactions/export${query ? `?${query}` : ""}`,
+      { responseType: "blob" }
+    );
+    return response.data;
+  },
+
   /** Xem trước hợp đồng điện tử */
   async getContractPreview(tradeId: string): Promise<ContractPreviewDto> {
     const res = await apiFetch<ContractPreviewDto>(`/Contracts/${tradeId}/preview`);

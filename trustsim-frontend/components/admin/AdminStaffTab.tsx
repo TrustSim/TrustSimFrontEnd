@@ -266,7 +266,7 @@ export function AdminStaffTab() {
   const lockedStaffCount = staffList.filter((s) => !s.isActive).length;
 
   return (
-    <div className="admin-tab-staff space-y-6">
+    <div className="admin-tab admin-tab-staff space-y-4">
       {/* ── SECTION 1: Institutional Context Header & Master Action Bar ── */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs relative overflow-hidden">
         {/* Subtle decorative security grid background */}

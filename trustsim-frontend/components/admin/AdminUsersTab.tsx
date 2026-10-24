@@ -226,7 +226,7 @@ export function AdminUsersTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="admin-tab admin-tab-users space-y-4">
       {/* ── 1. Header Card (Matching CRUD Workspace Guidelines) ── */}
       <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

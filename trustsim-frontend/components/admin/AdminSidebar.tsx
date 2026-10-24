@@ -65,7 +65,7 @@ export const ADMIN_NAV_SECTIONS: NavSection[] = [
     title: "Vận hành & An toàn",
     items: [
       { id: "documents", label: "Tài liệu & Chính sách", tab: "documents", icon: FileText },
-      { id: "disputes", label: "Khiếu nại", tab: "disputes", icon: AlertOctagon, badge: 2, badgeType: "danger" },
+      { id: "disputes", label: "Khiếu nại", tab: "disputes", icon: AlertOctagon },
       { id: "anomalies", label: "Giám sát AI Fraud", tab: "anomalies", icon: Bot },
       { id: "settings", label: "Cấu hình hệ thống", tab: "settings", icon: Settings },
     ],

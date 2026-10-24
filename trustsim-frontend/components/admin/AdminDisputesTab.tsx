@@ -32,6 +32,8 @@ import { tradeService } from "@/services/tradeService";
 import type { DisputeTicketDto, DisputeStatus } from "@/types/dispute";
 import type { TradeTransactionDto } from "@/types/trade";
 import { disputeValidators } from "@/utils/validators";
+import { Pagination } from "@/components/ui/Pagination";
+import { DisputeTicketSortBy, SortOrder } from "@/types/common";
 
 // Helper định dạng tiền tệ VNĐ
 const formatVND = (value: number) =>
@@ -90,8 +92,12 @@ export default function AdminDisputesTab() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [tradeId, setTradeId] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [sortBy, setSortBy] = useState<DisputeTicketSortBy>(DisputeTicketSortBy.CreatedDate);
   const [pageIndex, setPageIndex] = useState(1);
-  const pageSize = 15;
+  const [pageSize, setPageSize] = useState(15);
 
   // Drawer state
   const [selectedDispute, setSelectedDispute] = useState<DisputeTicketDto | null>(null);
@@ -133,6 +139,11 @@ export default function AdminDisputesTab() {
       const res = await disputeService.getDisputes({
         status: statusFilter === "all" ? undefined : statusFilter,
         keyword: debouncedSearch || undefined,
+        tradeId: tradeId.trim() || undefined,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
+        sortBy,
+        sortOrder: SortOrder.Desc,
         pageIndex,
         pageSize,
       });
@@ -143,7 +154,7 @@ export default function AdminDisputesTab() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, debouncedSearch, pageIndex, pageSize]);
+  }, [statusFilter, debouncedSearch, tradeId, fromDate, toDate, sortBy, pageIndex, pageSize]);
 
   useEffect(() => {
     fetchDisputes();
@@ -251,10 +262,8 @@ export default function AdminDisputesTab() {
     }
   };
 
-  const totalPages = Math.ceil(totalCount / pageSize) || 1;
-
   return (
-    <div className="space-y-4">
+    <div className="admin-tab admin-tab-disputes space-y-4">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-5 right-5 z-50 bg-[#001743] text-white text-xs px-4 py-2.5 rounded-xl shadow-lg border border-slate-700 animate-fade-in flex items-center gap-2">
@@ -374,11 +383,49 @@ export default function AdminDisputesTab() {
             <option value="RESOLVED_FAVOR_SELLER">Bên Bán thắng (Giải ngân)</option>
           </select>
 
-          {(search || statusFilter !== "all") && (
+          <input
+            value={tradeId}
+            onChange={(e) => { setTradeId(e.target.value); setPageIndex(1); }}
+            placeholder="Trade ID (UUID)"
+            className="w-44 text-xs py-1.5 px-3 bg-white border border-[#e4e7ec] rounded-lg text-slate-700 focus:border-[#001743] focus:outline-none"
+          />
+
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) => { setFromDate(e.target.value); setPageIndex(1); }}
+            aria-label="Khiếu nại từ ngày"
+            className="text-xs py-1.5 px-3 bg-white border border-[#e4e7ec] rounded-lg text-slate-700 focus:border-[#001743] focus:outline-none"
+          />
+
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => { setToDate(e.target.value); setPageIndex(1); }}
+            aria-label="Khiếu nại đến ngày"
+            className="text-xs py-1.5 px-3 bg-white border border-[#e4e7ec] rounded-lg text-slate-700 focus:border-[#001743] focus:outline-none"
+          />
+
+          <select
+            value={sortBy}
+            onChange={(e) => { setSortBy(Number(e.target.value)); setPageIndex(1); }}
+            aria-label="Sắp xếp khiếu nại"
+            className="text-xs py-1.5 px-3 bg-white border border-[#e4e7ec] rounded-lg text-slate-700 focus:border-[#001743] focus:outline-none"
+          >
+            <option value={DisputeTicketSortBy.CreatedDate}>Mới nhất</option>
+            <option value={DisputeTicketSortBy.Status}>Theo trạng thái</option>
+            <option value={DisputeTicketSortBy.TradeTransactionId}>Theo giao dịch</option>
+          </select>
+
+          {(search || statusFilter !== "all" || tradeId || fromDate || toDate || sortBy !== DisputeTicketSortBy.CreatedDate) && (
             <button
               onClick={() => {
                 setSearch("");
                 setStatusFilter("all");
+                setTradeId("");
+                setFromDate("");
+                setToDate("");
+                setSortBy(DisputeTicketSortBy.CreatedDate);
                 setPageIndex(1);
               }}
               className="text-xs text-[#E4011E] hover:underline px-1.5 py-1"
@@ -515,29 +562,19 @@ export default function AdminDisputesTab() {
           </table>
         </div>
 
-        {/* Pagination Toolbar */}
-        {totalPages > 1 && (
-          <div className="p-3 border-t border-[#e4e7ec] flex items-center justify-between text-xs text-slate-600 bg-[#F8FAFC]">
-            <span>
-              Trang <strong className="text-[#001743]">{pageIndex}</strong> / {totalPages}
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                disabled={pageIndex <= 1 || loading}
-                onClick={() => setPageIndex((p) => Math.max(1, p - 1))}
-                className="px-2.5 py-1 border border-[#e4e7ec] rounded-lg bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors"
-              >
-                Trang trước
-              </button>
-              <button
-                disabled={pageIndex >= totalPages || loading}
-                onClick={() => setPageIndex((p) => Math.min(totalPages, p + 1))}
-                className="px-2.5 py-1 border border-[#D1D5DB] rounded-[4px] bg-white hover:bg-slate-50 disabled:opacity-40"
-              >
-                Trang sau
-              </button>
-            </div>
-          </div>
+        {!loading && totalCount > 0 && (
+          <Pagination
+            pageIndex={pageIndex}
+            pageSize={pageSize}
+            totalCount={totalCount}
+            loading={loading}
+            onPageChange={setPageIndex}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPageIndex(1);
+            }}
+            pageSizeOptions={[15, 30, 50]}
+          />
         )}
       </div>
 
