@@ -4,7 +4,6 @@
 import React, { useState, useEffect, useRef, use, useMemo } from "react";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import { auctionService, AuctionDto, BidDto, PendingSettlementDto } from "@/services/auctionService";
 import { auctionHubService } from "@/services/auctionHubService";
 import { authService } from "@/services/authService";
@@ -1217,10 +1216,10 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                       )}
 
                       {/* Quick Rules Strip */}
-                     <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-                       <span>Thông tin nhanh của phiên</span>
-                       <AuctionHelpPopover topic={isDutch ? "dutch" : "english"} />
-                     </div>
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                        <span>Thông tin nhanh của phiên</span>
+                        <AuctionHelpPopover topic={isDutch ? "dutch" : "english"} />
+                      </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
                         {!isDutch ? (
                           <>
@@ -1234,11 +1233,11 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                             </div>
                             <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
                               <span className="text-[10px] text-slate-400 block font-medium">Tiền đặt cọc <AuctionHelpPopover topic="deposit" value={auction.depositAmount > 0 ? formatPrice(auction.depositAmount) : "miễn cọc"} /></span>
-                             <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">{auction.depositAmount > 0 ? formatPrice(auction.depositAmount) : "Miễn cọc"}</span>
+                              <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">{auction.depositAmount > 0 ? formatPrice(auction.depositAmount) : "Miễn cọc"}</span>
                             </div>
                             <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
                               <span className="text-[10px] text-slate-400 block font-medium">Gia hạn phút chót <AuctionHelpPopover topic="extension" value={`${auction.extensionDurationSeconds || 30} giây`} /></span>
-                             <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">+{auction.extensionDurationSeconds || 30}s / lần</span>
+                              <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">+{auction.extensionDurationSeconds || 30}s / lần</span>
                             </div>
                           </>
                         ) : (
@@ -1257,7 +1256,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                             </div>
                             <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
                               <span className="text-[10px] text-slate-400 block font-medium">Tiền đặt cọc <AuctionHelpPopover topic="deposit" value={auction.depositAmount > 0 ? formatPrice(auction.depositAmount) : "miễn cọc"} /></span>
-                             <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">{auction.depositAmount > 0 ? formatPrice(auction.depositAmount) : "Miễn cọc"}</span>
+                              <span className="font-mono font-bold text-[#001743] tabular-nums mt-0.5 block">{auction.depositAmount > 0 ? formatPrice(auction.depositAmount) : "Miễn cọc"}</span>
                             </div>
                           </>
                         )}

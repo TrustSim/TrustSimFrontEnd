@@ -18,8 +18,8 @@ export interface ApiResponse<T> {
 }
 
 export enum SortOrder {
+  Desc = 0,
   Asc = 1,
-  Desc = 2,
 }
 
 export enum AuctionSortBy {

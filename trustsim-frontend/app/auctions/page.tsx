@@ -138,11 +138,10 @@ function FilterDropdown<T extends { key: string }>({
       <button
         type="button"
         onClick={onToggle}
-        className={`h-9 px-3 rounded-lg text-[13px] font-semibold cursor-pointer inline-flex items-center gap-2 transition-all duration-150 whitespace-nowrap border ${
-          isActive
+        className={`h-9 px-3 rounded-lg text-[13px] font-semibold cursor-pointer inline-flex items-center gap-2 transition-all duration-150 whitespace-nowrap border ${isActive
             ? "bg-[#001743] text-white border-[#001743] shadow-sm"
             : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-        }`}
+          }`}
       >
         <span className={`flex items-center ${isActive ? "text-white" : "text-slate-400"}`}>{icon}</span>
         <span>{label}</span>
@@ -161,9 +160,8 @@ function FilterDropdown<T extends { key: string }>({
                 key={item.key}
                 type="button"
                 onClick={() => onChange(item.key)}
-                className={`w-full flex items-center justify-between px-3 py-2 text-left transition-colors duration-100 cursor-pointer ${
-                  isSelected ? "bg-slate-50" : "hover:bg-slate-50"
-                }`}
+                className={`w-full flex items-center justify-between px-3 py-2 text-left transition-colors duration-100 cursor-pointer ${isSelected ? "bg-slate-50" : "hover:bg-slate-50"
+                  }`}
               >
                 {renderOption(item, isSelected)}
                 {isSelected && (
@@ -738,19 +736,17 @@ export default function AuctionsPage() {
                       <button
                         key={tab.key}
                         onClick={() => { setStatusTab(tab.key); setPageIndex(1); }}
-                        className={`relative px-3.5 py-2 text-[13px] font-semibold cursor-pointer transition-all duration-200 rounded-lg flex items-center gap-1.5 ${
-                          isActive
+                        className={`relative px-3.5 py-2 text-[13px] font-semibold cursor-pointer transition-all duration-200 rounded-lg flex items-center gap-1.5 ${isActive
                             ? "text-[#001743] bg-slate-100"
                             : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-                        }`}
+                          }`}
                       >
                         {tab.dot && (
                           <span className="w-1.5 h-1.5 rounded-full bg-rose-500" style={{ boxShadow: isActive ? "0 0 6px #E4011E" : "none", animation: isActive ? "pulse 2s infinite" : "none" }} />
                         )}
                         <span>{tab.label}</span>
-                        <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-md tabular-nums ${
-                          isActive ? "bg-white text-slate-700 shadow-sm" : "bg-slate-100 text-slate-400"
-                        }`}>
+                        <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-md tabular-nums ${isActive ? "bg-white text-slate-700 shadow-sm" : "bg-slate-100 text-slate-400"
+                          }`}>
                           {tab.count}
                         </span>
                       </button>
@@ -768,11 +764,10 @@ export default function AuctionsPage() {
                     <button
                       key={m.key}
                       onClick={() => { setTypeFilter(m.key); setPageIndex(1); }}
-                      className={`px-3 py-1.5 rounded-md text-[12px] font-semibold cursor-pointer transition-all duration-150 ${
-                        typeFilter === m.key
+                      className={`px-3 py-1.5 rounded-md text-[12px] font-semibold cursor-pointer transition-all duration-150 ${typeFilter === m.key
                           ? "bg-white text-[#001743] shadow-sm"
                           : "text-slate-500 hover:text-slate-700"
-                      }`}
+                        }`}
                     >
                       {m.label}
                     </button>
@@ -811,7 +806,7 @@ export default function AuctionsPage() {
         </div>
 
         {/* ═══ 4. AUCTION GRID ════════════════════════════════ */}
-       <main className="max-w-[1280px] mx-auto px-4 sm:px-6 pt-4 pb-16">
+        <main className="max-w-[1280px] mx-auto px-4 sm:px-6 pt-4 pb-16">
           <AuctionGuideModal open={guideOpen} onClose={() => setGuideOpen(false)} initialType="participate" />
           {error && (
             <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 mb-6 flex items-center justify-between">
@@ -884,11 +879,10 @@ export default function AuctionsPage() {
               <button
                 onClick={() => setPageIndex((p) => Math.max(1, p - 1))}
                 disabled={pageIndex <= 1}
-                className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-colors cursor-pointer border ${
-                  pageIndex <= 1
+                className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-colors cursor-pointer border ${pageIndex <= 1
                     ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
                     : "bg-white text-[#001743] border-slate-200 hover:bg-slate-50 shadow-sm"
-                }`}
+                  }`}
               >
                 <ChevronLeft size={15} />
                 Trước
@@ -910,11 +904,10 @@ export default function AuctionsPage() {
                     <button
                       key={pageNum}
                       onClick={() => setPageIndex(pageNum)}
-                      className={`w-9 h-9 rounded-lg text-[13px] font-bold transition-all cursor-pointer ${
-                        pageIndex === pageNum
+                      className={`w-9 h-9 rounded-lg text-[13px] font-bold transition-all cursor-pointer ${pageIndex === pageNum
                           ? "bg-[#001743] text-white shadow-sm"
                           : "text-slate-600 hover:bg-slate-100"
-                      }`}
+                        }`}
                     >
                       {pageNum}
                     </button>
@@ -925,11 +918,10 @@ export default function AuctionsPage() {
               <button
                 onClick={() => setPageIndex((p) => Math.min(totalPages, p + 1))}
                 disabled={pageIndex >= totalPages}
-                className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-colors cursor-pointer border ${
-                  pageIndex >= totalPages
+                className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-colors cursor-pointer border ${pageIndex >= totalPages
                     ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
                     : "bg-white text-[#001743] border-slate-200 hover:bg-slate-50 shadow-sm"
-                }`}
+                  }`}
               >
                 Sau
                 <ChevronRight size={15} />
@@ -939,7 +931,6 @@ export default function AuctionsPage() {
         </main>
       </div>
 
-      <Footer />
     </div>
   );
 }

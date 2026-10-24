@@ -307,25 +307,22 @@ export function AiConsultantChatWidget() {
     <>
       {/* ─── 1. NÚT NỔI CỐ ĐỊNH (FLOATING ACTION BUTTON) ─── */}
       {!isOpen && (
-        <div className="fixed bottom-6 right-6 z-[999] animate-fade-in group">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[900] animate-fade-in group">
           <button
             type="button"
             onClick={() => {
               setIsOpen(true);
               setIsMinimized(false);
             }}
-            className="relative flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#001743] via-[#00266B] to-[#E4011E] text-white font-bold text-xs shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 border border-white/20 cursor-pointer"
+            className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[#001743] text-white shadow-lg transition-colors duration-200 hover:bg-[#00266B] sm:h-auto sm:w-auto sm:gap-2.5 sm:px-4 sm:py-3 cursor-pointer"
             title="Mở Trợ lý AI TrustSim (Tư vấn SIM & Phong thủy)"
           >
-            {/* Vòng sáng phát xung (Pulsing ring effect) */}
-            <span className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-red-500 to-purple-600 opacity-60 blur-xs group-hover:opacity-100 transition-opacity animate-pulse pointer-events-none" />
-
-            <div className="relative flex items-center justify-center w-7 h-7 rounded-full bg-white/15 backdrop-blur-xs shrink-0">
-              <Sparkles size={16} className="text-amber-300 animate-spin-slow" />
+            <div className="relative flex items-center justify-center w-7 h-7 rounded-full bg-white/10 shrink-0">
+              <Sparkles size={16} className="text-rose-300" />
             </div>
 
-            <div className="relative flex flex-col text-left pr-1">
-              <span className="text-[10px] text-amber-200 font-semibold uppercase tracking-wider leading-none">
+            <div className="relative hidden flex-col text-left pr-1 sm:flex">
+              <span className="text-[11px] text-rose-200 font-semibold leading-none">
                 AI Chuyên Gia
               </span>
               <span className="text-xs font-black text-white mt-0.5 tracking-tight">
@@ -334,7 +331,7 @@ export function AiConsultantChatWidget() {
             </div>
 
             {/* Chấm tròn báo trạng thái trực tuyến */}
-            <span className="relative flex h-2.5 w-2.5 ml-0.5">
+            <span className="relative hidden h-2.5 w-2.5 ml-0.5 sm:flex">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
             </span>

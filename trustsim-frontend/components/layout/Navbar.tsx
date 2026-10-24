@@ -210,7 +210,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
           </Link>
 
           {/* ═══ 2. CENTER: NAV LINKS (FLEXIBLE, NO OVERLAP) ═══ */}
-          <nav className="hidden md:flex items-center gap-1 lg:gap-1.5">
+          <nav className="hidden lg:flex items-center gap-1 lg:gap-1.5">
             {/* Sàn Đấu Giá */}
             <Link
               href="/auctions"
@@ -240,14 +240,6 @@ export const Navbar: React.FC<NavbarProps> = () => {
                 TỰ ĐỘNG
               </span>
             </button>
-
-            {/* Quy Trình 5 Bước */}
-            <Link
-              href="/#how-it-works"
-              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 hover:text-[#001743] hover:bg-slate-50 transition-all duration-150 flex items-center gap-1.5"
-            >
-              <span>Quy Trình 5 Bước</span>
-            </Link>
 
             {/* Hỗ Trợ & Cố Vấn Dropdown */}
             <div ref={supportRef} className="relative">
@@ -411,7 +403,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
           </nav>
 
           {/* ═══ 3. BÊN PHẢI: ACTIONS & ACCOUNT MENU ═══ */}
-          <div className="hidden md:flex items-center gap-2.5">
+          <div className="hidden lg:flex items-center gap-2.5">
             {!user ? (
               <div className="flex items-center gap-2">
                 <Link
@@ -429,14 +421,14 @@ export const Navbar: React.FC<NavbarProps> = () => {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                {/* Nút Đăng SIM nổi bật */}
+                {/* CTA đưa người dùng về kho SIM để chọn đúng SIM trước khi mở phiên */}
                 <Link
                   href="/profile?tab=auctions"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white text-xs font-bold transition-all shadow-2xs"
                   title="Đăng bán SIM lên sàn đấu giá"
                 >
                   <Plus size={13} strokeWidth={2.5} />
-                  <span>Đăng SIM</span>
+                  <span>Đăng bán SIM</span>
                 </Link>
 
                 {/* Bell notification */}
@@ -451,7 +443,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
           {/* ═══ 4. MOBILE HAMBURGER BUTTON ═══ */}
           <button
             type="button"
-            className="md:hidden flex items-center justify-center p-2 text-[#001743] hover:bg-slate-100 rounded-xl transition-colors"
+            className="lg:hidden flex items-center justify-center p-2 text-[#001743] hover:bg-slate-100 rounded-xl transition-colors"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
           >
@@ -462,7 +454,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
 
       {/* ═══ MOBILE DRAWER ═══ */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-[1050] bg-white flex flex-col p-6 pt-20 gap-3 md:hidden overflow-y-auto animate-in slide-in-from-right duration-200">
+        <div className="fixed inset-0 z-[1050] bg-white flex flex-col p-6 pt-20 gap-3 lg:hidden overflow-y-auto animate-in slide-in-from-right duration-200">
           <Link
             href="/auctions"
             onClick={() => setMobileOpen(false)}
@@ -601,7 +593,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
                 onClick={() => setMobileOpen(false)}
                 className="p-3 rounded-xl bg-[#001743] text-white text-xs font-bold text-center block"
               >
-                + Đăng bán SIM của bạn
+                + Đăng bán SIM
               </Link>
               <Link
                 href="/profile"

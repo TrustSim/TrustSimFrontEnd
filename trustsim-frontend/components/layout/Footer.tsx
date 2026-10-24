@@ -47,7 +47,7 @@ export const Footer: React.FC = () => {
             <p style={{ color: "#9CA3AF", fontSize: 14, lineHeight: 1.7, margin: "0 0 16px" }}>
               Sàn đấu giá SIM số đẹp uy tín, minh bạch và an toàn hàng đầu Việt Nam. Cơ chế bảo vệ giao dịch đa tầng và ký quỹ minh bạch.
             </p>
-            <div style={{ fontSize: 13, color: "#6B7280" }}>
+            <div style={{ fontSize: 13, color: "#94A3B8" }}>
               Hotline: <span style={{ color: "#FFFFFF", fontWeight: 600 }}>1900 6868</span> (8:00 - 21:00)
             </div>
           </div>

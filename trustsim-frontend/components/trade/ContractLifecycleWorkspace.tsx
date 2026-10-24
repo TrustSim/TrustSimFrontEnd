@@ -260,14 +260,14 @@ export default function ContractLifecycleWorkspace({ identifier }: { identifier:
   const hasSigned = isBuyer ? contract?.buyerSigned : isSeller ? contract?.sellerSigned : true;
   const statusMeta = trade
     ? STATUS_META[trade.status] ?? {
-        label: isCancelled ? "Giao dịch đã hủy" : trade.status,
-        tone: isCancelled
-          ? "border-rose-200 bg-rose-50 text-rose-800"
-          : "border-slate-200 bg-slate-50 text-slate-700",
-        description: isCancelled
-          ? "Hồ sơ đã dừng; dòng tiền được xử lý theo quy chế sàn."
-          : "Trạng thái hồ sơ đang được đồng bộ.",
-      }
+      label: isCancelled ? "Giao dịch đã hủy" : trade.status,
+      tone: isCancelled
+        ? "border-rose-200 bg-rose-50 text-rose-800"
+        : "border-slate-200 bg-slate-50 text-slate-700",
+      description: isCancelled
+        ? "Hồ sơ đã dừng; dòng tiền được xử lý theo quy chế sàn."
+        : "Trạng thái hồ sơ đang được đồng bộ.",
+    }
     : null;
 
   const documentItems = useMemo(() => [
@@ -666,7 +666,6 @@ export default function ContractLifecycleWorkspace({ identifier }: { identifier:
           onConfirm={confirmTransfer}
         />
       ) : null}
-      <Footer />
     </div>
   );
 }

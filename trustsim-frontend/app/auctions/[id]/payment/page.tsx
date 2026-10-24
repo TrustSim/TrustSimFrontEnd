@@ -5,7 +5,6 @@ import React, { useState, useEffect, use, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import {
   auctionService,
   AuctionDto,
@@ -578,10 +577,10 @@ export default function AuctionPaymentTerminalPage({
                     <div className="flex items-center gap-3">
                       <div
                         className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isAlreadyPaid
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            : isRunnerUp
-                              ? "bg-purple-50 text-purple-700 border border-purple-200"
-                              : "bg-amber-50 text-amber-700 border border-amber-200"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : isRunnerUp
+                            ? "bg-purple-50 text-purple-700 border border-purple-200"
+                            : "bg-amber-50 text-amber-700 border border-amber-200"
                           }`}
                       >
                         {isAlreadyPaid ? (
@@ -603,10 +602,10 @@ export default function AuctionPaymentTerminalPage({
                           </h2>
                           <span
                             className={`px-2 py-0.5 rounded text-[10px] font-bold ${isAlreadyPaid
-                                ? "bg-emerald-100 text-emerald-900 border border-emerald-200"
-                                : isRunnerUp
-                                  ? "bg-purple-100 text-purple-900 border border-purple-200"
-                                  : "bg-emerald-100 text-emerald-900 border border-emerald-200"
+                              ? "bg-emerald-100 text-emerald-900 border border-emerald-200"
+                              : isRunnerUp
+                                ? "bg-purple-100 text-purple-900 border border-purple-200"
+                                : "bg-emerald-100 text-emerald-900 border border-emerald-200"
                               }`}
                           >
                             {isAlreadyPaid
@@ -626,8 +625,8 @@ export default function AuctionPaymentTerminalPage({
                     {formattedCountdown && !isAlreadyPaid && (
                       <div
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono font-bold shrink-0 ${isExpired
-                            ? "bg-rose-50 border-rose-200 text-rose-700"
-                            : "bg-blue-50 border-blue-200 text-blue-900"
+                          ? "bg-rose-50 border-rose-200 text-rose-700"
+                          : "bg-blue-50 border-blue-200 text-blue-900"
                           }`}
                       >
                         <Clock size={13} className="text-blue-700" />
@@ -796,8 +795,8 @@ export default function AuctionPaymentTerminalPage({
                             disabled={actionLoading !== null || isExpired || !canPay}
                             onClick={handleAcceptRunnerUp}
                             className={`w-full sm:w-1/2 py-3 px-4 rounded-xl text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 ${canPay
-                                ? "bg-purple-700 hover:bg-purple-800 active:scale-[0.99]"
-                                : "bg-slate-400 cursor-not-allowed"
+                              ? "bg-purple-700 hover:bg-purple-800 active:scale-[0.99]"
+                              : "bg-slate-400 cursor-not-allowed"
                               }`}
                           >
                             {actionLoading === "ACCEPT_RUNNER_UP" ? (
@@ -829,8 +828,8 @@ export default function AuctionPaymentTerminalPage({
                             disabled={actionLoading !== null || !canPay || isExpired}
                             onClick={handleConfirmPayment}
                             className={`w-full sm:w-2/3 py-3.5 px-4 rounded-xl text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 ${canPay
-                                ? "bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99]"
-                                : "bg-slate-400 cursor-not-allowed"
+                              ? "bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99]"
+                              : "bg-slate-400 cursor-not-allowed"
                               }`}
                           >
                             {actionLoading === "PAY" ? (

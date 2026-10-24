@@ -108,6 +108,27 @@
         "Dynamic viewport-relative max-height for Orderbook feed",
         "Pruned dead unused Lucide icon imports"
       ]
+    },
+    {
+      "timestamp": "2026-10-24T09:00:00Z",
+      "scope": "page",
+      "target": "app/page.tsx",
+      "verb": "redesign",
+      "genre": "modern-minimal",
+      "style": "Buyer-first auction marketplace with restrained premium editorial type",
+      "macrostructure": "Search-led Catalogue",
+      "theme": "TrustSim Brand (Navy + Crimson Red + Newsreader display)",
+      "filesModified": [
+        "app/page.tsx",
+        "components/home/BuyerHomepage.tsx",
+        "components/home/BuyerHomepage.module.css",
+        "components/ai/AiConsultantChatWidget.tsx",
+        "components/layout/Navbar.tsx",
+        "components/layout/Footer.tsx"
+      ],
+      "filesPreserved": [
+        "components/home/LegacyHomepage.tsx"
+      ]
     }
   ]
 }
