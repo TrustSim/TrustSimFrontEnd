@@ -34,6 +34,7 @@ import {
   Plus,
   Bot,
   HelpCircle,
+  Home,
   Scale,
   X,
 } from "lucide-react";
@@ -210,7 +211,20 @@ export const Navbar: React.FC<NavbarProps> = () => {
           </Link>
 
           {/* ═══ 2. CENTER: NAV LINKS (FLEXIBLE, NO OVERLAP) ═══ */}
-          <nav className="hidden lg:flex items-center gap-1 lg:gap-1.5">
+          <nav className="hidden xl:flex items-center gap-1 xl:gap-1.5">
+            <Link
+              href="/"
+              aria-current={pathname === "/" ? "page" : undefined}
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 flex items-center gap-1.5 ${
+                pathname === "/"
+                  ? "bg-slate-100 text-[#001743] font-bold"
+                  : "text-slate-600 hover:text-[#001743] hover:bg-slate-50"
+              }`}
+            >
+              <Home size={14} />
+              <span>Trang Chủ</span>
+            </Link>
+
             {/* Sàn Đấu Giá */}
             <Link
               href="/auctions"
@@ -403,7 +417,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
           </nav>
 
           {/* ═══ 3. BÊN PHẢI: ACTIONS & ACCOUNT MENU ═══ */}
-          <div className="hidden lg:flex items-center gap-2.5">
+          <div className="hidden xl:flex items-center gap-2.5">
             {!user ? (
               <div className="flex items-center gap-2">
                 <Link
@@ -443,7 +457,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
           {/* ═══ 4. MOBILE HAMBURGER BUTTON ═══ */}
           <button
             type="button"
-            className="lg:hidden flex items-center justify-center p-2 text-[#001743] hover:bg-slate-100 rounded-xl transition-colors"
+            className="xl:hidden flex items-center justify-center p-2 text-[#001743] hover:bg-slate-100 rounded-xl transition-colors"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
           >
@@ -454,11 +468,30 @@ export const Navbar: React.FC<NavbarProps> = () => {
 
       {/* ═══ MOBILE DRAWER ═══ */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-[1050] bg-white flex flex-col p-6 pt-20 gap-3 lg:hidden overflow-y-auto animate-in slide-in-from-right duration-200">
+        <div className="fixed inset-0 z-[1050] bg-white flex flex-col p-6 pt-20 gap-3 xl:hidden overflow-y-auto animate-in slide-in-from-right duration-200">
+          <Link
+            href="/"
+            onClick={() => setMobileOpen(false)}
+            aria-current={pathname === "/" ? "page" : undefined}
+            className={`p-3.5 rounded-xl font-bold text-sm flex items-center gap-2 border ${
+              pathname === "/"
+                ? "border-slate-200 bg-slate-100 text-[#001743]"
+                : "border-transparent text-slate-700 hover:bg-slate-50"
+            }`}
+          >
+            <Home size={17} />
+            <span>Trang Chủ</span>
+          </Link>
+
           <Link
             href="/auctions"
             onClick={() => setMobileOpen(false)}
-            className="p-3.5 rounded-xl bg-rose-50 text-[#E4011E] font-bold text-sm flex items-center justify-between"
+            aria-current={pathname?.startsWith("/auctions") ? "page" : undefined}
+            className={`p-3.5 rounded-xl font-bold text-sm flex items-center justify-between border ${
+              pathname?.startsWith("/auctions")
+                ? "border-rose-100 bg-rose-50 text-[#E4011E]"
+                : "border-transparent text-slate-700 hover:bg-slate-50"
+            }`}
           >
             <span>Sàn Đấu Giá Trực Tuyến</span>
             <span className="w-2 h-2 rounded-full bg-[#E4011E] animate-pulse" />

@@ -34,7 +34,6 @@ import {
   Upload,
   UserRound,
   WalletCards,
-  X,
   XCircle,
 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
@@ -45,14 +44,12 @@ import { uploadImageToCloudinary } from "@/services/cloudinaryService";
 import { tradeService } from "@/services/tradeService";
 import type {
   ContractPreviewDto,
-  LiquidationPreviewDto,
   SimTransferDetailsDto,
   TradeTransactionDto,
   VerifyContractIntegrityResponse,
 } from "@/types/trade";
 
 type DocumentKind = "winning-notice" | "contract" | "liquidation";
-type PreviewKind = "contract" | "liquidation";
 
 const MONEY_FORMATTER = new Intl.NumberFormat("vi-VN", {
   style: "currency",
@@ -180,7 +177,6 @@ export default function ContractLifecycleWorkspace({ identifier }: { identifier:
   const [trade, setTrade] = useState<TradeTransactionDto | null>(null);
   const [contract, setContract] = useState<ContractPreviewDto | null>(null);
   const [transfer, setTransfer] = useState<SimTransferDetailsDto | null>(null);
-  const [liquidation, setLiquidation] = useState<LiquidationPreviewDto | null>(null);
   const [integrity, setIntegrity] = useState<VerifyContractIntegrityResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -189,7 +185,6 @@ export default function ContractLifecycleWorkspace({ identifier }: { identifier:
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofDescription, setProofDescription] = useState("");
-  const [preview, setPreview] = useState<PreviewKind | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -206,13 +201,10 @@ export default function ContractLifecycleWorkspace({ identifier }: { identifier:
       const nextTrade = await tradeService.getTradeByIdentifier(identifier);
       setTrade(nextTrade);
 
-      const shouldLoadContract = nextTrade.status !== "PendingEscrow";
       const shouldLoadTransfer =
         nextTrade.status === "PendingTransfer" || nextTrade.status === "Completed";
       const [nextContract, nextTransfer] = await Promise.all([
-        shouldLoadContract
-          ? tradeService.getContractPreview(nextTrade.id).catch(() => null)
-          : Promise.resolve(null),
+        tradeService.getContractPreview(nextTrade.id).catch(() => null),
         shouldLoadTransfer
           ? tradeService.getSimTransferDetails(nextTrade.id).catch(() => null)
           : Promise.resolve(null),
@@ -412,17 +404,9 @@ export default function ContractLifecycleWorkspace({ identifier }: { identifier:
     });
   };
 
-  const openPreview = (kind: PreviewKind) => {
-    if (!trade) return;
-    if (kind === "contract") {
-      setPreview("contract");
-      return;
-    }
-    void runAction("liquidation-preview", async () => {
-      const result = await tradeService.getLiquidationPreview(trade.id);
-      setLiquidation(result);
-      setPreview("liquidation");
-    });
+  const openDocumentViewer = (kind: DocumentKind) => {
+    const href = `/trades/${encodeURIComponent(identifier)}/documents/${kind}`;
+    window.open(href, "_blank", "noopener,noreferrer");
   };
 
   if (loading) return <LoadingState />;
@@ -536,7 +520,7 @@ export default function ContractLifecycleWorkspace({ identifier }: { identifier:
               onDescriptionChange={setProofDescription}
               onSubmitProof={submitProof}
               onConfirm={() => setConfirmOpen(true)}
-              onPreviewContract={() => openPreview("contract")}
+              onPreviewContract={() => openDocumentViewer("contract")}
             />
 
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -562,15 +546,16 @@ export default function ContractLifecycleWorkspace({ identifier }: { identifier:
                       {item.hash ? <p className="mt-1 truncate font-mono text-[10px] text-slate-400">SHA-256: {item.hash}</p> : null}
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {item.kind === "contract" && contract ? (
-                        <button type="button" onClick={() => openPreview("contract")} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
-                          <Eye size={14} /> Xem
-                        </button>
-                      ) : null}
-                      {item.kind === "liquidation" && trade.status === "Completed" ? (
-                        <button type="button" onClick={() => openPreview("liquidation")} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
-                          <Eye size={14} /> Xem
-                        </button>
+                      {item.available || (item.kind === "contract" && contract?.htmlContent) ? (
+                        <Link
+                          href={`/trades/${encodeURIComponent(identifier)}/documents/${item.kind}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`Xem ${item.title} trong tab mới`}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-[#001743] hover:bg-slate-50 hover:text-[#001743] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                        >
+                          <Eye size={14} /> Xem <ExternalLink size={12} />
+                        </Link>
                       ) : null}
                       <button
                         type="button"
@@ -645,17 +630,6 @@ export default function ContractLifecycleWorkspace({ identifier }: { identifier:
           </aside>
         </div>
       </main>
-
-      {preview ? (
-        <DocumentPreviewModal
-          title={preview === "contract" ? "Hợp đồng chuyển nhượng quyền sử dụng SIM" : "Biên bản nghiệm thu và thanh lý"}
-          subtitle={trade.tradeTransactionCode}
-          html={preview === "contract" ? contract?.htmlContent : liquidation?.htmlContent}
-          canDownload={preview === "contract" ? Boolean(contract?.documentPdfUrl) : Boolean(contract?.liquidationDocumentUrl)}
-          onClose={() => setPreview(null)}
-          onDownload={() => downloadDocument(preview === "contract" ? "contract" : "liquidation")}
-        />
-      ) : null}
 
       {confirmOpen ? (
         <ConfirmModal
@@ -769,10 +743,6 @@ function InfoRow({ label, value, strong = false }: { label: string; value: strin
 
 function Party({ name, role, signed, self }: { name?: string; role: string; signed?: boolean; self: boolean }) {
   return <div className="flex items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#001743] text-sm font-black text-white">{name?.charAt(0).toUpperCase() || "?"}</div><div className="min-w-0 flex-1"><div className="flex items-center gap-1.5"><span className="truncate text-xs font-bold text-slate-900">{maskedName(name)}</span>{self ? <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[9px] font-bold text-blue-700">Bạn</span> : null}</div><div className="mt-0.5 text-[10px] text-slate-400">{role}</div></div>{signed ? <BadgeCheck size={17} className="shrink-0 text-emerald-600" /> : <Clock3 size={16} className="shrink-0 text-amber-500" />}</div>;
-}
-
-function DocumentPreviewModal({ title, subtitle, html, canDownload, onClose, onDownload }: { title: string; subtitle: string; html?: string | null; canDownload: boolean; onClose: () => void; onDownload: () => void }) {
-  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#001743]/70 p-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={title}><div className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"><div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4"><div className="min-w-0"><h2 className="truncate font-extrabold text-[#001743]">{title}</h2><p className="mt-0.5 font-mono text-[11px] text-slate-400">{subtitle}</p></div><button type="button" onClick={onClose} aria-label="Đóng" className="rounded-full p-2 text-slate-500 hover:bg-slate-100"><X size={19} /></button></div><div className="overflow-y-auto bg-slate-100 p-3 sm:p-6">{html ? <article className="mx-auto max-w-4xl rounded-sm bg-white p-5 shadow-sm sm:p-10" dangerouslySetInnerHTML={{ __html: html }} /> : <div className="py-20 text-center text-sm text-slate-500">Tài liệu đang được tạo. Hãy đồng bộ lại hồ sơ sau ít phút.</div>}</div><div className="flex justify-end gap-2 border-t border-slate-200 px-5 py-3"><button type="button" onClick={onClose} className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-bold text-slate-700">Đóng</button><button type="button" onClick={onDownload} disabled={!canDownload} className="inline-flex items-center gap-2 rounded-lg bg-[#001743] px-4 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"><Download size={14} /> Tải PDF</button></div></div></div>;
 }
 
 function ConfirmModal({ simNumber, escrowAmount, busy, onClose, onConfirm }: { simNumber: string; escrowAmount: number; busy: boolean; onClose: () => void; onConfirm: () => void }) {

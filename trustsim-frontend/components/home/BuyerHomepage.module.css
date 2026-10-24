@@ -15,7 +15,7 @@
   --home-accent: var(--color-accent, #e4011e);
   --home-accent-dark: var(--primary-dark, #b80018);
   --home-accent-soft: var(--color-accent-soft, #fef3f2);
-  --home-display: var(--font-home-display), Georgia, serif;
+  --home-display: var(--font-inter), sans-serif;
   --home-body: var(--font-inter), sans-serif;
   padding-top: 64px;
   overflow-x: clip;
@@ -59,9 +59,14 @@
   position: relative;
   padding: 76px 0 52px;
   border-bottom: 1px solid var(--home-rule);
-  background:
-    linear-gradient(112deg, transparent 0 72%, color-mix(in srgb, var(--home-ink) 4%, transparent) 72%),
-    var(--home-paper);
+  color: white;
+  background-color: var(--home-ink);
+  background-image:
+    linear-gradient(90deg, rgba(0, 16, 52, 0.98) 0%, rgba(0, 23, 67, 0.92) 43%, rgba(0, 23, 67, 0.56) 72%, rgba(0, 10, 34, 0.2) 100%),
+    url("/banner.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 .heroRule {
@@ -83,15 +88,19 @@
   text-transform: uppercase;
 }
 
+.hero .kicker {
+  color: #ff9aa8;
+}
+
 .hero h1 {
   max-width: 980px;
   margin-top: 14px;
   font-family: var(--home-display);
-  font-size: clamp(3.1rem, 6.4vw, 5.75rem);
+  font-size: clamp(3rem, 5.8vw, 5.1rem);
   font-style: normal;
-  font-weight: 600;
-  letter-spacing: -0.055em;
-  line-height: 0.98;
+  font-weight: 850;
+  letter-spacing: -0.05em;
+  line-height: 1;
   overflow-wrap: anywhere;
 }
 
@@ -101,6 +110,10 @@
   color: var(--home-copy);
   font-size: 1.08rem;
   line-height: 1.65;
+}
+
+.hero .lede {
+  color: #d7deeb;
 }
 
 .searchPanel {
@@ -303,7 +316,7 @@
   margin-top: 30px;
   font-family: var(--home-display);
   font-size: 1.65rem;
-  font-weight: 600;
+  font-weight: 800;
   letter-spacing: -0.025em;
 }
 
@@ -516,7 +529,7 @@
   max-width: 12ch;
   font-family: var(--home-display);
   font-size: clamp(2.35rem, 4.7vw, 4.4rem);
-  font-weight: 500;
+  font-weight: 800;
 }
 
 .trustIntro a {
@@ -655,7 +668,7 @@
 
   .hero {
     padding: 48px 0 34px;
-    background: var(--home-paper);
+    background-position: 64% center;
   }
 
   .heroRule {
