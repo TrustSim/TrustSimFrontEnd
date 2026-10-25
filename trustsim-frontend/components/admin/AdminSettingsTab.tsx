@@ -12,6 +12,7 @@ import {
   Clock,
   Lock,
 } from "lucide-react";
+import { AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
 
 interface SettingSection {
   id: string;
@@ -72,20 +73,11 @@ export default function AdminSettingsTab() {
         </div>
       )}
 
-      {/* ── 1. Header Card ── */}
-      <div className="bg-white border border-[#e4e7ec] rounded-xl p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-base font-bold text-[#001743]">Cấu Hình &amp; Tham Số Hệ Thống</h1>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
-              Live Config
-            </span>
-          </div>
-          <p className="text-xs text-[#6B7280] mt-0.5">
-            Thiết lập tỷ lệ phí hoa hồng, hạn mức ký quỹ, quy tắc phòng đấu giá và bảo mật vận hành sàn.
-          </p>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Cấu Hình & Tham Số Hệ Thống"
+        description="Thiết lập tỷ lệ phí hoa hồng, hạn mức ký quỹ, quy tắc phòng đấu giá và bảo mật vận hành sàn."
+        badge="Cấu hình trực tiếp"
+      />
 
       {/* ── 2. Two-Column Layout (Navigation + Form) ── */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">

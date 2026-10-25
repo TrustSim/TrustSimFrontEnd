@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/layout/AppShell";
 import { SessionRefreshManager } from "@/components/auth/SessionRefreshManager";
+import { AntdRegistry } from "@ant-design/nextjs-registry";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -30,7 +31,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="vi" className={`${inter.variable} h-full`}>
       <body className="min-h-full flex flex-col font-sans antialiased text-gray-900 bg-white">
         <SessionRefreshManager />
-        <AppShell>{children}</AppShell>
+        <AntdRegistry>
+          <AppShell>{children}</AppShell>
+        </AntdRegistry>
       </body>
     </html>
   );

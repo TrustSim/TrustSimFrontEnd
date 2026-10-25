@@ -46,6 +46,7 @@ import {
 } from "@/services/auctionService";
 import { getSims, SimNumberDto } from "@/services/simService";
 import { AuctionSortBy, SortOrder } from "@/types/common";
+import { AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
 
 // Helper định dạng tiền tệ VNĐ
 const formatVND = (value: number) =>
@@ -415,23 +416,21 @@ export function AdminAuctionsTab() {
         </div>
       )}
 
-      {/* ── 1. Header Card (Matching Kho SIM & CRUD Workspace) ── */}
-      <div className="bg-white border border-[#e4e7ec] rounded-xl p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-base font-bold text-[#001743]">Quản Lý Phiên Đấu Giá SIM</h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Giám sát vận hành các phiên đấu giá, điều phối lịch mở thưởng và kích hoạt sớm.
-          </p>
-        </div>
-        <button
-          onClick={() => loadAuctions()}
-          disabled={loading}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-[#e4e7ec] hover:border-[#001743] hover:text-[#001743] text-slate-700 text-xs font-semibold rounded-lg transition-colors shadow-2xs shrink-0 disabled:opacity-50 cursor-pointer"
-        >
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          <span>Làm mới</span>
-        </button>
-      </div>
+      <AdminPageHeader
+        title="Quản Lý Phiên Đấu Giá SIM"
+        description="Giám sát vận hành các phiên đấu giá, điều phối lịch mở thưởng và kích hoạt sớm."
+        badge={`${totalCount} phiên`}
+        actions={
+          <button
+            onClick={() => loadAuctions()}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 rounded-md border border-[#d0d5dd] bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition-colors hover:border-[#001743] hover:text-[#001743] disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            <span>Làm mới</span>
+          </button>
+        }
+      />
 
       {/* ── 2. Contextual KPI Strip (Tối giản theo Workbench) ── */}
       <div className="bg-white border border-[#e4e7ec] rounded-xl p-3 shadow-2xs">

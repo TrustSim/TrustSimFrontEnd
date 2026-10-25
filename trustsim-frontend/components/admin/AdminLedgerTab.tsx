@@ -14,8 +14,6 @@ import {
   TrendingUp,
   Scale,
   FileSearch,
-  Search,
-  X,
 } from "lucide-react";
 import { walletService } from "@/services/walletService";
 import type {
@@ -25,7 +23,10 @@ import type {
   AccountReconciliationDetail,
 } from "@/types/wallet";
 import { LedgerJournalSortBy, SortOrder, type PagedResult } from "@/types/common";
-import { Pagination } from "@/components/ui/Pagination";
+import { Button, DatePicker, Input, InputNumber, Select } from "antd";
+import type { ColumnsType } from "antd/es/table";
+import dayjs from "dayjs";
+import { AdminDataTable, AdminFilterBar, AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 /** Safe formatVND — returns "—" for NaN/undefined/null */
@@ -733,6 +734,61 @@ export default function AdminLedgerTab() {
   };
 
   const totalJournals = journals?.totalCount ?? 0;
+  const journalColumns: ColumnsType<LedgerJournalDto> = [
+    {
+      title: "Mã phiếu",
+      dataIndex: "journalCode",
+      key: "journalCode",
+      render: (value: string, journal) => (
+        <div>
+          <div className="font-mono font-semibold text-[#001743] text-[11px]">{value}</div>
+          <div className="text-[10px] text-slate-400">{journal.transactionTypeName || journal.transactionType}</div>
+        </div>
+      ),
+    },
+    {
+      title: "Loại phát sinh",
+      dataIndex: "transactionType",
+      key: "transactionType",
+      render: (value: string) => <LoaiGiaoDichBadge type={value} />,
+    },
+    {
+      title: "Số tiền",
+      dataIndex: "totalAmount",
+      key: "totalAmount",
+      align: "right",
+      render: (value: number) => <span className="font-mono font-semibold text-[#001743]">{formatVND(Number(value))}</span>,
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
+      align: "center",
+      render: (value: string, journal) => (
+        <span className={`inline-flex rounded border px-2 py-0.5 text-[10px] font-bold ${value === "POSTED" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-700"}`}>
+          {journal.statusName || value}
+        </span>
+      ),
+    },
+    {
+      title: "Thời gian",
+      dataIndex: "postedAt",
+      key: "postedAt",
+      render: (value: string) => <span className="whitespace-nowrap text-slate-500">{formatDate(value)}</span>,
+    },
+    {
+      title: "Thao tác",
+      key: "actions",
+      align: "right",
+      fixed: "right",
+      width: 92,
+      render: (_, journal) => (
+        <Button size="small" icon={<Eye size={13} />} loading={detailLoading} onClick={() => handleViewDetail(journal.id)}>
+          Xem
+        </Button>
+      ),
+    },
+  ];
 
   return (
     <div className="admin-tab admin-tab-ledger space-y-6">
@@ -763,59 +819,19 @@ export default function AdminLedgerTab() {
         <ChainReportModal report={chainReport} onClose={() => setShowChainModal(false)} />
       )}
 
-      {/* ── 1. Header Card ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-base font-bold text-[#001743]">Sổ Cái Tài Chính</h1>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 font-mono">
-              {totalJournals.toLocaleString()} phiếu
-            </span>
-          </div>
-          <p className="text-xs text-[#6B7280] mt-0.5">
-            Toàn bộ phiếu kế toán thu chi của sàn, được bảo mật và kiểm soát tự động theo thời gian thực.
-          </p>
-        </div>
-
-        {/* Nút hành động */}
-        <div className="flex items-center gap-2 shrink-0 flex-wrap">
-          <button
-            onClick={handleExport}
-            disabled={exportLoading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#D1D5DB] text-xs font-semibold text-[#4B5563] bg-white hover:bg-slate-50 rounded-[6px] transition-colors disabled:opacity-50"
-          >
-            {exportLoading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-            Xuất dữ liệu
-          </button>
-
-          <button
-            onClick={handleDoiSoat}
-            disabled={auditLoading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-emerald-300 text-xs font-semibold text-emerald-700 bg-white hover:bg-emerald-50 rounded-[6px] transition-colors disabled:opacity-50"
-          >
-            {auditLoading ? <Loader2 size={14} className="animate-spin" /> : <Scale size={14} />}
-            Đối soát số dư sàn
-          </button>
-
-          <button
-            onClick={handleKiemTraChuoi}
-            disabled={chainLoading}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-[6px] transition-colors shadow-xs disabled:opacity-50 shrink-0"
-          >
-            {chainLoading ? <Loader2 size={14} className="animate-spin" /> : <Link2 size={14} />}
-            Kiểm tra chuỗi giao dịch
-          </button>
-
-          <button
-            onClick={() => { setRefreshing(true); fetchJournals(true); }}
-            disabled={refreshing || journalLoading}
-            title="Làm mới dữ liệu"
-            className="p-1.5 text-[#4B5563] hover:text-[#001743] hover:bg-slate-100 border border-[#D1D5DB] rounded-[6px] transition-colors bg-white disabled:opacity-50"
-          >
-            <RefreshCw size={15} className={refreshing ? "animate-spin text-[#001743]" : ""} />
-          </button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Sổ cái tài chính"
+        description="Toàn bộ phiếu kế toán thu chi của sàn, được bảo mật và kiểm soát tự động theo thời gian thực."
+        badge={`${totalJournals.toLocaleString()} phiếu`}
+        actions={
+          <>
+            <Button icon={<Download size={14} />} loading={exportLoading} onClick={handleExport}>Xuất dữ liệu</Button>
+            <Button icon={<Scale size={14} />} loading={auditLoading} onClick={handleDoiSoat}>Đối soát số dư</Button>
+            <Button type="primary" icon={<Link2 size={14} />} loading={chainLoading} onClick={handleKiemTraChuoi}>Kiểm tra chuỗi</Button>
+            <Button aria-label="Làm mới dữ liệu" icon={<RefreshCw size={14} />} loading={refreshing || journalLoading} onClick={() => { setRefreshing(true); fetchJournals(true); }} />
+          </>
+        }
+      />
 
       {/* ── 2. KPI Strip ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -946,207 +962,82 @@ export default function AdminLedgerTab() {
         </div>
       )}
 
-      {/* ── 5. Bộ lọc ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs">
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8 gap-3 items-end">
-          <div className="relative sm:col-span-2 xl:col-span-1">
-            <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-              Tìm kiếm
-            </label>
-            <Search size={13} className="absolute left-3 bottom-2 text-slate-400" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Mã phiếu, mô tả…"
-              className="w-full text-xs pl-8 pr-8 py-1.5 border border-[#D1D5DB] rounded-[6px] focus:outline-none focus:border-[#001743] bg-white"
-            />
-            {search && (
-              <button type="button" onClick={() => setSearch("")} aria-label="Xóa từ khóa" className="absolute right-2.5 bottom-2 text-slate-400 hover:text-slate-700">
-                <X size={12} />
-              </button>
-            )}
+      <AdminFilterBar>
+        <div className="grid grid-cols-1 gap-x-3 gap-y-3 sm:grid-cols-2 xl:grid-cols-12">
+          <label className="admin-filter-field sm:col-span-2 xl:col-span-3">
+            <span>Tìm kiếm</span>
+            <Input.Search value={search} onChange={(event) => setSearch(event.target.value)} onSearch={(value) => { setDebouncedSearch(value.trim()); setPageIndex(1); }} allowClear placeholder="Mã phiếu, mô tả…" />
+          </label>
+          <label className="admin-filter-field xl:col-span-3">
+            <span>Loại giao dịch</span>
+            <Select value={typeFilter || undefined} onChange={(value) => { setTypeFilter(value || ""); setPageIndex(1); }} allowClear placeholder="Tất cả loại" options={Object.entries(LOAI_GIAO_DICH_LABELS).map(([value, label]) => ({ value, label }))} />
+          </label>
+          <label className="admin-filter-field xl:col-span-3">
+            <span>Giá trị từ</span>
+            <InputNumber min={0} value={minAmount ? Number(minAmount) : null} onChange={(value) => { setMinAmount(value == null ? "" : String(value)); setPageIndex(1); }} placeholder="0" className="w-full" controls={false} />
+          </label>
+          <label className="admin-filter-field xl:col-span-3">
+            <span>Giá trị đến</span>
+            <InputNumber min={0} value={maxAmount ? Number(maxAmount) : null} onChange={(value) => { setMaxAmount(value == null ? "" : String(value)); setPageIndex(1); }} placeholder="Không giới hạn" className="w-full" controls={false} />
+          </label>
+          <label className="admin-filter-field sm:col-span-2 xl:col-span-4">
+            <span>Khoảng thời gian</span>
+            <DatePicker.RangePicker value={fromDate || toDate ? [fromDate ? dayjs(fromDate) : null, toDate ? dayjs(toDate) : null] : null} onChange={(_, values) => { setFromDate(values[0]); setToDate(values[1]); setPageIndex(1); }} format="DD/MM/YYYY" className="w-full" />
+          </label>
+          <label className="admin-filter-field xl:col-span-4">
+            <span>Sắp xếp</span>
+            <Select value={sortBy} onChange={(value) => { setSortBy(value); setPageIndex(1); }} options={[
+              { value: LedgerJournalSortBy.PostedAt, label: "Mới ghi sổ" },
+              { value: LedgerJournalSortBy.CreatedDate, label: "Mới tạo" },
+              { value: LedgerJournalSortBy.JournalCode, label: "Mã phiếu" },
+              { value: LedgerJournalSortBy.TransactionType, label: "Loại nghiệp vụ" },
+            ]} />
+          </label>
+          <div className="grid self-end grid-cols-2 gap-2 sm:col-span-2 xl:col-span-4">
+            <Button block onClick={() => { setSearch(""); setDebouncedSearch(""); setTypeFilter(""); setMinAmount(""); setMaxAmount(""); setFromDate(""); setToDate(""); setSortBy(LedgerJournalSortBy.PostedAt); setPageIndex(1); }}>Xóa lọc</Button>
+            <Button block type="primary" loading={journalLoading} onClick={() => fetchJournals()}>Áp dụng</Button>
           </div>
-          <div className="flex-1">
-            <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-              Loại giao dịch
-            </label>
-            <select
-              value={typeFilter}
-              onChange={(e) => { setTypeFilter(e.target.value); setPageIndex(1); }}
-              className="w-full text-xs px-3 py-1.5 border border-[#D1D5DB] rounded-[6px] focus:outline-none focus:border-[#001743] bg-white text-slate-700"
-            >
-              <option value="">Tất cả loại</option>
-              {Object.entries(LOAI_GIAO_DICH_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>{v}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Giá trị từ</label>
-            <input type="number" min="0" value={minAmount} onChange={(e) => { setMinAmount(e.target.value); setPageIndex(1); }} placeholder="0" className="w-full text-xs px-3 py-1.5 border border-[#D1D5DB] rounded-[6px] focus:outline-none focus:border-[#001743] bg-white" />
-          </div>
-          <div>
-            <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Giá trị đến</label>
-            <input type="number" min="0" value={maxAmount} onChange={(e) => { setMaxAmount(e.target.value); setPageIndex(1); }} placeholder="Không giới hạn" className="w-full text-xs px-3 py-1.5 border border-[#D1D5DB] rounded-[6px] focus:outline-none focus:border-[#001743] bg-white" />
-          </div>
-          <div>
-            <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Từ ngày</label>
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => { setFromDate(e.target.value); setPageIndex(1); }}
-              className="text-xs px-3 py-1.5 border border-[#D1D5DB] rounded-[6px] focus:outline-none focus:border-[#001743] bg-white"
-            />
-          </div>
-          <div>
-            <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Đến ngày</label>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => { setToDate(e.target.value); setPageIndex(1); }}
-              className="text-xs px-3 py-1.5 border border-[#D1D5DB] rounded-[6px] focus:outline-none focus:border-[#001743] bg-white"
-            />
-          </div>
-          <div>
-            <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Sắp xếp</label>
-            <select value={sortBy} onChange={(e) => { setSortBy(Number(e.target.value) as LedgerJournalSortBy); setPageIndex(1); }} className="w-full text-xs px-3 py-1.5 border border-[#D1D5DB] rounded-[6px] focus:outline-none focus:border-[#001743] bg-white text-slate-700">
-              <option value={LedgerJournalSortBy.PostedAt}>Mới ghi sổ</option>
-              <option value={LedgerJournalSortBy.CreatedDate}>Mới tạo</option>
-              <option value={LedgerJournalSortBy.JournalCode}>Mã phiếu</option>
-              <option value={LedgerJournalSortBy.TransactionType}>Loại nghiệp vụ</option>
-            </select>
-          </div>
-          <button
-            onClick={() => { setSearch(""); setDebouncedSearch(""); setTypeFilter(""); setMinAmount(""); setMaxAmount(""); setFromDate(""); setToDate(""); setSortBy(LedgerJournalSortBy.PostedAt); setPageIndex(1); }}
-            className="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 border border-[#D1D5DB] rounded-[6px] hover:bg-slate-50 transition-colors"
-          >
-            Xóa lọc
-          </button>
-          <button
-            onClick={() => fetchJournals()}
-            disabled={journalLoading}
-            className="px-4 py-1.5 text-xs font-bold bg-[#001743] text-white rounded-lg hover:bg-[#00266B] transition-colors disabled:opacity-50 cursor-pointer"
-          >
-            {journalLoading ? "Đang tải…" : "Áp dụng"}
-          </button>
         </div>
-      </div>
+      </AdminFilterBar>
 
-      {/* ── 6. Bảng danh sách phiếu kế toán ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] shadow-xs overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-[#E2E8F0] flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-bold text-[#001743]">Danh sách phiếu kế toán</h2>
-            <p className="text-[11px] text-slate-400 mt-0.5">
-              {journals ? `${journals.totalCount.toLocaleString()} phiếu thu chi` : "Đang tải…"}
-            </p>
-          </div>
-          <button
-            onClick={() => fetchJournals(true)}
-            disabled={refreshing || journalLoading}
-            className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-[#001743] transition-colors disabled:opacity-40"
-          >
-            <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} />
-            Làm mới
-          </button>
+      {journalError ? (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700">
+          <span className="flex items-center gap-2"><AlertTriangle size={14} />{journalError}</span>
+          <Button size="small" danger onClick={() => fetchJournals()}>Thử lại</Button>
         </div>
+      ) : null}
 
-        {journalError && (
-          <div className="px-5 py-3 text-xs text-rose-600 bg-rose-50 border-b border-rose-100 flex items-center gap-2">
-            <AlertTriangle size={14} />{journalError}
+      <AdminDataTable<LedgerJournalDto>
+        rowKey="id"
+        columns={journalColumns}
+        dataSource={journals?.items || []}
+        loading={journalLoading}
+        title={() => (
+          <div>
+            <div className="text-sm font-bold text-[#001743]">Danh sách phiếu kế toán</div>
+            <div className="mt-0.5 text-[11px] text-slate-400">{totalJournals.toLocaleString()} phiếu thu chi</div>
           </div>
         )}
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-slate-100 text-slate-400 font-medium text-[10px] uppercase h-10">
-                <th className="px-4 py-2">Mã phiếu</th>
-                <th className="px-4 py-2">Loại phát sinh</th>
-                <th className="px-4 py-2 text-right">Số tiền</th>
-                <th className="px-4 py-2 text-center">Trạng thái</th>
-                <th className="px-4 py-2">Thời gian</th>
-                <th className="px-4 py-2 text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {journalLoading ? (
-                <tr>
-                  <td colSpan={6} className="py-14 text-center">
-                    <Loader2 size={22} className="animate-spin mx-auto text-slate-300 mb-2" />
-                    <p className="text-xs text-slate-400">Đang tải dữ liệu sổ cái…</p>
-                  </td>
-                </tr>
-              ) : !journals || journals.items.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-14 text-center">
-                    <FileSearch size={34} className="mx-auto text-slate-300 mb-2" strokeWidth={1.5} />
-                    <p className="text-xs font-semibold text-[#001743]">Chưa có phiếu kế toán nào</p>
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      Sổ cái sẽ được cập nhật tự động khi phát sinh giao dịch
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                journals.items.map((j) => (
-                  <tr key={j.id} className="hover:bg-slate-50/60 transition-colors duration-150 h-12">
-                    <td className="px-4 py-2.5">
-                      <div className="font-mono font-semibold text-[#001743] text-[11px]">{j.journalCode}</div>
-                      <div className="text-[10px] text-slate-400">{j.transactionTypeName || j.transactionType}</div>
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <LoaiGiaoDichBadge type={j.transactionType} />
-                    </td>
-                    {/* Backend dùng totalAmount (Nợ = Có trong kế toán ghi kép), không có totalDebit/totalCredit riêng */}
-                    <td className="px-4 py-2.5 text-right font-mono text-[#001743] font-semibold">
-                      {formatVND(Number(j.totalAmount))}
-                    </td>
-                    <td className="px-4 py-2.5 text-center">
-                      {/* Backend dùng status, không có isBalanced trực tiếp */}
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                        j.status === "POSTED"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          : "bg-amber-50 text-amber-700 border-amber-200"
-                      }`}>
-                        {j.statusName || j.status}
-                      </span>
-                    </td>
-                    {/* Backend dùng postedAt, không phải createdAt */}
-                    <td className="px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap">
-                      {formatDate(j.postedAt)}
-                    </td>
-                    <td className="px-4 py-2.5 text-right">
-                      <button
-                        onClick={() => handleViewDetail(j.id)}
-                        disabled={detailLoading}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#001743] hover:bg-[#001743] hover:text-white border border-[#e4e7ec] rounded-lg transition-colors disabled:opacity-40 cursor-pointer"
-                      >
-                        <Eye size={12} />
-                        Xem
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {!journalLoading && totalJournals > 0 && (
-          <Pagination
-            pageIndex={pageIndex}
-            pageSize={pageSize}
-            totalCount={totalJournals}
-            loading={journalLoading}
-            onPageChange={setPageIndex}
-            onPageSizeChange={(size) => {
-              setPageSize(size);
-              setPageIndex(1);
-            }}
-            pageSizeOptions={[20, 50, 100]}
-          />
-        )}
-      </div>
+        pagination={{
+          current: pageIndex,
+          pageSize,
+          total: totalJournals,
+          pageSizeOptions: [20, 50, 100],
+          onChange: (page, size) => {
+            setPageIndex(size !== pageSize ? 1 : page);
+            setPageSize(size);
+          },
+        }}
+        locale={{
+          emptyText: (
+            <div className="py-10 text-center">
+              <FileSearch size={30} className="mx-auto mb-2 text-slate-300" />
+              <div className="text-xs font-semibold text-[#001743]">Chưa có phiếu kế toán</div>
+              <div className="mt-1 text-[11px] text-slate-400">Sổ cái sẽ cập nhật khi phát sinh giao dịch.</div>
+            </div>
+          ),
+        }}
+      />
     </div>
   );
 }

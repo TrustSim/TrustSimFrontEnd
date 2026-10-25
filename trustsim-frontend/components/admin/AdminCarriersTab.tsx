@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/RightDrawer";
 import { Pagination } from "@/components/ui/Pagination";
 import { AdminSortButton, toggleSort, type SortDirection } from "@/components/admin/AdminPrimitives";
+import { AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
 
 // --- Brand color map ---
 const BRAND_COLORS: Record<string, string> = {
@@ -823,20 +824,11 @@ export function AdminCarriersTab() {
 
   return (
     <div className="admin-tab admin-tab-carriers space-y-4">
-      {/* ── 1. Header Card (Matching Kho SIM) ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-base font-bold text-[#001743]">Quản Lý Nhà Mạng &amp; Dải Đầu Số</h1>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 font-mono">
-              {carriers.length} nhà mạng • {prefixes.length} đầu số
-            </span>
-          </div>
-          <p className="text-xs text-[#6B7280] mt-0.5">
-            Danh mục nhà mạng viễn thông tại Việt Nam, quản lý dải đầu số (098, 090, 088...) đồng bộ cơ sở dữ liệu.
-          </p>
-        </div>
-        <div className="flex items-center gap-3 shrink-0">
+      <AdminPageHeader
+        title="Quản Lý Nhà Mạng & Dải Đầu Số"
+        description="Danh mục nhà mạng viễn thông tại Việt Nam và dải đầu số đồng bộ với cơ sở dữ liệu."
+        badge={`${carriers.length} nhà mạng • ${prefixes.length} đầu số`}
+        actions={<>
           <ImportExportBar
             data={carriers}
             columns={carrierExportColumns}
@@ -851,8 +843,8 @@ export function AdminCarriersTab() {
             <Plus size={15} strokeWidth={1.75} />
             <span>Thêm nhà mạng</span>
           </button>
-        </div>
-      </div>
+        </>}
+      />
 
       {/* ── 2. Filter Toolbar Card ── */}
       <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3 flex flex-wrap items-center justify-between gap-3 shadow-xs">

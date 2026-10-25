@@ -9,14 +9,10 @@ import {
   Clock3,
   Download,
   Eye,
-  Loader2,
   RefreshCw,
-  Search,
   ShieldCheck,
-  X,
 } from "lucide-react";
-import { AdminSortButton, type SortDirection } from "@/components/admin/AdminPrimitives";
-import { Pagination } from "@/components/ui/Pagination";
+import type { SortDirection } from "@/components/admin/AdminPrimitives";
 import {
   DrawerBody,
   DrawerFooter,
@@ -26,6 +22,10 @@ import {
 import { tradeService } from "@/services/tradeService";
 import { SortOrder, TradeTransactionSortBy } from "@/types/common";
 import type { TradeTransactionDto, TradeTransactionStatus } from "@/types/trade";
+import { Button, DatePicker, Input, InputNumber, Select } from "antd";
+import type { ColumnsType } from "antd/es/table";
+import dayjs from "dayjs";
+import { AdminDataTable, AdminFilterBar, AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
 
 const STATUS_OPTIONS: Array<{ value: TradeTransactionStatus; label: string }> = [
   { value: "PendingEscrow", label: "Chờ ký quỹ" },
@@ -207,31 +207,65 @@ export default function AdminEscrowTab() {
   ).length;
   const disputedCount = trades.filter((trade) => trade.status === "Disputed").length;
   const hasFilters = Boolean(search || status || minAmount || maxAmount || fromDate || toDate);
+  const tradeColumns = useMemo<ColumnsType<TradeTransactionDto>>(() => [
+    {
+      title: "Giao dịch / SIM",
+      dataIndex: "tradeTransactionCode",
+      key: TradeTransactionSortBy.TradeTransactionCode,
+      sorter: true,
+      sortOrder: sortBy === TradeTransactionSortBy.TradeTransactionCode ? (sortDirection === "asc" ? "ascend" : "descend") : null,
+      render: (value: string, trade) => <div><div className="font-mono text-sm font-bold text-[#001743]">{formatPhone(trade.simPhoneNumber)}</div><div className="mt-0.5 font-mono text-[10px] text-slate-400">{value}</div></div>,
+    },
+    {
+      title: "Người mua → người bán",
+      key: "parties",
+      render: (_, trade) => <div><div className="font-medium text-slate-800">{trade.buyerName || trade.buyerId}</div><div className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400"><ArrowRight size={10} />{trade.sellerName || trade.sellerId}</div></div>,
+    },
+    {
+      title: "Giá trị ký quỹ",
+      dataIndex: "escrowAmount",
+      key: TradeTransactionSortBy.EscrowAmount,
+      sorter: true,
+      align: "right",
+      sortOrder: sortBy === TradeTransactionSortBy.EscrowAmount ? (sortDirection === "asc" ? "ascend" : "descend") : null,
+      render: (value: number) => <span className="font-mono text-sm font-bold text-[#001743]">{formatVND(Number(value))}</span>,
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: TradeTransactionSortBy.Status,
+      sorter: true,
+      align: "center",
+      sortOrder: sortBy === TradeTransactionSortBy.Status ? (sortDirection === "asc" ? "ascend" : "descend") : null,
+      render: (value: TradeTransactionStatus) => {
+        const meta = getStatusMeta(value);
+        const step = getPipelineStep(value);
+        return <div><span className={`inline-flex rounded border px-2 py-0.5 text-[10px] font-bold ${meta.cls}`}>{meta.label}</span><div className="mx-auto mt-2 flex w-20 gap-1">{[1,2,3,4,5].map((item) => <span key={item} className={`h-1 flex-1 rounded-full ${item <= step ? (value === "Disputed" ? "bg-rose-500" : "bg-emerald-500") : "bg-slate-200"}`} />)}</div></div>;
+      },
+    },
+    {
+      title: "Hạn xử lý",
+      key: "deadline",
+      render: (_, trade) => <span className="whitespace-nowrap text-[11px] text-slate-500">{formatDateTime(getDeadline(trade))}</span>,
+    },
+    {
+      title: "Thao tác",
+      key: "actions",
+      fixed: "right",
+      align: "right",
+      width: 92,
+      render: (_, trade) => <Button size="small" icon={<Eye size={13} />} onClick={(event) => { event.stopPropagation(); setSelectedTrade(trade); }}>Xem</Button>,
+    },
+  ], [sortBy, sortDirection]);
 
   return (
     <div className="admin-tab admin-tab-escrow space-y-4">
-      <section className="flex flex-col gap-4 rounded-xl border border-[#e4e7ec] bg-white p-4 shadow-xs md:flex-row md:items-center md:justify-between">
-        <div>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-base font-bold text-[#001743]">Quản lý giao dịch ký quỹ</h1>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 font-mono text-[10px] font-bold text-slate-700">
-              {totalCount.toLocaleString("vi-VN")} giao dịch
-            </span>
-          </div>
-          <p className="mt-1 text-xs text-slate-500">
-            Theo dõi tiền ký quỹ và toàn bộ vòng đời chuyển nhượng SIM từ dữ liệu vận hành thực tế.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={handleExport} disabled={exporting || loading} className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
-            {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-            Xuất Excel
-          </button>
-          <button type="button" onClick={fetchTrades} disabled={loading} aria-label="Làm mới dữ liệu" className="rounded-md border border-slate-300 p-2 text-slate-600 hover:bg-slate-50 disabled:opacity-50">
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          </button>
-        </div>
-      </section>
+      <AdminPageHeader
+        title="Quản lý giao dịch ký quỹ"
+        description="Theo dõi tiền ký quỹ và toàn bộ vòng đời chuyển nhượng SIM từ dữ liệu vận hành thực tế."
+        badge={`${totalCount.toLocaleString("vi-VN")} giao dịch`}
+        actions={<><Button icon={<Download size={14} />} loading={exporting} onClick={handleExport}>Xuất Excel</Button><Button aria-label="Làm mới dữ liệu" icon={<RefreshCw size={14} />} loading={loading} onClick={fetchTrades} /></>}
+      />
 
       <section className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-[#e4e7ec] bg-[#e4e7ec] sm:grid-cols-3">
         {[
@@ -249,63 +283,44 @@ export default function AdminEscrowTab() {
         ))}
       </section>
 
-      <section className="rounded-xl border border-[#e4e7ec] bg-white p-3.5 shadow-xs">
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-[minmax(240px,1.5fr)_repeat(5,minmax(130px,1fr))_auto]">
-          <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Mã giao dịch, số SIM, người mua/bán…" className="h-9 w-full rounded-md border border-slate-300 bg-white pl-9 pr-8 text-xs outline-none focus:border-[#001743]" />
-            {search && <button type="button" onClick={() => setSearch("")} aria-label="Xóa từ khóa" className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"><X size={13} /></button>}
-          </div>
-          <select value={status} onChange={(event) => { setStatus(event.target.value); setPageIndex(1); }} className="h-9 rounded-md border border-slate-300 bg-white px-2.5 text-xs text-slate-700 outline-none focus:border-[#001743]">
-            <option value="">Tất cả trạng thái</option>
-            {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-          <input type="number" min="0" value={minAmount} onChange={(event) => { setMinAmount(event.target.value); setPageIndex(1); }} placeholder="Giá trị từ" className="h-9 rounded-md border border-slate-300 px-2.5 text-xs outline-none focus:border-[#001743]" />
-          <input type="number" min="0" value={maxAmount} onChange={(event) => { setMaxAmount(event.target.value); setPageIndex(1); }} placeholder="Giá trị đến" className="h-9 rounded-md border border-slate-300 px-2.5 text-xs outline-none focus:border-[#001743]" />
-          <input type="date" value={fromDate} onChange={(event) => { setFromDate(event.target.value); setPageIndex(1); }} aria-label="Từ ngày" className="h-9 rounded-md border border-slate-300 px-2.5 text-xs text-slate-600 outline-none focus:border-[#001743]" />
-          <input type="date" value={toDate} onChange={(event) => { setToDate(event.target.value); setPageIndex(1); }} aria-label="Đến ngày" className="h-9 rounded-md border border-slate-300 px-2.5 text-xs text-slate-600 outline-none focus:border-[#001743]" />
-          {hasFilters && <button type="button" onClick={resetFilters} className="h-9 whitespace-nowrap rounded-md border border-rose-200 px-3 text-xs font-semibold text-rose-600 hover:bg-rose-50">Xóa lọc</button>}
+      <AdminFilterBar>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-12">
+          <label className="admin-filter-field sm:col-span-2 xl:col-span-3"><span>Tìm kiếm</span><Input.Search value={search} onChange={(event) => setSearch(event.target.value)} allowClear placeholder="Mã giao dịch, số SIM, người mua/bán…" /></label>
+          <label className="admin-filter-field xl:col-span-3"><span>Trạng thái</span><Select value={status || undefined} onChange={(value) => { setStatus(value || ""); setPageIndex(1); }} allowClear placeholder="Tất cả trạng thái" options={STATUS_OPTIONS} /></label>
+          <label className="admin-filter-field xl:col-span-2"><span>Giá trị từ</span><InputNumber min={0} value={minAmount ? Number(minAmount) : null} onChange={(value) => { setMinAmount(value == null ? "" : String(value)); setPageIndex(1); }} controls={false} className="w-full" /></label>
+          <label className="admin-filter-field xl:col-span-2"><span>Giá trị đến</span><InputNumber min={0} value={maxAmount ? Number(maxAmount) : null} onChange={(value) => { setMaxAmount(value == null ? "" : String(value)); setPageIndex(1); }} controls={false} className="w-full" /></label>
+          <div className="self-end xl:col-span-2"><Button block disabled={!hasFilters} onClick={resetFilters}>Xóa lọc</Button></div>
+          <label className="admin-filter-field sm:col-span-2 xl:col-span-4"><span>Khoảng thời gian</span><DatePicker.RangePicker value={fromDate || toDate ? [fromDate ? dayjs(fromDate) : null, toDate ? dayjs(toDate) : null] : null} onChange={(_, values) => { setFromDate(values[0]); setToDate(values[1]); setPageIndex(1); }} format="DD/MM/YYYY" className="w-full" /></label>
         </div>
-      </section>
+      </AdminFilterBar>
 
-      <section className="overflow-hidden rounded-xl border border-[#e4e7ec] bg-white shadow-xs">
-        {error && <div className="flex items-center justify-between gap-3 border-b border-rose-100 bg-rose-50 px-4 py-3 text-xs text-rose-700"><span className="flex items-center gap-2"><AlertTriangle size={14} />{error}</span><button type="button" onClick={fetchTrades} className="font-bold underline">Thử lại</button></div>}
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] border-collapse text-left text-xs">
-            <thead className="border-b border-slate-200 bg-slate-50/80">
-              <tr className="h-10">
-                <th className="px-4 py-2"><AdminSortButton label="Giao dịch / SIM" active={sortBy === TradeTransactionSortBy.TradeTransactionCode} direction={sortDirection} onClick={() => changeSort(TradeTransactionSortBy.TradeTransactionCode)} /></th>
-                <th className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Người mua → người bán</th>
-                <th className="px-4 py-2"><AdminSortButton label="Giá trị ký quỹ" align="right" active={sortBy === TradeTransactionSortBy.EscrowAmount} direction={sortDirection} onClick={() => changeSort(TradeTransactionSortBy.EscrowAmount)} /></th>
-                <th className="px-4 py-2 text-center"><AdminSortButton label="Trạng thái" align="center" active={sortBy === TradeTransactionSortBy.Status} direction={sortDirection} onClick={() => changeSort(TradeTransactionSortBy.Status)} /></th>
-                <th className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Hạn xử lý</th>
-                <th className="px-4 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-slate-500">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
-                <tr><td colSpan={6} className="py-16 text-center text-slate-400"><Loader2 size={22} className="mx-auto mb-2 animate-spin" />Đang tải giao dịch…</td></tr>
-              ) : trades.length === 0 ? (
-                <tr><td colSpan={6} className="py-16 text-center"><ShieldCheck size={30} className="mx-auto mb-2 text-slate-300" /><p className="font-semibold text-slate-700">Không có giao dịch phù hợp</p><p className="mt-1 text-[11px] text-slate-400">Thử thay đổi hoặc xóa bộ lọc hiện tại.</p></td></tr>
-              ) : trades.map((trade) => {
-                const statusMeta = getStatusMeta(trade.status);
-                const step = getPipelineStep(trade.status);
-                return (
-                  <tr key={trade.id} onClick={() => setSelectedTrade(trade)} className={`h-16 cursor-pointer transition-colors hover:bg-slate-50/80 ${trade.status === "Disputed" ? "border-l-[3px] border-l-[#E4011E] bg-rose-50/20" : ""}`}>
-                    <td className="px-4 py-3"><p className="font-mono text-sm font-bold text-[#001743]">{formatPhone(trade.simPhoneNumber)}</p><p className="mt-0.5 font-mono text-[10px] text-slate-400">{trade.tradeTransactionCode}</p></td>
-                    <td className="px-4 py-3"><p className="font-medium text-slate-800">{trade.buyerName || trade.buyerId}</p><p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400"><ArrowRight size={10} />{trade.sellerName || trade.sellerId}</p></td>
-                    <td className="px-4 py-3 text-right font-mono text-sm font-bold tabular-nums text-[#001743]">{formatVND(Number(trade.escrowAmount))}</td>
-                    <td className="px-4 py-3 text-center"><span className={`inline-flex rounded border px-2 py-0.5 text-[10px] font-bold ${statusMeta.cls}`}>{statusMeta.label}</span><div className="mx-auto mt-2 flex w-20 gap-1">{[1,2,3,4,5].map((item) => <span key={item} className={`h-1 flex-1 rounded-full ${item <= step ? (trade.status === "Disputed" ? "bg-rose-500" : "bg-emerald-500") : "bg-slate-200"}`} />)}</div></td>
-                    <td className="px-4 py-3 text-[11px] text-slate-500">{formatDateTime(getDeadline(trade))}</td>
-                    <td className="px-4 py-3 text-right"><button type="button" onClick={(event) => { event.stopPropagation(); setSelectedTrade(trade); }} className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 font-semibold text-[#001743] hover:bg-slate-50"><Eye size={13} />Xem</button></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        {!loading && totalCount > 0 && <Pagination pageIndex={pageIndex} pageSize={pageSize} totalCount={totalCount} loading={loading} onPageChange={setPageIndex} onPageSizeChange={(size) => { setPageSize(size); setPageIndex(1); }} />}
-      </section>
+      {error ? <div className="flex items-center justify-between gap-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700"><span className="flex items-center gap-2"><AlertTriangle size={14} />{error}</span><Button size="small" danger onClick={fetchTrades}>Thử lại</Button></div> : null}
+
+      <AdminDataTable<TradeTransactionDto>
+        rowKey="id"
+        columns={tradeColumns}
+        dataSource={trades}
+        loading={loading}
+        rowClassName={(trade) => trade.status === "Disputed" ? "admin-row-danger" : ""}
+        onRow={(trade) => ({ onClick: () => setSelectedTrade(trade), style: { cursor: "pointer" } })}
+        onChange={(_, __, sorter) => {
+          const activeSorter = Array.isArray(sorter) ? sorter[0] : sorter;
+          if (activeSorter.columnKey) {
+            changeSort(Number(activeSorter.columnKey) as TradeTransactionSortBy);
+          }
+        }}
+        pagination={{
+          current: pageIndex,
+          pageSize,
+          total: totalCount,
+          pageSizeOptions: [10, 20, 50],
+          onChange: (page, size) => {
+            setPageIndex(size !== pageSize ? 1 : page);
+            setPageSize(size);
+          },
+        }}
+        locale={{ emptyText: <div className="py-10"><ShieldCheck size={30} className="mx-auto mb-2 text-slate-300" /><div className="text-xs font-semibold text-slate-700">Không có giao dịch phù hợp</div><div className="mt-1 text-[11px] text-slate-400">Thử thay đổi hoặc xóa bộ lọc hiện tại.</div></div> }}
+      />
 
       <RightDrawer open={Boolean(selectedTrade)} onClose={() => setSelectedTrade(null)} title="Chi tiết giao dịch ký quỹ" badge={selectedTrade?.tradeTransactionCode} badgeCls="bg-[#001743] text-white" size="lg">
         {selectedTrade && <>

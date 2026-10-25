@@ -31,6 +31,8 @@ import {
 import { notificationHubService } from "@/services/notificationHubService";
 import type { WalletDto } from "@/types/wallet";
 import type { AuthResponseDto } from "@/types/auth";
+import { ConfigProvider } from "antd";
+import viVN from "antd/locale/vi_VN";
 
 const TAB_LABELS: Record<string, string> = {
   dashboard: "Tổng quan hệ thống",
@@ -512,7 +514,37 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
     >
       <AuthSessionGuard>
-        <AdminLayoutInner>{children}</AdminLayoutInner>
+        <ConfigProvider
+          locale={viVN}
+          theme={{
+            token: {
+              colorPrimary: "#001743",
+              colorError: "#E4011E",
+              colorText: "#344054",
+              colorTextHeading: "#001743",
+              colorBorder: "#D0D5DD",
+              colorBgLayout: "#F8F9FB",
+              borderRadius: 6,
+              controlHeight: 36,
+              fontFamily: "var(--font-inter), Inter, sans-serif",
+              fontSize: 13,
+            },
+            components: {
+              Table: {
+                headerBg: "#F8FAFC",
+                headerColor: "#475467",
+                borderColor: "#E4E7EC",
+                rowHoverBg: "#F8FAFC",
+                cellPaddingBlockSM: 10,
+                cellPaddingInlineSM: 16,
+              },
+              Button: { fontWeight: 600 },
+              Pagination: { itemActiveBg: "#001743" },
+            },
+          }}
+        >
+          <AdminLayoutInner>{children}</AdminLayoutInner>
+        </ConfigProvider>
       </AuthSessionGuard>
     </Suspense>
   );

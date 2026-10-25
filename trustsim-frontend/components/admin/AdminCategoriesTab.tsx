@@ -17,6 +17,7 @@ import {
 import { Pagination } from "@/components/ui/Pagination";
 import { AdminSortButton, toggleSort, type SortDirection } from "@/components/admin/AdminPrimitives";
 import { simValidators } from "@/utils/validators";
+import { AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
 
 // --- Delete Modal ---
 function DeleteModal({ name, onConfirm, onCancel, loading }: {
@@ -315,22 +316,20 @@ export function AdminCategoriesTab() {
 
   return (
     <div className="admin-tab admin-tab-categories space-y-4">
-      {/* ── 1. Header Card (Matching Kho SIM) ── */}
-      <div className="bg-white border border-[#e4e7ec] rounded-xl p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-base font-bold text-[#001743]">Quản Lý Thể Loại SIM &amp; Mô Hình Định Giá AI</h1>
-          <p className="text-xs text-[#6B7280] mt-0.5">
-            Cấu hình thế số phong thủy, hệ số định giá nhân bản (AI Score multiplier) và dự báo thanh khoản sàn đấu giá.
-          </p>
-        </div>
-        <button
-          onClick={openCreate}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-lg transition-colors shadow-2xs shrink-0"
-        >
-          <Plus size={15} strokeWidth={1.75} />
-          <span>Thêm thể loại</span>
-        </button>
-      </div>
+      <AdminPageHeader
+        title="Quản Lý Thể Loại SIM & Mô Hình Định Giá AI"
+        description="Cấu hình thế số phong thủy, hệ số định giá và dự báo thanh khoản sàn đấu giá."
+        badge={`${categories.length} thể loại`}
+        actions={
+          <button
+            onClick={openCreate}
+            className="inline-flex items-center gap-1.5 rounded-md bg-[#001743] px-3.5 py-2 text-xs font-bold text-white transition-colors hover:bg-[#00266b]"
+          >
+            <Plus size={15} strokeWidth={1.75} />
+            <span>Thêm thể loại</span>
+          </button>
+        }
+      />
 
       {/* ── 2. Filter Toolbar Card (Matching Kho SIM) ── */}
       <div className="bg-white border border-[#e4e7ec] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-2xs">

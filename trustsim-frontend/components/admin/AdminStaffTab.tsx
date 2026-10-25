@@ -268,24 +268,15 @@ export function AdminStaffTab() {
   return (
     <div className="admin-tab admin-tab-staff space-y-4">
       {/* ── SECTION 1: Institutional Context Header & Master Action Bar ── */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs relative overflow-hidden">
-        {/* Subtle decorative security grid background */}
-        <div className="absolute right-0 top-0 w-80 h-full opacity-[0.03] pointer-events-none bg-[radial-gradient(#001743_1px,transparent_1px)] [background-size:12px_12px]" />
+      <div className="rounded-xl border border-[#e4e7ec] bg-white p-4 shadow-xs">
 
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
           <div>
             <div className="flex items-center gap-2.5">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider uppercase bg-slate-100 text-[#001743] border border-slate-200">
-                <ShieldCheck size={12} className="text-[#001743]" />
-                <span>Kiểm soát phân quyền cấp cao</span>
-              </span>
-              <span className="text-[11px] font-mono text-slate-400">ISO/IEC 27001 COMPLIANT</span>
+              <h1 className="text-base font-bold text-[#001743]">Quản Trị Nhân Sự &amp; Thẩm Quyền Vận Hành</h1>
+              <span className="admin-page-badge">{totalCount} nhân sự</span>
             </div>
-
-            <h1 className="text-xl font-bold tracking-tight text-[#001743] mt-2">
-              Quản Trị Nhân Sự &amp; Thẩm Quyền Vận Hành
-            </h1>
-            <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
+            <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-500">
               Quản lý định danh nhân sự nội bộ, phân cấp bảo mật Tier-3 (Quản trị viên) và Tier-1 (Tư vấn viên trực sàn).
               Mọi thay đổi thẩm quyền đều được ghi vết tự động vào sổ cái kiểm toán.
             </p>
@@ -339,7 +330,7 @@ export function AdminStaffTab() {
         </div>
 
         {/* ── SECTION 2: Clean High-Trust KPI Metrics Ribbon ── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-6 mt-6 border-t border-slate-100">
+        <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 md:grid-cols-4">
           <div className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
             <div>
               <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tổng nhân sự trực</div>

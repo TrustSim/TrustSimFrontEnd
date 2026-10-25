@@ -3,9 +3,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
-  Search,
   RefreshCw,
-  X,
   Eye,
   CheckCircle2,
   Clock,
@@ -18,7 +16,6 @@ import {
   Phone,
   ShieldAlert,
   ArrowRight,
-  HelpCircle,
 } from "lucide-react";
 import {
   RightDrawer,
@@ -32,8 +29,11 @@ import { tradeService } from "@/services/tradeService";
 import type { DisputeTicketDto, DisputeStatus } from "@/types/dispute";
 import type { TradeTransactionDto } from "@/types/trade";
 import { disputeValidators } from "@/utils/validators";
-import { Pagination } from "@/components/ui/Pagination";
 import { DisputeTicketSortBy, SortOrder } from "@/types/common";
+import { Button, DatePicker, Input, Select } from "antd";
+import type { ColumnsType } from "antd/es/table";
+import dayjs from "dayjs";
+import { AdminDataTable, AdminFilterBar, AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
 
 // Helper định dạng tiền tệ VNĐ
 const formatVND = (value: number) =>
@@ -262,6 +262,16 @@ export default function AdminDisputesTab() {
     }
   };
 
+  const disputeColumns: ColumnsType<DisputeTicketDto> = [
+    { title: "Mã khiếu nại", dataIndex: "id", key: "id", render: (value: string) => <div><div className="font-mono font-bold text-[#001743]">#{value.slice(0, 8)}</div><div className="font-mono text-[10px] text-slate-400">{value.slice(8, 18)}…</div></div> },
+    { title: "Giao dịch liên quan", dataIndex: "tradeTransactionId", key: "trade", render: (value?: string) => <div><div className="font-mono text-[11px] font-medium text-slate-700">{value ? `GD-${value.slice(0, 8)}` : "—"}</div><div className="text-[10px] text-slate-400">Ký quỹ chuyển nhượng</div></div> },
+    { title: "Người khiếu nại", dataIndex: "complainantName", key: "complainant", render: (value: string, item) => <div><div className="font-medium text-slate-800">{value || "Người dùng ẩn danh"}</div><div className="font-mono text-[10px] text-slate-400">ID: {item.complainantId ? item.complainantId.slice(0, 8) : "—"}</div></div> },
+    { title: "Nội dung", dataIndex: "reason", key: "reason", width: 280, render: (value: string) => <p className="line-clamp-2 text-xs leading-relaxed text-slate-600" title={value}>{value}</p> },
+    { title: "Trạng thái", dataIndex: "status", key: "status", align: "center", render: (value: DisputeStatus) => { const badge = getStatusBadge(value); return <span className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[10px] font-bold ${badge.bg}`}><span className={`h-1.5 w-1.5 rounded-full ${badge.dot}`} />{badge.label}</span>; } },
+    { title: "Ngày tạo", dataIndex: "createdDate", key: "createdDate", render: (value?: string) => <span className="whitespace-nowrap font-mono text-[11px] text-slate-600">{value ? new Date(value).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}</span> },
+    { title: "Thao tác", key: "actions", align: "right", fixed: "right", width: 116, render: (_, item) => { const pending = item.status === "OPEN" || item.status === "INVESTIGATING"; return <Button size="small" icon={<Eye size={13} />} onClick={() => openDetail(item)}>{pending ? "Thẩm định" : "Chi tiết"}</Button>; } },
+  ];
+
   return (
     <div className="admin-tab admin-tab-disputes space-y-4">
       {/* Toast Notification */}
@@ -272,44 +282,12 @@ export default function AdminDisputesTab() {
         </div>
       )}
 
-      {/* ── 1. Header Card ── */}
-      <div className="bg-white border border-[#e4e7ec] rounded-xl p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-base font-bold text-[#001743]">Giải Quyết Khiếu Nại &amp; Trọng Tài</h1>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 font-mono">
-              {totalCount} hồ sơ
-            </span>
-          </div>
-          <p className="text-xs text-[#6B7280] mt-0.5">
-            Xem xét khiếu nại giữa các bên giao dịch, ban hành phán quyết trọng tài và đảm bảo quyền lợi người dùng sàn.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => fetchDisputes()}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 border border-[#e4e7ec] rounded-lg text-xs font-semibold text-slate-700 transition-colors shadow-2xs disabled:opacity-50"
-          >
-            <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
-            <span>Làm mới</span>
-          </button>
-
-          <button
-            onClick={handleExport}
-            disabled={exportLoading}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#001743] hover:bg-[#00266B] text-white rounded-lg text-xs font-semibold transition-colors shadow-2xs disabled:opacity-50"
-          >
-            {exportLoading ? (
-              <Loader2 size={13} className="animate-spin" />
-            ) : (
-              <Download size={13} strokeWidth={2} />
-            )}
-            <span>Xuất file Excel</span>
-          </button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Giải quyết khiếu nại & trọng tài"
+        description="Xem xét khiếu nại giữa các bên giao dịch, ban hành phán quyết trọng tài và đảm bảo quyền lợi người dùng sàn."
+        badge={`${totalCount.toLocaleString("vi-VN")} hồ sơ`}
+        actions={<><Button icon={<RefreshCw size={13} />} loading={loading} onClick={() => fetchDisputes()}>Làm mới</Button><Button type="primary" icon={<Download size={13} />} loading={exportLoading} onClick={handleExport}>Xuất Excel</Button></>}
+      />
 
       {/* ── 2. KPI Metrics Grid ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -346,237 +324,34 @@ export default function AdminDisputesTab() {
         </div>
       </div>
 
-      {/* ── 3. Filter Toolbar Card ── */}
-      <div className="bg-white border border-[#e4e7ec] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
-        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
-          <div className="relative w-80">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm mã khiếu nại, mã GD, người gửi, lý do…"
-              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none transition-colors"
-            />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X size={12} />
-              </button>
-            )}
-          </div>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPageIndex(1);
-            }}
-            className="text-xs py-1.5 px-3 bg-white border border-[#e4e7ec] rounded-lg text-slate-700 focus:border-[#001743] focus:outline-none transition-colors"
-          >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="OPEN">Chờ tiếp nhận</option>
-            <option value="INVESTIGATING">Đang xem xét</option>
-            <option value="RESOLVED_FAVOR_BUYER">Bên Mua thắng (Hoàn tiền)</option>
-            <option value="RESOLVED_FAVOR_SELLER">Bên Bán thắng (Giải ngân)</option>
-          </select>
-
-          <input
-            value={tradeId}
-            onChange={(e) => { setTradeId(e.target.value); setPageIndex(1); }}
-            placeholder="Trade ID (UUID)"
-            className="w-44 text-xs py-1.5 px-3 bg-white border border-[#e4e7ec] rounded-lg text-slate-700 focus:border-[#001743] focus:outline-none"
-          />
-
-          <input
-            type="date"
-            value={fromDate}
-            onChange={(e) => { setFromDate(e.target.value); setPageIndex(1); }}
-            aria-label="Khiếu nại từ ngày"
-            className="text-xs py-1.5 px-3 bg-white border border-[#e4e7ec] rounded-lg text-slate-700 focus:border-[#001743] focus:outline-none"
-          />
-
-          <input
-            type="date"
-            value={toDate}
-            onChange={(e) => { setToDate(e.target.value); setPageIndex(1); }}
-            aria-label="Khiếu nại đến ngày"
-            className="text-xs py-1.5 px-3 bg-white border border-[#e4e7ec] rounded-lg text-slate-700 focus:border-[#001743] focus:outline-none"
-          />
-
-          <select
-            value={sortBy}
-            onChange={(e) => { setSortBy(Number(e.target.value)); setPageIndex(1); }}
-            aria-label="Sắp xếp khiếu nại"
-            className="text-xs py-1.5 px-3 bg-white border border-[#e4e7ec] rounded-lg text-slate-700 focus:border-[#001743] focus:outline-none"
-          >
-            <option value={DisputeTicketSortBy.CreatedDate}>Mới nhất</option>
-            <option value={DisputeTicketSortBy.Status}>Theo trạng thái</option>
-            <option value={DisputeTicketSortBy.TradeTransactionId}>Theo giao dịch</option>
-          </select>
-
-          {(search || statusFilter !== "all" || tradeId || fromDate || toDate || sortBy !== DisputeTicketSortBy.CreatedDate) && (
-            <button
-              onClick={() => {
-                setSearch("");
-                setStatusFilter("all");
-                setTradeId("");
-                setFromDate("");
-                setToDate("");
-                setSortBy(DisputeTicketSortBy.CreatedDate);
-                setPageIndex(1);
-              }}
-              className="text-xs text-[#E4011E] hover:underline px-1.5 py-1"
-            >
-              Xóa bộ lọc
-            </button>
-          )}
+      <AdminFilterBar>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-12">
+          <label className="admin-filter-field sm:col-span-2 xl:col-span-3"><span>Tìm kiếm</span><Input.Search value={search} onChange={(event) => setSearch(event.target.value)} allowClear placeholder="Mã khiếu nại, người gửi, lý do…" /></label>
+          <label className="admin-filter-field xl:col-span-3"><span>Trạng thái</span><Select value={statusFilter === "all" ? undefined : statusFilter} onChange={(value) => { setStatusFilter(value || "all"); setPageIndex(1); }} allowClear placeholder="Tất cả trạng thái" options={[{ value: "OPEN", label: "Chờ tiếp nhận" }, { value: "INVESTIGATING", label: "Đang xem xét" }, { value: "RESOLVED_FAVOR_BUYER", label: "Bên mua thắng" }, { value: "RESOLVED_FAVOR_SELLER", label: "Bên bán thắng" }]} /></label>
+          <label className="admin-filter-field xl:col-span-3"><span>Giao dịch</span><Input value={tradeId} onChange={(event) => { setTradeId(event.target.value); setPageIndex(1); }} allowClear placeholder="Trade ID (UUID)" /></label>
+          <label className="admin-filter-field xl:col-span-3"><span>Sắp xếp</span><Select value={sortBy} onChange={(value) => { setSortBy(value); setPageIndex(1); }} options={[{ value: DisputeTicketSortBy.CreatedDate, label: "Mới nhất" }, { value: DisputeTicketSortBy.Status, label: "Theo trạng thái" }, { value: DisputeTicketSortBy.TradeTransactionId, label: "Theo giao dịch" }]} /></label>
+          <label className="admin-filter-field sm:col-span-2 xl:col-span-6"><span>Khoảng thời gian</span><DatePicker.RangePicker value={fromDate || toDate ? [fromDate ? dayjs(fromDate) : null, toDate ? dayjs(toDate) : null] : null} onChange={(_, values) => { setFromDate(values[0]); setToDate(values[1]); setPageIndex(1); }} format="DD/MM/YYYY" className="w-full" /></label>
+          <div className="self-end sm:col-span-2 xl:col-span-3"><Button block onClick={() => { setSearch(""); setStatusFilter("all"); setTradeId(""); setFromDate(""); setToDate(""); setSortBy(DisputeTicketSortBy.CreatedDate); setPageIndex(1); }}>Xóa lọc</Button></div>
         </div>
+      </AdminFilterBar>
 
-        <div className="text-xs text-[#6B7280]">
-          Hiển thị <strong className="text-[#001743]">{filteredDisputes.length}</strong> / {totalCount} hồ sơ
-        </div>
-      </div>
-
-      {/* ── 4. Main Table Card ── */}
-      <div className="bg-white border border-[#e4e7ec] rounded-xl overflow-hidden shadow-2xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-[#e4e7ec] bg-[#F8FAFC] text-slate-500 font-semibold uppercase text-[10px] tracking-wider h-10">
-                <th className="py-3 px-4">Mã khiếu nại</th>
-                <th className="py-3 px-4">Giao dịch liên quan</th>
-                <th className="py-3 px-4">Người khiếu nại</th>
-                <th className="py-3 px-4">Nội dung khiếu nại</th>
-                <th className="py-3 px-4 text-center">Trạng thái</th>
-                <th className="py-3 px-4">Ngày tạo</th>
-                <th className="py-3 px-4 text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#e4e7ec]">
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
-                    <div className="inline-flex items-center gap-2">
-                      <Loader2 size={16} className="animate-spin text-[#001743]" />
-                      <span>Đang tải danh sách khiếu nại từ máy chủ…</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : filteredDisputes.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
-                    <div className="flex flex-col items-center justify-center gap-1.5">
-                      <HelpCircle size={24} className="text-slate-300" />
-                      <span>Không tìm thấy hồ sơ khiếu nại nào phù hợp</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredDisputes.map((item) => {
-                  const badge = getStatusBadge(item.status);
-                  const isPending = item.status === "OPEN" || item.status === "INVESTIGATING";
-
-                  return (
-                    <tr
-                      key={item.id}
-                      className={`hover:bg-slate-50/80 transition-colors h-14 ${
-                        isPending ? "border-l-4 border-l-amber-500 bg-amber-50/15" : ""
-                      }`}
-                    >
-                      {/* Ticket ID */}
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-[#001743] font-mono">
-                          #{item.id.slice(0, 8)}
-                        </div>
-                        <span className="text-[10px] text-slate-400 font-mono block">
-                          {item.id.slice(8, 18)}…
-                        </span>
-                      </td>
-
-                      {/* Trade Transaction ID */}
-                      <td className="py-3 px-4">
-                        <div className="font-mono text-slate-700 text-[11px] font-medium">
-                          {item.tradeTransactionId ? `GD-${item.tradeTransactionId.slice(0, 8)}` : "—"}
-                        </div>
-                        <span className="text-[10px] text-slate-400 block">Ký quỹ chuyển nhượng</span>
-                      </td>
-
-                      {/* Complainant */}
-                      <td className="py-3 px-4">
-                        <div className="font-medium text-slate-800">
-                          {item.complainantName || "Người dùng ẩn danh"}
-                        </div>
-                        <span className="text-[10px] text-slate-400 font-mono block">
-                          ID: {item.complainantId ? item.complainantId.slice(0, 8) : "—"}
-                        </span>
-                      </td>
-
-                      {/* Reason */}
-                      <td className="py-3 px-4 max-w-xs">
-                        <p className="line-clamp-2 text-slate-600 text-xs leading-relaxed" title={item.reason}>
-                          {item.reason}
-                        </p>
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-3 px-4 text-center">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-[10px] font-bold border ${badge.bg}`}
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
-                          {badge.label}
-                        </span>
-                      </td>
-
-                      {/* Created Date */}
-                      <td className="py-3 px-4 text-slate-600 text-[11px] font-mono tabular-nums whitespace-nowrap">
-                        {item.createdDate
-                          ? new Date(item.createdDate).toLocaleString("vi-VN", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : "—"}
-                      </td>
-
-                      {/* Action */}
-                      <td className="py-3 px-4 text-right">
-                        <button
-                          onClick={() => openDetail(item)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-slate-100 border border-[#e4e7ec] rounded-lg text-xs font-semibold text-slate-700 transition-colors shadow-2xs"
-                        >
-                          <Eye size={13} strokeWidth={1.75} />
-                          <span>{isPending ? "Thẩm định" : "Xem chi tiết"}</span>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {!loading && totalCount > 0 && (
-          <Pagination
-            pageIndex={pageIndex}
-            pageSize={pageSize}
-            totalCount={totalCount}
-            loading={loading}
-            onPageChange={setPageIndex}
-            onPageSizeChange={(size) => {
-              setPageSize(size);
-              setPageIndex(1);
-            }}
-            pageSizeOptions={[15, 30, 50]}
-          />
-        )}
-      </div>
+      <AdminDataTable<DisputeTicketDto>
+        rowKey="id"
+        columns={disputeColumns}
+        dataSource={filteredDisputes}
+        loading={loading}
+        rowClassName={(item) => item.status === "OPEN" || item.status === "INVESTIGATING" ? "admin-row-warning" : ""}
+        pagination={{
+          current: pageIndex,
+          pageSize,
+          total: totalCount,
+          pageSizeOptions: [15, 30, 50],
+          onChange: (page, size) => {
+            setPageIndex(size !== pageSize ? 1 : page);
+            setPageSize(size);
+          },
+        }}
+      />
 
       {/* ── 5. RightDrawer: Detailed Case Review (size="xl") ── */}
       <RightDrawer

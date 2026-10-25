@@ -44,6 +44,7 @@ import {
 } from "@/services/simService";
 import { getCarriers, type SimCarrierDto, type PhonePrefixDto } from "@/services/carrierService";
 import { getCategories, type SimCategoryDto } from "@/services/categoryService";
+import { AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
 import {
   RightDrawer,
   DrawerBody,
@@ -410,22 +411,11 @@ export function AdminSimsTab() {
         </div>
       )}
 
-      {/* ── 1. Header Card (Matching Carriers & Categories) ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-base font-bold text-[#001743]">Quản Lý Kho SIM Số Đẹp</h1>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 font-mono">
-              {totalCount} số SIM
-            </span>
-          </div>
-          <p className="text-xs text-[#6B7280] mt-0.5">
-            Quản lý tập trung toàn bộ SIM số đẹp, thông tin nhà mạng, đầu số, phân loại và trạng thái giao dịch.
-          </p>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-3 shrink-0 flex-wrap">
+      <AdminPageHeader
+        title="Quản Lý Kho SIM Số Đẹp"
+        description="Quản lý tập trung toàn bộ SIM số đẹp, thông tin nhà mạng, đầu số, phân loại và trạng thái giao dịch."
+        badge={`${totalCount} số SIM`}
+        actions={<>
           <ImportExportBar
             data={sims}
             columns={SIM_EXPORT_COLUMNS}
@@ -454,8 +444,8 @@ export function AdminSimsTab() {
             <Plus size={15} strokeWidth={1.75} />
             <span>Thêm SIM mới</span>
           </button>
-        </div>
-      </div>
+        </>}
+      />
 
       {/* 2. KPI Metric Strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

@@ -32,6 +32,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import ImportExportBar from "@/components/admin/ImportExportBar";
+import { AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
 import { ExcelColumnDef } from "@/services/excelService";
 import {
   getDocuments,
@@ -455,23 +456,11 @@ export function AdminDocumentsTab() {
         </div>
       )}
 
-      {/* ─── 1. Header Card with Direct Ingest & Upload Action Buttons ─── */}
-      <div className="bg-white border border-[#e4e7ec] rounded-xl p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-base font-bold text-[#001743]">
-              Quản Lý Tài Liệu &amp; Cơ Sở Tri Thức AI
-            </h1>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 font-mono">
-              {documents.length} văn bản
-            </span>
-          </div>
-          <p className="text-xs text-[#6B7280] mt-0.5">
-            Quản lý văn bản pháp lý, chính sách và nạp tài liệu định giá SIM số đẹp cho hệ thống AI.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+      <AdminPageHeader
+        title="Quản Lý Tài Liệu & Cơ Sở Tri Thức AI"
+        description="Quản lý văn bản pháp lý, chính sách và nạp tài liệu định giá SIM số đẹp cho hệ thống AI."
+        badge={`${documents.length} văn bản`}
+        actions={<>
           <ImportExportBar
             data={filteredDocs}
             columns={DOCUMENT_EXPORT_COLUMNS}
@@ -500,8 +489,8 @@ export function AdminDocumentsTab() {
             <Plus size={15} />
             <span>Thêm tài liệu</span>
           </button>
-        </div>
-      </div>
+        </>}
+      />
 
       {/* ─── 2. KPI Overview Cards ─── */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
