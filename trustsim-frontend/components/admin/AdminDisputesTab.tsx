@@ -243,9 +243,15 @@ export default function AdminDisputesTab() {
   const handleExport = async () => {
     setExportLoading(true);
     try {
-      const blob = await disputeService.exportDisputes(
-        statusFilter === "all" ? undefined : statusFilter
-      );
+      const blob = await disputeService.exportDisputes({
+        keyword: debouncedSearch || undefined,
+        tradeId: tradeId.trim() || undefined,
+        status: statusFilter === "all" ? undefined : statusFilter,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
+        sortBy,
+        sortOrder: SortOrder.Desc,
+      });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;

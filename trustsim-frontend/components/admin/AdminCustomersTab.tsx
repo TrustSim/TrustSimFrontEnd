@@ -25,6 +25,7 @@ import {
   Calendar,
   Building2,
   ArrowUpRight,
+  Download,
 } from "lucide-react";
 import {
   userService,
@@ -42,7 +43,7 @@ import {
 import { Pagination } from "@/components/ui/Pagination";
 import { AdminSortButton, toggleSort, type SortDirection } from "@/components/admin/AdminPrimitives";
 import ImportExportBar from "@/components/admin/ImportExportBar";
-import { ExcelColumnDef } from "@/services/excelService";
+import { ExcelColumnDef, exportTableToExcel } from "@/services/excelService";
 import { SortOrder, UserAccountSortBy } from "@/types/common";
 
 // Format currency
@@ -169,6 +170,10 @@ export function AdminCustomersTab() {
   const [sortKey, setSortKey] = useState<"name" | "wallet">("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [totalCount, setTotalCount] = useState(0);
+  const [exporting, setExporting] = useState(false);
+  const [exportingKyc, setExportingKyc] = useState(false);
+  const [minWalletBalance, setMinWalletBalance] = useState("");
+  const [maxWalletBalance, setMaxWalletBalance] = useState("");
 
   // Toast & selection
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -203,6 +208,8 @@ export function AdminCustomersTab() {
         role: UserRoleEnum.USER,
         isActive: selectedStatus !== "" ? selectedStatus === "active" : undefined,
         kycStatus: selectedKyc !== "" ? selectedKyc : undefined,
+        minWalletBalance: minWalletBalance ? Number(minWalletBalance) : undefined,
+        maxWalletBalance: maxWalletBalance ? Number(maxWalletBalance) : undefined,
         sortBy: sortKey === "wallet" ? UserAccountSortBy.WalletBalance : UserAccountSortBy.FullName,
         sortOrder: sortDirection === "asc" ? SortOrder.Asc : SortOrder.Desc,
         pageIndex,
@@ -215,7 +222,7 @@ export function AdminCustomersTab() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, selectedKyc, selectedStatus, sortKey, sortDirection, pageIndex, pageSize]);
+  }, [debouncedSearch, selectedKyc, selectedStatus, minWalletBalance, maxWalletBalance, sortKey, sortDirection, pageIndex, pageSize]);
 
   useEffect(() => {
     fetchCustomers();
@@ -250,7 +257,7 @@ export function AdminCustomersTab() {
     }
   };
 
-  const hasActiveFilters = debouncedSearch || selectedKyc !== "" || selectedStatus !== "";
+  const hasActiveFilters = debouncedSearch || selectedKyc !== "" || selectedStatus !== "" || minWalletBalance || maxWalletBalance;
   const displayCustomers = customers;
 
   const changeSort = (key: "name" | "wallet") => {
@@ -264,7 +271,45 @@ export function AdminCustomersTab() {
     setDebouncedSearch("");
     setSelectedKyc("");
     setSelectedStatus("");
+    setMinWalletBalance("");
+    setMaxWalletBalance("");
     setPageIndex(1);
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await exportTableToExcel("/Users/admin/export", {
+        keyword: debouncedSearch || undefined,
+        role: UserRoleEnum.USER,
+        isActive: selectedStatus ? selectedStatus === "active" : undefined,
+        kycStatus: selectedKyc || undefined,
+        minWalletBalance: minWalletBalance ? Number(minWalletBalance) : undefined,
+        maxWalletBalance: maxWalletBalance ? Number(maxWalletBalance) : undefined,
+        sortBy: sortKey === "wallet" ? UserAccountSortBy.WalletBalance : UserAccountSortBy.FullName,
+        sortOrder: sortDirection === "asc" ? SortOrder.Asc : SortOrder.Desc,
+      }, "TrustSim_KhachHang");
+      showToast("Đã xuất toàn bộ khách hàng phù hợp với bộ lọc.");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Không thể xuất file Excel.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleKycExport = async () => {
+    setExportingKyc(true);
+    try {
+      await exportTableToExcel("/Users/admin/kyc/export", {
+        keyword: debouncedSearch || undefined,
+        status: selectedKyc || undefined,
+      }, "TrustSim_KYC");
+      showToast("Đã xuất hồ sơ eKYC phù hợp với bộ lọc.");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Không thể xuất hồ sơ eKYC.");
+    } finally {
+      setExportingKyc(false);
+    }
   };
 
   // KPIs
@@ -308,6 +353,8 @@ export function AdminCustomersTab() {
               columns={CUSTOMER_EXPORT_COLUMNS}
               filename={`TrustSim_KhachHang_${new Date().toISOString().slice(0, 10)}`}
               entityName="khách hàng"
+              onExport={handleExport}
+              exportLoading={exporting}
               onImport={(rows) => {
                 const newCustomers: AdminUserDetailDto[] = rows
                   .map((r, idx) => ({
@@ -334,6 +381,7 @@ export function AdminCustomersTab() {
                 }
               }}
             />
+            <button type="button" onClick={handleKycExport} disabled={exportingKyc} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-[#001743] disabled:opacity-50"><Download size={13} />{exportingKyc ? "Đang xuất…" : "Xuất hồ sơ KYC"}</button>
 
             <button
               onClick={fetchCustomers}
@@ -487,6 +535,10 @@ export function AdminCustomersTab() {
                 <X size={13} strokeWidth={1.5} />
               </button>
             )}
+          </div>
+          <div className="grid w-full grid-cols-2 gap-2 sm:w-auto">
+            <label className="text-[10px] font-semibold text-slate-500"><span className="mb-1 block">Số dư từ</span><input type="number" min={0} value={minWalletBalance} onChange={(event) => { setMinWalletBalance(event.target.value); setPageIndex(1); }} className="min-h-9 w-full rounded-lg border border-slate-200 px-2 text-xs" /></label>
+            <label className="text-[10px] font-semibold text-slate-500"><span className="mb-1 block">Số dư đến</span><input type="number" min={0} value={maxWalletBalance} onChange={(event) => { setMaxWalletBalance(event.target.value); setPageIndex(1); }} className="min-h-9 w-full rounded-lg border border-slate-200 px-2 text-xs" /></label>
           </div>
 
           <div className="text-xs text-slate-500 font-mono">

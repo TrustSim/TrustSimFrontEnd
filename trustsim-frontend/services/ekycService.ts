@@ -1,6 +1,7 @@
 import { apiFetch } from "./apiClient";
 import { withQuery } from "./queryParams";
 import type { BaseQueryFilter, KycSortBy, PagedResult } from "@/types/common";
+import type { UserKycHistoryQueryFilter } from "@/types/api-filters";
 
 export type VerificationStatus =
   | "PENDING_VERIFICATION"
@@ -89,7 +90,7 @@ export const ekycService = {
    * Lấy danh sách lịch sử tất cả các lần nộp hồ sơ KYC
    */
   async getMyKycHistoryPaged(
-    filter: BaseQueryFilter<KycSortBy> = {}
+    filter: UserKycHistoryQueryFilter = {}
   ): Promise<PagedResult<IdentityVerificationDto>> {
     const res = await apiFetch<PagedResult<IdentityVerificationDto>>(
       withQuery("/Users/kyc/history", {

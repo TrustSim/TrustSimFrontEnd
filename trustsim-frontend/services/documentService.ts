@@ -1,4 +1,7 @@
 import { apiFetch } from "./apiClient";
+import { withQuery } from "./queryParams";
+import type { PagedResult } from "@/types/common";
+import type { DocumentQueryFilter } from "@/types/api-filters";
 
 // --- DTOs (mirror backend DocumentsController) ---
 export interface DocumentDto {
@@ -6,6 +9,11 @@ export interface DocumentDto {
   documentName: string;
   linkUrl: string;
   createdDate: string;
+  documentType?: DocumentTypeEnum | string;
+  status?: DocumentStatusEnum | string;
+  isActive?: boolean;
+  totalChunks?: number;
+  totalTokens?: number;
 }
 
 export interface CreateDocumentPayload {
@@ -24,10 +32,23 @@ export interface UpdateDocumentPayload {
 /**
  * Lấy danh sách tài liệu / quy chế sàn / chính sách
  */
-export async function getDocuments(activeOnly: boolean = false): Promise<DocumentDto[]> {
-  const query = activeOnly ? "?activeOnly=true" : "?activeOnly=false";
-  const res = await apiFetch<DocumentDto[]>(`/Documents${query}`);
-  return res.data ?? [];
+export async function getDocuments(filter: DocumentQueryFilter = {}): Promise<PagedResult<DocumentDto>> {
+  const pageIndex = filter.pageIndex ?? 1;
+  const pageSize = filter.pageSize ?? 20;
+  const res = await apiFetch<PagedResult<DocumentDto>>(withQuery("/Documents", {
+    ...filter,
+    pageIndex,
+    pageSize,
+  }));
+  return res.data ?? {
+    items: [],
+    pageIndex,
+    pageSize,
+    totalCount: 0,
+    totalPages: 0,
+    hasPreviousPage: false,
+    hasNextPage: false,
+  };
 }
 
 /**

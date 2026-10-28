@@ -13,6 +13,8 @@ import AdminDisputesTab from "@/components/admin/AdminDisputesTab";
 import AdminSettingsTab from "@/components/admin/AdminSettingsTab";
 import AdminLedgerTab from "@/components/admin/AdminLedgerTab";
 import { AdminDocumentsTab } from "@/components/admin/AdminDocumentsTab";
+import { AdminAuditLogsTab } from "@/components/admin/AdminAuditLogsTab";
+import { AdminFinancialActivityTab } from "@/components/admin/AdminFinancialActivityTab";
 import { AdminAnomaliesTab } from "@/components/admin/AdminAnomaliesTab";
 import ImportExportBar from "@/components/admin/ImportExportBar";
 import { ExcelColumnDef } from "@/services/excelService";
@@ -1068,6 +1070,7 @@ export default function AdminControlCenter() {
       {currentTab === "sims" && <AdminSimsTab />}
       {currentTab === "auctions" && <AdminAuctionsTab />}
       {currentTab === "transactions" && <AdminEscrowTab />}
+      {currentTab === "finance" && <AdminFinancialActivityTab />}
       {currentTab === "categories" && <AdminCategoriesTab />}
       {currentTab === "carriers" && <AdminCarriersTab />}
       {currentTab === "customers" && <AdminCustomersTab />}
@@ -1075,6 +1078,7 @@ export default function AdminControlCenter() {
       {currentTab === "users" && <AdminCustomersTab />}
       {currentTab === "disputes" && <AdminDisputesTab />}
       {currentTab === "documents" && <AdminDocumentsTab />}
+      {currentTab === "audit-logs" && <AdminAuditLogsTab />}
       {currentTab === "ledger" && <AdminLedgerTab />}
       {currentTab === "anomalies" && <AdminAnomaliesTab />}
       {currentTab === "settings" && <AdminSettingsTab />}

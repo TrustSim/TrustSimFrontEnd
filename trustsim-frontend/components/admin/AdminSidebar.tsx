@@ -20,6 +20,8 @@ import {
   Home,
   FileText,
   BookOpen,
+  ScrollText,
+  WalletCards,
 } from "lucide-react";
 
 export interface NavItem {
@@ -56,6 +58,7 @@ export const ADMIN_NAV_SECTIONS: NavSection[] = [
     title: "Tài chính & Tài khoản",
     items: [
       { id: "transactions", label: "Giao dịch Ký quỹ", tab: "transactions", icon: CreditCard },
+      { id: "finance", label: "Dòng tiền & Doanh thu", tab: "finance", icon: WalletCards },
       { id: "ledger", label: "Sổ cái kế toán", tab: "ledger", icon: BookOpen },
       { id: "customers", label: "Khách hàng", tab: "customers", icon: Users },
       { id: "staff", label: "Nhân sự & Nội bộ", tab: "staff", icon: UserCheck },
@@ -65,6 +68,7 @@ export const ADMIN_NAV_SECTIONS: NavSection[] = [
     title: "Vận hành & An toàn",
     items: [
       { id: "documents", label: "Tài liệu & Chính sách", tab: "documents", icon: FileText },
+      { id: "audit-logs", label: "Nhật ký kiểm toán", tab: "audit-logs", icon: ScrollText },
       { id: "disputes", label: "Khiếu nại", tab: "disputes", icon: AlertOctagon },
       { id: "anomalies", label: "Giám sát AI Fraud", tab: "anomalies", icon: Bot },
       { id: "settings", label: "Cấu hình hệ thống", tab: "settings", icon: Settings },

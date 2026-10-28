@@ -1,4 +1,7 @@
 import { apiFetch } from "./apiClient";
+import { withQuery } from "./queryParams";
+import type { PagedResult } from "@/types/common";
+import type { SimValuationQueryFilter } from "@/types/api-filters";
 
 export interface SimValuationDto {
   valuationId: string;
@@ -22,6 +25,9 @@ export interface SimValuationDto {
   detectedCategories: string[];
   valuationReasoning: string;
   fengShuiAnalysis?: string;
+  aiModelName?: string;
+  appliedToSim?: boolean;
+  createdDate?: string;
 }
 
 export const aiValuationService = {
@@ -46,5 +52,16 @@ export const aiValuationService = {
     });
     if (!res.data) throw new Error(res.message || "Không thể định giá SIM lúc này.");
     return res.data;
+  },
+
+  async getHistory(simId: string, filter: SimValuationQueryFilter = {}): Promise<PagedResult<SimValuationDto>> {
+    const pageIndex = filter.pageIndex ?? 1;
+    const pageSize = filter.pageSize ?? 10;
+    const res = await apiFetch<PagedResult<SimValuationDto>>(withQuery(`/ai/valuation/sim/${simId}/history`, {
+      ...filter,
+      pageIndex,
+      pageSize,
+    }));
+    return res.data || { items: [], pageIndex, pageSize, totalCount: 0, totalPages: 0, hasPreviousPage: false, hasNextPage: false };
   },
 };

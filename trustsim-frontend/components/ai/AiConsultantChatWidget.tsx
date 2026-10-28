@@ -21,13 +21,21 @@ import {
   CheckCircle2,
   AlertCircle,
   HelpCircle,
+  History,
+  Search,
+  Loader2,
 } from "lucide-react";
 import {
   streamChatConsultation,
+  getConsultationSessions,
+  getSessionMessages,
   type ChatConsultationRequest,
   type ChatConsultationStreamEvent,
   type ConsultationSimSuggestion,
+  type ConsultationSessionDto,
+  type ConsultationMessageDto,
 } from "@/services/aiConsultantService";
+import { ConsultationMessageSortBy, ConsultationSessionSortBy } from "@/types/api-filters";
 
 interface ChatMessage {
   id: string;
@@ -69,6 +77,14 @@ export function AiConsultantChatWidget() {
   const [inputValue, setInputValue] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [sessionSearch, setSessionSearch] = useState("");
+  const [debouncedSessionSearch, setDebouncedSessionSearch] = useState("");
+  const [sessions, setSessions] = useState<ConsultationSessionDto[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [messagePage, setMessagePage] = useState(1);
+  const [hasMoreMessages, setHasMoreMessages] = useState(false);
 
   // Bộ lọc thông tin tùy chọn
   const [showFilters, setShowFilters] = useState(false);
@@ -103,6 +119,78 @@ export function AiConsultantChatWidget() {
     window.addEventListener("open_ai_chat", handleOpenChat);
     return () => window.removeEventListener("open_ai_chat", handleOpenChat);
   }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSessionSearch(sessionSearch.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [sessionSearch]);
+
+  const loadSessions = useCallback(async () => {
+    if (!showHistory) return;
+    setHistoryLoading(true);
+    try {
+      const result = await getConsultationSessions({
+        pageIndex: 1,
+        pageSize: 20,
+        keyword: debouncedSessionSearch || undefined,
+        sortBy: ConsultationSessionSortBy.CreatedDate,
+        sortOrder: "Desc",
+      });
+      setSessions(result.items);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [debouncedSessionSearch, showHistory]);
+
+  useEffect(() => {
+    void loadSessions();
+  }, [loadSessions]);
+
+  const mapStoredMessages = (items: ConsultationMessageDto[]): ChatMessage[] => items.map((item) => ({
+    id: item.id,
+    sender: item.senderRole === "USER" ? "user" : "assistant",
+    content: item.messageContent,
+    suggestedSims: item.suggestedSims,
+    timestamp: new Date(item.createdDate).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+  }));
+
+  const openStoredSession = async (storedSession: ConsultationSessionDto) => {
+    setMessagesLoading(true);
+    try {
+      const result = await getSessionMessages(storedSession.id, {
+        pageIndex: 1,
+        pageSize: 50,
+        sortBy: ConsultationMessageSortBy.CreatedDate,
+        sortOrder: "Desc",
+      });
+      setSessionId(storedSession.id);
+      setMessages(mapStoredMessages([...result.items].reverse()));
+      setMessagePage(1);
+      setHasMoreMessages(result.hasNextPage);
+      setShowHistory(false);
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
+
+  const loadOlderMessages = async () => {
+    if (!sessionId || !hasMoreMessages || messagesLoading) return;
+    setMessagesLoading(true);
+    try {
+      const nextPage = messagePage + 1;
+      const result = await getSessionMessages(sessionId, {
+        pageIndex: nextPage,
+        pageSize: 50,
+        sortBy: ConsultationMessageSortBy.CreatedDate,
+        sortOrder: "Desc",
+      });
+      setMessages((current) => [...mapStoredMessages([...result.items].reverse()), ...current]);
+      setMessagePage(nextPage);
+      setHasMoreMessages(result.hasNextPage);
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
 
   // Xử lý gửi tin nhắn
   const handleSendMessage = async (textToSend?: string) => {
@@ -261,6 +349,9 @@ export function AiConsultantChatWidget() {
     setSessionId(null);
     setMessages([]);
     setInputValue("");
+    setHasMoreMessages(false);
+    setMessagePage(1);
+    setShowHistory(false);
   };
 
   // Tự động điều chỉnh chiều cao ô nhập liệu
@@ -369,6 +460,15 @@ export function AiConsultantChatWidget() {
             </div>
 
             <div className="flex items-center gap-1 text-slate-300 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowHistory((value) => !value)}
+                className={`p-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer ${showHistory ? "text-amber-300 bg-white/15" : "hover:text-white"}`}
+                title="Lịch sử tư vấn"
+                aria-label="Mở lịch sử tư vấn"
+              >
+                <History size={14} />
+              </button>
               {/* Nút cài đặt bộ lọc (Năm sinh, mệnh, ngân sách) */}
               <button
                 type="button"
@@ -416,6 +516,28 @@ export function AiConsultantChatWidget() {
           {/* ── Thân Chat: Chỉ hiển thị khi không bị thu nhỏ ── */}
           {!isMinimized && (
             <div className="flex flex-col flex-1 min-h-0 bg-[#F8FAFC]">
+              {showHistory && (
+                <section className="max-h-[280px] overflow-hidden border-b border-slate-200 bg-white shadow-sm shrink-0" aria-label="Lịch sử tư vấn">
+                  <div className="border-b border-slate-100 p-3">
+                    <label className="relative block">
+                      <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" aria-hidden />
+                      <input value={sessionSearch} onChange={(event) => setSessionSearch(event.target.value)} placeholder="Tìm theo tiêu đề phiên…" className="min-h-9 w-full rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-3 text-xs outline-none focus:border-[#001743] focus:bg-white" />
+                    </label>
+                  </div>
+                  <div className="max-h-[220px] overflow-y-auto p-2">
+                    {historyLoading ? (
+                      <div className="flex items-center justify-center gap-2 py-8 text-xs text-slate-500"><Loader2 className="size-4 animate-spin" />Đang tải lịch sử…</div>
+                    ) : sessions.length === 0 ? (
+                      <p className="m-0 py-8 text-center text-xs text-slate-500">Không có phiên tư vấn phù hợp.</p>
+                    ) : sessions.map((storedSession) => (
+                      <button key={storedSession.id} type="button" disabled={messagesLoading} onClick={() => void openStoredSession(storedSession)} className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left hover:bg-slate-50 disabled:opacity-60">
+                        <span className="min-w-0"><strong className="block truncate text-xs text-[#001743]">{storedSession.sessionTitle || "Phiên tư vấn"}</strong><span className="mt-0.5 block text-[10px] text-slate-500">{new Date(storedSession.lastMessageDate || storedSession.createdDate).toLocaleString("vi-VN")}</span></span>
+                        {messagesLoading ? <Loader2 className="size-3.5 shrink-0 animate-spin text-slate-400" /> : null}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
               {/* Thanh lọc bối cảnh (Collapsible Context Drawer) */}
               {showFilters && (
                 <div className="p-3 bg-white border-b border-slate-200 text-xs space-y-2 animate-fadeIn shadow-xs shrink-0">
@@ -489,6 +611,9 @@ export function AiConsultantChatWidget() {
 
               {/* Vùng cuộn tin nhắn */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+                {hasMoreMessages ? (
+                  <div className="text-center"><button type="button" onClick={() => void loadOlderMessages()} disabled={messagesLoading} className="min-h-9 rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-semibold text-[#001743] hover:bg-slate-50 disabled:opacity-50">{messagesLoading ? "Đang tải…" : "Tải tin nhắn cũ hơn"}</button></div>
+                ) : null}
                 {messages.length === 0 ? (
                   /* Màn hình khởi đầu với gợi ý nhanh */
                   <div className="py-3 space-y-4">

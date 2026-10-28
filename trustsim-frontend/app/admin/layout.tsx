@@ -48,6 +48,8 @@ const TAB_LABELS: Record<string, string> = {
   ekyc: "Phê duyệt hồ sơ eKYC",
   disputes: "Giải quyết khiếu nại & Trọng tài",
   documents: "Quản lý Tài liệu & Chính sách",
+  "audit-logs": "Nhật ký kiểm toán hệ thống",
+  finance: "Dòng tiền & Doanh thu sàn",
   anomalies: "AI Giám sát bất thường & Gian lận",
   settings: "Cài đặt & Cấu hình sàn",
 };

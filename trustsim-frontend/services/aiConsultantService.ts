@@ -1,5 +1,8 @@
 import { apiFetch } from "./apiClient";
 import { ensureFreshAccessToken } from "./authSession";
+import { withQuery } from "./queryParams";
+import type { PagedResult } from "@/types/common";
+import type { ConsultationMessageQueryFilter, ConsultationSessionQueryFilter } from "@/types/api-filters";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -166,19 +169,36 @@ export async function syncChatConsultation(request: ChatConsultationRequest) {
 /**
  * Lấy danh sách các phiên tư vấn đã lưu của người dùng
  */
-export async function getConsultationSessions(): Promise<ConsultationSessionDto[]> {
-  const res = await apiFetch<ConsultationSessionDto[]>("ai/consultant/sessions", {
+export async function getConsultationSessions(
+  filter: ConsultationSessionQueryFilter = {},
+): Promise<PagedResult<ConsultationSessionDto>> {
+  const pageIndex = filter.pageIndex ?? 1;
+  const pageSize = filter.pageSize ?? 20;
+  const res = await apiFetch<PagedResult<ConsultationSessionDto>>(withQuery("/ai/consultant/sessions", {
+    ...filter,
+    pageIndex,
+    pageSize,
+  }), {
     method: "GET",
   });
-  return res.data || [];
+  return res.data || { items: [], pageIndex, pageSize, totalCount: 0, totalPages: 0, hasPreviousPage: false, hasNextPage: false };
 }
 
 /**
  * Lấy toàn bộ tin nhắn trong một phiên tư vấn
  */
-export async function getSessionMessages(sessionId: string): Promise<ConsultationMessageDto[]> {
-  const res = await apiFetch<ConsultationMessageDto[]>(`ai/consultant/sessions/${sessionId}/messages`, {
+export async function getSessionMessages(
+  sessionId: string,
+  filter: ConsultationMessageQueryFilter = {},
+): Promise<PagedResult<ConsultationMessageDto>> {
+  const pageIndex = filter.pageIndex ?? 1;
+  const pageSize = filter.pageSize ?? 50;
+  const res = await apiFetch<PagedResult<ConsultationMessageDto>>(withQuery(`/ai/consultant/sessions/${sessionId}/messages`, {
+    ...filter,
+    pageIndex,
+    pageSize,
+  }), {
     method: "GET",
   });
-  return res.data || [];
+  return res.data || { items: [], pageIndex, pageSize, totalCount: 0, totalPages: 0, hasPreviousPage: false, hasNextPage: false };
 }

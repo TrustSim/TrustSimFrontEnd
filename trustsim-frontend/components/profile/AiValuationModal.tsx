@@ -14,11 +14,13 @@ import {
   Minus,
   BadgeCheck,
   Zap,
+  History,
 } from "lucide-react";
 import { OwnedSim } from "@/types/types";
 import { aiValuationService, SimValuationDto } from "@/services/aiValuationService";
 import { updateSim } from "@/services/simService";
 import { ToastMessage } from "@/components/ui/Toast";
+import { SimValuationSortBy } from "@/types/api-filters";
 
 interface AiValuationModalProps {
   sim: OwnedSim;
@@ -83,6 +85,12 @@ export default function AiValuationModal({
   const detailRef = React.useRef<HTMLDivElement>(null);
   const [applyingPrice, setApplyingPrice] = useState(false);
   const [appliedPrice, setAppliedPrice] = useState<number | null>(null);
+  const [history, setHistory] = useState<SimValuationDto[]>([]);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyTotalPages, setHistoryTotalPages] = useState(1);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [appliedFilter, setAppliedFilter] = useState<"" | "true" | "false">("");
+  const [modelFilter, setModelFilter] = useState("");
 
   const handleToggleDetail = () => {
     setShowDetail((prev) => {
@@ -120,6 +128,29 @@ export default function AiValuationModal({
     runValuation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!/^[0-9a-fA-F-]{36}$/.test(sim.id)) return;
+    let active = true;
+    setHistoryLoading(true);
+    aiValuationService.getHistory(sim.id, {
+      pageIndex: historyPage,
+      pageSize: 5,
+      appliedToSim: appliedFilter === "" ? undefined : appliedFilter === "true",
+      aiModelName: modelFilter.trim() || undefined,
+      sortBy: SimValuationSortBy.CreatedDate,
+      sortOrder: "Desc",
+    }).then((data) => {
+      if (!active) return;
+      setHistory(data.items);
+      setHistoryTotalPages(Math.max(data.totalPages, 1));
+    }).catch(() => {
+      if (active) setHistory([]);
+    }).finally(() => {
+      if (active) setHistoryLoading(false);
+    });
+    return () => { active = false; };
+  }, [appliedFilter, historyPage, modelFilter, sim.id, result]);
 
   const runValuation = async () => {
     setStatus("loading");
@@ -451,6 +482,17 @@ export default function AiValuationModal({
                   </div>
                 )}
               </div>
+              <section className="mt-4 rounded-xl border border-slate-200 bg-white p-3" aria-labelledby="valuation-history-title">
+                <div className="flex items-center justify-between gap-3">
+                  <h4 id="valuation-history-title" className="m-0 flex items-center gap-1.5 text-xs font-bold text-[#001743]"><History className="size-3.5" />Lịch sử thẩm định</h4>
+                  <div className="flex gap-1.5">
+                    <select value={appliedFilter} onChange={(event) => { setAppliedFilter(event.target.value as typeof appliedFilter); setHistoryPage(1); }} aria-label="Lọc trạng thái áp dụng" className="min-h-8 rounded-md border border-slate-200 bg-white px-2 text-[10px]"><option value="">Tất cả</option><option value="true">Đã áp dụng</option><option value="false">Chưa áp dụng</option></select>
+                    <input value={modelFilter} onChange={(event) => { setModelFilter(event.target.value); setHistoryPage(1); }} aria-label="Lọc theo mô hình AI" placeholder="Mô hình AI" className="min-h-8 w-24 rounded-md border border-slate-200 px-2 text-[10px]" />
+                  </div>
+                </div>
+                {historyLoading ? <div className="py-5 text-center text-[11px] text-slate-500">Đang tải lịch sử…</div> : history.length === 0 ? <div className="py-5 text-center text-[11px] text-slate-500">Chưa có lần thẩm định phù hợp.</div> : <div className="mt-2 divide-y divide-slate-100">{history.map((item) => <div key={item.valuationId} className="flex items-center justify-between gap-3 py-2 text-[11px]"><span><strong className="block text-[#001743]">{item.suggestedPrice.toLocaleString("vi-VN")} ₫</strong><span className="text-slate-500">{item.aiModelName || "AI"} · {item.createdDate ? new Date(item.createdDate).toLocaleString("vi-VN") : "—"}</span></span><span className={`rounded-md border px-2 py-1 font-semibold ${item.appliedToSim ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-slate-600"}`}>{item.appliedToSim ? "Đã áp dụng" : "Tham khảo"}</span></div>)}</div>}
+                {historyTotalPages > 1 ? <div className="mt-2 flex items-center justify-end gap-2 text-[10px] text-slate-500"><button type="button" disabled={historyPage <= 1} onClick={() => setHistoryPage((page) => page - 1)} className="min-h-8 rounded-md border border-slate-200 px-2 disabled:opacity-40">Trước</button><span>{historyPage}/{historyTotalPages}</span><button type="button" disabled={historyPage >= historyTotalPages} onClick={() => setHistoryPage((page) => page + 1)} className="min-h-8 rounded-md border border-slate-200 px-2 disabled:opacity-40">Sau</button></div> : null}
+              </section>
             </>
           )}
         </div>

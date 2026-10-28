@@ -6,13 +6,14 @@ import { AlertTriangle, Loader2, RefreshCw, X } from "lucide-react";
 import { auctionService, PendingSettlementDto } from "@/services/auctionService";
 import { formatPhoneNumber } from "@/services/simService";
 import { ToastMessage } from "@/components/ui/Toast";
+import { PendingSettlementSortBy } from "@/types/api-filters";
 
 interface SettlementsTabProps {
   addToast: (toast: Omit<ToastMessage, "id">) => void;
   onOpenDeposit: () => void;
 }
 
-type RoleFilter = "ALL" | "BUYER" | "SELLER";
+type RoleFilter = "ALL" | "WINNER" | "RUNNER_UP" | "SELLER";
 type SettlementAction =
   | "PAY"
   | "FORFEIT"
@@ -91,6 +92,9 @@ function getTask(item: PendingSettlementDto) {
 export default function SettlementsTab({ addToast, onOpenDeposit }: SettlementsTabProps) {
   const [items, setItems] = useState<PendingSettlementDto[]>([]);
   const [filter, setFilter] = useState<RoleFilter>("ALL");
+  const [pageIndex, setPageIndex] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -104,8 +108,16 @@ export default function SettlementsTab({ addToast, onOpenDeposit }: SettlementsT
     setLoadError(false);
 
     try {
-      const data = await auctionService.getPendingSettlements();
-      setItems(data || []);
+      const data = await auctionService.getPendingSettlements({
+        pageIndex,
+        pageSize: 10,
+        role: filter === "ALL" ? undefined : filter,
+        sortBy: PendingSettlementSortBy.Deadline,
+        sortOrder: "Asc",
+      });
+      setItems(data.items || []);
+      setTotalCount(data.totalCount);
+      setTotalPages(Math.max(data.totalPages, 1));
     } catch (error) {
       setLoadError(true);
       if (silent) {
@@ -119,7 +131,7 @@ export default function SettlementsTab({ addToast, onOpenDeposit }: SettlementsT
       setLoading(false);
       setRefreshing(false);
     }
-  }, [addToast]);
+  }, [addToast, filter, pageIndex]);
 
   useEffect(() => {
     fetchSettlements();
@@ -138,18 +150,12 @@ export default function SettlementsTab({ addToast, onOpenDeposit }: SettlementsT
   }), [items]);
 
   const visibleItems = useMemo(() => {
-    const filtered = items.filter((item) => {
-      if (filter === "BUYER") return isBuyer(item);
-      if (filter === "SELLER") return item.role === "SELLER";
-      return true;
-    });
-
-    return filtered.toSorted((a, b) => {
+    return items.toSorted((a, b) => {
       const aTime = a.deadline ? new Date(a.deadline).getTime() : Number.MAX_SAFE_INTEGER;
       const bTime = b.deadline ? new Date(b.deadline).getTime() : Number.MAX_SAFE_INTEGER;
       return aTime - bTime;
     });
-  }, [filter, items]);
+  }, [items]);
 
   const deficitTotal = useMemo(
     () => items.reduce((total, item) => total + Math.max(item.deficitAmount || 0, 0), 0),
@@ -213,7 +219,7 @@ export default function SettlementsTab({ addToast, onOpenDeposit }: SettlementsT
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <p className="m-0 text-sm text-slate-500">Các phiên đã kết thúc và đang chờ bạn xử lý.</p>
         <div className="flex items-center gap-5 text-xs text-slate-500">
-          <span><strong className="block text-base text-[#101828]">{counts.all}</strong>cần làm</span>
+          <span><strong className="block text-base text-[#101828]">{totalCount}</strong>cần làm</span>
           <span><strong className="block text-base text-[#101828]">{counts.urgent}</strong>sắp hết hạn</span>
         </div>
       </div>
@@ -226,15 +232,16 @@ export default function SettlementsTab({ addToast, onOpenDeposit }: SettlementsT
           </div>
           <div className="flex flex-wrap gap-1.5" aria-label="Lọc theo vai trò">
             {([
-              ["ALL", `Tất cả ${counts.all}`],
-              ["BUYER", `Mua ${counts.buyer}`],
-              ["SELLER", `Bán ${counts.seller}`],
+              ["ALL", "Tất cả"],
+              ["WINNER", "Người thắng"],
+              ["RUNNER_UP", "Á quân"],
+              ["SELLER", "Người bán"],
             ] as const).map(([value, label]) => (
               <button
                 key={value}
                 type="button"
                 aria-pressed={filter === value}
-                onClick={() => setFilter(value)}
+                onClick={() => { setFilter(value); setPageIndex(1); }}
                 className={`min-h-9 rounded-lg border px-3 text-xs font-semibold transition-colors ${
                   filter === value
                     ? "border-[#001743] bg-[#001743] text-white"
@@ -324,7 +331,10 @@ export default function SettlementsTab({ addToast, onOpenDeposit }: SettlementsT
               </ul>
             )}
 
-            <footer className="border-t border-slate-200 px-5 py-3 text-[11px] text-slate-500">Danh sách chỉ hiển thị những phiên đang chờ chính bạn xử lý.</footer>
+            <footer className="flex items-center justify-between gap-3 border-t border-slate-200 px-5 py-3 text-[11px] text-slate-500">
+              <span>Danh sách chỉ hiển thị những phiên đang chờ chính bạn xử lý.</span>
+              {totalPages > 1 ? <span className="flex items-center gap-2"><button type="button" disabled={pageIndex <= 1} onClick={() => setPageIndex((page) => Math.max(1, page - 1))} className="min-h-9 rounded-lg border border-slate-200 px-3 font-semibold text-[#001743] disabled:opacity-40">Trước</button><strong>Trang {pageIndex}/{totalPages}</strong><button type="button" disabled={pageIndex >= totalPages} onClick={() => setPageIndex((page) => Math.min(totalPages, page + 1))} className="min-h-9 rounded-lg border border-slate-200 px-3 font-semibold text-[#001743] disabled:opacity-40">Sau</button></span> : null}
+            </footer>
           </>
         )}
       </section>

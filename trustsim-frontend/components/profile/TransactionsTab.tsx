@@ -24,7 +24,13 @@ export default function TransactionsTab({
   const [loading, setLoading] = useState<boolean>(true);
   const [pageIndex, setPageIndex] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
-  const [sourceFilter, setSourceFilter] = useState<"ALL" | "WALLET" | "AUCTION">("ALL");
+  const [sourceFilter, setSourceFilter] = useState<"ALL" | "WALLET" | "AUCTION" | "AUCTION_DEPOSIT" | "ESCROW" | "COMPENSATION">("ALL");
+  const [directionFilter, setDirectionFilter] = useState<"ALL" | "CREDIT" | "DEBIT" | "LOCK">("ALL");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "PENDING" | "SUCCESS" | "FAILED">("ALL");
+  const [keyword, setKeyword] = useState("");
+  const [debouncedKeyword, setDebouncedKeyword] = useState("");
+  const [minAmount, setMinAmount] = useState("");
+  const [maxAmount, setMaxAmount] = useState("");
   const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.Desc);
 
   const loadTransactions = useCallback(async () => {
@@ -34,6 +40,11 @@ export default function TransactionsTab({
         pageIndex,
         pageSize: 15,
         sourceType: sourceFilter !== "ALL" ? sourceFilter : undefined,
+        direction: directionFilter !== "ALL" ? directionFilter : undefined,
+        status: statusFilter !== "ALL" ? statusFilter : undefined,
+        keyword: debouncedKeyword || undefined,
+        minAmount: minAmount ? Number(minAmount) : undefined,
+        maxAmount: maxAmount ? Number(maxAmount) : undefined,
         sortBy: WalletTransactionSortBy.CreatedAt,
         sortOrder,
       });
@@ -48,7 +59,12 @@ export default function TransactionsTab({
     } finally {
       setLoading(false);
     }
-  }, [sourceFilter, sortOrder, pageIndex, addToast]);
+  }, [sourceFilter, directionFilter, statusFilter, debouncedKeyword, minAmount, maxAmount, sortOrder, pageIndex, addToast]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedKeyword(keyword.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [keyword]);
 
   useEffect(() => {
     loadTransactions();
@@ -57,6 +73,7 @@ export default function TransactionsTab({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "COMPLETED":
+      case "SUCCESS":
         return { text: "Hoàn tất", bg: "#F0FDF4", color: "#16A34A", border: "#BBF7D0" };
       case "PENDING":
         return { text: "Đang xử lý", bg: "#FEF9C3", color: "#A16207", border: "#FEF08A" };
@@ -116,7 +133,7 @@ export default function TransactionsTab({
           <select
             value={sourceFilter}
             onChange={(e) => {
-              setSourceFilter(e.target.value as "ALL" | "WALLET" | "AUCTION");
+              setSourceFilter(e.target.value as typeof sourceFilter);
               setPageIndex(1);
             }}
             style={{
@@ -132,7 +149,18 @@ export default function TransactionsTab({
           >
             <option value="ALL">Tất cả nguồn giao dịch</option>
             <option value="WALLET">Nạp/rút ngân hàng</option>
-            <option value="AUCTION">Đấu giá và Escrow</option>
+            <option value="AUCTION">Tất cả đấu giá</option>
+            <option value="AUCTION_DEPOSIT">Tiền cọc đấu giá</option>
+            <option value="ESCROW">Thanh toán Escrow</option>
+            <option value="COMPENSATION">Tiền bồi thường</option>
+          </select>
+
+          <select value={directionFilter} onChange={(event) => { setDirectionFilter(event.target.value as typeof directionFilter); setPageIndex(1); }} aria-label="Lọc hướng dòng tiền" style={{ padding: "7px 12px", fontSize: 12.5, fontWeight: 600, borderRadius: 6, border: "1px solid #D1D5DB", background: "#FFFFFF", color: "#374151" }}>
+            <option value="ALL">Tất cả thu/chi</option><option value="CREDIT">Tiền vào</option><option value="DEBIT">Tiền ra</option><option value="LOCK">Tạm khóa</option>
+          </select>
+
+          <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value as typeof statusFilter); setPageIndex(1); }} aria-label="Lọc trạng thái giao dịch" style={{ padding: "7px 12px", fontSize: 12.5, fontWeight: 600, borderRadius: 6, border: "1px solid #D1D5DB", background: "#FFFFFF", color: "#374151" }}>
+            <option value="ALL">Tất cả trạng thái</option><option value="PENDING">Đang xử lý</option><option value="SUCCESS">Thành công</option><option value="FAILED">Thất bại</option>
           </select>
 
           {/* Filter Status */}
@@ -182,6 +210,12 @@ export default function TransactionsTab({
             <Icons.ArrowUpRight size={15} /> Rút tiền
           </button>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-2 rounded-lg border border-slate-200 bg-white p-3 sm:grid-cols-3">
+        <label className="text-xs font-semibold text-slate-600"><span className="mb-1 block">Tìm chứng từ hoặc nội dung</span><input value={keyword} onChange={(event) => { setKeyword(event.target.value); setPageIndex(1); }} placeholder="Mã tham chiếu, ghi chú…" className="min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal outline-none focus:border-[#001743]" /></label>
+        <label className="text-xs font-semibold text-slate-600"><span className="mb-1 block">Số tiền tối thiểu</span><input type="number" min={0} value={minAmount} onChange={(event) => { setMinAmount(event.target.value); setPageIndex(1); }} className="min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal outline-none focus:border-[#001743]" /></label>
+        <label className="text-xs font-semibold text-slate-600"><span className="mb-1 block">Số tiền tối đa</span><input type="number" min={0} value={maxAmount} onChange={(event) => { setMaxAmount(event.target.value); setPageIndex(1); }} className="min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal outline-none focus:border-[#001743]" /></label>
       </div>
 
       {/* Transaction List Card */}
@@ -283,7 +317,7 @@ export default function TransactionsTab({
                         fontVariantNumeric: "tabular-nums",
                       }}
                     >
-                      {isPlus ? "+" : isLock ? "🔒 " : "-"}{tx.amount.toLocaleString("vi-VN")} ₫
+                      {isPlus ? "+" : isLock ? "Giữ " : "-"}{tx.amount.toLocaleString("vi-VN")} ₫
                     </div>
 
                     {tx.balanceAfter !== undefined && (

@@ -33,6 +33,30 @@ export default function EkycTab({
   addToast,
 }: EkycTabProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [historyItems, setHistoryItems] = useState(kycHistory);
+  const [historyStatus, setHistoryStatus] = useState<"" | "PENDING_VERIFICATION" | "VERIFIED" | "REJECTED" | "EXPIRED">("");
+  const [idCardNumber, setIdCardNumber] = useState("");
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  useEffect(() => setHistoryItems(kycHistory), [kycHistory]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(async () => {
+      setHistoryLoading(true);
+      try {
+        const result = await ekycService.getMyKycHistoryPaged({
+          pageIndex: 1,
+          pageSize: 20,
+          status: historyStatus || undefined,
+          idCardNumber: idCardNumber.trim() || undefined,
+        });
+        setHistoryItems(result.items);
+      } finally {
+        setHistoryLoading(false);
+      }
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [historyStatus, idCardNumber]);
 
   // Determine raw status
   const rawStatus = kycStatus?.verificationStatus;
@@ -343,13 +367,18 @@ export default function EkycTab({
 
       {/* 4. History Table */}
       <div style={{ background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: 10, overflow: "hidden" }}>
-        <div style={{ padding: "16px 20px", borderBottom: "1px solid #E5E7EB", background: "#F8F9FA" }}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid #E5E7EB", background: "#F8F9FA", display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "end" }}>
           <h3 style={{ fontSize: 15, fontWeight: 800, color: "#001743", margin: 0 }}>
             Lịch sử nộp hồ sơ eKYC
           </h3>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input value={idCardNumber} onChange={(event) => setIdCardNumber(event.target.value)} aria-label="Lọc theo số căn cước" placeholder="Số CCCD" style={{ minHeight: 38, border: "1px solid #D1D5DB", borderRadius: 6, padding: "0 10px", fontSize: 12 }} />
+            <select value={historyStatus} onChange={(event) => setHistoryStatus(event.target.value as typeof historyStatus)} aria-label="Lọc trạng thái hồ sơ" style={{ minHeight: 38, border: "1px solid #D1D5DB", borderRadius: 6, padding: "0 10px", fontSize: 12, background: "white" }}><option value="">Tất cả trạng thái</option><option value="PENDING_VERIFICATION">Đang đối soát</option><option value="VERIFIED">Đã duyệt</option><option value="REJECTED">Bị từ chối</option><option value="EXPIRED">Hết hiệu lực</option></select>
+          </div>
         </div>
 
-        {kycHistory && kycHistory.length > 0 ? (
+        {historyLoading ? <div style={{ padding: "28px 20px", textAlign: "center", color: "#6B7280", fontSize: 13 }}>Đang tải lịch sử eKYC…</div> : historyItems.length > 0 ? (
+          <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
             <thead>
               <tr style={{ background: "#F9FAFB", borderBottom: "1px solid #E5E7EB", color: "#4B5563", fontWeight: 700 }}>
@@ -361,7 +390,7 @@ export default function EkycTab({
               </tr>
             </thead>
             <tbody>
-              {kycHistory.map((item, idx) => {
+              {historyItems.map((item, idx) => {
                 const isItemVerified = ekycService.isVerified(item);
                 const isItemPending = item.verificationStatus === 0 || item.verificationStatus === "PENDING_VERIFICATION";
                 return (
@@ -378,15 +407,15 @@ export default function EkycTab({
                     <td style={{ padding: "12px 16px" }}>
                       {isItemVerified ? (
                         <span style={{ fontSize: 11.5, fontWeight: 700, color: "#16A34A", background: "#F0FDF4", padding: "2px 8px", borderRadius: 4, border: "1px solid #BBF7D0" }}>
-                          ✓ Đã duyệt thành công
+                          Đã duyệt thành công
                         </span>
                       ) : isItemPending ? (
                         <span style={{ fontSize: 11.5, fontWeight: 700, color: "#D97706", background: "#FFFBEB", padding: "2px 8px", borderRadius: 4, border: "1px solid #FDE68A" }}>
-                          ⏳ Đang đối soát
+                          Đang đối soát
                         </span>
                       ) : (
                         <span style={{ fontSize: 11.5, fontWeight: 700, color: "#DC2626", background: "#FEF2F2", padding: "2px 8px", borderRadius: 4, border: "1px solid #FECACA" }}>
-                          ✕ Bị từ chối
+                          Bị từ chối
                         </span>
                       )}
                     </td>
@@ -398,6 +427,7 @@ export default function EkycTab({
               })}
             </tbody>
           </table>
+          </div>
         ) : (
           <div style={{ padding: "28px 20px", textAlign: "center", color: "#9CA3AF", fontSize: 13 }}>
             Chưa có lịch sử nộp hồ sơ eKYC nào. Bấm nút <strong>"Bắt đầu xác thực eKYC"</strong> để bắt đầu.

@@ -1,6 +1,7 @@
 import { apiFetch } from "./apiClient";
 import { withQuery } from "./queryParams";
 import type { AuctionSortBy, BaseQueryFilter } from "@/types/common";
+import type { AuctionBidQueryFilter, PendingSettlementQueryFilter } from "@/types/api-filters";
 
 export interface PagedResult<T> {
   items: T[];
@@ -420,9 +421,15 @@ export const auctionService = {
   /**
    * Lấy lịch sử trả giá (Bids) của phiên đấu giá từ Backend (Public API)
    */
-  async getAuctionBids(id: string, top: number = 50): Promise<BidDto[]> {
-    const res = await apiFetch<BidDto[]>(`/Auctions/${id}/bids?top=${top}`);
-    return res.data || [];
+  async getAuctionBids(id: string, filter: AuctionBidQueryFilter = {}): Promise<PagedResult<BidDto>> {
+    const pageIndex = filter.pageIndex ?? 1;
+    const pageSize = filter.pageSize ?? 20;
+    const res = await apiFetch<PagedResult<BidDto>>(withQuery(`/Auctions/${id}/bids`, {
+      ...filter,
+      pageIndex,
+      pageSize,
+    }));
+    return res.data || { items: [], pageIndex, pageSize, totalCount: 0, totalPages: 0, hasPreviousPage: false, hasNextPage: false };
   },
 
   /**
@@ -450,9 +457,15 @@ export const auctionService = {
   /**
    * Lấy danh sách các phiên đấu giá đang cần người dùng thanh toán hoặc xử lý quyết định
    */
-  async getPendingSettlements(): Promise<PendingSettlementDto[]> {
-    const res = await apiFetch<PendingSettlementDto[]>("/Auctions/my-pending-settlements");
-    return res.data || [];
+  async getPendingSettlements(filter: PendingSettlementQueryFilter = {}): Promise<PagedResult<PendingSettlementDto>> {
+    const pageIndex = filter.pageIndex ?? 1;
+    const pageSize = filter.pageSize ?? 20;
+    const res = await apiFetch<PagedResult<PendingSettlementDto>>(withQuery("/Auctions/my-pending-settlements", {
+      ...filter,
+      pageIndex,
+      pageSize,
+    }));
+    return res.data || { items: [], pageIndex, pageSize, totalCount: 0, totalPages: 0, hasPreviousPage: false, hasNextPage: false };
   },
 
   /**

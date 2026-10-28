@@ -1,4 +1,5 @@
 import type { BaseQueryFilter, LedgerJournalSortBy, WalletTransactionSortBy } from "./common";
+import type { RevenueHistoryQueryFilter } from "./api-filters";
 
 // ─── Wallet DTOs ──────────────────────────────────────────────────────────────
 
@@ -17,6 +18,7 @@ export type WalletTransactionType = "TOP_UP" | "WITHDRAW" | string;
 
 export type TransactionStatus =
   | "PENDING"
+  | "SUCCESS"
   | "COMPLETED"
   | "FAILED"
   | "CANCELLED";
@@ -90,6 +92,7 @@ export interface WalletTransactionFilter extends BaseQueryFilter<WalletTransacti
 export interface AdminWalletFilter extends WalletTransactionFilter {
   keyword?: string;
   userId?: string;
+  walletId?: string;
   walletStatus?: "ACTIVE" | "FROZEN" | "SUSPENDED";
   minBalance?: number;
   maxBalance?: number;
@@ -110,10 +113,23 @@ export interface UnifiedWalletTransactionDto {
 }
 
 export interface UnifiedStatementFilter extends BaseQueryFilter<WalletTransactionSortBy> {
-  sourceType?: "WALLET" | "AUCTION";
+  sourceType?: "WALLET" | "AUCTION" | "AUCTION_DEPOSIT" | "ESCROW" | "COMPENSATION";
+  direction?: "CREDIT" | "DEBIT" | "LOCK";
+  status?: "PENDING" | "SUCCESS" | "FAILED";
+  transactionType?: string;
   minAmount?: number;
   maxAmount?: number;
 }
+
+export interface AdminWithdrawalFilter extends BaseQueryFilter<WalletTransactionSortBy> {
+  userId?: string;
+  walletId?: string;
+  status?: "PENDING" | "SUCCESS" | "FAILED";
+  minAmount?: number;
+  maxAmount?: number;
+}
+
+export type AdminRevenueHistoryFilter = RevenueHistoryQueryFilter;
 
 // ─── Ledger DTOs (aligned with backend response) ─────────────────────────────
 

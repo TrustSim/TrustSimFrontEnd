@@ -149,15 +149,15 @@ export default function SellerConfirmRunnerUpPage({
     try {
       const [auctionData, bidsData] = await Promise.all([
         auctionService.getAuctionById(auctionId),
-        auctionService.getAuctionBids(auctionId, 15).catch(() => []),
+        auctionService.getAuctionBids(auctionId, { pageSize: 15 }).catch(() => null),
       ]);
       setAuction(auctionData);
-      setBids(bidsData);
+      setBids(bidsData?.items || []);
 
       // Tra cứu Pending Settlement để lấy chính xác các mốc tài chính
       try {
         const settlements = await auctionService.getPendingSettlements();
-        const matched = settlements.find(
+        const matched = settlements.items.find(
           (s: PendingSettlementDto) => s.auctionId === auctionId
         );
         if (matched) setMySettlement(matched);

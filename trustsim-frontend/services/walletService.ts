@@ -14,6 +14,8 @@ import type {
   PaymentIntentDto,
   UnifiedStatementFilter,
   UnifiedWalletTransactionDto,
+  AdminWithdrawalFilter,
+  AdminRevenueHistoryFilter,
 } from "@/types/wallet";
 import type { PagedResult } from "@/types/common";
 import { withQuery } from "./queryParams";
@@ -178,6 +180,36 @@ export const walletService = {
     throw new Error(res.message || "Không thể tải lịch sử giao dịch");
   },
 
+  /** [Admin] Danh sách yêu cầu rút tiền, hỗ trợ tra cứu theo người dùng và ví. */
+  async adminGetWithdrawals(
+    filter: AdminWithdrawalFilter = {}
+  ): Promise<PagedResult<WalletTransactionDto>> {
+    const res = await apiFetch<PagedResult<WalletTransactionDto>>(
+      withQuery("/Wallets/admin/withdrawals", {
+        ...filter,
+        pageIndex: filter.pageIndex ?? 1,
+        pageSize: filter.pageSize ?? 10,
+      })
+    );
+    if (res.data) return res.data;
+    throw new Error(res.message || "Không thể tải danh sách yêu cầu rút tiền");
+  },
+
+  /** [Admin] Lịch sử doanh thu sàn với phân trang đã được backend tính đúng. */
+  async adminGetRevenueHistory(
+    filter: AdminRevenueHistoryFilter = {}
+  ): Promise<PagedResult<LedgerJournalDto>> {
+    const res = await apiFetch<PagedResult<LedgerJournalDto>>(
+      withQuery("/Wallets/admin/financial/revenue-history", {
+        ...filter,
+        pageIndex: filter.pageIndex ?? 1,
+        pageSize: filter.pageSize ?? 10,
+      })
+    );
+    if (res.data) return res.data;
+    throw new Error(res.message || "Không thể tải lịch sử doanh thu sàn");
+  },
+
   /** [Admin] Đóng băng hoặc mở đóng băng ví */
   async adminFreezeWallet(
     walletId: string,
@@ -252,12 +284,9 @@ export const walletService = {
   },
 
   /** [Admin] Xuất lịch sử giao dịch toàn sàn ra file Excel (.xlsx) */
-  async adminExportTransactions(type?: string, status?: string): Promise<Blob> {
-    const params = new URLSearchParams();
-    if (type) params.set("type", type);
-    if (status) params.set("status", status);
-
-    const query = params.toString();
+  async adminExportTransactions(filter: AdminWalletFilter = {}): Promise<Blob> {
+    const { pageIndex: _pageIndex, pageSize: _pageSize, ...exportFilter } = filter;
+    const query = new URLSearchParams(Object.entries(exportFilter).filter(([, value]) => value !== undefined && value !== null && value !== "").map(([key, value]) => [key, String(value)])).toString();
     const response = await apiClient.get<Blob>(
       `/api/Wallets/admin/transactions/export${query ? `?${query}` : ""}`,
       { responseType: "blob" }

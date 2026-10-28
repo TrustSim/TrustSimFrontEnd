@@ -164,14 +164,14 @@ export default function AuctionPaymentTerminalPage({
         const [auctionData, walletData, settlements, myTrades] = await Promise.all([
           auctionService.getAuctionById(auctionId),
           walletService.getMyWallet().catch(() => null),
-          auctionService.getPendingSettlements().catch(() => []),
+          auctionService.getPendingSettlements({ keyword: auctionId, pageSize: 20 }).catch(() => null),
           tradeService.getMyTrades({ pageSize: 50 }).catch(() => null),
         ]);
 
         setAuction(auctionData);
         setWallet(walletData);
 
-        const matched = settlements.find(
+        const matched = settlements?.items.find(
           (s: PendingSettlementDto) => s.auctionId === auctionId
         );
         // Luôn cập nhật settlement thành matched hoặc null để xóa state cũ khi đã quyết toán

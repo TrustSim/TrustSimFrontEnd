@@ -15,6 +15,7 @@ import AuctionHelpPopover from "@/components/ui/AuctionHelpPopover";
 import { DepositModal } from "@/components/wallet/DepositModal";
 import PostAuctionSettlementTerminal from "@/components/auction/PostAuctionSettlementTerminal";
 import { formatPhoneNumber, getCarrierColor } from "@/services/simService";
+import { BidSortBy } from "@/types/api-filters";
 import {
   Gavel, Clock, Flame, ShieldCheck, CheckCircle2, Lock,
   ArrowLeft, TrendingUp, TrendingDown, RefreshCw, Wallet,
@@ -142,6 +143,12 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
 
   const [auction, setAuction] = useState<AuctionDto | null>(null);
   const [bids, setBids] = useState<BidDto[]>([]);
+  const [bidPageIndex, setBidPageIndex] = useState(1);
+  const [bidTotalCount, setBidTotalCount] = useState(0);
+  const [bidTotalPages, setBidTotalPages] = useState(1);
+  const [bidSortBy, setBidSortBy] = useState<BidSortBy>(BidSortBy.PlacedAt);
+  const [bidSortOrder, setBidSortOrder] = useState<"Asc" | "Desc">("Desc");
+  const [bidStatus, setBidStatus] = useState<"" | "VALID" | "OUTBID" | "CANCELLED">("");
   const [loading, setLoading] = useState(true);
   const [bidding, setBidding] = useState(false);
   const [registering, setRegistering] = useState(false);
@@ -205,7 +212,13 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
       if (!isBackground) setLoading(true);
       const [auctionData, bidsData] = await Promise.all([
         auctionService.getAuctionById(auctionId),
-        auctionService.getAuctionBids(auctionId, 40),
+        auctionService.getAuctionBids(auctionId, {
+          pageIndex: bidPageIndex,
+          pageSize: 10,
+          status: bidStatus || undefined,
+          sortBy: bidSortBy,
+          sortOrder: bidSortOrder,
+        }),
       ]);
 
       setAuction((prev) => {
@@ -231,9 +244,13 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
       }
       previousEndAtRef.current = auctionData.endAt;
 
-      if (bidsData.length > 0) {
+      setBidTotalCount(bidsData.totalCount);
+      setBidTotalPages(Math.max(bidsData.totalPages, 1));
+      if (bidsData.items.length > 0) {
         // Sắp xếp theo thời gian mới nhất trên đầu
-        const sortedBids = sortAndMergeBids(bidsData);
+        const sortedBids = bidSortBy === BidSortBy.PlacedAt && bidSortOrder === "Desc"
+          ? sortAndMergeBids(bidsData.items)
+          : bidsData.items;
         setBids((prev) => {
           if (prev.length > 0 && sortedBids[0].id !== prev[0]?.id) {
             setNewestBidId(sortedBids[0].id);
@@ -249,10 +266,10 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
       if (authService.isAuthenticated()) {
         try {
           const [settlements, myWallet] = await Promise.all([
-            auctionService.getPendingSettlements().catch(() => []),
+            auctionService.getPendingSettlements({ keyword: auctionId, pageSize: 20 }).catch(() => null),
             walletService.getMyWallet().catch(() => null),
           ]);
-          const match = settlements.find(
+          const match = settlements?.items.find(
             (s) => s.auctionId.toLowerCase() === auctionId.toLowerCase()
           );
           setMySettlement(match || null);
@@ -281,22 +298,30 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
     }
   };
 
-  useEffect(() => { fetchAuctionData(false); }, [auctionId]);
+  useEffect(() => { fetchAuctionData(false); }, [auctionId, bidPageIndex, bidSortBy, bidSortOrder, bidStatus]);
 
   // SignalR là kênh chính. Tải lại nhẹ danh sách định kỳ để tự phục hồi khi
   // trình duyệt ngủ, mạng đổi hoặc một sự kiện bị bỏ lỡ trong lúc kết nối lại.
   useEffect(() => {
     const refreshBids = async () => {
       try {
-        const nextBids = await auctionService.getAuctionBids(auctionId, 40);
-        setBids(sortAndMergeBids(nextBids));
+        const nextBids = await auctionService.getAuctionBids(auctionId, {
+          pageIndex: bidPageIndex,
+          pageSize: 10,
+          status: bidStatus || undefined,
+          sortBy: bidSortBy,
+          sortOrder: bidSortOrder,
+        });
+        setBids(bidSortBy === BidSortBy.PlacedAt && bidSortOrder === "Desc" ? sortAndMergeBids(nextBids.items) : nextBids.items);
+        setBidTotalCount(nextBids.totalCount);
+        setBidTotalPages(Math.max(nextBids.totalPages, 1));
       } catch {
         // Không làm gián đoạn màn hình đang xem nếu lần đồng bộ dự phòng lỗi.
       }
     };
     const interval = window.setInterval(refreshBids, 5000);
     return () => window.clearInterval(interval);
-  }, [auctionId]);
+  }, [auctionId, bidPageIndex, bidSortBy, bidSortOrder, bidStatus]);
 
   const minBidStepRef = useRef<number>(auction?.minBidStep || 500_000);
   const isDutchRef = useRef<boolean>(isDutch);
@@ -1697,7 +1722,19 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                         </span>
                       </div>
                     </div>
-                    <span className="text-xs font-mono font-bold px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-full border border-slate-200">{bids.length} lượt</span>
+                    <span className="text-xs font-mono font-bold px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-full border border-slate-200">{bidTotalCount} lượt</span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 border-b border-slate-100 bg-slate-50/70 px-4 py-2.5">
+                    <select aria-label="Lọc trạng thái lượt trả giá" value={bidStatus} onChange={(event) => { setBidStatus(event.target.value as typeof bidStatus); setBidPageIndex(1); }} className="min-h-9 rounded-lg border border-slate-200 bg-white px-2 text-[11px] text-slate-700">
+                      <option value="">Tất cả trạng thái</option><option value="VALID">Hợp lệ</option><option value="OUTBID">Đã bị vượt</option><option value="CANCELLED">Đã hủy</option>
+                    </select>
+                    <select aria-label="Sắp xếp lượt trả giá" value={bidSortBy} onChange={(event) => { setBidSortBy(Number(event.target.value) as BidSortBy); setBidPageIndex(1); }} className="min-h-9 rounded-lg border border-slate-200 bg-white px-2 text-[11px] text-slate-700">
+                      <option value={BidSortBy.PlacedAt}>Thời gian đặt</option><option value={BidSortBy.BidAmount}>Số tiền đặt</option>
+                    </select>
+                    <select aria-label="Chiều sắp xếp" value={bidSortOrder} onChange={(event) => { setBidSortOrder(event.target.value as "Asc" | "Desc"); setBidPageIndex(1); }} className="min-h-9 rounded-lg border border-slate-200 bg-white px-2 text-[11px] text-slate-700">
+                      <option value="Desc">Giảm dần</option><option value="Asc">Tăng dần</option>
+                    </select>
                   </div>
 
                   <div className="divide-y divide-slate-100 min-h-[320px] overflow-y-auto lg:min-h-0">
@@ -1743,6 +1780,13 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                       })
                     )}
                   </div>
+
+                  {bidTotalPages > 1 ? (
+                    <div className="flex items-center justify-between border-t border-slate-100 bg-white px-5 py-2.5 text-[11px] text-slate-500">
+                      <span>Trang {bidPageIndex}/{bidTotalPages}</span>
+                      <div className="flex gap-2"><button type="button" disabled={bidPageIndex <= 1} onClick={() => setBidPageIndex((page) => Math.max(1, page - 1))} className="min-h-9 rounded-lg border border-slate-200 px-3 font-semibold text-[#001743] disabled:opacity-40">Trước</button><button type="button" disabled={bidPageIndex >= bidTotalPages} onClick={() => setBidPageIndex((page) => Math.min(bidTotalPages, page + 1))} className="min-h-9 rounded-lg border border-slate-200 px-3 font-semibold text-[#001743] disabled:opacity-40">Sau</button></div>
+                    </div>
+                  ) : null}
 
                   <div className="border-t border-slate-200 bg-white p-4">
                     {renderAuctionDeskAction()}

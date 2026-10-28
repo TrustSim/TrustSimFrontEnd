@@ -23,6 +23,7 @@ import {
   Calendar,
   DollarSign,
   User,
+  Download,
 } from "lucide-react";
 import {
   RightDrawer,
@@ -47,6 +48,7 @@ import {
 import { getSims, SimNumberDto } from "@/services/simService";
 import { AuctionSortBy, SortOrder } from "@/types/common";
 import { AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
+import { exportTableToExcel } from "@/services/excelService";
 
 // Helper định dạng tiền tệ VNĐ
 const formatVND = (value: number) =>
@@ -192,6 +194,7 @@ export function AdminAuctionsTab() {
   const [auctions, setAuctions] = useState<AuctionListItemDto[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [updatedId, setUpdatedId] = useState<string | null>(null);
@@ -366,6 +369,24 @@ export function AdminAuctionsTab() {
     setSortKey(next.key); setSortDirection(next.direction);
   };
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await exportTableToExcel("/Auctions/export", {
+        keyword: search.trim() || undefined,
+        type: typeFilter === "all" ? undefined : Number(typeFilter),
+        status: statusFilter === "all" ? undefined : Number(statusFilter),
+        sortBy: sortKey === "start" ? AuctionSortBy.StartingPrice : sortKey === "current" ? AuctionSortBy.CurrentPrice : AuctionSortBy.CreatedDate,
+        sortOrder: sortDirection === "asc" ? SortOrder.Asc : SortOrder.Desc,
+      }, "TrustSim_Auctions");
+      setToast("Đã xuất toàn bộ phiên đấu giá phù hợp với bộ lọc.");
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : "Không thể xuất file Excel.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // Trạng thái badge helper
   const renderStatusBadge = (status: number | AuctionStatusEnum) => {
     switch (status) {
@@ -420,7 +441,8 @@ export function AdminAuctionsTab() {
         title="Quản Lý Phiên Đấu Giá SIM"
         description="Giám sát vận hành các phiên đấu giá, điều phối lịch mở thưởng và kích hoạt sớm."
         badge={`${totalCount} phiên`}
-        actions={
+        actions={<>
+          <button type="button" onClick={handleExport} disabled={exporting} className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-[#d0d5dd] bg-white px-3.5 text-xs font-semibold text-slate-700 hover:border-[#001743] hover:text-[#001743] disabled:opacity-50"><Download size={14} />{exporting ? "Đang xuất…" : "Xuất Excel"}</button>
           <button
             onClick={() => loadAuctions()}
             disabled={loading}
@@ -429,7 +451,7 @@ export function AdminAuctionsTab() {
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
             <span>Làm mới</span>
           </button>
-        }
+        </>}
       />
 
       {/* ── 2. Contextual KPI Strip (Tối giản theo Workbench) ── */}

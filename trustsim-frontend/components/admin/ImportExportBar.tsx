@@ -11,6 +11,8 @@ interface ImportExportBarProps<T = any> {
   sheetName?: string;
   onImport?: (rows: any[]) => void | Promise<void>;
   entityName?: string;
+  onExport?: () => void | Promise<void>;
+  exportLoading?: boolean;
   showImport?: boolean;
 }
 
@@ -21,6 +23,8 @@ export default function ImportExportBar<T = any>({
   sheetName = "Sheet1",
   onImport,
   entityName = "dữ liệu",
+  onExport,
+  exportLoading = false,
   showImport = true,
 }: ImportExportBarProps<T>) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -30,6 +34,10 @@ export default function ImportExportBar<T = any>({
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleExport = () => {
+    if (onExport) {
+      void onExport();
+      return;
+    }
     exportToExcel(data, columns, filename, sheetName);
   };
 
@@ -90,11 +98,12 @@ export default function ImportExportBar<T = any>({
         <button
           type="button"
           onClick={handleExport}
+          disabled={exportLoading}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-[#e4e7ec] rounded-lg text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
           title="Xuất bảng ra file Excel"
         >
           <Download size={13} strokeWidth={2} className="text-slate-500" />
-          <span>Xuất Excel</span>
+          <span>{exportLoading ? "Đang xuất…" : "Xuất Excel"}</span>
         </button>
       </div>
 

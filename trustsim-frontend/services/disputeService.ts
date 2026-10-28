@@ -51,11 +51,9 @@ export const disputeService = {
   },
 
   /** [Admin] Xuất báo cáo khiếu nại và tranh chấp ra file Excel (.xlsx) */
-  async exportDisputes(status?: string): Promise<Blob> {
-    const params = new URLSearchParams();
-    if (status && status !== "all") params.set("status", status);
-
-    const query = params.toString();
+  async exportDisputes(filter: DisputeFilter = {}): Promise<Blob> {
+    const { pageIndex: _pageIndex, pageSize: _pageSize, ...exportFilter } = filter;
+    const query = new URLSearchParams(Object.entries(exportFilter).filter(([, value]) => value !== undefined && value !== null && value !== "" && value !== "all").map(([key, value]) => [key, String(value)])).toString();
     const response = await apiClient.get<Blob>(
       `/api/Disputes/export${query ? `?${query}` : ""}`,
       { responseType: "blob" }

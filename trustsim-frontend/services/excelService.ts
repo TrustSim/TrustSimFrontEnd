@@ -1,4 +1,6 @@
 import * as XLSX from "xlsx";
+import { apiClient } from "./apiClient";
+import { buildQueryParams } from "./queryParams";
 
 export interface ExcelColumnDef<T = any> {
   header: string;
@@ -79,4 +81,40 @@ export function parseExcelFile<T = any>(file: File): Promise<T[]> {
     reader.onerror = (err) => reject(err);
     reader.readAsArrayBuffer(file);
   });
+}
+
+type ExportFilterValue = string | number | boolean | null | undefined;
+
+/**
+ * Tải file Excel do backend tạo, giữ nguyên toàn bộ bộ lọc đang áp dụng trên bảng.
+ * Phân trang được loại bỏ để endpoint export trả về toàn bộ bản ghi phù hợp.
+ */
+export async function exportTableToExcel(
+  endpoint: string,
+  filter: Record<string, ExportFilterValue>,
+  fileNamePrefix: string,
+): Promise<void> {
+  const { pageIndex: _pageIndex, pageSize: _pageSize, ...exportFilter } = filter;
+  const query = buildQueryParams(exportFilter);
+  const normalizedEndpoint = endpoint.startsWith("/api/") ? endpoint : `/api${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+  const response = await apiClient.get<Blob>(`${normalizedEndpoint}${query ? `?${query}` : ""}`, {
+    responseType: "blob",
+  });
+
+  const contentDisposition = response.headers["content-disposition"] as string | undefined;
+  const encodedName = contentDisposition?.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+  const plainName = contentDisposition?.match(/filename="?([^";]+)"?/i)?.[1];
+  const serverFileName = encodedName ? decodeURIComponent(encodedName) : plainName;
+  const fileName = serverFileName || `${fileNamePrefix}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  const blob = new Blob([response.data], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.URL.revokeObjectURL(url);
 }

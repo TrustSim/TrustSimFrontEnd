@@ -27,7 +27,7 @@ import {
   Filter,
 } from "lucide-react";
 import ImportExportBar from "@/components/admin/ImportExportBar";
-import { ExcelColumnDef } from "@/services/excelService";
+import { ExcelColumnDef, exportTableToExcel } from "@/services/excelService";
 import {
   getAdminSims,
   createAdminSim,
@@ -78,6 +78,7 @@ export function AdminSimsTab() {
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   // Master Data
   const [carriers, setCarriers] = useState<SimCarrierDto[]>([]);
@@ -254,6 +255,23 @@ export function AdminSimsTab() {
     setSortDirection(next.direction);
   };
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await exportTableToExcel("/Sims/export", {
+        keyword: search.trim() || undefined,
+        carrierId: selectedCarrier || undefined,
+        categoryId: selectedCategories.length === 1 ? selectedCategories[0] : undefined,
+        status: selectedStatus || undefined,
+      }, "TrustSim_KhoSIM");
+      showToast("Đã xuất toàn bộ SIM phù hợp với bộ lọc.");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Không thể xuất file Excel.", "error");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // KPIs
   const kpiAvailable = useMemo(() => sims.filter((s) => s.simStatus === "AVAILABLE").length, [sims]);
   const kpiAuction = useMemo(() => sims.filter((s) => s.simStatus === "IN_AUCTION").length, [sims]);
@@ -421,6 +439,8 @@ export function AdminSimsTab() {
             columns={SIM_EXPORT_COLUMNS}
             filename={`TrustSim_KhoSIM_${new Date().toISOString().slice(0, 10)}`}
             entityName="SIM"
+            onExport={handleExport}
+            exportLoading={exporting}
             onImport={async (rows) => {
               showToast(`Đang xử lý ${rows.length} bản ghi nhập từ tệp…`);
               fetchSims();

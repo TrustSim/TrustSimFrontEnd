@@ -1,7 +1,7 @@
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   FileText,
   Plus,
@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 import ImportExportBar from "@/components/admin/ImportExportBar";
 import { AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
-import { ExcelColumnDef } from "@/services/excelService";
+import { ExcelColumnDef, exportTableToExcel } from "@/services/excelService";
 import {
   getDocuments,
   createDocument,
@@ -57,6 +57,8 @@ import {
 } from "@/components/ui/RightDrawer";
 import { Pagination } from "@/components/ui/Pagination";
 import { AdminSortButton, toggleSort, type SortDirection } from "@/components/admin/AdminPrimitives";
+import { DocumentSortBy } from "@/types/api-filters";
+import type { DocumentStatusEnum } from "@/services/documentService";
 
 const DOCUMENT_EXPORT_COLUMNS: ExcelColumnDef<DocumentDto>[] = [
   { header: "Mã tài liệu", key: "id", width: 36 },
@@ -98,9 +100,14 @@ export function AdminDocumentsTab() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortKey, setSortKey] = useState<"name" | "date">("date");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [activeOnly, setActiveOnly] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<DocumentStatusEnum | "">("");
+  const [typeFilter, setTypeFilter] = useState<DocumentTypeEnum | "">("");
+  const [totalCount, setTotalCount] = useState(0);
+  const [exporting, setExporting] = useState(false);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -146,8 +153,18 @@ export function AdminDocumentsTab() {
     try {
       if (!isSilent) setLoading(true);
       else setRefreshing(true);
-      const data = await getDocuments(activeOnly);
-      setDocuments(data);
+      const data = await getDocuments({
+        pageIndex: currentPage,
+        pageSize,
+        keyword: debouncedSearch || undefined,
+        status: statusFilter || undefined,
+        documentType: typeFilter || undefined,
+        activeOnly: activeOnly ? true : undefined,
+        sortBy: sortKey === "name" ? DocumentSortBy.DocumentName : DocumentSortBy.CreatedDate,
+        sortOrder: sortDirection === "asc" ? "Asc" : "Desc",
+      });
+      setDocuments(data.items);
+      setTotalCount(data.totalCount);
     } catch (err: any) {
       console.error("Lỗi tải danh sách tài liệu:", err);
       showToast(err.message || "Không thể tải danh sách tài liệu.", "error");
@@ -155,28 +172,16 @@ export function AdminDocumentsTab() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [activeOnly]);
+  }, [activeOnly, currentPage, debouncedSearch, pageSize, sortDirection, sortKey, statusFilter, typeFilter]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [search]);
 
   useEffect(() => {
     fetchDocuments();
   }, [fetchDocuments]);
-
-  // Filtered list
-  const filteredDocs = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const filtered = !q ? [...documents] : documents.filter(
-      (d) =>
-        d.documentName.toLowerCase().includes(q) ||
-        d.linkUrl.toLowerCase().includes(q) ||
-        d.id.toLowerCase().includes(q)
-    );
-    return filtered.sort((a, b) => {
-      const left = sortKey === "name" ? a.documentName : new Date(a.createdDate).getTime();
-      const right = sortKey === "name" ? b.documentName : new Date(b.createdDate).getTime();
-      const result = typeof left === "number" && typeof right === "number" ? left - right : String(left).localeCompare(String(right), "vi");
-      return sortDirection === "asc" ? result : -result;
-    });
-  }, [documents, search, sortKey, sortDirection]);
 
   const changeSort = (key: "name" | "date") => {
     const next = toggleSort(sortKey, sortDirection, key);
@@ -185,17 +190,31 @@ export function AdminDocumentsTab() {
     setCurrentPage(1);
   };
 
-  // Paginated list
-  const totalPages = Math.ceil(filteredDocs.length / pageSize) || 1;
-  const pagedDocs = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredDocs.slice(start, start + pageSize);
-  }, [filteredDocs, currentPage, pageSize]);
+  const pagedDocs = documents;
 
   // Reset page when filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, activeOnly]);
+  }, [debouncedSearch, activeOnly, statusFilter, typeFilter]);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await exportTableToExcel("/Documents/export", {
+        keyword: debouncedSearch || undefined,
+        status: statusFilter || undefined,
+        documentType: typeFilter || undefined,
+        activeOnly: activeOnly ? true : undefined,
+        sortBy: sortKey === "name" ? DocumentSortBy.DocumentName : DocumentSortBy.CreatedDate,
+        sortOrder: sortDirection === "asc" ? "Asc" : "Desc",
+      }, "TrustSim_Documents");
+      showToast("Đã xuất toàn bộ tài liệu phù hợp với bộ lọc.");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Không thể xuất file Excel.", "error");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   // Open Drawer: Add Document (with choices: Ingest URL, Upload File, Manual)
   const handleOpenAddDocument = (defaultTab: "ingest" | "upload" | "create" = "ingest") => {
@@ -459,15 +478,17 @@ export function AdminDocumentsTab() {
       <AdminPageHeader
         title="Quản Lý Tài Liệu & Cơ Sở Tri Thức AI"
         description="Quản lý văn bản pháp lý, chính sách và nạp tài liệu định giá SIM số đẹp cho hệ thống AI."
-        badge={`${documents.length} văn bản`}
+        badge={`${totalCount} văn bản`}
         actions={<>
           <ImportExportBar
-            data={filteredDocs}
+            data={documents}
             columns={DOCUMENT_EXPORT_COLUMNS}
             filename="TrustSim_Documents"
             sheetName="DanhSachTaiLieu"
             showImport={false}
             entityName="tài liệu"
+            onExport={handleExport}
+            exportLoading={exporting}
           />
 
           <button
@@ -504,7 +525,7 @@ export function AdminDocumentsTab() {
               Tổng số tài liệu
             </div>
             <div className="text-xl font-bold text-[#001743] mt-0.5 font-mono">
-              {documents.length}
+              {totalCount}
             </div>
           </div>
         </div>
@@ -582,7 +603,19 @@ export function AdminDocumentsTab() {
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as DocumentStatusEnum | "")} className="min-h-9 rounded-lg border border-[#e4e7ec] bg-white px-2.5 text-xs text-slate-700" aria-label="Lọc trạng thái xử lý">
+            <option value="">Tất cả trạng thái</option>
+            <option value="PENDING">Chờ xử lý</option>
+            <option value="CRAWLING">Đang thu thập</option>
+            <option value="PROCESSING">Đang xử lý</option>
+            <option value="INDEXED">Đã lập chỉ mục</option>
+            <option value="FAILED">Thất bại</option>
+          </select>
+          <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value as DocumentTypeEnum | "")} className="min-h-9 rounded-lg border border-[#e4e7ec] bg-white px-2.5 text-xs text-slate-700" aria-label="Lọc loại tài liệu">
+            <option value="">Tất cả loại</option>
+            {DOCUMENT_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
+          </select>
           <label className="flex items-center gap-2 text-xs font-medium text-slate-600 cursor-pointer select-none">
             <input
               type="checkbox"
@@ -602,7 +635,7 @@ export function AdminDocumentsTab() {
             <Loader2 size={28} className="animate-spin text-[#001743]" />
             <span className="text-xs">Đang tải danh sách tài liệu...</span>
           </div>
-        ) : filteredDocs.length === 0 ? (
+        ) : documents.length === 0 ? (
           <div className="py-16 text-center">
             <div className="w-14 h-14 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
               <BookOpen size={24} />
@@ -773,11 +806,11 @@ export function AdminDocumentsTab() {
             </div>
 
             {/* Pagination */}
-            {filteredDocs.length > pageSize && (
+            {totalCount > pageSize && (
             <Pagination
               pageIndex={currentPage}
               pageSize={pageSize}
-              totalCount={filteredDocs.length}
+              totalCount={totalCount}
               onPageChange={setCurrentPage}
               onPageSizeChange={(size) => {
                 setPageSize(size);
