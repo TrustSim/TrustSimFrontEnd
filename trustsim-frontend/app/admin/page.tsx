@@ -665,7 +665,7 @@ export default function AdminControlCenter() {
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   onClick={() => showToast(`Đã ra lệnh khóa khẩn cấp phiên đấu giá SIM ${anom.sim}.`)}
-                                  className="px-2.5 py-1 text-xs font-medium text-rose-600 hover:text-white hover:bg-[#E4011E] rounded-md border border-rose-200 hover:border-[#E4011E] transition-all"
+                                  className="px-2.5 py-1 text-xs font-medium text-rose-600 hover:text-white hover:bg-[#E4011E] rounded-md border border-rose-200 hover:border-[#E4011E] transition-colors"
                                 >
                                   Khóa phiên
                                 </button>
@@ -723,7 +723,7 @@ export default function AdminControlCenter() {
                           strokeWidth={hoveredDonutSegment?.label === "Đang được đặt giá" ? 16 : 13}
                           strokeDasharray={`${activeBiddingDash} ${circumference}`}
                           strokeDashoffset="0"
-                          className="cursor-pointer transition-all duration-300 ease-out"
+                          className="cursor-pointer transition-colors duration-200 ease-out"
                           onMouseEnter={() =>
                             setHoveredDonutSegment({
                               label: "Đang được đặt giá",
@@ -745,7 +745,7 @@ export default function AdminControlCenter() {
                           strokeWidth={hoveredDonutSegment?.label === "Sắp kết thúc" ? 16 : 13}
                           strokeDasharray={`${urgentDash} ${circumference}`}
                           strokeDashoffset={String(-activeBiddingDash)}
-                          className="cursor-pointer transition-all duration-300 ease-out"
+                          className="cursor-pointer transition-colors duration-200 ease-out"
                           onMouseEnter={() =>
                             setHoveredDonutSegment({
                               label: "Sắp kết thúc",
@@ -767,7 +767,7 @@ export default function AdminControlCenter() {
                           strokeWidth={hoveredDonutSegment?.label === "Chưa có lượt đặt giá" ? 16 : 13}
                           strokeDasharray={`${newAuctionDash} ${circumference}`}
                           strokeDashoffset={String(-(activeBiddingDash + urgentDash))}
-                          className="cursor-pointer transition-all duration-300 ease-out"
+                          className="cursor-pointer transition-colors duration-200 ease-out"
                           onMouseEnter={() =>
                             setHoveredDonutSegment({
                               label: "Chưa có lượt đặt giá",
@@ -783,7 +783,7 @@ export default function AdminControlCenter() {
                 </svg>
 
                 {/* Center Content: Chuyển đổi mượt mà giữa Tổng số và Chi tiết mảng màu khi hover */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none transition-all duration-200">
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none transition-opacity duration-200">
                   {hoveredDonutSegment ? (
                     <div className="text-center px-1">
                       <span
@@ -818,7 +818,7 @@ export default function AdminControlCenter() {
                 ) : (
                   <>
                     <div
-                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${hoveredDonutSegment?.label === "Đang được đặt giá" ? "bg-slate-50" : "hover:bg-slate-50/70"
+                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${hoveredDonutSegment?.label === "Đang được đặt giá" ? "bg-slate-50" : "hover:bg-slate-50/70"
                         }`}
                       onMouseEnter={() =>
                         setHoveredDonutSegment({
@@ -839,7 +839,7 @@ export default function AdminControlCenter() {
                     </div>
 
                     <div
-                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${hoveredDonutSegment?.label === "Sắp kết thúc" ? "bg-amber-50/60" : "hover:bg-slate-50/70"
+                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${hoveredDonutSegment?.label === "Sắp kết thúc" ? "bg-amber-50/60" : "hover:bg-slate-50/70"
                         }`}
                       onMouseEnter={() =>
                         setHoveredDonutSegment({
@@ -860,7 +860,7 @@ export default function AdminControlCenter() {
                     </div>
 
                     <div
-                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${hoveredDonutSegment?.label === "Chưa có lượt đặt giá" ? "bg-blue-50/60" : "hover:bg-slate-50/70"
+                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${hoveredDonutSegment?.label === "Chưa có lượt đặt giá" ? "bg-blue-50/60" : "hover:bg-slate-50/70"
                         }`}
                       onMouseEnter={() =>
                         setHoveredDonutSegment({

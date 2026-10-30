@@ -2,6 +2,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { Button, Tag as AntTag } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import {
   Plus, Edit3, Trash2, AlertTriangle, X, Check,
   Loader2, RefreshCw, Tag, TrendingUp, Search,
@@ -17,7 +19,7 @@ import {
 import { Pagination } from "@/components/ui/Pagination";
 import { AdminSortButton, toggleSort, type SortDirection } from "@/components/admin/AdminPrimitives";
 import { simValidators } from "@/utils/validators";
-import { AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
+import { AdminDataTable, AdminIconButton, AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
 
 // --- Delete Modal ---
 function DeleteModal({ name, onConfirm, onCancel, loading }: {
@@ -314,6 +316,32 @@ export function AdminCategoriesTab() {
     setPageIndex(1);
   };
 
+  const tableColumns: ColumnsType<SimCategoryDto> = [
+    {
+      title: <AdminSortButton label="Thể loại / Mã thế số" active={sortKey === "name"} direction={sortDirection} onClick={() => changeSort("name")} />,
+      key: "category",
+      width: 230,
+      render: (_, cat) => <div><strong className="block text-xs text-[var(--admin-ink)]">{cat.categoryName}</strong><span className="font-mono text-[11px] text-slate-500">{cat.categoryCode}</span></div>,
+    },
+    {
+      title: <AdminSortButton label="Hệ số định giá AI" align="center" active={sortKey === "multiplier"} direction={sortDirection} onClick={() => changeSort("multiplier")} />,
+      key: "multiplier",
+      width: 180,
+      align: "center",
+      render: (_, cat) => <AntTag color="geekblue" icon={<TrendingUp size={12} aria-hidden="true" />}>x{cat.valuationMultiplier.toFixed(1)} AI Score</AntTag>,
+    },
+    { title: "Quy tắc nhận diện & mô tả", dataIndex: "description", key: "description", ellipsis: true, render: (value) => value || <span className="text-slate-400">Chưa có mô tả chi tiết</span> },
+    { title: "Thanh khoản dự báo", key: "liquidity", width: 150, align: "center", render: (_, cat) => <AntTag color="success">{cat.valuationMultiplier >= 3 ? "Rất cao (A+)" : "Cao (A)"}</AntTag> },
+    {
+      title: "Thao tác",
+      key: "actions",
+      width: 104,
+      fixed: "right",
+      align: "right",
+      render: (_, cat) => <div className="flex justify-end gap-1" onClick={(event) => event.stopPropagation()}><AdminIconButton label="Chỉnh sửa thể loại" icon={Edit3} onClick={() => openEdit(cat)} /><AdminIconButton label="Xóa thể loại" icon={Trash2} danger onClick={() => setDeleteTarget(cat)} /></div>,
+    },
+  ];
+
   return (
     <div className="admin-tab admin-tab-categories space-y-4">
       <AdminPageHeader
@@ -373,7 +401,17 @@ export function AdminCategoriesTab() {
       </div>
 
       {/* ── 3. Table Card (Matching Kho SIM) ── */}
-      <div className="bg-white border border-[#e4e7ec] rounded-xl overflow-hidden shadow-2xs">
+      <AdminDataTable<SimCategoryDto>
+        rowKey="id"
+        loading={loading}
+        columns={tableColumns}
+        dataSource={sorted}
+        onRow={(cat) => ({ onClick: () => openEdit(cat) })}
+        rowClassName={(cat) => cat.id === updatedId ? "bg-emerald-50" : ""}
+        locale={{ emptyText: error ? <div className="py-8"><AlertTriangle size={24} className="mx-auto mb-2 text-amber-500" /><p>{error}</p><Button className="mt-3" onClick={load}>Thử lại</Button></div> : search ? "Không tìm thấy thể loại phù hợp" : "Chưa có thể loại nào" }}
+        pagination={{ current: pageIndex, pageSize, total: filtered.length, onChange: (page, size) => { setPageIndex(page); setPageSize(size); } }}
+      />
+      <div className="hidden bg-white border border-[#e4e7ec] rounded-xl overflow-hidden shadow-2xs" aria-hidden="true">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>

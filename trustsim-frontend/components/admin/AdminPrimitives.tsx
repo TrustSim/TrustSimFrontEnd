@@ -23,7 +23,7 @@ export function AdminSortButton({
     <button
       type="button"
       onClick={onClick}
-      className={`admin-sort-button inline-flex items-center gap-1.5 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[.06em] text-slate-500 hover:text-[#001743] transition-colors duration-150 cursor-pointer ${
+      className={`admin-sort-button inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] font-semibold text-slate-500 hover:text-[#001743] transition-colors duration-150 cursor-pointer ${
         align === "right" ? "justify-end w-full" : align === "center" ? "justify-center w-full" : "justify-start"
       }`}
       aria-label={`Sắp xếp theo ${label}`}

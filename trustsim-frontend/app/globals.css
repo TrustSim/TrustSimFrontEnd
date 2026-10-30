@@ -66,6 +66,25 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --dur-fast: 120ms;
   --dur-short: 180ms;
+
+  /* TrustSim Admin · dense operations console */
+  --admin-brand: #001743;
+  --admin-brand-hover: #00266b;
+  --admin-accent: #e4011e;
+  --admin-canvas: #f6f8fb;
+  --admin-surface: #ffffff;
+  --admin-surface-muted: #f8fafc;
+  --admin-ink: #101828;
+  --admin-ink-secondary: #475467;
+  --admin-ink-muted: #667085;
+  --admin-line: #e4e7ec;
+  --admin-line-strong: #d0d5dd;
+  --admin-focus: #2563eb;
+  --admin-danger: #c5162e;
+  --admin-radius-sm: 6px;
+  --admin-radius-md: 8px;
+  --admin-radius-lg: 10px;
+  --admin-shadow: 0 1px 2px rgba(16, 24, 40, .04);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -347,15 +366,14 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px;
-  border: 1px solid #e4e7ec;
-  border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, .02);
+  padding: 4px 0 2px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 .admin-page-header h1 {
   margin: 0;
-  color: #001743;
+  color: var(--admin-brand);
   font-size: 17px;
   line-height: 1.35;
   font-weight: 700;
@@ -364,7 +382,7 @@ body {
 .admin-page-header p {
   max-width: 760px;
   margin: 4px 0 0;
-  color: #667085;
+  color: var(--admin-ink-muted);
   font-size: 12px;
   line-height: 1.55;
 }
@@ -373,10 +391,10 @@ body {
   align-items: center;
   min-height: 22px;
   padding: 2px 9px;
-  border: 1px solid #e4e7ec;
+  border: 1px solid var(--admin-line);
   border-radius: 999px;
-  background: #f8fafc;
-  color: #475467;
+  background: var(--admin-surface-muted);
+  color: var(--admin-ink-secondary);
   font-size: 11px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -385,9 +403,9 @@ body {
 .admin-page-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; flex: none; }
 .admin-filter-bar {
   padding: 14px;
-  border: 1px solid #e4e7ec;
+  border: 1px solid var(--admin-line);
   border-radius: 10px;
-  background: #fff;
+  background: var(--admin-surface);
   box-shadow: 0 1px 2px rgba(16, 24, 40, .02);
 }
 
@@ -399,11 +417,11 @@ body {
 }
 
 .admin-filter-field > span {
-  color: #667085;
+  color: var(--admin-ink-muted);
   font-size: 11px;
   font-weight: 600;
   line-height: 1.2;
-  text-transform: uppercase;
+  letter-spacing: .01em;
 }
 
 .admin-filter-field .ant-select,
@@ -421,22 +439,159 @@ body {
 }
 .admin-data-table {
   overflow: hidden;
-  border: 1px solid #e4e7ec;
+  border: 1px solid var(--admin-line);
   border-radius: 10px;
-  background: #fff;
+  background: var(--admin-surface);
   box-shadow: 0 1px 2px rgba(16, 24, 40, .02);
 }
 .trustsim-admin-table .ant-table { font-size: 12px; }
 .trustsim-admin-table .ant-table-thead > tr > th {
-  color: #475467;
-  font-size: 10px;
+  color: var(--admin-ink-secondary);
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: .04em;
-  text-transform: uppercase;
+  letter-spacing: .01em;
 }
 .trustsim-admin-table .ant-table-pagination.ant-pagination { margin: 14px 16px; }
 .trustsim-admin-table .ant-pagination-item-active a { color: #fff; }
 .trustsim-admin-table .ant-table-row { cursor: default; }
+
+.trustsim-admin-table .ant-table-cell {
+  font-variant-numeric: tabular-nums;
+}
+
+.trustsim-admin-table .ant-btn.ant-btn-icon-only,
+.admin-page-actions .ant-btn.ant-btn-icon-only {
+  display: inline-grid;
+  place-items: center;
+}
+
+.trustsim-admin-drawer .ant-drawer-header {
+  min-height: 64px;
+  padding: 14px 20px;
+  border-bottom-color: var(--admin-line);
+}
+
+.trustsim-admin-drawer .ant-drawer-body {
+  display: flex;
+  min-height: 0;
+  padding: 0;
+}
+
+.admin-drawer-tabs .ant-tabs-nav {
+  margin: 0;
+  padding-inline: 20px;
+}
+
+.admin-drawer-tabs .ant-tabs-tab {
+  min-height: 48px;
+  padding-block: 0;
+  font-size: 12px;
+}
+
+.admin-shell button:focus-visible,
+.admin-shell a:focus-visible,
+.admin-shell input:focus-visible,
+.admin-shell select:focus-visible,
+.admin-shell textarea:focus-visible {
+  outline: 2px solid var(--admin-focus);
+  outline-offset: 2px;
+}
+
+.admin-shell .admin-tab button,
+.admin-shell .admin-tab a,
+.admin-shell .admin-tab [role="button"] {
+  cursor: pointer;
+}
+
+.admin-shell .admin-tab table:not(.ant-table) {
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-shell .admin-tab table:not(.ant-table) thead {
+  color: var(--admin-ink-secondary);
+  font-size: 11px;
+  letter-spacing: .01em;
+  text-transform: none;
+}
+
+.admin-shell .admin-tab button > svg,
+.admin-shell .admin-tab a > svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.8;
+}
+
+.admin-shell .admin-tab table button > svg,
+.admin-shell .admin-tab table a > svg {
+  width: 14px;
+  height: 14px;
+}
+
+.admin-shell .admin-tab table:not(.ant-table) tbody tr {
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.admin-shell .admin-tab table:not(.ant-table) tbody tr:hover {
+  background: var(--admin-surface-muted);
+}
+
+.admin-shell .admin-tab table:not(.ant-table) th,
+.admin-shell .admin-tab table:not(.ant-table) td {
+  border-color: var(--admin-line);
+}
+
+.admin-shell .admin-tab input:not([class*="ant-"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.admin-shell .admin-tab select:not([class*="ant-"]),
+.admin-shell .admin-tab textarea:not([class*="ant-"]) {
+  min-height: 40px;
+  border: 1px solid var(--admin-line-strong);
+  border-radius: var(--admin-radius-md);
+  background: var(--admin-surface);
+  color: var(--admin-ink);
+  font-size: 13px;
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.admin-shell .admin-tab input:not([class*="ant-"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):hover,
+.admin-shell .admin-tab select:not([class*="ant-"]):hover,
+.admin-shell .admin-tab textarea:not([class*="ant-"]):hover {
+  border-color: var(--admin-brand);
+}
+
+.admin-shell .admin-tab input:not([class*="ant-"]):disabled,
+.admin-shell .admin-tab select:not([class*="ant-"]):disabled,
+.admin-shell .admin-tab textarea:not([class*="ant-"]):disabled {
+  cursor: not-allowed;
+  background: var(--admin-surface-muted);
+  color: var(--admin-ink-muted);
+}
+
+@media (max-width: 767px) {
+  .admin-data-table {
+    border-radius: var(--admin-radius-md);
+  }
+
+  .trustsim-admin-table .ant-table-pagination.ant-pagination {
+    justify-content: flex-start;
+    margin: 12px;
+  }
+
+  .trustsim-admin-drawer .ant-drawer-content-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-shell *,
+  .trustsim-admin-drawer * {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
 
 @media (max-width: 768px) {
   .admin-page-header { align-items: flex-start; flex-direction: column; }

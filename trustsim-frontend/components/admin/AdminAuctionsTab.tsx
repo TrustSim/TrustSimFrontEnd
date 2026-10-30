@@ -1,6 +1,8 @@
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 "use client";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { Tag as AntTag } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import {
   Gavel,
   Search,
@@ -47,7 +49,7 @@ import {
 } from "@/services/auctionService";
 import { getSims, SimNumberDto } from "@/services/simService";
 import { AuctionSortBy, SortOrder } from "@/types/common";
-import { AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
+import { AdminDataTable, AdminIconButton, AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
 import { exportTableToExcel } from "@/services/excelService";
 
 // Helper định dạng tiền tệ VNĐ
@@ -369,6 +371,16 @@ export function AdminAuctionsTab() {
     setSortKey(next.key); setSortDirection(next.direction);
   };
 
+  const tableColumns: ColumnsType<AuctionListItemDto> = [
+    { title: <AdminSortButton label="Mã phiên / Số SIM" active={sortKey === "code"} direction={sortDirection} onClick={() => changeSort("code")} />, key: "auction", width: 245, render: (_, auction) => <div><strong className="block font-mono text-sm text-[var(--admin-ink)]">{formatPhone(auction.phoneNumber)}</strong><span className="text-[11px] text-slate-500">{auction.auctionCode} · {auction.carrierName || "—"}</span></div> },
+    { title: "Hình thức", key: "type", width: 120, align: "center", render: (_, auction) => { const english = auction.auctionType === AuctionTypeEnum.ENGLISH; return <AntTag color={english ? "blue" : "purple"} icon={english ? <TrendingUp size={12} aria-hidden="true" /> : <TrendingDown size={12} aria-hidden="true" />}>{english ? "Anh" : "Hà Lan"}</AntTag>; } },
+    { title: <AdminSortButton label="Giá khởi điểm" align="right" active={sortKey === "start"} direction={sortDirection} onClick={() => changeSort("start")} />, dataIndex: "startingPrice", key: "startingPrice", width: 150, align: "right", render: (value) => <span className="whitespace-nowrap">{formatVND(value)}</span> },
+    { title: <AdminSortButton label="Giá hiện tại" align="right" active={sortKey === "current"} direction={sortDirection} onClick={() => changeSort("current")} />, key: "currentPrice", width: 160, align: "right", render: (_, auction) => <div><strong className="block whitespace-nowrap text-[var(--admin-ink)]">{formatVND(auction.currentPrice)}</strong>{auction.reservePrice > 0 ? <span className="text-[11px] text-slate-500">Trần {formatVND(auction.reservePrice)}</span> : null}</div> },
+    { title: "Lịch thi đấu", key: "schedule", width: 210, render: (_, auction) => <div><span className="block">{formatDateTime(auction.startAt)}</span><span className="text-[11px] text-slate-500">đến {formatDateTime(auction.endAt)}</span></div> },
+    { title: "Trạng thái", dataIndex: "auctionStatus", key: "status", width: 130, align: "center", render: (value) => renderStatusBadge(value) },
+    { title: "Thao tác", key: "actions", width: 136, fixed: "right", align: "right", render: (_, auction) => { const canCancel = [AuctionStatusEnum.SCHEDULE, AuctionStatusEnum.ACTIVE, AuctionStatusEnum.DRAFT].includes(auction.auctionStatus); return <div className="flex justify-end gap-1" onClick={(event) => event.stopPropagation()}><AdminIconButton label="Xem chi tiết" icon={Eye} onClick={() => handleOpenDetail(auction)} />{auction.auctionStatus === AuctionStatusEnum.SCHEDULE ? <AdminIconButton label="Kích hoạt sớm" icon={Zap} onClick={() => void handleActivate(auction)} /> : null}{canCancel ? <AdminIconButton label="Hủy phiên" icon={XCircle} danger onClick={() => setCancelTarget(auction)} /> : null}</div>; } },
+  ];
+
   const handleExport = async () => {
     setExporting(true);
     try {
@@ -562,7 +574,17 @@ export function AdminAuctionsTab() {
       </div>
 
       {/* ── 4. Main Table Card (Matching Kho SIM) ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] overflow-hidden shadow-xs">
+      <AdminDataTable<AuctionListItemDto>
+        rowKey="auctionId"
+        loading={loading}
+        columns={tableColumns}
+        dataSource={displayAuctions}
+        onRow={(auction) => ({ onClick: () => handleOpenDetail(auction) })}
+        rowClassName={(auction) => auction.auctionId === updatedId ? "bg-emerald-50" : ""}
+        locale={{ emptyText: search ? "Không tìm thấy phiên đấu giá phù hợp" : "Chưa có phiên đấu giá nào" }}
+        pagination={{ current: pageIndex, pageSize, total: totalCount, onChange: (page, size) => { setPageIndex(page); setPageSize(size); } }}
+      />
+      <div className="hidden bg-white border border-[#E2E8F0] rounded-[8px] overflow-hidden shadow-xs" aria-hidden="true">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>

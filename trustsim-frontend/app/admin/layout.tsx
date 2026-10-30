@@ -31,7 +31,7 @@ import {
 import { notificationHubService } from "@/services/notificationHubService";
 import type { WalletDto } from "@/types/wallet";
 import type { AuthResponseDto } from "@/types/auth";
-import { ConfigProvider } from "antd";
+import { App as AntApp, ConfigProvider } from "antd";
 import viVN from "antd/locale/vi_VN";
 
 const TAB_LABELS: Record<string, string> = {
@@ -521,15 +521,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           theme={{
             token: {
               colorPrimary: "#001743",
-              colorError: "#E4011E",
+              colorInfo: "#2563EB",
+              colorSuccess: "#15803D",
+              colorWarning: "#B45309",
+              colorError: "#C5162E",
               colorText: "#344054",
               colorTextHeading: "#001743",
+              colorTextSecondary: "#667085",
               colorBorder: "#D0D5DD",
-              colorBgLayout: "#F8F9FB",
-              borderRadius: 6,
-              controlHeight: 36,
+              colorBorderSecondary: "#E4E7EC",
+              colorBgLayout: "#F6F8FB",
+              colorBgContainer: "#FFFFFF",
+              borderRadius: 8,
+              controlHeight: 40,
               fontFamily: "var(--font-inter), Inter, sans-serif",
               fontSize: 13,
+              motionDurationFast: "0.12s",
+              motionDurationMid: "0.18s",
             },
             components: {
               Table: {
@@ -537,15 +545,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 headerColor: "#475467",
                 borderColor: "#E4E7EC",
                 rowHoverBg: "#F8FAFC",
-                cellPaddingBlockSM: 10,
-                cellPaddingInlineSM: 16,
+                cellPaddingBlockSM: 11,
+                cellPaddingInlineSM: 14,
               },
-              Button: { fontWeight: 600 },
+              Button: { fontWeight: 600, primaryShadow: "none" },
+              Drawer: { paddingLG: 20 },
+              Form: { itemMarginBottom: 16, labelColor: "#344054" },
               Pagination: { itemActiveBg: "#001743" },
+              Tabs: { itemColor: "#667085", itemSelectedColor: "#001743", inkBarColor: "#E4011E" },
             },
           }}
         >
-          <AdminLayoutInner>{children}</AdminLayoutInner>
+          <AntApp>
+            <AdminLayoutInner>{children}</AdminLayoutInner>
+          </AntApp>
         </ConfigProvider>
       </AuthSessionGuard>
     </Suspense>

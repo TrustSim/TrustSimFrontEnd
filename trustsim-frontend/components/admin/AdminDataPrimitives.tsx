@@ -1,8 +1,12 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Table } from "antd";
+import { Button, Table, Tooltip } from "antd";
 import type { TableProps } from "antd";
+import type { LucideIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+export const ADMIN_ICON_SIZE = 16;
 
 export function AdminPageHeader({
   title,
@@ -33,6 +37,33 @@ export function AdminFilterBar({ children }: { children: ReactNode }) {
   return <section className="admin-filter-bar">{children}</section>;
 }
 
+export function AdminIconButton({
+  label,
+  icon: Icon,
+  onClick,
+  disabled,
+  danger,
+}: {
+  label: string;
+  icon: LucideIcon;
+  onClick?: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <Tooltip title={label} mouseEnterDelay={0.7}>
+      <Button
+        type="text"
+        danger={danger}
+        disabled={disabled}
+        onClick={onClick}
+        aria-label={label}
+        icon={<Icon size={ADMIN_ICON_SIZE} strokeWidth={1.8} aria-hidden="true" />}
+      />
+    </Tooltip>
+  );
+}
+
 export function AdminDataTable<RecordType extends object>({
   className,
   pagination,
@@ -55,6 +86,11 @@ export function AdminDataTable<RecordType extends object>({
                 showQuickJumper: false,
                 position: ["bottomRight"],
                 showTotal: (total, range) => `${range[0]}–${range[1]} / ${total} bản ghi`,
+                itemRender: (_page, type, originalElement) => {
+                  if (type === "prev") return <ChevronLeft size={14} aria-hidden="true" />;
+                  if (type === "next") return <ChevronRight size={14} aria-hidden="true" />;
+                  return originalElement;
+                },
                 ...pagination,
               }
         }

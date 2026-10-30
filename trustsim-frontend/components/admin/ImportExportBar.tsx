@@ -1,7 +1,9 @@
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 "use client";
 import React, { useRef, useState } from "react";
-import { Download, Upload, FileSpreadsheet, Check, X, AlertCircle } from "lucide-react";
+import { App, Button, Empty, Modal, Table } from "antd";
+import type { ColumnsType } from "antd/es/table";
+import { Download, Upload, FileSpreadsheet } from "lucide-react";
 import { exportToExcel, parseExcelFile, ExcelColumnDef } from "@/services/excelService";
 
 interface ImportExportBarProps<T = any> {
@@ -27,6 +29,7 @@ export default function ImportExportBar<T = any>({
   exportLoading = false,
   showImport = true,
 }: ImportExportBarProps<T>) {
+  const { message } = App.useApp();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [previewRows, setPreviewRows] = useState<any[]>([]);
@@ -51,7 +54,7 @@ export default function ImportExportBar<T = any>({
       setPreviewRows(rows);
       setImportModalOpen(true);
     } catch (err: any) {
-      alert("Không thể đọc file Excel. Vui lòng kiểm tra lại định dạng file.");
+      void message.error("Không thể đọc file Excel. Vui lòng kiểm tra lại định dạng file.");
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
@@ -65,11 +68,28 @@ export default function ImportExportBar<T = any>({
       setImportModalOpen(false);
       setPreviewRows([]);
     } catch (err: any) {
-      alert(`Lỗi khi nhập dữ liệu: ${err.message}`);
+      void message.error(`Lỗi khi nhập dữ liệu: ${err.message}`);
     } finally {
       setIsProcessing(false);
     }
   };
+
+  const previewKeys = Object.keys(previewRows[0] || {}).slice(0, 6);
+  const previewColumns: ColumnsType<Record<string, unknown>> = [
+    {
+      title: "#",
+      key: "index",
+      width: 56,
+      render: (_value, _row, index) => index + 1,
+    },
+    ...previewKeys.map((key) => ({
+      title: key,
+      dataIndex: key,
+      key,
+      ellipsis: true,
+      render: (value: unknown) => String(value ?? ""),
+    })),
+  ];
 
   return (
     <>
@@ -83,115 +103,60 @@ export default function ImportExportBar<T = any>({
               accept=".xlsx, .xls, .csv"
               className="hidden"
             />
-            <button
-              type="button"
+            <Button
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-[#e4e7ec] rounded-lg text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
               title="Nhập dữ liệu từ file Excel"
+              icon={<Upload size={14} strokeWidth={1.8} aria-hidden="true" />}
             >
-              <Upload size={13} strokeWidth={2} className="text-slate-500" />
-              <span>Nhập Excel</span>
-            </button>
+              Nhập Excel
+            </Button>
           </>
         )}
 
-        <button
-          type="button"
+        <Button
           onClick={handleExport}
           disabled={exportLoading}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-[#e4e7ec] rounded-lg text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
           title="Xuất bảng ra file Excel"
+          icon={<Download size={14} strokeWidth={1.8} aria-hidden="true" />}
         >
-          <Download size={13} strokeWidth={2} className="text-slate-500" />
-          <span>{exportLoading ? "Đang xuất…" : "Xuất Excel"}</span>
-        </button>
+          {exportLoading ? "Đang xuất…" : "Xuất Excel"}
+        </Button>
       </div>
 
-      {/* Modal Preview Import */}
-      {importModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="bg-white border border-[#e4e7ec] rounded-xl w-full max-w-2xl shadow-xl overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-[#e4e7ec] flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center gap-2">
-                <FileSpreadsheet size={17} className="text-emerald-600" />
-                <h3 className="text-sm font-semibold text-[#001743]">
-                  Xem trước dữ liệu nhập ({previewRows.length} dòng từ {importFileName})
-                </h3>
-              </div>
-              <button
-                onClick={() => setImportModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors cursor-pointer"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="p-5 max-h-[420px] overflow-y-auto">
-              <p className="text-xs text-slate-500 mb-3">
-                Kiểm tra dữ liệu trích xuất từ file Excel trước khi đưa vào hệ thống {entityName}.
-              </p>
-
-              {previewRows.length === 0 ? (
-                <div className="text-center py-8 text-slate-400 text-xs flex flex-col items-center gap-2">
-                  <AlertCircle size={24} />
-                  <span>File không có dòng dữ liệu hợp lệ</span>
-                </div>
-              ) : (
-                <div className="border border-[#e4e7ec] rounded-lg overflow-x-auto text-xs">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 border-b border-[#e4e7ec] text-slate-500 text-[11px] font-semibold">
-                        <th className="p-2.5">#</th>
-                        {Object.keys(previewRows[0] || {}).slice(0, 6).map((headerKey) => (
-                          <th key={headerKey} className="p-2.5 whitespace-nowrap">
-                            {headerKey}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {previewRows.slice(0, 8).map((row, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/60">
-                          <td className="p-2.5 text-slate-400 font-mono text-[11px]">{idx + 1}</td>
-                          {Object.keys(previewRows[0] || {}).slice(0, 6).map((headerKey) => (
-                            <td key={headerKey} className="p-2.5 max-w-[160px] truncate text-slate-700">
-                              {String(row[headerKey] ?? "")}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {previewRows.length > 8 && (
-                    <div className="p-2 bg-slate-50 text-center text-slate-400 text-[11px] border-t border-[#e4e7ec]">
-                      … và {previewRows.length - 8} dòng khác
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="px-5 py-3 border-t border-[#e4e7ec] bg-slate-50/60 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setImportModalOpen(false)}
-                className="px-3.5 py-1.5 border border-[#e4e7ec] text-xs font-semibold text-slate-600 rounded-lg hover:bg-white transition-colors cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                disabled={previewRows.length === 0 || isProcessing}
-                onClick={handleConfirmImport}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
-              >
-                <Check size={14} />
-                <span>{isProcessing ? "Đang xử lý…" : `Xác nhận nhập ${previewRows.length} bản ghi`}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        open={importModalOpen}
+        onCancel={() => setImportModalOpen(false)}
+        onOk={() => void handleConfirmImport()}
+        okText={isProcessing ? "Đang xử lý…" : `Nhập ${previewRows.length} bản ghi`}
+        cancelText="Hủy"
+        okButtonProps={{ disabled: previewRows.length === 0, loading: isProcessing }}
+        width={760}
+        title={
+          <span className="inline-flex items-center gap-2">
+            <FileSpreadsheet size={18} className="text-emerald-700" aria-hidden="true" />
+            Xem trước dữ liệu nhập
+          </span>
+        }
+      >
+        <p className="mb-3 text-xs text-slate-500">
+          {importFileName} · Kiểm tra dữ liệu trước khi đưa vào hệ thống {entityName}.
+        </p>
+        {previewRows.length === 0 ? (
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="File không có dòng dữ liệu hợp lệ" />
+        ) : (
+          <Table<Record<string, unknown>>
+            rowKey={(_row, index) => String(index)}
+            size="small"
+            columns={previewColumns}
+            dataSource={previewRows.slice(0, 8)}
+            pagination={false}
+            scroll={{ x: "max-content" }}
+          />
+        )}
+        {previewRows.length > 8 ? (
+          <p className="mt-2 text-center text-[11px] text-slate-500">… và {previewRows.length - 8} dòng khác</p>
+        ) : null}
+      </Modal>
     </>
   );
 }

@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import React from "react";
+import { Button, Drawer, Tabs } from "antd";
 
 type DrawerSize = "md" | "lg" | "xl";
 
 const SIZE_MAP: Record<DrawerSize, string> = {
-  md: "w-[560px]",
-  lg: "w-[640px]",
-  xl: "w-[720px]",
+  md: "min(520px, 100vw)",
+  lg: "min(640px, 100vw)",
+  xl: "min(760px, 100vw)",
 };
 
 interface RightDrawerProps {
@@ -40,74 +40,28 @@ export function RightDrawer({
   size = "md",
   children,
 }: RightDrawerProps) {
-  // Close on ESC
-  useEffect(() => {
-    if (!open) return;
-    const handle = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handle);
-    return () => document.removeEventListener("keydown", handle);
-  }, [open, onClose]);
-
-  // Prevent body scroll when open
-  useEffect(() => {
-    if (open) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => { document.body.style.overflow = ""; };
-  }, [open]);
-
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className={`fixed inset-0 z-[60] bg-black/30 backdrop-blur-[2px] transition-opacity duration-200 ${
-          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Panel */}
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        className={`
-          fixed right-0 top-0 bottom-0 z-[61] flex flex-col bg-white shadow-2xl
-          ${SIZE_MAP[size]} max-w-full
-          transition-transform duration-[220ms] ease-[cubic-bezier(0.32,0.72,0,1)]
-          ${open ? "translate-x-0" : "translate-x-full pointer-events-none invisible"}
-        `}
-      >
-        {/* Sticky header */}
-        <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-slate-100 shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <h2 className="text-sm font-semibold text-[#001743] truncate">{title}</h2>
-            {badge && (
-              <span className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-mono font-semibold ${badgeCls}`}>
-                {badge}
-              </span>
-            )}
-          </div>
-          <button
-            onClick={onClose}
-            className="shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-            aria-label="Đóng"
-          >
-            <X size={16} strokeWidth={1.75} />
-          </button>
+    <Drawer
+      open={open}
+      onClose={onClose}
+      width={SIZE_MAP[size]}
+      keyboard
+      maskClosable
+      destroyOnHidden
+      rootClassName="trustsim-admin-drawer"
+      title={
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="truncate text-sm font-semibold text-[var(--admin-ink)]">{title}</span>
+          {badge ? (
+            <span className={`shrink-0 rounded px-2 py-0.5 font-mono text-[10px] font-semibold ${badgeCls}`}>
+              {badge}
+            </span>
+          ) : null}
         </div>
-
-        {/* Scrollable body + optional sticky footer — children handle this */}
-        <div className="flex flex-col flex-1 min-h-0">
-          {children}
-        </div>
-      </div>
-    </>
+      }
+    >
+      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+    </Drawer>
   );
 }
 
@@ -150,7 +104,7 @@ export function DrawerSection({
       {(title || subtitle) && (
         <div>
           {title && (
-            <div className="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">
+            <div className="text-xs font-semibold text-slate-800">
               {title}
             </div>
           )}
@@ -180,13 +134,16 @@ export function FormField({
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-slate-700 mb-1.5">
-        {label}
-        {required && <span className="text-rose-500 ml-0.5">*</span>}
+      <label className="block text-xs font-medium text-slate-700">
+        <span className="mb-1.5 block">
+          {label}
+          {required && <span className="ml-0.5 text-rose-500">*</span>}
+        </span>
+        {children}
       </label>
-      {children}
-      {error && <p className="text-[11px] text-rose-600 mt-1">{error}</p>}
-      {!error && hint && <p className="text-[11px] text-slate-400 mt-1">{hint}</p>}
+      <p className={`mt-1 min-h-[1.25rem] text-[11px] ${error ? "text-rose-600" : "text-slate-500"}`}>
+        {error || hint || ""}
+      </p>
     </div>
   );
 }
@@ -204,26 +161,17 @@ export function DrawerTabs({
   onChange: (i: number) => void;
 }) {
   return (
-    <div className="flex gap-0 border-b border-slate-100 shrink-0 px-6">
-      {tabs.map((tab, i) => (
-        <button
-          key={tab}
-          onClick={() => onChange(i)}
-          className={`py-3 px-4 text-xs font-medium border-b-2 transition-colors duration-150 ${
-            active === i
-              ? "border-[#001743] text-[#001743]"
-              : "border-transparent text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          {tab}
-        </button>
-      ))}
-    </div>
+    <Tabs
+      className="admin-drawer-tabs"
+      activeKey={String(active)}
+      onChange={(key) => onChange(Number(key))}
+      items={tabs.map((tab, index) => ({ key: String(index), label: tab }))}
+    />
   );
 }
 
 /**
- * Pre-built primary button with active:scale feedback.
+ * Primary action mapped to the shared Ant Design theme.
  */
 export function BtnPrimary({
   children,
@@ -239,15 +187,9 @@ export function BtnPrimary({
   form?: string;
 }) {
   return (
-    <button
-      type={type}
-      form={form}
-      onClick={onClick}
-      disabled={disabled}
-      className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#001743] hover:bg-[#00266B] active:scale-[0.98] text-white text-xs font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-    >
+    <Button type="primary" htmlType={type} form={form} onClick={onClick} disabled={disabled}>
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -268,14 +210,8 @@ export function BtnSecondary({
   form?: string;
 }) {
   return (
-    <button
-      type={type}
-      form={form}
-      onClick={onClick}
-      disabled={disabled}
-      className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-50 hover:bg-slate-100 active:scale-[0.98] text-slate-600 text-xs font-medium rounded-lg border border-slate-200 transition-all disabled:opacity-50"
-    >
+    <Button htmlType={type} form={form} onClick={onClick} disabled={disabled}>
       {children}
-    </button>
+    </Button>
   );
 }

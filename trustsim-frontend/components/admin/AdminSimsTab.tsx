@@ -2,6 +2,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { Tag as AntTag } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import {
   Smartphone,
   Search,
@@ -44,7 +46,7 @@ import {
 } from "@/services/simService";
 import { getCarriers, type SimCarrierDto, type PhonePrefixDto } from "@/services/carrierService";
 import { getCategories, type SimCategoryDto } from "@/services/categoryService";
-import { AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
+import { AdminDataTable, AdminIconButton, AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
 import {
   RightDrawer,
   DrawerBody,
@@ -254,6 +256,17 @@ export function AdminSimsTab() {
     setSortKey(next.key as any);
     setSortDirection(next.direction);
   };
+
+  const tableColumns: ColumnsType<AdminSimItemDto> = [
+    { title: <AdminSortButton label="Số SIM / Đầu số" active={sortKey === "phone"} direction={sortDirection} onClick={() => changeSort("phone")} />, key: "phone", width: 190, render: (_, sim) => <div><strong className="block whitespace-nowrap font-mono text-sm text-[var(--admin-ink)]">{formatPhoneNumber(sim.phoneNumber)}</strong><span className="font-mono text-[11px] text-slate-500">Đầu số {sim.prefixValue || "—"}</span></div> },
+    { title: "Nhà mạng", dataIndex: "carrierName", key: "carrier", width: 130, render: (value) => <AntTag>{value}</AntTag> },
+    { title: <AdminSortButton label="Thể loại" active={sortKey === "category" || sortKey === "categoryCount"} direction={sortDirection} onClick={() => changeSort("category")} />, key: "categories", width: 220, render: (_, sim) => <div className="flex flex-wrap gap-1">{sim.categoryNames?.length ? sim.categoryNames.slice(0, 3).map((name) => <AntTag key={name}>{name}</AntTag>) : "—"}</div> },
+    { title: "Định dạng nhịp", dataIndex: "formatRhythmName", key: "rhythm", width: 170, ellipsis: true, render: (value) => value || "—" },
+    { title: "Chủ sở hữu", key: "owner", width: 190, render: (_, sim) => sim.ownerFullName ? <div><span className="block font-medium text-slate-800">{sim.ownerFullName}</span><span className="font-mono text-[11px] text-slate-500">{sim.ownerPhoneNumber || "—"}</span></div> : <AntTag>Kho sàn TrustSim</AntTag> },
+    { title: <AdminSortButton label="Trạng thái" align="center" active={sortKey === "status"} direction={sortDirection} onClick={() => changeSort("status")} />, dataIndex: "simStatus", key: "status", width: 145, align: "center", render: (value: SimStatus) => <AntTag color={value === "AVAILABLE" ? "success" : value === "IN_AUCTION" ? "warning" : value === "TRANFERED" ? "blue" : "default"}>{getSimStatusLabel(value)}</AntTag> },
+    { title: "Ngày tạo", dataIndex: "createdDate", key: "created", width: 112, render: (value) => value ? new Date(value).toLocaleDateString("vi-VN") : "—" },
+    { title: "Thao tác", key: "actions", width: 136, fixed: "right", align: "right", render: (_, sim) => <div className="flex justify-end gap-1" onClick={(event) => event.stopPropagation()}><AdminIconButton label="Xem chi tiết" icon={Eye} onClick={() => handleOpenDrawer(sim, "view")} /><AdminIconButton label="Chỉnh sửa SIM" icon={Edit3} onClick={() => handleOpenDrawer(sim, "edit")} /><AdminIconButton label="Xóa SIM" icon={Trash2} danger onClick={() => { setSimToDelete(sim); setDeleteModalOpen(true); }} /></div> },
+  ];
 
   const handleExport = async () => {
     setExporting(true);
@@ -757,7 +770,17 @@ export function AdminSimsTab() {
       </div>
 
       {/* 4. Data Table */}
-      <div className="bg-white border border-slate-200/80 rounded-xl overflow-hidden shadow-2xs">
+      <AdminDataTable<AdminSimItemDto>
+        rowKey="id"
+        loading={loading}
+        columns={tableColumns}
+        dataSource={displaySims}
+        rowSelection={{ selectedRowKeys: selectedSimIds, onChange: (keys) => setSelectedSimIds(keys.map(String)) }}
+        onRow={(sim) => ({ onClick: () => handleOpenDrawer(sim, "view") })}
+        locale={{ emptyText: "Không tìm thấy số SIM phù hợp" }}
+        pagination={{ current: pageIndex, pageSize, total: totalCount, onChange: (page, size) => { setPageIndex(page); setPageSize(size); } }}
+      />
+      <div className="hidden bg-white border border-slate-200/80 rounded-xl overflow-hidden shadow-2xs" aria-hidden="true">
         <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
           <table className="w-full min-w-[900px] text-left border-collapse text-xs">
             <thead>

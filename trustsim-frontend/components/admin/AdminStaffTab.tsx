@@ -2,6 +2,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { Button, Tag as AntTag } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import {
   ShieldCheck,
   ShieldAlert,
@@ -51,6 +53,7 @@ import { AdminSortButton, toggleSort, type SortDirection } from "@/components/ad
 import ImportExportBar from "@/components/admin/ImportExportBar";
 import { ExcelColumnDef } from "@/services/excelService";
 import { SortOrder, UserAccountSortBy } from "@/types/common";
+import { AdminDataTable, AdminIconButton } from "@/components/admin/AdminDataPrimitives";
 
 const STAFF_EXPORT_COLUMNS: ExcelColumnDef<AdminUserDetailDto>[] = [
   { header: "Mã nhân sự", key: "id", width: 15 },
@@ -183,6 +186,15 @@ export function AdminStaffTab() {
     setSortKey(next.key);
     setSortDirection(next.direction);
   };
+
+  const tableColumns: ColumnsType<AdminUserDetailDto> = [
+    { title: <AdminSortButton label="Định danh nhân sự" active={sortKey === "name"} direction={sortDirection} onClick={() => changeSort("name")} />, key: "staff", width: 260, render: (_, member) => <div className="flex items-center gap-3"><BankingStaffAvatar name={member.fullName || member.userName} avatar={member.avatarImg} isActive={member.isActive} /><div className="min-w-0"><strong className="block truncate text-xs text-[var(--admin-ink)]">{member.fullName || member.userName}</strong><span className="block truncate text-[11px] text-slate-500">@{member.userName} · {member.email}</span></div></div> },
+    { title: "Liên hệ & định danh", key: "contact", width: 190, render: (_, member) => <div><span className="block font-mono text-xs">{member.phoneNumber || "Chưa đăng ký"}</span><span className="text-[11px] text-slate-500">{member.identityNumber ? `CCCD •••• ${member.identityNumber.slice(-4)}` : "Chưa nộp CCCD"}</span></div> },
+    { title: "Phân cấp kiểm toán", key: "role", width: 210, render: () => <AntTag color={activeSegment === "admins" ? "purple" : "blue"}>{activeSegment === "admins" ? "Tier-3 · Toàn quyền" : "Tier-1 · Tư vấn"}</AntTag> },
+    { title: <AdminSortButton label="Ngày cấp phép" active={sortKey === "date"} direction={sortDirection} onClick={() => changeSort("date")} />, dataIndex: "createdDate", key: "date", width: 135, render: (value) => value ? new Date(value).toLocaleDateString("vi-VN") : "—" },
+    { title: "Tình trạng", dataIndex: "isActive", key: "status", width: 135, align: "center", render: (value) => <AntTag color={value ? "success" : "error"}>{value ? "Hoạt động" : "Tạm đình chỉ"}</AntTag> },
+    { title: "Thao tác", key: "actions", width: 136, fixed: "right", align: "right", render: (_, member) => <div className="flex justify-end gap-1" onClick={(event) => event.stopPropagation()}><AdminIconButton label="Xem hồ sơ" icon={Eye} onClick={() => openView(member)} /><AdminIconButton label="Chỉnh sửa nhân sự" icon={Edit3} onClick={() => openEdit(member)} /><AdminIconButton label={member.isActive ? "Khóa tài khoản" : "Mở khóa tài khoản"} icon={member.isActive ? Lock : Unlock} danger={member.isActive} onClick={() => setStatusConfirm({ user: member, targetStatus: !member.isActive })} /></div> },
+  ];
 
   const fetchStaff = useCallback(async () => {
     setLoading(true);
@@ -321,7 +333,7 @@ export function AdminStaffTab() {
 
             <button
               onClick={openCreate}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white text-xs font-semibold rounded-xl shadow-xs transition-all duration-150 shrink-0"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#001743] hover:bg-[#00266B] text-white text-xs font-semibold rounded-xl shadow-xs transition-colors duration-150 shrink-0"
             >
               <Plus size={15} strokeWidth={2} />
               <span>{activeSegment === "admins" ? "Cấp tài khoản Quản trị" : "Cấp tài khoản Tư vấn"}</span>
@@ -391,7 +403,7 @@ export function AdminStaffTab() {
                 setActiveSegment("admins");
                 setPageIndex(1);
               }}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-150 ${
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-colors duration-150 ${
                 activeSegment === "admins"
                   ? "bg-white text-[#001743] shadow-xs border border-slate-200/60 font-bold"
                   : "text-slate-600 hover:text-slate-900"
@@ -407,7 +419,7 @@ export function AdminStaffTab() {
                 setActiveSegment("consultants");
                 setPageIndex(1);
               }}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-150 ${
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-colors duration-150 ${
                 activeSegment === "consultants"
                   ? "bg-white text-[#001743] shadow-xs border border-slate-200/60 font-bold"
                   : "text-slate-600 hover:text-slate-900"
@@ -437,7 +449,7 @@ export function AdminStaffTab() {
                   setSelectedStatus(st.id);
                   setPageIndex(1);
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150 ${
                   selectedStatus === st.id
                     ? "bg-[#001743] text-white shadow-2xs font-bold"
                     : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/60"
@@ -458,7 +470,7 @@ export function AdminStaffTab() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm theo họ tên, username, số điện thoại, CCCD…"
-              className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-[#001743] focus:ring-1 focus:ring-[#001743] focus:outline-none transition-all placeholder:text-slate-400"
+              className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-[#001743] focus:ring-1 focus:ring-[#001743] focus:outline-none transition-colors placeholder:text-slate-400"
             />
             {search && (
               <button
@@ -489,7 +501,17 @@ export function AdminStaffTab() {
       </div>
 
       {/* ── SECTION 4: The Clean High-Trust Institutional Data Table ── */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs">
+      <AdminDataTable<AdminUserDetailDto>
+        rowKey="id"
+        loading={loading}
+        columns={tableColumns}
+        dataSource={displayStaff}
+        onRow={(member) => ({ onClick: () => openView(member) })}
+        rowClassName={(member) => member.id === updatedStaffId ? "bg-emerald-50" : ""}
+        locale={{ emptyText: error ? <div className="py-8"><AlertTriangle size={24} className="mx-auto mb-2 text-rose-600" /><p>{error}</p><Button className="mt-3" onClick={fetchStaff}>Thử kết nối lại</Button></div> : `Chưa có ${activeSegment === "admins" ? "quản trị viên" : "tư vấn viên"} phù hợp` }}
+        pagination={{ current: pageIndex, pageSize, total: totalCount, onChange: (page, size) => { setPageIndex(page); setPageSize(size); } }}
+      />
+      <div className="hidden bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs" aria-hidden="true">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
@@ -585,7 +607,7 @@ export function AdminStaffTab() {
                     <tr
                       key={member.id}
                       onClick={() => openView(member)}
-                      className={`group cursor-pointer transition-all duration-150 ${
+                      className={`group cursor-pointer transition-colors duration-150 ${
                         isUpdated
                           ? "bg-emerald-50/70"
                           : "hover:bg-slate-50/80 bg-white"
@@ -777,7 +799,7 @@ export function AdminStaffTab() {
           <div className="flex flex-col flex-1 min-h-0">
             <DrawerBody>
               {/* Dossier Header Card */}
-              <div className="p-5 bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-2xl flex items-center justify-between shadow-2xs">
+              <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-5 shadow-2xs">
                 <div className="flex items-center gap-3.5">
                   <BankingStaffAvatar
                     name={selectedStaff.fullName || selectedStaff.userName}

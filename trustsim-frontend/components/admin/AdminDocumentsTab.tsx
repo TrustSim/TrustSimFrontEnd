@@ -2,6 +2,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { Tag as AntTag } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import {
   FileText,
   Plus,
@@ -32,7 +34,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import ImportExportBar from "@/components/admin/ImportExportBar";
-import { AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
+import { AdminDataTable, AdminIconButton, AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
 import { ExcelColumnDef, exportTableToExcel } from "@/services/excelService";
 import {
   getDocuments,
@@ -456,6 +458,15 @@ export function AdminDocumentsTab() {
     return <FileText size={16} className="text-slate-600" />;
   };
 
+  const tableColumns: ColumnsType<DocumentDto> = [
+    { title: "STT", key: "index", width: 64, align: "center", render: (_value, _doc, index) => (currentPage - 1) * pageSize + index + 1 },
+    { title: <AdminSortButton label="Tên tài liệu / Văn bản" active={sortKey === "name"} direction={sortDirection} onClick={() => changeSort("name")} />, key: "document", width: 280, render: (_, doc) => <div className="flex items-start gap-3"><span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-slate-100">{getFileIcon(doc.linkUrl || doc.documentName)}</span><div className="min-w-0"><strong className="block truncate text-xs text-[var(--admin-ink)]">{doc.documentName}</strong><span className="block truncate font-mono text-[11px] text-slate-500">{doc.id}</span></div></div> },
+    { title: "Đường dẫn / Tệp nguồn", dataIndex: "linkUrl", key: "source", ellipsis: true, render: (value) => value ? <span className="font-mono text-xs text-blue-700">{value}</span> : "—" },
+    { title: "Học dữ liệu", key: "ingest", width: 135, render: (_, doc) => <AntTag className="cursor-pointer" color="processing" onClick={() => handleOpenStatus(doc)}>Kiểm tra</AntTag> },
+    { title: <AdminSortButton label="Ngày tạo" active={sortKey === "date"} direction={sortDirection} onClick={() => changeSort("date")} />, dataIndex: "createdDate", key: "createdDate", width: 170, render: (value) => value ? new Date(value).toLocaleString("vi-VN") : "—" },
+    { title: "Thao tác", key: "actions", width: 168, fixed: "right", align: "right", render: (_, doc) => <div className="flex justify-end gap-1"><AdminIconButton label="Xem tiến độ nạp AI" icon={Cpu} onClick={() => handleOpenStatus(doc)} />{doc.linkUrl?.startsWith("http") ? <AdminIconButton label="Mở liên kết" icon={ExternalLink} onClick={() => window.open(doc.linkUrl, "_blank", "noopener,noreferrer")} /> : null}<AdminIconButton label="Chỉnh sửa tài liệu" icon={Edit3} onClick={() => handleOpenEdit(doc)} /><AdminIconButton label="Xóa tài liệu" icon={Trash2} danger onClick={() => setDeleteModalDoc(doc)} /></div> },
+  ];
+
   return (
     <div className="admin-tab admin-tab-documents space-y-4">
       {/* Toast Notification */}
@@ -629,7 +640,15 @@ export function AdminDocumentsTab() {
       </div>
 
       {/* ─── 4. Table / Content View ─── */}
-      <div className="bg-white border border-[#e4e7ec] rounded-xl shadow-2xs overflow-hidden">
+      <AdminDataTable<DocumentDto>
+        rowKey="id"
+        loading={loading}
+        columns={tableColumns}
+        dataSource={pagedDocs}
+        locale={{ emptyText: search ? `Không tìm thấy tài liệu phù hợp với "${search}"` : "Chưa có tài liệu nào" }}
+        pagination={{ current: currentPage, pageSize, total: totalCount, onChange: (page, size) => { setCurrentPage(page); setPageSize(size); } }}
+      />
+      <div className="hidden bg-white border border-[#e4e7ec] rounded-xl shadow-2xs overflow-hidden" aria-hidden="true">
         {loading ? (
           <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-3">
             <Loader2 size={28} className="animate-spin text-[#001743]" />

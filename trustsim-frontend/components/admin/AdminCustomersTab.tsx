@@ -2,6 +2,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { Button, Tag as AntTag } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import {
   Users,
   Search,
@@ -45,6 +47,7 @@ import { AdminSortButton, toggleSort, type SortDirection } from "@/components/ad
 import ImportExportBar from "@/components/admin/ImportExportBar";
 import { ExcelColumnDef, exportTableToExcel } from "@/services/excelService";
 import { SortOrder, UserAccountSortBy } from "@/types/common";
+import { AdminDataTable, AdminIconButton } from "@/components/admin/AdminDataPrimitives";
 
 // Format currency
 const formatVND = (value: number) =>
@@ -266,6 +269,16 @@ export function AdminCustomersTab() {
     setSortDirection(next.direction);
   };
 
+  const tableColumns: ColumnsType<AdminUserDetailDto> = [
+    { title: <AdminSortButton label="Khách hàng" active={sortKey === "name"} direction={sortDirection} onClick={() => changeSort("name")} />, key: "customer", width: 260, render: (_, customer) => <div className="flex items-center gap-3"><BankingCustomerAvatar name={customer.fullName || customer.userName} avatar={customer.avatarImg} isActive={customer.isActive} /><div className="min-w-0"><strong className="block truncate text-xs text-[var(--admin-ink)]">{customer.fullName || customer.userName}</strong><span className="block truncate text-[11px] text-slate-500">@{customer.userName} · {customer.email}</span></div></div> },
+    { title: "Liên hệ & CCCD", key: "contact", width: 190, render: (_, customer) => <div><span className="block font-mono text-xs">{customer.phoneNumber || "Chưa cập nhật"}</span><span className="text-[11px] text-slate-500">{customer.identityNumber ? `CCCD •••• ${customer.identityNumber.slice(-4)}` : "Chưa có CCCD"}</span></div> },
+    { title: "Định danh eKYC", dataIndex: "verificationStatus", key: "kyc", width: 140, render: (value) => { const badge = getKycBadge(value); return <AntTag color={String(value).toUpperCase().includes("VERIFIED") ? "success" : "default"}>{badge.label}</AntTag>; } },
+    { title: "Chữ ký số PKI", dataIndex: "hasPkiKeys", key: "pki", width: 130, align: "center", render: (value) => <AntTag color={value ? "success" : "default"}>{value ? "Đã cấp PKI" : "Chưa cấp"}</AntTag> },
+    { title: <AdminSortButton label="Ví khả dụng" align="right" active={sortKey === "wallet"} direction={sortDirection} onClick={() => changeSort("wallet")} />, key: "wallet", width: 180, align: "right", render: (_, customer) => <div><strong className="block whitespace-nowrap font-mono text-xs text-[var(--admin-ink)]">{formatVND(customer.availableBalance)}</strong>{customer.lockedBalance > 0 ? <span className="text-[11px] text-amber-700">Ký quỹ {formatVND(customer.lockedBalance)}</span> : null}</div> },
+    { title: "Trạng thái", dataIndex: "isActive", key: "status", width: 125, align: "center", render: (value) => <AntTag color={value ? "success" : "error"}>{value ? "Hoạt động" : "Tạm khóa"}</AntTag> },
+    { title: "Thao tác", key: "actions", width: 104, fixed: "right", align: "right", render: (_, customer) => <div className="flex justify-end gap-1" onClick={(event) => event.stopPropagation()}><AdminIconButton label="Xem hồ sơ" icon={Eye} onClick={() => openDetail(customer)} /><AdminIconButton label={customer.isActive ? "Khóa tài khoản" : "Mở khóa tài khoản"} icon={customer.isActive ? Lock : Unlock} danger={customer.isActive} onClick={() => setStatusConfirm({ user: customer, targetStatus: !customer.isActive })} /></div> },
+  ];
+
   const handleResetFilters = () => {
     setSearch("");
     setDebouncedSearch("");
@@ -466,7 +479,7 @@ export function AdminCustomersTab() {
                   setSelectedKyc(st.id);
                   setPageIndex(1);
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150 ${
                   selectedKyc === st.id
                     ? "bg-[#001743] text-white shadow-2xs font-bold"
                     : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/60"
@@ -495,7 +508,7 @@ export function AdminCustomersTab() {
                   setSelectedStatus(st.id);
                   setPageIndex(1);
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150 ${
                   selectedStatus === st.id
                     ? "bg-[#001743] text-white shadow-2xs font-bold"
                     : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/60"
@@ -525,7 +538,7 @@ export function AdminCustomersTab() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm theo tên khách, username, email, SĐT, CCCD…"
-              className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-[#001743] focus:ring-1 focus:ring-[#001743] focus:outline-none transition-all placeholder:text-slate-400"
+              className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-[#001743] focus:ring-1 focus:ring-[#001743] focus:outline-none transition-colors placeholder:text-slate-400"
             />
             {search && (
               <button
@@ -549,7 +562,17 @@ export function AdminCustomersTab() {
       </div>
 
       {/* ── SECTION 4: The Clean High-Trust Institutional Data Table ── */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs">
+      <AdminDataTable<AdminUserDetailDto>
+        rowKey="id"
+        loading={loading}
+        columns={tableColumns}
+        dataSource={displayCustomers}
+        onRow={(customer) => ({ onClick: () => openDetail(customer) })}
+        rowClassName={(customer) => customer.id === updatedCustomerId ? "bg-emerald-50" : ""}
+        locale={{ emptyText: error ? <div className="py-8"><AlertTriangle size={24} className="mx-auto mb-2 text-rose-600" /><p>{error}</p><Button className="mt-3" onClick={fetchCustomers}>Thử kết nối lại</Button></div> : hasActiveFilters ? "Không tìm thấy khách hàng phù hợp" : "Chưa có khách hàng nào" }}
+        pagination={{ current: pageIndex, pageSize, total: totalCount, onChange: (page, size) => { setPageIndex(page); setPageSize(size); } }}
+      />
+      <div className="hidden bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs" aria-hidden="true">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
@@ -658,7 +681,7 @@ export function AdminCustomersTab() {
                     <tr
                       key={customer.id}
                       onClick={() => openDetail(customer)}
-                      className={`group cursor-pointer transition-all duration-150 ${
+                      className={`group cursor-pointer transition-colors duration-150 ${
                         isUpdated ? "bg-emerald-50/70" : "hover:bg-slate-50/80 bg-white"
                       }`}
                     >
@@ -824,7 +847,7 @@ export function AdminCustomersTab() {
           <div className="flex flex-col flex-1 min-h-0">
             <DrawerBody>
               {/* Profile Card Header */}
-              <div className="p-5 bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-2xl flex items-center justify-between shadow-2xs">
+              <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-5 shadow-2xs">
                 <div className="flex items-center gap-3.5">
                   <BankingCustomerAvatar
                     name={selectedCustomer.fullName || selectedCustomer.userName}

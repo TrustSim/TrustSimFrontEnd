@@ -2,6 +2,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { Button, Tag as AntTag } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import {
   Plus,
   Edit3,
@@ -46,7 +48,7 @@ import {
 } from "@/components/ui/RightDrawer";
 import { Pagination } from "@/components/ui/Pagination";
 import { AdminSortButton, toggleSort, type SortDirection } from "@/components/admin/AdminPrimitives";
-import { AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
+import { AdminDataTable, AdminIconButton, AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
 
 // --- Brand color map ---
 const BRAND_COLORS: Record<string, string> = {
@@ -822,6 +824,14 @@ export function AdminCarriersTab() {
     setPageIndex(1);
   };
 
+  const tableColumns: ColumnsType<SimCarrierDto> = [
+    { title: <AdminSortButton label="Nhà mạng" active={sortKey === "name"} direction={sortDirection} onClick={() => changeSort("name")} />, key: "carrier", width: 230, render: (_, carrier) => <div className="flex items-center gap-3"><CarrierAvatar name={carrier.carrierName} logo={carrier.logoImg || undefined} /><div><strong className="block text-xs text-[var(--admin-ink)]">{carrier.carrierName}</strong><span className="font-mono text-[11px] text-slate-500">{carrier.carrierCode}</span></div></div> },
+    { title: <AdminSortButton label="Mã viết tắt" active={sortKey === "code"} direction={sortDirection} onClick={() => changeSort("code")} />, dataIndex: "carrierCode", key: "carrierCode", width: 130, render: (value) => <AntTag>{value}</AntTag> },
+    { title: <AdminSortButton label={`Dải đầu số (${prefixes.length})`} active={sortKey === "prefixes"} direction={sortDirection} onClick={() => changeSort("prefixes")} />, key: "prefixes", render: (_, carrier) => { const values = prefixesByCarrier[carrier.id] || []; return <div className="flex flex-wrap gap-1">{values.length ? values.slice(0, 6).map((prefix) => <AntTag key={prefix.id}>{prefix.prefixValue}</AntTag>) : <Button type="link" size="small" onClick={(event) => { event.stopPropagation(); openEdit(carrier); }}>Thêm đầu số</Button>}{values.length > 6 ? <AntTag>+{values.length - 6}</AntTag> : null}</div>; } },
+    { title: "Trạng thái", key: "status", width: 130, align: "center", render: () => <AntTag color="success">Hoạt động</AntTag> },
+    { title: "Thao tác", key: "actions", width: 104, fixed: "right", align: "right", render: (_, carrier) => <div className="flex justify-end gap-1" onClick={(event) => event.stopPropagation()}><AdminIconButton label="Chỉnh sửa nhà mạng" icon={Edit3} onClick={() => openEdit(carrier)} /><AdminIconButton label="Xóa nhà mạng" icon={Trash2} danger onClick={() => setDeleteTarget(carrier)} /></div> },
+  ];
+
   return (
     <div className="admin-tab admin-tab-carriers space-y-4">
       <AdminPageHeader
@@ -888,7 +898,17 @@ export function AdminCarriersTab() {
       </div>
 
       {/* ── 3. Table Card ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-[8px] overflow-hidden shadow-xs">
+      <AdminDataTable<SimCarrierDto>
+        rowKey="id"
+        loading={loading}
+        columns={tableColumns}
+        dataSource={sorted}
+        onRow={(carrier) => ({ onClick: () => openEdit(carrier) })}
+        rowClassName={(carrier) => carrier.id === updatedId ? "bg-emerald-50" : ""}
+        locale={{ emptyText: error ? <div className="py-8"><AlertTriangle size={24} className="mx-auto mb-2 text-amber-500" /><p>{error}</p><Button className="mt-3" onClick={load}>Thử lại</Button></div> : search ? "Không tìm thấy nhà mạng phù hợp" : "Chưa có nhà mạng nào" }}
+        pagination={{ current: pageIndex, pageSize, total: filtered.length, onChange: (page, size) => { setPageIndex(page); setPageSize(size); } }}
+      />
+      <div className="hidden bg-white border border-[#E2E8F0] rounded-[8px] overflow-hidden shadow-xs" aria-hidden="true">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
