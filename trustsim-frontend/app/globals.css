@@ -354,7 +354,8 @@ body {
   outline: 2px solid rgba(228,1,30,.35);
   outline-offset: 2px;
 }
-.admin-shell .admin-tab table { min-width: 860px; }
+.admin-shell .admin-tab table.min-w-custom,
+.admin-shell .admin-tab .overflow-x-auto > table:not(.ant-table table) { min-width: 860px; }
 .admin-shell .admin-tab .overflow-x-auto { scrollbar-color: #cbd5e1 transparent; }
 .admin-shell .admin-tab .text-\[\#001743\] { color: #101828; }
 .admin-shell .admin-tab .bg-\[\#001743\] { background-color: #101828; }
@@ -363,13 +364,22 @@ body {
 /* Shared admin data language: header, filters and Ant Design tables. */
 .admin-page-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
   padding: 4px 0 2px;
   border: 0;
   background: transparent;
   box-shadow: none;
+  width: 100%;
+}
+@media (min-width: 1024px) {
+  .admin-page-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
 }
 .admin-page-header h1 {
   margin: 0;
@@ -398,9 +408,22 @@ body {
   font-size: 11px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+  white-space: nowrap !important;
+  flex-shrink: 0;
 }
-.admin-page-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; flex: none; }
+.admin-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+@media (min-width: 1024px) {
+  .admin-page-actions {
+    width: auto;
+    justify-content: flex-end;
+  }
+}
 .admin-filter-bar {
   padding: 14px;
   border: 1px solid var(--admin-line);
@@ -438,13 +461,46 @@ body {
   box-shadow: inset 3px 0 #f59e0b;
 }
 .admin-data-table {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow: hidden;
   border: 1px solid var(--admin-line);
   border-radius: 10px;
   background: var(--admin-surface);
   box-shadow: 0 1px 2px rgba(16, 24, 40, .02);
 }
-.trustsim-admin-table .ant-table { font-size: 12px; }
+.trustsim-admin-table {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.trustsim-admin-table .ant-table-wrapper,
+.trustsim-admin-table .ant-spin-nested-loading,
+.trustsim-admin-table .ant-spin-container,
+.trustsim-admin-table .ant-table {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  font-size: 12px;
+}
+.trustsim-admin-table .ant-table-content {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+.trustsim-admin-table .ant-table-cell-fix-right {
+  background: #ffffff !important;
+  z-index: 2;
+  box-shadow: -4px 0 8px -2px rgba(0, 0, 0, 0.06);
+}
+.trustsim-admin-table .ant-table-row:hover .ant-table-cell-fix-right {
+  background: #f8fafc !important;
+}
+.trustsim-admin-table .ant-tag,
+.admin-tab .ant-tag {
+  white-space: nowrap !important;
+  flex-shrink: 0;
+}
 .trustsim-admin-table .ant-table-thead > tr > th {
   color: var(--admin-ink-secondary);
   font-size: 11px;
@@ -593,16 +649,35 @@ body {
   }
 }
 
-@media (max-width: 768px) {
-  .admin-page-header { align-items: flex-start; flex-direction: column; }
-  .admin-page-actions { width: 100%; justify-content: flex-start; }
+/* Responsive Admin Shell Container Rules */
+.admin-shell {
+  min-width: 0;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
-@media (max-width: 768px) {
-  .admin-shell .admin-sidebar { width: 68px; }
-  .admin-shell .admin-main { margin-left: 68px; }
-  .admin-shell .admin-content { padding: 20px 16px; }
-  .admin-shell .admin-topbar { padding: 0 16px; }
+.admin-shell .admin-main {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.admin-shell .admin-content {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+.admin-shell .admin-tab {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+@media (max-width: 1023px) {
+  .admin-page-header { align-items: flex-start; flex-direction: column; }
+  .admin-page-actions { width: 100%; justify-content: flex-start; }
 }
 
 /* ─── Profile workspace ───────────────────────────────────── */

@@ -22,6 +22,7 @@ import {
   BookOpen,
   ScrollText,
   WalletCards,
+  X,
 } from "lucide-react";
 
 export interface NavItem {
@@ -80,44 +81,71 @@ interface AdminSidebarProps {
   collapsed: boolean;
   onToggleCollapse: () => void;
   currentTab: string;
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
 export default function AdminSidebar({
   collapsed,
   onToggleCollapse,
   currentTab,
+  mobileOpen = false,
+  onCloseMobile,
 }: AdminSidebarProps) {
+  // Khi mở dạng drawer trên mobile/tablet, luôn hiển thị đầy đủ tên menu
+  const isExpanded = mobileOpen || !collapsed;
+
   return (
     <aside
-      className={`admin-sidebar fixed top-0 bottom-0 left-0 z-40 bg-[#07132b] border-r border-[#15274d] flex flex-col transition-[width] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] select-none ${
-        collapsed ? "w-[68px]" : "w-[248px]"
+      className={`admin-sidebar fixed top-0 bottom-0 left-0 z-50 bg-[#07132b] border-r border-[#15274d] flex flex-col transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] select-none ${
+        /* Mobile/Tablet drawer: trượt vào khi mobileOpen, trượt ra ngoài khi đóng */
+        mobileOpen ? "translate-x-0 w-[248px] shadow-2xl" : "-translate-x-full"
+      } ${
+        /* Desktop: luôn hiện diện cố định, điều khiển theo collapsed */
+        collapsed ? "lg:translate-x-0 lg:w-[68px]" : "lg:translate-x-0 lg:w-[248px]"
       }`}
     >
       {/* Brand Header */}
-      <div className="h-[60px] border-b border-[#15274d] flex items-center px-5">
-        <Link href="/admin" className="flex items-center gap-2.5 justify-center w-full">
+      <div className="h-[60px] border-b border-[#15274d] flex items-center justify-between px-4">
+        <Link
+          href="/admin"
+          onClick={() => onCloseMobile?.()}
+          className="flex items-center gap-2.5 min-w-0"
+        >
           <Image
             src="/logo/S-Logo.png"
             alt="TrustSim"
             width={26}
             height={26}
-            className="object-contain"
+            className="object-contain shrink-0"
             style={{ width: "auto", height: "26px" }}
             priority
           />
-          {!collapsed && (
-            <span className="text-white font-semibold tracking-tight text-[14px]">
+          {isExpanded && (
+            <span className="text-white font-semibold tracking-tight text-[14px] truncate">
               TrustSim <span className="text-slate-400 font-normal text-xs">Workbench</span>
             </span>
           )}
         </Link>
+
+        {/* Nút đóng drawer trên mobile */}
+        {onCloseMobile && (
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            className="lg:hidden p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            aria-label="Đóng thanh điều hướng"
+          >
+            <X size={18} />
+          </button>
+        )}
       </div>
 
       {/* Navigation Sections */}
       <nav className="admin-nav flex-1 overflow-y-auto px-3 py-4 space-y-5">
         {ADMIN_NAV_SECTIONS.map((section) => (
           <div key={section.title}>
-            {!collapsed && (
+            {isExpanded && (
               <div className="px-3 pb-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.12em]">
                 {section.title}
               </div>
@@ -131,7 +159,8 @@ export default function AdminSidebar({
                   <Link
                     key={item.id}
                     href={`/admin?tab=${item.tab}`}
-                    title={collapsed ? item.label : undefined}
+                    onClick={() => onCloseMobile?.()}
+                    title={!isExpanded ? item.label : undefined}
                     className={`group flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium transition-colors duration-150 relative ${
                       isActive
                         ? "bg-white/[0.08] text-white font-semibold border-l-2 border-[#E4011E] pl-[10px]"
@@ -139,7 +168,7 @@ export default function AdminSidebar({
                     }`}
                   >
                     {/* Icon with relative positioning for dot indicator */}
-                    <div className="relative flex items-center justify-center">
+                    <div className="relative flex items-center justify-center shrink-0">
                       <Icon
                         size={16}
                         strokeWidth={1.75}
@@ -148,7 +177,7 @@ export default function AdminSidebar({
                         }`}
                       />
                       {/* Dot indicator: only shown in collapsed mode when badge exists */}
-                      {collapsed && item.badge !== undefined && (
+                      {!isExpanded && item.badge !== undefined && (
                         <span
                           className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ring-2 ring-[#07132b] ${
                             item.badgeType === "danger"
@@ -160,12 +189,12 @@ export default function AdminSidebar({
                         />
                       )}
                     </div>
-                    {!collapsed && (
+                    {isExpanded && (
                       <span className="flex-1 truncate tracking-normal">{item.label}</span>
                     )}
-                    {!collapsed && item.badge !== undefined && (
+                    {isExpanded && item.badge !== undefined && (
                       <span
-                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none ${
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none shrink-0 ${
                           item.badgeType === "danger"
                             ? "bg-[#E4011E] text-white"
                             : item.badgeType === "warning"
@@ -186,10 +215,11 @@ export default function AdminSidebar({
 
       {/* Sidebar Footer */}
       <div className="p-3 border-t border-[#15274d] bg-[#07132b]">
-        {collapsed ? (
+        {!isExpanded ? (
           <div className="flex flex-col items-center gap-1">
             <Link
               href="/"
+              onClick={() => onCloseMobile?.()}
               title="Về trang người dùng"
               aria-label="Về trang người dùng"
               className="flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors"
@@ -200,7 +230,7 @@ export default function AdminSidebar({
               onClick={onToggleCollapse}
               title="Mở rộng thanh điều hướng"
               aria-label="Mở rộng thanh điều hướng"
-              className="flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+              className="hidden lg:flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
             >
               <ChevronRight size={16} strokeWidth={1.5} />
             </button>
@@ -209,6 +239,7 @@ export default function AdminSidebar({
           <div className="flex items-center justify-between gap-1 px-1">
             <Link
               href="/"
+              onClick={() => onCloseMobile?.()}
               title="Về trang người dùng"
               aria-label="Về trang người dùng"
               className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-white py-1 px-2 rounded hover:bg-white/[0.06] transition-colors"
@@ -220,7 +251,7 @@ export default function AdminSidebar({
               onClick={onToggleCollapse}
               title="Thu gọn thanh điều hướng"
               aria-label="Thu gọn thanh điều hướng"
-              className="flex items-center justify-center p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+              className="hidden lg:flex items-center justify-center p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
             >
               <ChevronLeft size={16} strokeWidth={1.5} />
             </button>

@@ -529,7 +529,7 @@ export function AdminSimsTab() {
 
       {/* 3. Filter Toolbar */}
       <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[300px]">
+        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
           {/* Search Box */}
           <div className="relative flex-1 min-w-[220px] max-w-sm">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />

@@ -212,6 +212,7 @@ export default function AdminEscrowTab() {
       title: "Giao dịch / SIM",
       dataIndex: "tradeTransactionCode",
       key: TradeTransactionSortBy.TradeTransactionCode,
+      width: 180,
       sorter: true,
       sortOrder: sortBy === TradeTransactionSortBy.TradeTransactionCode ? (sortDirection === "asc" ? "ascend" : "descend") : null,
       render: (value: string, trade) => <div><div className="font-mono text-sm font-bold text-[#001743]">{formatPhone(trade.simPhoneNumber)}</div><div className="mt-0.5 font-mono text-[10px] text-slate-400">{value}</div></div>,
@@ -219,12 +220,14 @@ export default function AdminEscrowTab() {
     {
       title: "Người mua → người bán",
       key: "parties",
+      width: 200,
       render: (_, trade) => <div><div className="font-medium text-slate-800">{trade.buyerName || trade.buyerId}</div><div className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400"><ArrowRight size={10} />{trade.sellerName || trade.sellerId}</div></div>,
     },
     {
       title: "Giá trị ký quỹ",
       dataIndex: "escrowAmount",
       key: TradeTransactionSortBy.EscrowAmount,
+      width: 160,
       sorter: true,
       align: "right",
       sortOrder: sortBy === TradeTransactionSortBy.EscrowAmount ? (sortDirection === "asc" ? "ascend" : "descend") : null,
@@ -234,18 +237,20 @@ export default function AdminEscrowTab() {
       title: "Trạng thái",
       dataIndex: "status",
       key: TradeTransactionSortBy.Status,
+      width: 180,
       sorter: true,
       align: "center",
       sortOrder: sortBy === TradeTransactionSortBy.Status ? (sortDirection === "asc" ? "ascend" : "descend") : null,
       render: (value: TradeTransactionStatus) => {
         const meta = getStatusMeta(value);
         const step = getPipelineStep(value);
-        return <div><span className={`inline-flex rounded border px-2 py-0.5 text-[10px] font-bold ${meta.cls}`}>{meta.label}</span><div className="mx-auto mt-2 flex w-20 gap-1">{[1,2,3,4,5].map((item) => <span key={item} className={`h-1 flex-1 rounded-full ${item <= step ? (value === "Disputed" ? "bg-rose-500" : "bg-emerald-500") : "bg-slate-200"}`} />)}</div></div>;
+        return <div><span className={`inline-flex rounded border px-2 py-0.5 text-[10px] font-bold whitespace-nowrap shrink-0 ${meta.cls}`}>{meta.label}</span><div className="mx-auto mt-2 flex w-20 gap-1">{[1,2,3,4,5].map((item) => <span key={item} className={`h-1 flex-1 rounded-full ${item <= step ? (value === "Disputed" ? "bg-rose-500" : "bg-emerald-500") : "bg-slate-200"}`} />)}</div></div>;
       },
     },
     {
       title: "Hạn xử lý",
       key: "deadline",
+      width: 160,
       render: (_, trade) => <span className="whitespace-nowrap text-[11px] text-slate-500">{formatDateTime(getDeadline(trade))}</span>,
     },
     {

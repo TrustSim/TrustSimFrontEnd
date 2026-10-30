@@ -350,9 +350,9 @@ export function AdminCustomersTab() {
 
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
           <div>
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2.5 min-w-0">
               <h1 className="text-base font-bold text-[#001743]">Quản Trị Khách Hàng &amp; Giám Sát Tài Khoản Ký Quỹ</h1>
-              <span className="admin-page-badge">{totalCount} khách hàng</span>
+              <span className="admin-page-badge shrink-0">{totalCount} khách hàng</span>
             </div>
             <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-500">
               Theo dõi định danh pháp lý eKYC, chữ ký số điện tử PKI, số dư ví khả dụng và trạng thái đóng băng ký quỹ

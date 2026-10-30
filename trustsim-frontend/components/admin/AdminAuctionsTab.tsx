@@ -404,38 +404,38 @@ export function AdminAuctionsTab() {
     switch (status) {
       case AuctionStatusEnum.ACTIVE:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60 whitespace-nowrap shrink-0">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
             <span>Đang live</span>
           </span>
         );
       case AuctionStatusEnum.SCHEDULE:
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-[4px] text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-[4px] text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap shrink-0">
             <Clock size={10} />
             <span>Chờ mở</span>
           </span>
         );
       case AuctionStatusEnum.DRAFT:
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-[4px] text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-[4px] text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap shrink-0">
             Bản nháp
           </span>
         );
       case AuctionStatusEnum.END:
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-[4px] text-[10px] font-bold bg-[#001743] text-white">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-[4px] text-[10px] font-bold bg-[#001743] text-white whitespace-nowrap shrink-0">
             Đã kết thúc
           </span>
         );
       case AuctionStatusEnum.CANCELLED:
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-[4px] text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-[4px] text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap shrink-0">
             Đã hủy
           </span>
         );
       default:
-        return <span className="text-slate-400">—</span>;
+        return <span className="text-slate-400 whitespace-nowrap shrink-0">—</span>;
     }
   };
 
@@ -468,30 +468,30 @@ export function AdminAuctionsTab() {
 
       {/* ── 2. Contextual KPI Strip (Tối giản theo Workbench) ── */}
       <div className="bg-white border border-[#e4e7ec] rounded-xl p-3 shadow-2xs">
-        <div className="flex flex-wrap items-center gap-6 text-xs divide-x divide-slate-100">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span className="text-slate-500 font-medium">Đang live:</span>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50/70 border border-emerald-200/50 rounded-lg">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+            <span className="text-slate-600 font-medium">Đang live:</span>
             <span className="font-extrabold text-[#001743] text-sm tabular-nums">{kpi.active}</span>
           </div>
-          <div className="flex items-center gap-2 pl-6">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-            <span className="text-slate-500 font-medium">Chờ mở:</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50/70 border border-amber-200/50 rounded-lg">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
+            <span className="text-slate-600 font-medium">Chờ mở:</span>
             <span className="font-bold text-[#001743] text-sm tabular-nums">{kpi.schedule}</span>
           </div>
-          <div className="flex items-center gap-2 pl-6">
-            <span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
-            <span className="text-slate-500 font-medium">Bản nháp:</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200/60 rounded-lg">
+            <span className="w-2.5 h-2.5 rounded-full bg-slate-400 shrink-0"></span>
+            <span className="text-slate-600 font-medium">Bản nháp:</span>
             <span className="font-bold text-slate-700 text-sm tabular-nums">{kpi.draft}</span>
           </div>
-          <div className="flex items-center gap-2 pl-6">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#001743]"></span>
-            <span className="text-slate-500 font-medium">Đã kết thúc:</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-lg">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#001743] shrink-0"></span>
+            <span className="text-slate-600 font-medium">Đã kết thúc:</span>
             <span className="font-bold text-[#001743] text-sm tabular-nums">{kpi.end}</span>
           </div>
-          <div className="flex items-center gap-2 pl-6">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-            <span className="text-slate-500 font-medium">Đã hủy:</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-rose-50/70 border border-rose-200/50 rounded-lg">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
+            <span className="text-slate-600 font-medium">Đã hủy:</span>
             <span className="font-bold text-rose-700 text-sm tabular-nums">{kpi.cancelled}</span>
           </div>
         </div>
@@ -499,9 +499,9 @@ export function AdminAuctionsTab() {
 
       {/* ── 3. Filter Toolbar Card ── */}
       <div className="bg-white border border-[#e4e7ec] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
-        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
+        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
           {/* Ô tìm kiếm */}
-          <div className="relative w-64">
+          <div className="relative w-full sm:w-64">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"

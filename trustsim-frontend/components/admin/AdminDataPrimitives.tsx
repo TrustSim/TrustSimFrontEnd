@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { Button, Table, Tooltip } from "antd";
 import type { TableProps } from "antd";
 import type { LucideIcon } from "lucide-react";
@@ -21,20 +21,20 @@ export function AdminPageHeader({
 }) {
   return (
     <section className="admin-page-header">
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2.5">
-          <h1>{title}</h1>
-          {badge ? <span className="admin-page-badge">{badge}</span> : null}
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+          <h1 className="tracking-tight">{title}</h1>
+          {badge ? <span className="admin-page-badge shrink-0">{badge}</span> : null}
         </div>
-        <p>{description}</p>
+        <p className="mt-1">{description}</p>
       </div>
-      {actions ? <div className="admin-page-actions">{actions}</div> : null}
+      {actions ? <div className="admin-page-actions shrink-0">{actions}</div> : null}
     </section>
   );
 }
 
 export function AdminFilterBar({ children }: { children: ReactNode }) {
-  return <section className="admin-filter-bar">{children}</section>;
+  return <section className="admin-filter-bar min-w-0 w-full">{children}</section>;
 }
 
 export function AdminIconButton({
@@ -69,15 +69,37 @@ export function AdminDataTable<RecordType extends object>({
   pagination,
   locale,
   scroll,
+  columns,
   ...props
 }: TableProps<RecordType>) {
+  // Tính toán trước scroll.x tối ưu từ độ rộng các cột
+  // Tránh việc Ant Design ép hẹp các cột trạng thái (badge) hoặc làm cột cố định (fixed: right) đè lên dữ liệu
+  const computedScroll = useMemo(() => {
+    if (scroll?.x && typeof scroll.x === "number") {
+      return scroll;
+    }
+    let calculatedWidth = 0;
+    if (columns && Array.isArray(columns) && columns.length > 0) {
+      calculatedWidth = columns.reduce((acc, col) => {
+        const w = typeof col.width === "number" ? col.width : 135;
+        return acc + w;
+      }, 0);
+    }
+    const finalX = Math.max(calculatedWidth, 980);
+    return {
+      x: scroll?.x ?? finalX,
+      ...scroll,
+    };
+  }, [scroll, columns]);
+
   return (
-    <section className="admin-data-table">
+    <section className="admin-data-table min-w-0 max-w-full w-full">
       <Table<RecordType>
+        columns={columns}
         {...props}
         className={`trustsim-admin-table ${className || ""}`}
         size="small"
-        scroll={scroll ?? { x: "max-content" }}
+        scroll={computedScroll}
         pagination={
           pagination === false
             ? false

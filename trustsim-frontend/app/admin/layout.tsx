@@ -18,6 +18,7 @@ import {
   FileText,
   Gavel,
   Smartphone,
+  Menu,
 } from "lucide-react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import { AuthSessionGuard } from "@/components/auth/AuthSessionGuard";
@@ -79,10 +80,12 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const currentTab = searchParams?.get("tab") || "dashboard";
 
+  // Tự động thu gọn thanh điều hướng trên màn hình nhỏ hoặc tablet
   useEffect(() => {
-    if (window.matchMedia("(max-width: 767px)").matches) {
+    if (window.matchMedia("(max-width: 1023px)").matches) {
       setCollapsed(true);
     }
   }, []);
@@ -226,27 +229,59 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const availableBalance = wallet?.availableBalance ?? 0;
 
   return (
-    <div className="admin-shell min-h-screen flex bg-[#f8f9fa] text-[#001743] font-sans antialiased">
+    <div className="admin-shell min-h-screen flex bg-[#f8f9fa] text-[#001743] font-sans antialiased overflow-x-hidden">
+      {/* Mobile Drawer Backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 lg:hidden transition-opacity duration-200"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Modular Admin Sidebar */}
       <AdminSidebar
         collapsed={collapsed}
         onToggleCollapse={() => setCollapsed(!collapsed)}
         currentTab={currentTab}
+        mobileOpen={mobileOpen}
+        onCloseMobile={() => setMobileOpen(false)}
       />
 
-      {/* Main Container */}
+      {/* Main Container - Responsive Margin & Overflow Guard */}
       <div
-        className={`admin-main flex-1 flex flex-col min-h-screen transition-[margin] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          collapsed ? "ml-[68px]" : "ml-[248px]"
-        }`}
+        className={`admin-main flex-1 flex flex-col min-h-screen min-w-0 max-w-full w-full transition-[margin] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          collapsed ? "lg:ml-[68px]" : "lg:ml-[248px]"
+        } ml-0`}
       >
         {/* Top Header */}
         <header className="admin-topbar sticky top-0 z-30 h-[60px] bg-white border-b border-[#e4e7ec] px-3 sm:px-6 flex items-center justify-between shadow-xs">
-          {/* Breadcrumb / Title */}
-          <div className="flex items-center gap-2 text-[13px]">
-            <span className="text-slate-400 font-medium">Bàn làm việc</span>
-            <span className="text-slate-300">/</span>
-            <span className="font-semibold text-[#001743] tracking-tight">
+          {/* Breadcrumb / Title with Hamburger Toggle */}
+          <div className="flex items-center gap-1.5 sm:gap-2 text-[13px] min-w-0">
+            {/* Mobile Hamburger Button */}
+            <button
+              type="button"
+              onClick={() => setMobileOpen(true)}
+              className="lg:hidden p-2 -ml-1 mr-1 rounded-lg text-slate-600 hover:text-[#001743] hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+              aria-label="Mở danh mục điều hướng"
+            >
+              <Menu size={18} strokeWidth={2} />
+            </button>
+
+            {/* Desktop Quick Toggle */}
+            <button
+              type="button"
+              onClick={() => setCollapsed(!collapsed)}
+              className="hidden lg:flex p-1.5 -ml-1 mr-1 rounded-lg text-slate-400 hover:text-[#001743] hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+              title={collapsed ? "Mở rộng thanh điều hướng" : "Thu gọn thanh điều hướng"}
+              aria-label="Chuyển đổi thanh điều hướng"
+            >
+              <Menu size={16} strokeWidth={1.8} />
+            </button>
+
+            <span className="text-slate-400 font-medium hidden sm:inline">Bàn làm việc</span>
+            <span className="text-slate-300 hidden sm:inline">/</span>
+            <span className="font-semibold text-[#001743] tracking-tight truncate">
               {TAB_LABELS[currentTab] || "Quản trị"}
             </span>
           </div>
@@ -497,8 +532,8 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        {/* Content View */}
-        <main className="admin-content flex-1 px-3 py-4 sm:px-5 sm:py-5 lg:px-7 lg:py-7 max-w-[1680px] w-full mx-auto">
+        {/* Content View - Full Width & Internal Scroll Container */}
+        <main className="admin-content flex-1 min-w-0 max-w-[1680px] w-full mx-auto px-3 py-4 sm:px-5 sm:py-5 lg:px-7 lg:py-7">
           {children}
         </main>
       </div>

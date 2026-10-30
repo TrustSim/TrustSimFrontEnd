@@ -284,9 +284,9 @@ export function AdminStaffTab() {
 
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
           <div>
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2.5 min-w-0">
               <h1 className="text-base font-bold text-[#001743]">Quản Trị Nhân Sự &amp; Thẩm Quyền Vận Hành</h1>
-              <span className="admin-page-badge">{totalCount} nhân sự</span>
+              <span className="admin-page-badge shrink-0">{totalCount} nhân sự</span>
             </div>
             <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-500">
               Quản lý định danh nhân sự nội bộ, phân cấp bảo mật Tier-3 (Quản trị viên) và Tier-1 (Tư vấn viên trực sàn).

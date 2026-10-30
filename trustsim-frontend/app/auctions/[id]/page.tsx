@@ -1725,17 +1725,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                     <span className="text-xs font-mono font-bold px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-full border border-slate-200">{bidTotalCount} lượt</span>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 border-b border-slate-100 bg-slate-50/70 px-4 py-2.5">
-                    <select aria-label="Lọc trạng thái lượt trả giá" value={bidStatus} onChange={(event) => { setBidStatus(event.target.value as typeof bidStatus); setBidPageIndex(1); }} className="min-h-9 rounded-lg border border-slate-200 bg-white px-2 text-[11px] text-slate-700">
-                      <option value="">Tất cả trạng thái</option><option value="VALID">Hợp lệ</option><option value="OUTBID">Đã bị vượt</option><option value="CANCELLED">Đã hủy</option>
-                    </select>
-                    <select aria-label="Sắp xếp lượt trả giá" value={bidSortBy} onChange={(event) => { setBidSortBy(Number(event.target.value) as BidSortBy); setBidPageIndex(1); }} className="min-h-9 rounded-lg border border-slate-200 bg-white px-2 text-[11px] text-slate-700">
-                      <option value={BidSortBy.PlacedAt}>Thời gian đặt</option><option value={BidSortBy.BidAmount}>Số tiền đặt</option>
-                    </select>
-                    <select aria-label="Chiều sắp xếp" value={bidSortOrder} onChange={(event) => { setBidSortOrder(event.target.value as "Asc" | "Desc"); setBidPageIndex(1); }} className="min-h-9 rounded-lg border border-slate-200 bg-white px-2 text-[11px] text-slate-700">
-                      <option value="Desc">Giảm dần</option><option value="Asc">Tăng dần</option>
-                    </select>
-                  </div>
+
 
                   <div className="divide-y divide-slate-100 min-h-[320px] overflow-y-auto lg:min-h-0">
                     {bids.length === 0 ? (
