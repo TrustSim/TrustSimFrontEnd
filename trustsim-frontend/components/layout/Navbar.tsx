@@ -191,13 +191,15 @@ export const Navbar: React.FC<NavbarProps> = () => {
       />
 
       <header
-        className={`fixed top-0 left-0 right-0 z-[1000] h-16 transition-all duration-200 border-b ${
-          scrolled
-            ? "bg-white/95 backdrop-blur-md border-slate-200 shadow-xs"
-            : "bg-white border-slate-100"
-        }`}
+        className="fixed top-0 left-0 right-0 z-[1000] pt-2.5 px-3 sm:px-6 pointer-events-none"
       >
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 h-full flex items-center justify-between gap-4">
+        <div
+          className={`pointer-events-auto max-w-[1180px] mx-auto h-[52px] pl-4 pr-2 sm:pl-5 rounded-full flex items-center justify-between gap-4 border transition-all duration-300 backdrop-blur-xl ${
+            scrolled
+              ? "bg-white/90 border-slate-200/80 shadow-[0_8px_30px_rgba(0,23,67,0.10)]"
+              : "bg-white/70 border-white/80 shadow-[0_4px_24px_rgba(0,23,67,0.06)]"
+          }`}
+        >
           {/* ═══ 1. BÊN TRÁI: LOGO ═══ */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0 select-none">
             <Image
@@ -215,9 +217,9 @@ export const Navbar: React.FC<NavbarProps> = () => {
             <Link
               href="/"
               aria-current={pathname === "/" ? "page" : undefined}
-              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 flex items-center gap-1.5 ${
+              className={`px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-150 flex items-center gap-1.5 ${
                 pathname === "/"
-                  ? "bg-slate-100 text-[#001743] font-bold"
+                  ? "bg-[#001743]/[0.07] text-[#001743] font-bold"
                   : "text-slate-600 hover:text-[#001743] hover:bg-slate-50"
               }`}
             >
@@ -228,7 +230,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
             {/* Sàn Đấu Giá */}
             <Link
               href="/auctions"
-              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 flex items-center gap-2 ${
+              className={`px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-150 flex items-center gap-2 ${
                 pathname?.startsWith("/auctions")
                   ? "bg-rose-50 text-[#E4011E] font-bold"
                   : "text-slate-600 hover:text-[#001743] hover:bg-slate-50"
@@ -245,7 +247,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
             <button
               type="button"
               onClick={() => setQuickValuationOpen(true)}
-              className="px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 hover:text-purple-700 hover:bg-purple-50/70 transition-all duration-150 flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold text-slate-600 hover:text-purple-700 hover:bg-purple-50/70 transition-all duration-150 flex items-center gap-1.5 cursor-pointer"
               title="Thẩm định giá trị thị trường của số SIM"
             >
               <SparklesIcon size={14} className="text-purple-600" />
@@ -260,7 +262,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
               <button
                 type="button"
                 onClick={() => setSupportOpen(!supportOpen)}
-                className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer ${
                   supportOpen
                     ? "bg-slate-100 text-[#001743]"
                     : "text-slate-600 hover:text-[#001743] hover:bg-slate-50"
@@ -422,13 +424,13 @@ export const Navbar: React.FC<NavbarProps> = () => {
               <div className="flex items-center gap-2">
                 <Link
                   href="/login"
-                  className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-[#001743] hover:bg-slate-100 transition-colors"
+                  className="px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold text-slate-700 hover:text-[#001743] hover:bg-slate-100 transition-colors"
                 >
                   Đăng nhập
                 </Link>
                 <Link
                   href="/register"
-                  className="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[#E4011E] hover:bg-[#C00119] active:scale-[0.99] text-white transition-all shadow-xs"
+                  className="px-5 py-2 rounded-full text-xs sm:text-sm font-bold bg-gradient-to-b from-[#0B2A6B] to-[#001743] hover:from-[#12358A] hover:to-[#001743] active:scale-[0.98] text-white transition-all shadow-[0_4px_14px_rgba(0,23,67,0.30)]"
                 >
                   Đăng ký
                 </Link>
@@ -438,7 +440,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
                 {/* CTA đưa người dùng về kho SIM để chọn đúng SIM trước khi mở phiên */}
                 <Link
                   href="/profile?tab=auctions"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white text-xs font-bold transition-all shadow-2xs"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#001743] hover:bg-[#00266B] active:scale-[0.99] text-white text-xs font-bold transition-all shadow-2xs"
                   title="Đăng bán SIM lên sàn đấu giá"
                 >
                   <Plus size={13} strokeWidth={2.5} />
@@ -779,7 +781,7 @@ function NotificationDropdown() {
       <button
         onClick={() => setOpen(!open)}
         aria-label="Thông báo"
-        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-150 relative cursor-pointer ${
+        className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150 relative cursor-pointer ${
           open
             ? "bg-[#001743] text-white shadow-xs"
             : "text-slate-700 hover:text-[#001743] hover:bg-slate-100"

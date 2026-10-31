@@ -4,13 +4,16 @@ import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
+  BadgeCheck,
   Clock3,
   FileSignature,
   Gavel,
   Search,
   ShieldCheck,
   Smartphone,
+  Sparkles,
   Users,
+  Wallet,
 } from "lucide-react";
 import { auctionService, type AuctionDto, type GetAuctionsParams } from "@/services/auctionService";
 import { getCarriers, type SimCarrierDto } from "@/services/carrierService";
@@ -77,6 +80,13 @@ const getStatusLabel = (status: string) => {
   return "Đã kết thúc";
 };
 
+const PROCESS_STEPS = [
+  { title: "Đăng ký và đặt cọc", desc: "Xác thực danh tính, đặt cọc để tham gia phiên." },
+  { title: "Tham gia đấu giá", desc: "Đặt giá theo thời gian thực, có bù giờ phút chót." },
+  { title: "Ký hợp đồng điện tử", desc: "Ký bằng OTP, tiền ký quỹ được sàn giữ trung gian." },
+  { title: "Hoàn tất sang tên SIM", desc: "Chụp bằng chứng chuyển nhượng, nhận SIM và hoàn tất." },
+];
+
 const getAuctionTypeLabel = (type: string) =>
   type === "DUTCH" || String(type) === "1" ? "Giảm dần" : "Tăng dần";
 
@@ -87,6 +97,7 @@ export default function BuyerHomepage() {
   const [auctions, setAuctions] = useState<AuctionDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeStep, setActiveStep] = useState(0);
   const requestIdRef = useRef(0);
 
   const loadAuctions = useCallback(async (nextCriteria: SearchCriteria) => {
@@ -123,6 +134,11 @@ export default function BuyerHomepage() {
     } finally {
       if (requestId === requestIdRef.current) setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setActiveStep((s) => (s + 1) % 4), 3500);
+    return () => window.clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -163,40 +179,62 @@ export default function BuyerHomepage() {
 
   const resultHeading = hasAppliedFilters ? "Phiên phù hợp với tiêu chí" : "Phiên đáng xem ngay";
 
+  const fanAuctions = auctions.slice(0, 3);
+  const [fanLeft, fanCenter, fanRight] = [fanAuctions[1], fanAuctions[0], fanAuctions[2]];
+
+  const renderFanCard = (auction: AuctionDto | undefined, className: string) => {
+    if (!auction) return null;
+    return (
+      <Link href={`/auctions/${auction.id}`} className={`${styles.fanCard} ${className}`}>
+        <div className={styles.fanTop}>
+          <span>{auction.carrierName || "Nhà mạng"}</span>
+          <span>{getAuctionTypeLabel(auction.auctionType)}</span>
+        </div>
+        <strong className={styles.fanNumber}>{formatPhoneNumber(auction.simPhoneNumber)}</strong>
+        <p className={styles.fanMeta}>{getStatusLabel(auction.auctionStatus)} · {auction.totalBids ?? 0} lượt đặt</p>
+        <div className={styles.fanBid}>
+          <span>Giá hiện tại</span>
+          <strong>{formatCurrency(auction.currentPrice || auction.startingPrice)}</strong>
+        </div>
+        {className === styles.fanCenter ? (
+          <div className={styles.fanCta}>
+            Vào phiên ngay <ArrowRight size={15} aria-hidden="true" />
+          </div>
+        ) : null}
+      </Link>
+    );
+  };
+
   return (
     <div className={styles.page}>
+      {/* ── HERO ── */}
       <section className={styles.hero} aria-labelledby="home-title">
-        <div className={styles.heroRule} aria-hidden="true" />
-        <div className={styles.shell}>
-          <div className={styles.heroCopy}>
-            <p className={styles.kicker}>Sàn đấu giá SIM minh bạch</p>
-            <h1 id="home-title">
-              Tìm đúng số.
-              <br />
-              Vào đúng phiên.
-            </h1>
-            <p className={styles.lede}>
-              Tìm theo dãy số, ngân sách và nhà mạng. TrustSim đưa những phiên phù hợp lên trước để bạn
-              so sánh và quyết định nhanh hơn.
-            </p>
-          </div>
+        <div className={`${styles.shell} ${styles.heroInner}`}>
+          <span className={styles.chip}>
+            <Sparkles size={14} aria-hidden="true" /> Sàn đấu giá SIM minh bạch
+          </span>
+          <h1 id="home-title">
+            Sở hữu số đẹp,
+            <br />
+            đấu giá <span className={styles.grad}>an tâm tuyệt đối</span>
+          </h1>
+          <p className={styles.lede}>
+            Tìm theo dãy số, ngân sách và nhà mạng. Mọi phiên đều có ký quỹ độc lập và hợp đồng điện tử —
+            nhanh, rõ ràng, đáng tin.
+          </p>
 
           <form className={styles.searchPanel} onSubmit={handleSubmit} aria-label="Tìm phiên đấu giá SIM">
-            <label className={styles.searchField}>
-              <span>Số hoặc mẫu số</span>
-              <div className={styles.inputWrap}>
-                <Search size={19} aria-hidden="true" />
-                <input
-                  value={criteria.keyword}
-                  onChange={(event) => setCriteria((current) => ({ ...current, keyword: event.target.value }))}
-                  placeholder="Ví dụ: 6868, 8888, 09…"
-                />
-              </div>
-            </label>
-
-            <label className={styles.selectField}>
-              <span>Nhà mạng</span>
+            <div className={styles.searchBar}>
+              <Search size={19} aria-hidden="true" />
+              <input
+                value={criteria.keyword}
+                onChange={(event) => setCriteria((current) => ({ ...current, keyword: event.target.value }))}
+                placeholder="Nhập số hoặc mẫu số: 6868, 8888, 09…"
+                aria-label="Số hoặc mẫu số"
+              />
+              <span className={styles.divider} aria-hidden="true" />
               <select
+                aria-label="Nhà mạng"
                 value={criteria.carrierId}
                 onChange={(event) => setCriteria((current) => ({ ...current, carrierId: event.target.value }))}
               >
@@ -207,11 +245,9 @@ export default function BuyerHomepage() {
                   </option>
                 ))}
               </select>
-            </label>
-
-            <label className={styles.selectField}>
-              <span>Ngân sách</span>
+              <span className={styles.divider} aria-hidden="true" />
               <select
+                aria-label="Ngân sách"
                 value={criteria.budget}
                 onChange={(event) =>
                   setCriteria((current) => ({ ...current, budget: event.target.value as BudgetKey }))
@@ -223,18 +259,14 @@ export default function BuyerHomepage() {
                   </option>
                 ))}
               </select>
-            </label>
-
-            <button className={styles.searchButton} type="submit" disabled={loading}>
-              {loading ? "Đang tìm…" : "Tìm phiên đấu giá"}
-              {!loading ? <ArrowRight size={18} aria-hidden="true" /> : null}
-            </button>
+              <button className={styles.searchButton} type="submit" disabled={loading}>
+                {loading ? "Đang tìm…" : "Tìm phiên"}
+                {!loading ? <ArrowRight size={17} aria-hidden="true" /> : null}
+              </button>
+            </div>
 
             <div className={styles.quickFilters} aria-label="Gợi ý tìm nhanh">
-              <button
-                type="button"
-                onClick={() => applyPreset({ ...INITIAL_CRITERIA, budget: "10to20" })}
-              >
+              <button type="button" onClick={() => applyPreset({ ...INITIAL_CRITERIA, budget: "10to20" })}>
                 10 – 20 triệu
               </button>
               <button type="button" onClick={() => applyPreset({ ...INITIAL_CRITERIA, keyword: "68" })}>
@@ -248,54 +280,168 @@ export default function BuyerHomepage() {
               </button>
             </div>
           </form>
-        </div>
-      </section>
 
-      <section className={styles.discovery} aria-labelledby="discovery-title">
-        <div className={styles.shell}>
-          <div className={styles.sectionHeading}>
-            <div>
-              <p className={styles.kicker}>Bắt đầu theo cách của bạn</p>
-              <h2 id="discovery-title">Khám phá theo nhu cầu mua</h2>
+          {fanCenter ? (
+            <div className={styles.fan} aria-label="Phiên đấu giá nổi bật">
+              {renderFanCard(fanLeft, styles.fanLeft)}
+              {renderFanCard(fanRight, styles.fanRight)}
+              {renderFanCard(fanCenter, styles.fanCenter)}
             </div>
-            <p>Chọn một lối tắt, sau đó tinh chỉnh thêm bằng bộ tìm kiếm phía trên.</p>
-          </div>
+          ) : null}
 
-          <div className={styles.discoveryGrid}>
-            <button type="button" onClick={() => applyPreset({ ...INITIAL_CRITERIA, budget: "under10" })}>
-              <span>Ngân sách dễ bắt đầu</span>
-              <strong>Dưới 10 triệu</strong>
-              <small>Xem các phiên có mức giá hiện tại phù hợp.</small>
-            </button>
-            <button type="button" onClick={() => applyPreset({ ...INITIAL_CRITERIA, keyword: "68" })}>
-              <span>Ý nghĩa tài lộc</span>
-              <strong>Lộc phát 68</strong>
-              <small>Tìm các dãy số có nhịp 6 và 8.</small>
-            </button>
-            <button type="button" onClick={() => applyPreset({ ...INITIAL_CRITERIA, keyword: "8888" })}>
-              <span>Dấu ấn mạnh</span>
-              <strong>Tứ quý</strong>
-              <small>Ưu tiên những dãy số lặp dễ nhận diện.</small>
-            </button>
-            <button type="button" onClick={() => applyPreset(INITIAL_CRITERIA)}>
-              <span>Cần quyết định sớm</span>
-              <strong>Sắp kết thúc</strong>
-              <small>Phiên đang hoạt động được xếp theo thời gian còn lại.</small>
-            </button>
+          <div className={styles.laurel}>
+            <div className={styles.laurelIcons} aria-hidden="true">
+              <span><Smartphone size={16} /></span>
+              <span><ShieldCheck size={16} /></span>
+              <span><FileSignature size={16} /></span>
+            </div>
+            <strong>Giao dịch được bảo vệ đa tầng</strong>
+            <small>Xác minh SIM chính chủ · Ký quỹ độc lập · Hợp đồng điện tử</small>
           </div>
         </div>
       </section>
 
-      <section className={styles.auctionSection} id="featured-auctions" aria-labelledby="auction-title">
+      {/* ── STATEMENT ── */}
+      <section className={styles.statement} aria-label="Giới thiệu">
         <div className={styles.shell}>
-          <div className={styles.auctionHeading}>
-            <div>
-              <p className={styles.kicker}>{hasAppliedFilters ? "Kết quả tìm kiếm" : "Đang trên sàn"}</p>
-              <h2 id="auction-title">{resultHeading}</h2>
+          <p>
+            Trong thị trường SIM số đẹp nhiều rủi ro, TrustSim là nơi <span className={styles.grad}>minh bạch</span>{" "}
+            <span className={styles.grad}>và đáng tin cậy.</span> Chúng tôi kiểm tra chính chủ, giữ tiền trung
+            gian và ghi nhận từng bước —{" "}
+            <span className={styles.fade}>
+              để bạn tập trung chọn đúng con số mình muốn, không phải lo bị lừa hay mất cọc.
+            </span>
+          </p>
+        </div>
+      </section>
+
+      {/* ── FEATURES ── */}
+      <section className={styles.features} aria-labelledby="trust-title">
+        <div className={styles.shell}>
+          <div className={styles.sectionHead}>
+            <span className={styles.chip}>
+              <ShieldCheck size={14} aria-hidden="true" /> Bảo vệ giao dịch
+            </span>
+            <h2 className={styles.sectionTitle} id="trust-title">
+              Đấu giá <span className={styles.grad}>minh bạch</span>, mỗi bước đều có dấu vết
+            </h2>
+            <p className={styles.sectionLede}>
+              Từ xác minh quyền sở hữu đến khi nhận chuyển nhượng, quy trình được kiểm soát và lưu vết rõ ràng.
+            </p>
+          </div>
+
+          <div className={styles.featureGrid}>
+            <article className={styles.featureCard}>
+              <span className={styles.featureIcon}><Smartphone size={18} aria-hidden="true" /></span>
+              <div>
+                <h3>Xác minh SIM chính chủ</h3>
+                <p>Kiểm tra quyền sở hữu qua OTP và đối soát nhà mạng trước khi mở phiên.</p>
+              </div>
+            </article>
+            <article className={styles.featureCard}>
+              <span className={styles.featureIcon}><Wallet size={18} aria-hidden="true" /></span>
+              <div>
+                <h3>Ký quỹ độc lập</h3>
+                <p>Tiền được giữ trung gian, chỉ chuyển cho người bán khi giao dịch hoàn tất.</p>
+              </div>
+            </article>
+            <article className={styles.featureCard}>
+              <span className={styles.featureIcon}><FileSignature size={18} aria-hidden="true" /></span>
+              <div>
+                <h3>Hợp đồng điện tử</h3>
+                <p>Các bên ký xác nhận bằng OTP, hợp đồng được lưu vết và đối chiếu khi cần.</p>
+              </div>
+            </article>
+            <article className={styles.featureCard}>
+              <span className={styles.featureIcon}><Gavel size={18} aria-hidden="true" /></span>
+              <div>
+                <h3>Giải quyết tranh chấp</h3>
+                <p>Có đầu mối, bằng chứng và quy chế xử lý rõ ràng cho cả người mua lẫn người bán.</p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ── */}
+      <section className={styles.how} aria-labelledby="process-title">
+        <div className={styles.shell}>
+          <div className={styles.howGrid}>
+            <div className={styles.howCopy}>
+              <span className={styles.chip}>
+                <Clock3 size={14} aria-hidden="true" /> Sau khi chọn được SIM
+              </span>
+              <h2 id="process-title">
+                Từ đặt giá đến <span className={styles.grad}>nhận chuyển nhượng</span>
+              </h2>
+              <p>Bốn bước đơn giản, mọi khoản tiền và chữ ký đều được kiểm soát theo tiến trình.</p>
+              <ol className={styles.steps}>
+                {PROCESS_STEPS.map((step, index) => (
+                  <li
+                    key={step.title}
+                    className={`${styles.step} ${index === activeStep ? styles.stepActive : ""}`}
+                    onMouseEnter={() => setActiveStep(index)}
+                  >
+                    <span className={styles.stepNo}>{String(index + 1).padStart(2, "0")}</span>
+                    <div>
+                      <strong>{step.title}</strong>
+                      <span className="desc">{step.desc}</span>
+                    </div>
+                  </li>
+                ))}
+              </ol>
             </div>
-            <Link href="/auctions" className={styles.allAuctionsLink}>
-              Xem toàn bộ sàn <ArrowRight size={17} aria-hidden="true" />
-            </Link>
+
+            <div className={styles.phoneCard} aria-hidden="true">
+              <div className={styles.sealBadge}>
+                <BadgeCheck size={30} />
+              </div>
+              <h4>Hợp đồng đã ký thành công</h4>
+              <p>Tiền ký quỹ đang được sàn giữ trung gian</p>
+              <div className={styles.phoneRows}>
+                <div><span>Số SIM</span><b>0868 686 868</b></div>
+                <div><span>Hình thức</span><b>Đấu giá kiểu Anh</b></div>
+                <div><span>Ký hợp đồng</span><b>OTP · Đã xác nhận</b></div>
+                <div><span>Ký quỹ</span><b>Đang giữ an toàn</b></div>
+              </div>
+              <div className={styles.phoneBtn}>Tiếp tục sang tên SIM</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── AUCTIONS ── */}
+      <section className={styles.auctions} id="featured-auctions" aria-labelledby="auction-title">
+        <div className={styles.shell}>
+          <div className={styles.sectionHead}>
+            <span className={styles.chip}>
+              <Gavel size={14} aria-hidden="true" /> {hasAppliedFilters ? "Kết quả tìm kiếm" : "Đang trên sàn"}
+            </span>
+            <h2 className={styles.sectionTitle} id="auction-title">
+              {hasAppliedFilters ? (
+                <>Phiên <span className={styles.grad}>phù hợp</span> với tiêu chí</>
+              ) : (
+                <>Hôm nay bạn muốn sở hữu <span className={styles.grad}>số nào?</span></>
+              )}
+            </h2>
+            <p className={styles.sectionLede}>
+              Chọn một lối tắt hoặc dùng bộ tìm kiếm phía trên để tinh chỉnh theo nhu cầu của bạn.
+            </p>
+          </div>
+
+          <div className={styles.presetRow}>
+            <button type="button" className={styles.preset} onClick={() => applyPreset({ ...INITIAL_CRITERIA, budget: "under10" })}>
+              Dưới 10 triệu
+            </button>
+            <button type="button" className={styles.preset} onClick={() => applyPreset({ ...INITIAL_CRITERIA, keyword: "68" })}>
+              Lộc phát 68
+            </button>
+            <button type="button" className={styles.preset} onClick={() => applyPreset({ ...INITIAL_CRITERIA, keyword: "8888" })}>
+              Tứ quý
+            </button>
+            <button type="button" className={styles.preset} onClick={() => applyPreset(INITIAL_CRITERIA)}>
+              Sắp kết thúc
+            </button>
           </div>
 
           {error ? (
@@ -322,96 +468,61 @@ export default function BuyerHomepage() {
             </div>
           ) : (
             <div className={styles.auctionGrid}>
-              {auctions.map((auction, index) => (
-                <Link
-                  className={`${styles.auctionCard} ${index === 0 ? styles.primaryAuction : ""}`}
-                  href={`/auctions/${auction.id}`}
-                  key={auction.id}
-                >
-                  <div className={styles.cardMeta}>
-                    <span data-status={auction.auctionStatus}>{getStatusLabel(auction.auctionStatus)}</span>
-                    <time dateTime={auction.endAt}>Kết thúc {formatEndTime(auction.endAt)}</time>
-                  </div>
-                  <h3>{formatPhoneNumber(auction.simPhoneNumber)}</h3>
-                  <p className={styles.cardDescriptor}>
-                    {auction.carrierName || "Nhà mạng chưa cập nhật"} · {getAuctionTypeLabel(auction.auctionType)}
-                  </p>
-                  <div className={styles.cardPrice}>
-                    <span>Giá hiện tại</span>
-                    <strong>{formatCurrency(auction.currentPrice || auction.startingPrice)}</strong>
-                  </div>
-                  <div className={styles.cardFooter}>
-                    <span>
-                      <Users size={15} aria-hidden="true" /> {auction.totalBids ?? 0} lượt đặt
-                    </span>
-                    <span className={styles.cardAction}>
-                      Xem phiên <ArrowRight size={16} aria-hidden="true" />
-                    </span>
-                  </div>
-                </Link>
-              ))}
+              {auctions.map((auction) => {
+                const isLive = auction.auctionStatus === "ACTIVE" || String(auction.auctionStatus) === "2";
+                return (
+                  <Link className={styles.auctionCard} href={`/auctions/${auction.id}`} key={auction.id}>
+                    <div className={styles.cardMeta}>
+                      <span className={styles.statusPill} data-live={isLive}>
+                        {getStatusLabel(auction.auctionStatus)}
+                      </span>
+                      <time dateTime={auction.endAt}>Kết thúc {formatEndTime(auction.endAt)}</time>
+                    </div>
+                    <h3>{formatPhoneNumber(auction.simPhoneNumber)}</h3>
+                    <p className={styles.cardDescriptor}>
+                      {auction.carrierName || "Nhà mạng chưa cập nhật"} · {getAuctionTypeLabel(auction.auctionType)}
+                    </p>
+                    <div className={styles.cardPrice}>
+                      <span>Giá hiện tại</span>
+                      <strong>{formatCurrency(auction.currentPrice || auction.startingPrice)}</strong>
+                    </div>
+                    <div className={styles.cardFooter}>
+                      <span>
+                        <Users size={15} aria-hidden="true" /> {auction.totalBids ?? 0} lượt đặt
+                      </span>
+                      <span className={styles.cardArrow}>
+                        <ArrowRight size={15} aria-hidden="true" />
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           )}
-        </div>
-      </section>
 
-      <section className={styles.trustSection} aria-labelledby="trust-title">
-        <div className={styles.shell}>
-          <div className={styles.trustIntro}>
-            <p className={styles.kicker}>Bảo vệ giao dịch</p>
-            <h2 id="trust-title">Mỗi phiên đều có dấu vết rõ ràng.</h2>
-            <Link href="/regulations">
-              Xem quy chế sàn <ArrowRight size={17} aria-hidden="true" />
+          <div className={styles.moreRow}>
+            <Link href="/auctions" className={styles.ghostBtn}>
+              Xem toàn bộ sàn <ArrowRight size={16} aria-hidden="true" />
             </Link>
           </div>
-          <div className={styles.trustList}>
-            <article>
-              <Smartphone aria-hidden="true" />
-              <div>
-                <h3>Xác minh SIM</h3>
-                <p>Kiểm tra quyền sở hữu trước khi mở phiên.</p>
-              </div>
-            </article>
-            <article>
-              <ShieldCheck aria-hidden="true" />
-              <div>
-                <h3>Ký quỹ giao dịch</h3>
-                <p>Khoản tiền được kiểm soát theo tiến trình.</p>
-              </div>
-            </article>
-            <article>
-              <FileSignature aria-hidden="true" />
-              <div>
-                <h3>Hợp đồng điện tử</h3>
-                <p>Các bên ký xác nhận và lưu vết giao dịch.</p>
-              </div>
-            </article>
-            <article>
-              <Gavel aria-hidden="true" />
-              <div>
-                <h3>Quy trình tranh chấp</h3>
-                <p>Có đầu mối và quy chế xử lý rõ ràng.</p>
-              </div>
-            </article>
-          </div>
         </div>
       </section>
 
-      <section className={styles.processSection} aria-labelledby="process-title">
+      {/* ── CTA ── */}
+      <section className={styles.cta} aria-label="Bắt đầu">
         <div className={styles.shell}>
-          <div className={styles.processHeading}>
-            <Clock3 aria-hidden="true" />
-            <div>
-              <p className={styles.kicker}>Sau khi chọn được SIM</p>
-              <h2 id="process-title">Từ đặt giá đến nhận chuyển nhượng.</h2>
+          <div className={styles.ctaBox}>
+            <h2>Sẵn sàng đấu giá hoặc đăng bán SIM của bạn?</h2>
+            <p>Tạo tài khoản, xác thực danh tính và tham gia sàn trong vài phút. Mọi giao dịch đều được ký quỹ an toàn.</p>
+            <div className={styles.ctaActions}>
+              <Link href="/register" className={styles.ctaPrimary}>
+                Tạo tài khoản <ArrowRight size={16} aria-hidden="true" />
+              </Link>
+              <Link href="/regulations" className={styles.ctaSecondary}>
+                Xem quy chế sàn
+              </Link>
             </div>
           </div>
-          <ol className={styles.processList}>
-            <li><span>01</span><strong>Đăng ký và đặt cọc</strong></li>
-            <li><span>02</span><strong>Tham gia đấu giá</strong></li>
-            <li><span>03</span><strong>Ký hợp đồng điện tử</strong></li>
-            <li><span>04</span><strong>Hoàn tất sang tên SIM</strong></li>
-          </ol>
         </div>
       </section>
     </div>

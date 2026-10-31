@@ -3,181 +3,113 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { ArrowUpRight, Mail, Phone, ShieldCheck } from "lucide-react";
+
+const COLUMNS: Array<{ title: string; links: Array<{ label: string; href: string }> }> = [
+  {
+    title: "Sàn đấu giá",
+    links: [
+      { label: "Khám phá SIM số", href: "/auctions" },
+      { label: "Đấu giá kiểu Anh", href: "/auctions?type=english" },
+      { label: "Đấu giá kiểu Hà Lan", href: "/auctions?type=dutch" },
+      { label: "Đăng ký bán SIM", href: "/register" },
+    ],
+  },
+  {
+    title: "Quy trình & pháp lý",
+    links: [
+      { label: "Quy chế hoạt động sàn", href: "/regulations" },
+      { label: "Bảo đảm ký quỹ 100%", href: "/regulations#escrow" },
+      { label: "Luật đấu giá & Anti-sniping", href: "/regulations#auction-rules" },
+      { label: "Chế tài & xử lý Á quân", href: "/regulations#runner-up" },
+    ],
+  },
+  {
+    title: "Hỗ trợ",
+    links: [
+      { label: "Giải đáp thắc mắc (FAQ)", href: "/regulations#faq" },
+      { label: "Quy trình sang tên 5 bước", href: "/regulations#handover" },
+      { label: "Điều khoản dịch vụ", href: "/regulations" },
+      { label: "Giải quyết tranh chấp", href: "/regulations#faq" },
+    ],
+  },
+];
 
 export const Footer: React.FC = () => {
   return (
-    <footer
-      style={{
-        background: "#001743",
-        borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-        padding: "56px 0 32px",
-        color: "#9CA3AF",
-      }}
-    >
-      <div className="container">
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: 40,
-            marginBottom: 48,
-          }}
-        >
+    <footer className="relative overflow-hidden bg-[#F4F6FC] px-3 sm:px-6 pt-6 pb-6">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[radial-gradient(60%_100%_at_50%_0%,rgba(122,140,255,0.22),transparent)]"
+      />
+      <div className="relative mx-auto max-w-[1180px] rounded-[32px] border border-white bg-white/80 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,23,67,0.08)] px-6 sm:px-10 pt-10 pb-6">
+        <div className="grid gap-10 lg:grid-cols-[1.4fr_repeat(3,1fr)]">
           {/* Brand */}
-          <div style={{ maxWidth: 320 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-              <div
-                style={{
-                  background: "#FFFFFF",
-                  padding: "4px 8px",
-                  borderRadius: 4,
-                  display: "inline-flex",
-                  alignItems: "center",
-                }}
-              >
-                <Image
-                  src="/logo/TrustSim-Logo.png"
-                  alt="TrustSim Logo"
-                  width={110}
-                  height={28}
-                  style={{ height: 24, width: "auto", objectFit: "contain" }}
-                />
-              </div>
-            </div>
-            <p style={{ color: "#9CA3AF", fontSize: 14, lineHeight: 1.7, margin: "0 0 16px" }}>
-              Sàn đấu giá SIM số đẹp uy tín, minh bạch và an toàn hàng đầu Việt Nam. Cơ chế bảo vệ giao dịch đa tầng và ký quỹ minh bạch.
+          <div className="max-w-sm">
+            <Link href="/" className="inline-flex items-center">
+              <Image
+                src="/logo/TrustSim-Logo.png"
+                alt="TrustSim Logo"
+                width={130}
+                height={34}
+                className="h-8 w-auto object-contain"
+              />
+            </Link>
+            <p className="mt-4 text-sm leading-relaxed text-slate-500">
+              Sàn đấu giá SIM số đẹp minh bạch và an toàn. Mỗi phiên đều có ký quỹ độc lập, hợp đồng
+              điện tử và quy trình chuyển nhượng rõ ràng.
             </p>
-            <div style={{ fontSize: 13, color: "#94A3B8" }}>
-              Hotline: <span style={{ color: "#FFFFFF", fontWeight: 600 }}>1900 6868</span> (8:00 - 21:00)
+            <div className="mt-5 flex flex-col gap-2 text-sm text-slate-600">
+              <a
+                href="tel:19006868"
+                className="inline-flex items-center gap-2 hover:text-[#001743] transition-colors"
+              >
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-[#001743]/[0.06] text-[#001743]">
+                  <Phone size={13} />
+                </span>
+                1900 6868 <span className="text-slate-400">(8:00 – 21:00)</span>
+              </a>
+              <a
+                href="mailto:support@trustsim.vn"
+                className="inline-flex items-center gap-2 hover:text-[#001743] transition-colors"
+              >
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-[#001743]/[0.06] text-[#001743]">
+                  <Mail size={13} />
+                </span>
+                support@trustsim.vn
+              </a>
             </div>
           </div>
 
-          {/* Column 1: Sản phẩm */}
-          <div>
-            <h4
-              style={{
-                color: "#FFFFFF",
-                fontSize: 14,
-                fontWeight: 700,
-                marginBottom: 16,
-                textTransform: "uppercase",
-                letterSpacing: "0.04em",
-              }}
-            >
-              Sản Phẩm & Đấu Giá
-            </h4>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-              {[
-                { label: "Khám phá SIM số", href: "/auctions" },
-                { label: "Đấu giá kiểu Anh", href: "/auctions?type=english" },
-                { label: "Đấu giá kiểu Hà Lan", href: "/auctions?type=dutch" },
-                { label: "Đăng ký bán SIM", href: "/register" },
-              ].map((item) => (
-                <li key={item.label}>
-                  <Link
-                    href={item.href}
-                    style={{ color: "#9CA3AF", textDecoration: "none", fontSize: 14, transition: "color 0.2s" }}
-                    onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#FFFFFF")}
-                    onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#9CA3AF")}
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Column 2: Quy trình & An toàn */}
-          <div>
-            <h4
-              style={{
-                color: "#FFFFFF",
-                fontSize: 14,
-                fontWeight: 700,
-                marginBottom: 16,
-                textTransform: "uppercase",
-                letterSpacing: "0.04em",
-              }}
-            >
-              Quy Trình & Pháp Lý
-            </h4>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-              {[
-                { label: "Quy chế hoạt động sàn", href: "/regulations" },
-                { label: "Bảo đảm ký quỹ 100%", href: "/regulations#escrow" },
-                { label: "Luật đấu giá & Anti-sniping", href: "/regulations#auction-rules" },
-                { label: "Chế tài & Xử lý Á quân", href: "/regulations#runner-up" },
-              ].map((item) => (
-                <li key={item.label}>
-                  <Link
-                    href={item.href}
-                    style={{ color: "#9CA3AF", textDecoration: "none", fontSize: 14, transition: "color 0.2s" }}
-                    onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#FFFFFF")}
-                    onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#9CA3AF")}
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Column 3: Hỗ trợ & Về TrustSim */}
-          <div>
-            <h4
-              style={{
-                color: "#FFFFFF",
-                fontSize: 14,
-                fontWeight: 700,
-                marginBottom: 16,
-                textTransform: "uppercase",
-                letterSpacing: "0.04em",
-              }}
-            >
-              Hỗ Trợ Khách Hàng
-            </h4>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-              {[
-                { label: "Giải đáp thắc mắc (FAQ)", href: "/regulations#faq" },
-                { label: "Quy trình sang tên 5 bước", href: "/regulations#handover" },
-                { label: "Điều khoản dịch vụ", href: "/regulations" },
-                { label: "Giải quyết tranh chấp", href: "/regulations#faq" },
-              ].map((item) => (
-                <li key={item.label}>
-                  <Link
-                    href={item.href}
-                    style={{ color: "#9CA3AF", textDecoration: "none", fontSize: 14, transition: "color 0.2s" }}
-                    onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#FFFFFF")}
-                    onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#9CA3AF")}
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {COLUMNS.map((column) => (
+            <div key={column.title}>
+              <h4 className="text-sm font-bold text-[#001743] mb-4">{column.title}</h4>
+              <ul className="m-0 flex list-none flex-col gap-3 p-0">
+                {column.links.map((item) => (
+                  <li key={item.label}>
+                    <Link
+                      href={item.href}
+                      className="group inline-flex items-center gap-1 text-sm text-slate-500 transition-colors hover:text-[#001743]"
+                    >
+                      {item.label}
+                      <ArrowUpRight
+                        size={13}
+                        className="opacity-0 -translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-x-0"
+                      />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
-        {/* Bottom bar */}
-        <div
-          style={{
-            borderTop: "1px solid rgba(255, 255, 255, 0.1)",
-            paddingTop: 24,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 16,
-            fontSize: 13,
-          }}
-        >
+        <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/80 pt-5 text-[13px] text-slate-500">
           <span>© 2026 TrustSim. Toàn bộ bản quyền thuộc về TrustSim Auction Platform.</span>
-          <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
-            <span style={{ color: "#10B981", display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 500 }}>
-              <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10B981", display: "inline-block" }} />
-              Hệ thống bảo vệ giao dịch đa tầng kích hoạt
-            </span>
-          </div>
+          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-medium text-emerald-700">
+            <ShieldCheck size={14} />
+            Hệ thống bảo vệ giao dịch đa tầng đang hoạt động
+          </span>
         </div>
       </div>
     </footer>
