@@ -427,7 +427,7 @@ function OwnedSimHeroCard({
             <button
               type="button"
               onClick={() => onOpenAiValuation(sim)}
-              className="p-1.5 rounded-[6px] bg-violet-500/20 hover:bg-violet-500/35 text-violet-300 hover:text-white border border-violet-400/30 transition-colors cursor-pointer"
+              className="p-1.5 rounded-full bg-violet-500/20 hover:bg-violet-500/35 text-violet-300 hover:text-white border border-violet-400/30 transition-colors cursor-pointer"
               title="Nhờ AI thẩm định giá"
             >
               <Sparkles size={13} className="text-yellow-400" />
@@ -435,7 +435,7 @@ function OwnedSimHeroCard({
             <button
               type="button"
               onClick={() => onOpenDetail(sim)}
-              className="p-1.5 rounded-[6px] bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
               title="Xem chi tiết số SIM"
             >
               <Eye size={13} />
@@ -443,7 +443,7 @@ function OwnedSimHeroCard({
             <button
               type="button"
               onClick={() => onOpenUpdate(sim)}
-              className="p-1.5 rounded-[6px] bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
               title="Chỉnh sửa thông tin SIM"
             >
               <Pencil size={13} />
@@ -451,7 +451,7 @@ function OwnedSimHeroCard({
             <button
               type="button"
               onClick={() => onOpenDelete(sim)}
-              className="p-1.5 rounded-[6px] bg-white/10 hover:bg-rose-500/25 text-slate-300 hover:text-rose-300 transition-colors cursor-pointer"
+              className="p-1.5 rounded-full bg-white/10 hover:bg-rose-500/25 text-slate-300 hover:text-rose-300 transition-colors cursor-pointer"
               title="Xóa SIM khỏi kho"
             >
               <Trash2 size={13} />
@@ -464,7 +464,7 @@ function OwnedSimHeroCard({
                     ? `/auctions/${sim.activeAuctionId}`
                     : `/auctions?keyword=${sim.simNumber.replace(/\D/g, "")}`
                 }
-                className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-[6px] text-xs font-bold bg-white/10 hover:bg-white/15 border border-white/20 text-white transition-colors shadow-sm whitespace-nowrap flex-1 min-w-[132px]"
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white/10 hover:bg-white/15 border border-white/20 text-white transition-colors shadow-2xs whitespace-nowrap flex-1 min-w-[132px]"
               >
                 <span>Đang đấu giá</span>
                 <ArrowRight size={12} />
@@ -477,7 +477,7 @@ function OwnedSimHeroCard({
                   background: "linear-gradient(135deg, #FDE047 0%, #EAB308 50%, #CA8A04 100%)",
                   boxShadow: "0 4px 14px rgba(234, 179, 8, 0.35)",
                 }}
-                className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-[6px] text-xs font-black text-[#001743] hover:brightness-105 active:scale-95 transition-all cursor-pointer whitespace-nowrap flex-1 min-w-[132px]"
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black text-[#001743] hover:brightness-105 active:scale-95 transition-all cursor-pointer whitespace-nowrap flex-1 min-w-[132px]"
               >
                 <Gavel size={12} className="text-[#001743]" strokeWidth={2.2} />
                 <span>Mở đấu giá</span>
@@ -486,7 +486,7 @@ function OwnedSimHeroCard({
               <button
                 type="button"
                 onClick={() => onOpenVerify(sim)}
-                className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-[6px] text-xs font-bold bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 hover:border-yellow-400 transition-colors cursor-pointer whitespace-nowrap flex-1 min-w-[132px]"
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 hover:border-yellow-400 transition-colors cursor-pointer whitespace-nowrap flex-1 min-w-[132px]"
                 title="Xác thực chính chủ với Cổng viễn thông Nhà mạng"
               >
                 <ShieldCheck size={12} />
@@ -900,14 +900,15 @@ export default function OwnedSimsTab({
 
         <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap sm:flex-nowrap shrink-0">
           {/* Segmented Control Toggle: Dạng bảng vs Thẻ SIM */}
-          <div className="inline-flex p-0.5 bg-slate-100 rounded-lg border border-slate-200/90 shadow-2xs gap-0.5 shrink-0">
+          <div className="inline-flex p-1 bg-slate-100/90 rounded-full border border-slate-200/80 shadow-2xs gap-1 shrink-0">
             <button
               type="button"
               onClick={() => setViewMode("table")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${viewMode === "table"
-                ? "bg-white text-[#001743] shadow-xs"
-                : "text-slate-500 hover:text-slate-800"
-                }`}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                viewMode === "table"
+                  ? "bg-white text-[#001743] shadow-xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
               title="Chuyển sang chế độ xem bảng chi tiết"
             >
               <TableIcon size={14} strokeWidth={2} />
@@ -916,10 +917,11 @@ export default function OwnedSimsTab({
             <button
               type="button"
               onClick={() => setViewMode("grid")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${viewMode === "grid"
-                ? "bg-[#001743] text-white shadow-xs"
-                : "text-slate-500 hover:text-slate-800"
-                }`}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                viewMode === "grid"
+                  ? "bg-[#001743] text-white shadow-xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
               title="Chuyển sang chế độ xem thẻ SIM Luxury độc đáo"
             >
               <LayoutGrid size={14} strokeWidth={2} />
@@ -932,7 +934,7 @@ export default function OwnedSimsTab({
             type="button"
             onClick={fetchSimsFromDb}
             disabled={loading}
-            className="h-[34px] px-3 inline-flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700 disabled:opacity-60 rounded-lg text-xs font-semibold shadow-2xs transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-98"
+            className="h-[36px] px-3.5 inline-flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700 disabled:opacity-60 rounded-full text-xs font-bold shadow-2xs transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95"
             title="Làm mới dữ liệu từ Database"
           >
             <RefreshCw size={13} className={loading ? "animate-spin text-[#001743]" : "text-slate-500"} />
@@ -943,7 +945,7 @@ export default function OwnedSimsTab({
           <button
             type="button"
             onClick={handleOpenAddModal}
-            className="h-[34px] px-3 inline-flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-[#001743] rounded-lg text-xs font-bold shadow-2xs hover:border-[#001743] transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
+            className="h-[36px] px-4 inline-flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-[#001743] rounded-full text-xs font-bold shadow-2xs hover:border-[#001743] transition-all cursor-pointer active:scale-95 shrink-0 whitespace-nowrap"
           >
             <Plus size={15} strokeWidth={2.5} />
             <span>Thêm SIM cá nhân</span>
@@ -953,10 +955,10 @@ export default function OwnedSimsTab({
           <button
             type="button"
             onClick={() => handleOpenCreateAuction()}
-            className="h-[34px] px-3.5 inline-flex items-center gap-1.5 bg-[#E4011E] hover:bg-[#C00119] text-white rounded-lg text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
+            className="h-[36px] px-4 inline-flex items-center gap-1.5 bg-[#001743] hover:bg-[#002875] text-white rounded-full text-xs font-bold shadow-md shadow-navy-950/15 hover:shadow-lg transition-all cursor-pointer active:scale-95 shrink-0 whitespace-nowrap"
             title="Tạo phiên đấu giá cho số SIM đã xác thực"
           >
-            <Gavel size={15} strokeWidth={2.5} />
+            <Gavel size={14} strokeWidth={2.2} />
             <span>Tạo phiên đấu giá</span>
           </button>
         </div>
@@ -964,9 +966,9 @@ export default function OwnedSimsTab({
 
       {/* ── 2. Content: Table View vs Grid Hero View ── */}
       {ownedSims.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-[10px] p-12 text-center">
-          <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
-            <Smartphone size={22} />
+        <div className="bg-white border border-slate-100/90 rounded-[28px] p-12 text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="w-14 h-14 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+            <Smartphone size={24} />
           </div>
           <h3 className="text-sm font-bold text-[#001743]">Chưa có số SIM nào trong kho</h3>
           <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
@@ -975,7 +977,7 @@ export default function OwnedSimsTab({
           <button
             type="button"
             onClick={handleOpenAddModal}
-            className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-[#001743] hover:bg-[#002266] text-white text-xs font-bold rounded-[6px] transition-colors"
+            className="mt-4 inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#001743] hover:bg-[#002875] text-white text-xs font-bold rounded-full shadow-md shadow-navy-950/15 transition-all active:scale-95 cursor-pointer"
           >
             <Plus size={14} /> Thêm SIM mới ngay
           </button>
@@ -998,26 +1000,26 @@ export default function OwnedSimsTab({
         </div>
       ) : (
         /* ════ CHẾ ĐỘ 2: TABLE VIEW (CHUẨN BẢNG FINTECH) ════ */
-        <div className="bg-white border border-slate-200 rounded-[10px] overflow-hidden shadow-2xs animate-fade-up">
+        <div className="bg-white border border-slate-100/90 rounded-[28px] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] animate-fade-up">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
-                  <th className="py-3 px-4">Số SIM</th>
-                  <th className="py-3 px-4">Nhà mạng & Gói</th>
-                  <th className="py-3 px-4">Nguồn gốc</th>
-                  <th className="py-3 px-4">Xác thực chính chủ</th>
-                  <th className="py-3 px-4">Định giá ước tính</th>
-                  <th className="py-3 px-4 text-right">Thao tác</th>
+                <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-600 font-bold">
+                  <th className="py-3.5 px-5">Số SIM</th>
+                  <th className="py-3.5 px-5">Nhà mạng & Gói</th>
+                  <th className="py-3.5 px-5">Nguồn gốc</th>
+                  <th className="py-3.5 px-5">Xác thực chính chủ</th>
+                  <th className="py-3.5 px-5">Định giá ước tính</th>
+                  <th className="py-3.5 px-5 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {ownedSims.map((sim) => {
                   const isOwnerVerified = sim.ownershipStatus === "VERIFIED_OWNER";
                   return (
-                    <tr key={sim.id} className="hover:bg-slate-50/80 transition-colors h-16">
+                    <tr key={sim.id} className="hover:bg-slate-50/70 transition-colors h-16">
                       {/* Cột 1: Số SIM */}
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-5">
                         <div className="font-extrabold text-sm text-[#001743] font-mono tabular-nums">
                           {sim.simNumber}
                         </div>
@@ -1025,7 +1027,7 @@ export default function OwnedSimsTab({
                       </td>
 
                       {/* Cột 2: Nhà mạng với Logo Vuông */}
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-5">
                         <div className="flex items-center gap-2.5">
                           <CarrierSquareLogo name={sim.carrier} logo={sim.carrierLogo} size={28} />
                           <div>
@@ -1036,33 +1038,33 @@ export default function OwnedSimsTab({
                       </td>
 
                       {/* Cột 3: Nguồn gốc */}
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-5">
                         {sim.acquiredFrom === "PLATFORM_AUCTION" ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
                             Trúng đấu giá sàn
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-semibold bg-slate-100 text-slate-600">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold bg-slate-100 text-slate-600">
                             Tự thêm cá nhân
                           </span>
                         )}
                       </td>
 
                       {/* Cột 4: Xác thực chính chủ */}
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-5">
                         {isOwnerVerified ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                             <Check size={12} strokeWidth={2.5} /> Đã xác thực chính chủ
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
                             <Clock size={12} /> Chưa xác thực chính chủ
                           </span>
                         )}
                       </td>
 
                       {/* Cột 5: Định giá ước tính */}
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-5">
                         <div className="font-bold text-[#001743] font-mono tabular-nums text-xs">
                           {sim.estimatedValue > 0 ? (
                             `${sim.estimatedValue.toLocaleString("vi-VN")} ₫`
@@ -1073,7 +1075,7 @@ export default function OwnedSimsTab({
                         <button
                           type="button"
                           onClick={() => setSelectedSimForAiValuation(sim)}
-                          className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 transition-colors cursor-pointer"
                           title="Thẩm định giá với AI"
                         >
                           <Sparkles size={10} className="text-violet-600" />
@@ -1082,12 +1084,12 @@ export default function OwnedSimsTab({
                       </td>
 
                       {/* Cột 6: Thao tác */}
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3.5 px-5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
                             onClick={() => setSelectedSimForAiValuation(sim)}
-                            className="p-1.5 rounded-[6px] border border-violet-200 hover:bg-violet-50 text-violet-600 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-full border border-violet-200 hover:bg-violet-50 text-violet-600 transition-colors cursor-pointer"
                             title="Thẩm định giá với AI"
                           >
                             <Sparkles size={13} />
@@ -1095,7 +1097,7 @@ export default function OwnedSimsTab({
                           <button
                             type="button"
                             onClick={() => setSelectedSimForDetail(sim)}
-                            className="p-1.5 rounded-[6px] border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-full border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
                             title="Xem chi tiết SIM"
                           >
                             <Eye size={13} />
@@ -1103,7 +1105,7 @@ export default function OwnedSimsTab({
                           <button
                             type="button"
                             onClick={() => setSelectedSimForUpdate(sim)}
-                            className="p-1.5 rounded-[6px] border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-full border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
                             title="Chỉnh sửa thông tin SIM"
                           >
                             <Pencil size={13} />
@@ -1111,7 +1113,7 @@ export default function OwnedSimsTab({
                           <button
                             type="button"
                             onClick={() => setSelectedSimForDelete(sim)}
-                            className="p-1.5 rounded-[6px] border border-rose-200 hover:bg-rose-50 text-rose-600 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-full border border-rose-200 hover:bg-rose-50 text-rose-600 transition-colors cursor-pointer"
                             title="Xóa SIM"
                           >
                             <Trash2 size={13} />
@@ -1124,7 +1126,7 @@ export default function OwnedSimsTab({
                                   ? `/auctions/${sim.activeAuctionId}`
                                   : `/auctions?keyword=${sim.simNumber.replace(/\D/g, "")}`
                               }
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[6px] text-xs font-bold border border-slate-300 text-slate-700 hover:bg-slate-100 transition-colors"
+                              className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-bold border border-slate-300 text-slate-700 hover:bg-slate-100 transition-colors"
                             >
                               <span>Đang đấu giá</span>
                               <ArrowRight size={12} />
@@ -1133,7 +1135,7 @@ export default function OwnedSimsTab({
                             <button
                               type="button"
                               onClick={() => handleOpenCreateAuction(sim)}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[6px] text-xs font-bold bg-[#E4011E] hover:bg-[#B80018] text-white transition-colors cursor-pointer"
+                              className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#001743] hover:bg-[#002875] text-white shadow-xs transition-colors cursor-pointer"
                             >
                               <Gavel size={12} />
                               <span>Mở đấu giá</span>
@@ -1142,7 +1144,7 @@ export default function OwnedSimsTab({
                             <button
                               type="button"
                               onClick={() => setSelectedSimForVerify(sim)}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[6px] text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
+                              className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
                               title="Xác thực chính chủ với Cổng viễn thông Nhà mạng"
                             >
                               <ShieldCheck size={12} />

@@ -241,12 +241,12 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
   return (
     <div className="flex flex-col gap-6">
       {/* ── Top Header Section ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-100">
         <div>
-          <h2 className="text-lg font-black text-[#001743] m-0">
+          <h2 className="text-xl font-extrabold text-[#001743] m-0 tracking-tight">
             Hợp đồng chuyển nhượng SIM
           </h2>
-          <p className="text-xs text-slate-500 m-0 mt-0.5">
+          <p className="text-xs text-slate-500 m-0 mt-1">
             Tài khoản bảo chứng trung gian bảo vệ an toàn 100% tài chính cho cả bên mua và bên bán
           </p>
         </div>
@@ -255,11 +255,11 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
           type="button"
           onClick={handleManualRefresh}
           disabled={refreshing}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-[#001743] shadow-2xs transition-colors cursor-pointer self-start sm:self-auto disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-[#001743] shadow-2xs hover:shadow-xs transition-all cursor-pointer self-start sm:self-auto disabled:opacity-60 active:scale-95"
         >
           <RefreshCw
             size={13}
-            className={`text-slate-600 ${refreshing ? "animate-spin" : ""}`}
+            className={`text-slate-600 ${refreshing ? "animate-spin text-[#001743]" : ""}`}
           />
           <span>{refreshing ? "Đang đồng bộ..." : "Đồng bộ hợp đồng"}</span>
         </button>
@@ -267,49 +267,49 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
 
       {/* ── KPI Overview Summary Cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-2xs">
-          <div className="text-xs text-slate-500 font-semibold mb-1">
+        <div className="bg-white border border-slate-100/90 rounded-[24px] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+          <div className="text-xs text-slate-500 font-bold mb-1">
             Tổng hợp đồng
           </div>
-          <div className="text-xl font-black text-[#001743] font-mono tabular-nums">
-            {summaryStats.total} <span className="text-sm font-bold">hồ sơ</span>
+          <div className="text-2xl font-black text-[#001743] font-mono tabular-nums">
+            {summaryStats.total} <span className="text-xs font-bold text-slate-400">hồ sơ</span>
           </div>
           <div className="text-[11px] text-slate-400 mt-1">
             Tất cả giao dịch trên hệ thống
           </div>
         </div>
 
-        <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-2xs">
-          <div className="text-xs text-slate-500 font-semibold mb-1">
-            Đang ký quỹ & sang tên
+        <div className="bg-white border border-slate-100/90 rounded-[24px] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+          <div className="text-xs text-blue-700 font-bold mb-1">
+            Đang ký quỹ &amp; sang tên
           </div>
-          <div className="text-xl font-black text-blue-600 font-mono tabular-nums">
-            {summaryStats.active} <span className="text-sm font-bold">hồ sơ</span>
+          <div className="text-2xl font-black text-blue-900 font-mono tabular-nums">
+            {summaryStats.active} <span className="text-xs font-bold text-slate-400">hồ sơ</span>
           </div>
           <div className="text-[11px] text-slate-400 mt-1">
             Đang trong tiến trình chuyển giao
           </div>
         </div>
 
-        <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-2xs">
-          <div className="text-xs text-slate-500 font-semibold mb-1">
+        <div className="bg-white border border-slate-100/90 rounded-[24px] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+          <div className="text-xs text-emerald-700 font-bold mb-1">
             Hoàn tất thành công
           </div>
-          <div className="text-xl font-black text-emerald-600 font-mono tabular-nums">
-            {summaryStats.completed} <span className="text-sm font-bold">hồ sơ</span>
+          <div className="text-2xl font-black text-emerald-900 font-mono tabular-nums">
+            {summaryStats.completed} <span className="text-xs font-bold text-slate-400">hồ sơ</span>
           </div>
           <div className="text-[11px] text-slate-400 mt-1">
-            Đã chuyển giao SIM & giải ngân
+            Đã chuyển giao SIM &amp; giải ngân
           </div>
         </div>
 
-        <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-4 shadow-2xs">
-          <div className="text-xs text-slate-500 font-semibold mb-1">
+        <div className="bg-white border border-slate-100/90 rounded-[24px] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+          <div className="text-xs text-slate-500 font-bold mb-1">
             Tổng giá trị ký quỹ
           </div>
-          <div className="text-xl font-black text-[#E4011E] font-mono tabular-nums">
+          <div className="text-xl font-black text-[#001743] font-mono tabular-nums">
             {summaryStats.totalEscrow.toLocaleString("vi-VN")}{" "}
-            <span className="text-sm font-bold">₫</span>
+            <span className="text-xs font-bold">₫</span>
           </div>
           <div className="text-[11px] text-slate-400 mt-1">
             Được bảo hiểm giao dịch 100%
@@ -318,18 +318,18 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
       </div>
 
       {/* ── Search & Filter Toolbar ── */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white border border-[#E2E8F0] rounded-[8px] p-3 shadow-2xs">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white border border-slate-100/90 rounded-[24px] p-4 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
         <div className="relative flex-1 min-w-[220px]">
           <Search
             size={15}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
           />
           <input
             type="text"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             placeholder="Tìm theo mã hợp đồng, số SIM, tên đối tác..."
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-[6px] text-[#001743] placeholder:text-slate-400 focus:outline-none focus:border-[#001743] transition-colors"
+            className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50/50 border border-slate-200 rounded-full text-[#001743] placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#001743] transition-colors"
           />
         </div>
 
@@ -340,7 +340,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
               setStatusFilter(e.target.value);
               setPageIndex(1);
             }}
-            className="px-3 py-1.5 text-xs font-semibold bg-white border border-slate-200 rounded-[6px] text-slate-700 focus:outline-none focus:border-[#001743]"
+            className="px-4 py-2 text-xs font-bold bg-white border border-slate-200 rounded-full text-slate-700 focus:outline-none focus:border-[#001743] cursor-pointer shadow-2xs"
           >
             <option value="ALL">Tất cả trạng thái</option>
             <option value="PendingEscrow">Chờ nộp ký quỹ</option>
@@ -354,38 +354,38 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
 
       {/* ── Contracts List ── */}
       {loading ? (
-        <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-12 text-center shadow-2xs">
+        <div className="bg-white border border-slate-100/90 rounded-[28px] p-12 text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
           <RefreshCw
             size={24}
-            className="animate-spin text-slate-400 mx-auto mb-2"
+            className="animate-spin text-[#001743] mx-auto mb-2"
           />
           <div className="text-xs font-bold text-slate-600">
             Đang tải dữ liệu hợp đồng ký quỹ từ máy chủ...
           </div>
         </div>
       ) : filteredTrades.length === 0 ? (
-        <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-12 text-center shadow-2xs">
-          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mx-auto mb-3">
+        <div className="bg-white border border-slate-100/90 rounded-[28px] p-12 text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mx-auto mb-3">
             <FileText size={24} />
           </div>
-          <h4 className="text-sm font-extrabold text-[#001743] m-0 mb-1">
+          <h4 className="text-base font-extrabold text-[#001743] m-0 mb-1">
             Không tìm thấy hợp đồng chuyển nhượng nào
           </h4>
-          <p className="text-xs text-slate-500 max-w-md mx-auto m-0 mb-4">
+          <p className="text-xs text-slate-500 max-w-md mx-auto m-0 mb-4 leading-relaxed">
             {searchKeyword
               ? "Không có hợp đồng nào phù hợp với từ khóa tìm kiếm của bạn. Hãy thử từ khóa khác."
               : "Khi bạn trúng đấu giá SIM hoặc thực hiện mua bán trên sàn, hợp đồng chuyển giao và tiến trình ký quỹ bảo đảm sẽ hiển thị tại đây."}
           </p>
           <Link
             href="/auctions"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[6px] bg-[#E4011E] hover:bg-[#C90019] text-white text-xs font-bold transition-colors shadow-xs"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#001743] hover:bg-[#002875] text-white text-xs font-bold transition-all shadow-md shadow-navy-950/15 cursor-pointer active:scale-95"
           >
             <span>Khám phá phòng đấu giá SIM</span>
             <ArrowRight size={13} />
           </Link>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           {filteredTrades.map((trade) => {
             const escrowBadge = getEscrowBadge(trade.escrowStatus);
             const tradeBadge = getTradeStatusBadge(trade.status);
@@ -404,12 +404,12 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
             return (
               <div
                 key={trade.id}
-                className="bg-white border border-[#E2E8F0] rounded-[8px] p-5 shadow-2xs hover:border-slate-300 transition-all flex flex-col gap-4"
+                className="bg-white border border-slate-100/90 rounded-[24px] p-5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-lg transition-all flex flex-col gap-4"
               >
                 {/* Header: Code, Badges & Date */}
                 <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-[6px] bg-slate-100 text-[#001743] flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-2xl bg-slate-100 text-[#001743] flex items-center justify-center shrink-0">
                       <FileText size={15} />
                     </div>
                     <span className="text-xs font-black text-[#001743] font-mono">
@@ -420,7 +420,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
                       onClick={() =>
                         handleCopy(trade.tradeTransactionCode, "Mã hợp đồng")
                       }
-                      className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-600 transition-colors"
+                      className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
                       title="Sao chép mã hợp đồng"
                     >
                       <Copy size={12} />
@@ -438,7 +438,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
                         color: escrowBadge.color,
                         borderColor: escrowBadge.border,
                       }}
-                      className="text-[10.5px] font-bold px-2 py-0.5 rounded-[4px] border inline-flex items-center gap-1"
+                      className="text-[10.5px] font-bold px-3 py-0.5 rounded-full border inline-flex items-center gap-1"
                     >
                       <Lock size={10} />
                       {escrowBadge.text}
@@ -450,7 +450,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
                         color: tradeBadge.color,
                         borderColor: tradeBadge.border,
                       }}
-                      className="text-[10.5px] font-bold px-2 py-0.5 rounded-[4px] border"
+                      className="text-[10.5px] font-bold px-3 py-0.5 rounded-full border"
                     >
                       {tradeBadge.text}
                     </span>
@@ -464,7 +464,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
                     <div className="text-[10.5px] text-slate-400 font-semibold uppercase tracking-wider">
                       Số SIM chuyển nhượng
                     </div>
-                    <div className="text-lg font-black text-[#001743] font-mono tracking-wide mt-0.5">
+                    <div className="text-xl font-black text-[#001743] font-mono tracking-wide mt-0.5 tabular-nums">
                       {formatPhoneNumber(trade.simPhoneNumber)}
                     </div>
                   </div>
@@ -474,9 +474,9 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
                     <div className="text-[10.5px] text-slate-400 font-semibold uppercase tracking-wider">
                       Tiền ký quỹ bảo chứng
                     </div>
-                    <div className="text-lg font-black text-[#E4011E] font-mono tabular-nums mt-0.5">
+                    <div className="text-xl font-black text-[#001743] font-mono tabular-nums mt-0.5">
                       {trade.escrowAmount.toLocaleString("vi-VN")}{" "}
-                      <span className="text-xs font-bold">₫</span>
+                      <span className="text-xs font-bold text-slate-400">₫</span>
                     </div>
                   </div>
 
@@ -496,7 +496,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
                 </div>
 
                 {/* Visual 4-Step Progress Bar */}
-                <div className="bg-slate-50 border border-slate-100 rounded-[6px] p-3">
+                <div className="bg-slate-50/70 border border-slate-100 rounded-[18px] p-3.5">
                   <div className="grid grid-cols-4 gap-2 text-center">
                     {[
                       { step: 1, label: "1. Ký quỹ" },
@@ -511,11 +511,11 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
                         <div key={s.step} className="flex flex-col items-center">
                           <div className="w-full flex items-center mb-1.5">
                             <div
-                              className={`h-1 flex-1 rounded-full ${
+                              className={`h-1.5 flex-1 rounded-full ${
                                 isDone
                                   ? "bg-emerald-500"
                                   : isCurrent
-                                  ? "bg-blue-500"
+                                  ? "bg-[#001743]"
                                   : "bg-slate-200"
                               }`}
                             />
@@ -525,7 +525,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
                               isDone
                                 ? "text-emerald-700"
                                 : isCurrent
-                                ? "text-blue-700"
+                                ? "text-[#001743]"
                                 : "text-slate-400"
                             }`}
                           >
@@ -538,7 +538,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
                 </div>
 
                 {/* Footer Action Bar */}
-                <div className="flex items-center justify-between pt-1">
+                <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
                   <div className="text-[11px] text-slate-500">
                     {trade.escrowDeadline && (
                       <span>
@@ -558,7 +558,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
                         href={trade.documentUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[6px] border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 shadow-2xs transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 shadow-2xs transition-colors"
                       >
                         <ExternalLink size={12} />
                         <span>Bản số hóa PDF</span>
@@ -567,7 +567,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
 
                     <Link
                       href={`/trades/${trade.id}`}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[6px] bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold transition-colors cursor-pointer shadow-xs"
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#001743] hover:bg-[#002875] text-white text-xs font-bold transition-all cursor-pointer shadow-md shadow-navy-950/15 active:scale-95"
                     >
                       <span>Xem chi tiết tiến trình</span>
                       <ChevronRight size={13} />
@@ -580,9 +580,9 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
 
           {/* Pagination Controls */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between bg-white border border-[#E2E8F0] rounded-[8px] p-3 shadow-2xs text-xs">
+            <div className="flex items-center justify-between bg-white border border-slate-100/90 rounded-[20px] p-3.5 px-5 shadow-2xs text-xs">
               <span className="text-slate-500">
-                Hiển thị trang <strong>{pageIndex}</strong> / {totalPages} (Tổng{" "}
+                Hiển thị trang <strong className="text-[#001743]">{pageIndex}</strong> / {totalPages} (Tổng{" "}
                 {totalCount} hợp đồng)
               </span>
 
@@ -591,7 +591,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
                   type="button"
                   disabled={pageIndex <= 1}
                   onClick={() => setPageIndex((p) => Math.max(1, p - 1))}
-                  className="px-3 py-1 rounded border border-slate-200 bg-white disabled:bg-slate-100 disabled:text-slate-400 font-bold text-slate-700 cursor-pointer disabled:cursor-not-allowed"
+                  className="px-4 py-1.5 rounded-full border border-slate-200 bg-white disabled:opacity-40 font-bold text-slate-700 cursor-pointer disabled:cursor-not-allowed shadow-2xs text-xs hover:bg-slate-50"
                 >
                   ← Trước
                 </button>
@@ -599,7 +599,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
                   type="button"
                   disabled={pageIndex >= totalPages}
                   onClick={() => setPageIndex((p) => Math.min(totalPages, p + 1))}
-                  className="px-3 py-1 rounded border border-slate-200 bg-white disabled:bg-slate-100 disabled:text-slate-400 font-bold text-slate-700 cursor-pointer disabled:cursor-not-allowed"
+                  className="px-4 py-1.5 rounded-full border border-slate-200 bg-white disabled:opacity-40 font-bold text-slate-700 cursor-pointer disabled:cursor-not-allowed shadow-2xs text-xs hover:bg-slate-50"
                 >
                   Sau →
                 </button>

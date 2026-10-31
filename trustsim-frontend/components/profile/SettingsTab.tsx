@@ -132,145 +132,176 @@ export default function SettingsTab({ user, profile, addToast }: SettingsTabProp
   };
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, maxWidth: 960 }}>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl">
       {/* Cột 1: Thông tin cá nhân */}
-      <div style={{ background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: 8, padding: 24 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 800, color: "#001743", margin: "0 0 16px", display: "flex", alignItems: "center", gap: 8 }}>
-          <Icons.User /> Thông tin cá nhân
-        </h3>
-        <form onSubmit={handleUpdateProfile} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#001743", marginBottom: 4 }}>
-              Họ và tên
-            </label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="profile-input"
-              required
-            />
+      <div className="rounded-[28px] border border-slate-100/90 bg-white p-7 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-between">
+        <div>
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+            <div className="w-10 h-10 rounded-2xl bg-[#001743]/5 flex items-center justify-center text-[#001743]">
+              <Icons.User size={20} />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-[#001743] m-0">
+                Thông tin cá nhân
+              </h3>
+              <p className="text-xs text-slate-500 m-0 mt-0.5">
+                Cập nhật thông tin định danh và địa chỉ liên lạc của bạn
+              </p>
+            </div>
           </div>
-          <div>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#001743", marginBottom: 4 }}>
-              Số điện thoại
-            </label>
-            <input
-              type="tel"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              className="profile-input"
-              required
-            />
-          </div>
-          <div>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#001743", marginBottom: 4 }}>
-              Số CCCD / CMND
-            </label>
-            <input
-              type="text"
-              value={identityNumber}
-              onChange={(e) => setIdentityNumber(e.target.value)}
-              className="profile-input"
-              required
-            />
-          </div>
-          <div>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#001743", marginBottom: 4 }}>
-              Địa chỉ liên hệ
-            </label>
-            <input
-              type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="profile-input"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loadingProfile}
-            className="btn-red"
-            style={{ marginTop: 8, padding: "10px 18px", fontSize: 13, borderRadius: 6 }}
-          >
-            {loadingProfile ? "Đang lưu..." : "Lưu thay đổi"}
-          </button>
-        </form>
+
+          <form onSubmit={handleUpdateProfile} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-[#001743] mb-1.5">
+                Họ và tên
+              </label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 text-sm focus:bg-white focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 outline-none transition-all font-medium"
+                placeholder="Nhập họ và tên đầy đủ"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#001743] mb-1.5">
+                Số điện thoại liên hệ
+              </label>
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 text-sm focus:bg-white focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 outline-none transition-all font-mono tabular-nums font-medium"
+                placeholder="0912 345 678"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#001743] mb-1.5">
+                Số CCCD / CMND
+              </label>
+              <input
+                type="text"
+                value={identityNumber}
+                onChange={(e) => setIdentityNumber(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 text-sm focus:bg-white focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 outline-none transition-all font-mono tabular-nums font-medium"
+                placeholder="12 chữ số CCCD"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#001743] mb-1.5">
+                Địa chỉ cư trú
+              </label>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 text-sm focus:bg-white focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 outline-none transition-all font-medium"
+                placeholder="Địa chỉ liên hệ và nhận hợp đồng"
+              />
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={loadingProfile}
+                className="rounded-full bg-[#001743] hover:bg-[#002875] text-white px-6 py-2.5 text-xs font-bold shadow-md shadow-navy-950/15 transition-all active:scale-95 disabled:opacity-60 cursor-pointer inline-flex items-center gap-2"
+              >
+                {loadingProfile ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Đang lưu...
+                  </>
+                ) : (
+                  "Lưu thay đổi hồ sơ"
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
       {/* Cột 2: Đổi mật khẩu */}
-      <div style={{ background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: 8, padding: 24 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 800, color: "#001743", margin: "0 0 16px", display: "flex", alignItems: "center", gap: 8 }}>
-          <Icons.Lock /> Đổi mật khẩu tài khoản
-        </h3>
-        <form onSubmit={handleChangePassword} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#001743", marginBottom: 4 }}>
-              Mật khẩu hiện tại
-            </label>
-            <input
-              type="password"
-              placeholder="Nhập mật khẩu cũ"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              className="profile-input"
-              required
-            />
+      <div className="rounded-[28px] border border-slate-100/90 bg-white p-7 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-between">
+        <div>
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+            <div className="w-10 h-10 rounded-2xl bg-[#001743]/5 flex items-center justify-center text-[#001743]">
+              <Icons.Lock size={20} />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-[#001743] m-0">
+                Đổi mật khẩu tài khoản
+              </h3>
+              <p className="text-xs text-slate-500 m-0 mt-0.5">
+                Bảo vệ tài khoản bằng mật khẩu mạnh có chữ hoa, số & ký tự đặc biệt
+              </p>
+            </div>
           </div>
-          <div>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#001743", marginBottom: 4 }}>
-              Mật khẩu mới
-            </label>
-            <input
-              type="password"
-              placeholder="Tối thiểu 6 ký tự"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="profile-input"
-              required
-              minLength={6}
-            />
-          </div>
-          <div>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#001743", marginBottom: 4 }}>
-              Xác nhận mật khẩu mới
-            </label>
-            <input
-              type="password"
-              placeholder="Nhập lại mật khẩu mới"
-              value={confirmNewPassword}
-              onChange={(e) => setConfirmNewPassword(e.target.value)}
-              className="profile-input"
-              required
-              minLength={6}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loadingPassword}
-            className="btn-outline"
-            style={{ marginTop: 8, padding: "10px 18px", fontSize: 13, borderRadius: 6 }}
-          >
-            {loadingPassword ? "Đang xử lý..." : "Cập nhật mật khẩu"}
-          </button>
-        </form>
-      </div>
 
-      <style>{`
-        .profile-input {
-          width: 100%;
-          padding: 8px 12px;
-          font-size: 13px;
-          border-radius: 6px;
-          border: 1px solid #D1D5DB;
-          outline: none;
-          color: #001743;
-          background: #FFFFFF;
-          transition: border-color 0.2s;
-        }
-        .profile-input:focus {
-          border-color: #001743;
-        }
-      `}</style>
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-[#001743] mb-1.5">
+                Mật khẩu hiện tại
+              </label>
+              <input
+                type="password"
+                placeholder="Nhập mật khẩu hiện tại"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 text-sm focus:bg-white focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 outline-none transition-all font-medium"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#001743] mb-1.5">
+                Mật khẩu mới
+              </label>
+              <input
+                type="password"
+                placeholder="Tối thiểu 8 ký tự (hoa, số, ký tự đặc biệt)"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 text-sm focus:bg-white focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 outline-none transition-all font-medium"
+                required
+                minLength={6}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#001743] mb-1.5">
+                Xác nhận mật khẩu mới
+              </label>
+              <input
+                type="password"
+                placeholder="Nhập lại mật khẩu mới vừa đặt"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 text-sm focus:bg-white focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 outline-none transition-all font-medium"
+                required
+                minLength={6}
+              />
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={loadingPassword}
+                className="rounded-full bg-white hover:bg-slate-50 text-[#001743] border border-slate-200 px-6 py-2.5 text-xs font-bold shadow-2xs hover:shadow-xs transition-all active:scale-95 disabled:opacity-60 cursor-pointer inline-flex items-center gap-2"
+              >
+                {loadingPassword ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-[#001743]/30 border-t-[#001743] rounded-full animate-spin" />
+                    Đang xử lý...
+                  </>
+                ) : (
+                  "Cập nhật mật khẩu mới"
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

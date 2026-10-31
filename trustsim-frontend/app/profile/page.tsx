@@ -1,7 +1,10 @@
 "use client";
 
-import React, { Suspense, useState, useEffect, useCallback } from "react";
+import React, { Suspense, useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 import { authService } from "@/services/authService";
 import { walletService } from "@/services/walletService";
 import { ekycService, IdentityVerificationDto } from "@/services/ekycService";
@@ -14,7 +17,7 @@ import { WithdrawModal } from "@/components/wallet/WithdrawModal";
 
 import { ProfileIcons as Icons } from "@/components/profile/ProfileIcons";
 import { ProfileTab } from "@/types/types";
-import { Camera, Loader2 } from "lucide-react";
+import { Camera, Loader2, Sparkles, Check, Clock, Plus, ArrowUpRight, ShieldCheck, Wallet } from "lucide-react";
 import { uploadImageToCloudinary } from "@/services/cloudinaryService";
 
 // Modular Tab Components
@@ -33,7 +36,7 @@ const TABS: { key: ProfileTab; icon: React.ComponentType<{ size?: number }>; lab
   { key: "auctions", icon: Icons.Inbox, label: "SIM sở hữu" },
   { key: "bids", icon: Icons.Gavel, label: "Đang đấu giá" },
   { key: "settlements", icon: Icons.FileCheck, label: "Hoàn tất giao dịch" },
-  { key: "transactions", icon: Icons.Wallet, label: "Giao dịch Ví" },
+  { key: "transactions", icon: Icons.Wallet, label: "Giao dịch ví" },
   { key: "contracts", icon: Icons.FileText, label: "Hợp đồng" },
   { key: "settings", icon: Icons.Settings, label: "Cài đặt & Bảo mật" },
 ];
@@ -42,7 +45,7 @@ const PROFILE_TAB_KEYS = new Set<ProfileTab>(TABS.map((tab) => tab.key));
 
 function getProfileTab(value: string | null): ProfileTab {
   if (value === "trades") return "contracts";
-  return value && PROFILE_TAB_KEYS.has(value as ProfileTab) ? value as ProfileTab : "overview";
+  return value && PROFILE_TAB_KEYS.has(value as ProfileTab) ? (value as ProfileTab) : "overview";
 }
 
 function ProfilePageInner() {
@@ -64,10 +67,13 @@ function ProfilePageInner() {
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
   const [walletRefreshKey, setWalletRefreshKey] = useState(0);
 
-  const handleTabChange = useCallback((tab: ProfileTab) => {
-    setActiveTab(tab);
-    router.replace(`/profile?tab=${tab}`, { scroll: false });
-  }, [router]);
+  const handleTabChange = useCallback(
+    (tab: ProfileTab) => {
+      setActiveTab(tab);
+      router.replace(`/profile?tab=${tab}`, { scroll: false });
+    },
+    [router]
+  );
 
   const addToast = (toast: Omit<ToastMessage, "id">) => {
     showToast(toast);
@@ -78,7 +84,7 @@ function ProfilePageInner() {
       walletService
         .getMyWallet()
         .then((data) => setWallet(data))
-        .catch(() => { });
+        .catch(() => {});
     }
   };
 
@@ -107,8 +113,14 @@ function ProfilePageInner() {
 
     if (authService.isAuthenticated()) {
       Promise.all([
-        authService.getProfile().then((data) => setProfile(data)).catch(() => { }),
-        walletService.getMyWallet().then((data) => setWallet(data)).catch(() => { }),
+        authService
+          .getProfile()
+          .then((data) => setProfile(data))
+          .catch(() => {}),
+        walletService
+          .getMyWallet()
+          .then((data) => setWallet(data))
+          .catch(() => {}),
         fetchKyc(),
       ]).finally(() => setLoading(false));
     } else {
@@ -118,10 +130,9 @@ function ProfilePageInner() {
 
   // Người dùng được xem là ĐÃ XÁC THỰC nếu có bất kỳ hồ sơ eKYC nào hợp lệ (VERIFIED)
   const isEkycVerified =
-    ekycService.isVerified(kycStatus) ||
-    kycHistory.some((h) => ekycService.isVerified(h));
+    ekycService.isVerified(kycStatus) || kycHistory.some((h) => ekycService.isVerified(h));
 
-  const displayName = profile?.fullName || user?.fullName || "";
+  const displayName = profile?.fullName || user?.fullName || "Thành viên TrustSim";
   const displayEmail = profile?.email || user?.email || "customer@trustsim.vn";
   const displayPhone = profile?.phoneNumber || user?.phoneNumber || "";
   const displayIdentity = profile?.identityNumber || "";
@@ -130,7 +141,7 @@ function ProfilePageInner() {
   const initialChar = (displayName || user?.userName || "T").charAt(0).toUpperCase();
 
   // Cloudinary Avatar upload state
-  const avatarInputRef = React.useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -165,20 +176,20 @@ function ProfilePageInner() {
         addToast({
           type: "success",
           title: "Thành công",
-          message: "Đã cập nhật ảnh đại diện lên Cloudinary thành công!",
+          message: "Đã cập nhật ảnh đại diện mới thành công!",
         });
       } else {
         addToast({
           type: "error",
           title: "Lỗi tải ảnh",
-          message: res.error || "Không thể tải ảnh đại diện lên Cloudinary.",
+          message: res.error || "Không thể tải ảnh đại diện lên máy chủ.",
         });
       }
     } catch (err: any) {
       addToast({
         type: "error",
         title: "Lỗi tải ảnh",
-        message: err.message || "Không thể tải ảnh đại diện lên Cloudinary.",
+        message: err.message || "Không thể tải ảnh đại diện.",
       });
     } finally {
       setAvatarUploading(false);
@@ -192,7 +203,9 @@ function ProfilePageInner() {
   const lockedBalance = wallet?.lockedBalance ?? profile?.wallet?.lockedBalance ?? 0;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F8F9FA", paddingTop: 64 }}>
+    <div className="min-h-screen bg-[#F7F8FD] text-[#0B1630] font-sans flex flex-col pt-16">
+      <Navbar />
+
       {/* Modals */}
       <DepositModal
         isOpen={depositModalOpen}
@@ -213,78 +226,55 @@ function ProfilePageInner() {
           addToast({
             type: "success",
             title: "Rút tiền thành công",
-            message: `Đã tạo lệnh rút ${tx.amount.toLocaleString("vi-VN")} ₫ về ${tx.destinationBankName || "ngân hàng"}.`,
+            message: `Đã tạo lệnh rút ${tx.amount.toLocaleString("vi-VN")} ₫ về ${
+              tx.destinationBankName || "ngân hàng"
+            }.`,
           });
         }}
       />
 
-      {/* ═══════════════════════════════════════════════════════════
-          1. HERO HEADER: Glassmorphism / Deep Navy Signature Section
-      ═══════════════════════════════════════════════════════════ */}
-      <section
-        style={{
-          background: "linear-gradient(135deg, #001743 0%, #002266 60%, #0A1931 100%)",
-          color: "#FFFFFF",
-          padding: "36px 0 28px",
-          position: "relative",
-          overflow: "hidden",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
-        }}
-      >
-        <div className="container" style={{ maxWidth: 1180, margin: "0 auto", padding: "0 20px" }}>
-          <div className="profile-hero-grid" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 32, alignItems: "center" }}>
-            {/* Left Column: Avatar & Personal Credentials */}
-            <div className="profile-hero-identity" style={{ display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
-              <div style={{ position: "relative" }}>
+      {/* ═══ 1. PROFILE SHOWCASE HERO: SOFT-CLOUD NAVY ═══════ */}
+      <div className="px-3 sm:px-6 pt-5 pb-3">
+        <section className="relative mx-auto max-w-[1180px] overflow-hidden rounded-[32px] border border-white bg-gradient-to-b from-[#f1f3ff] via-[#e4e9ff] to-[#d3dbff] p-6 sm:p-8 shadow-[0_16px_50px_rgba(0,23,67,0.08)]">
+          {/* Ambient Glow Orbs */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-24 -left-20 h-72 w-72 rounded-full bg-white/70 blur-3xl"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute top-10 -right-20 h-72 w-72 rounded-full bg-[#8c9cff]/30 blur-3xl"
+          />
+
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-center">
+            {/* Left Column: Avatar & User Identity */}
+            <div className="flex flex-wrap items-center gap-5">
+              {/* Avatar with Camera upload */}
+              <div className="relative shrink-0">
                 <input
                   type="file"
                   ref={avatarInputRef}
                   onChange={handleAvatarChange}
                   accept="image/*"
-                  style={{ display: "none" }}
+                  className="hidden"
                 />
                 <div
                   onClick={() => avatarInputRef.current?.click()}
-                  style={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: "50%",
-                    background: "linear-gradient(135deg, #E4011E 0%, #B91C1C 100%)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 32,
-                    fontWeight: 900,
-                    color: "#FFFFFF",
-                    boxShadow: "0 8px 24px rgba(228, 1, 30, 0.35)",
-                    border: "3px solid rgba(255, 255, 255, 0.2)",
-                    overflow: "hidden",
-                    cursor: "pointer",
-                    position: "relative",
-                  }}
-                  title="Nhấn để đổi ảnh đại diện (Cloudinary)"
+                  className="relative h-20 w-20 cursor-pointer overflow-hidden rounded-full border-3 border-white bg-gradient-to-br from-[#0B2A6B] to-[#001743] shadow-[0_8px_24px_rgba(0,23,67,0.22)] flex items-center justify-center font-bold text-2xl text-white select-none transition-transform hover:scale-102"
+                  title="Nhấn để đổi ảnh đại diện"
                 >
                   {displayAvatar ? (
                     <img
                       src={displayAvatar}
                       alt={displayName}
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      className="h-full w-full object-cover"
                     />
                   ) : (
                     initialChar
                   )}
                   {avatarUploading && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        inset: 0,
-                        backgroundColor: "rgba(0, 0, 0, 0.6)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Loader2 size={24} className="animate-spin text-white" />
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <Loader2 size={22} className="animate-spin text-white" />
                     </div>
                   )}
                 </div>
@@ -294,24 +284,9 @@ function ProfilePageInner() {
                   type="button"
                   onClick={() => avatarInputRef.current?.click()}
                   disabled={avatarUploading}
-                  style={{
-                    position: "absolute",
-                    bottom: 0,
-                    left: -2,
-                    width: 26,
-                    height: 26,
-                    borderRadius: "50%",
-                    background: "#001743",
-                    border: "2px solid #FFFFFF",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#FFFFFF",
-                    cursor: "pointer",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
-                    transition: "transform 0.15s ease",
-                  }}
-                  title="Tải ảnh đại diện lên Cloudinary"
+                  className="absolute -bottom-1 -left-1 grid h-7 w-7 cursor-pointer place-items-center rounded-full border-2 border-white bg-[#001743] text-white shadow-xs transition-transform hover:scale-110"
+                  title="Tải ảnh đại diện"
+                  aria-label="Tải ảnh đại diện"
                 >
                   {avatarUploading ? (
                     <Loader2 size={12} className="animate-spin" />
@@ -320,297 +295,232 @@ function ProfilePageInner() {
                   )}
                 </button>
 
+                {/* Status Indicator Dot */}
                 <div
-                  style={{
-                    position: "absolute",
-                    bottom: 2,
-                    right: 2,
-                    width: 22,
-                    height: 22,
-                    borderRadius: "50%",
-                    background: isEkycVerified ? "#16A34A" : "#D97706",
-                    border: "2.5px solid #001743",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#FFFFFF",
-                  }}
+                  className={`absolute -bottom-1 -right-1 grid h-6 w-6 place-items-center rounded-full border-2 border-white text-white ${
+                    isEkycVerified ? "bg-emerald-600" : "bg-amber-500"
+                  }`}
                   title={isEkycVerified ? "Tài khoản đã xác minh eKYC" : "Tài khoản chưa hoàn tất eKYC"}
                 >
-                  {isEkycVerified ? <Icons.Check size={13} /> : <Icons.Clock size={11} />}
+                  {isEkycVerified ? <Check size={13} strokeWidth={2.5} /> : <Clock size={11} />}
                 </div>
               </div>
 
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
-                  <h1 style={{ fontSize: 22, fontWeight: 900, color: "#FFFFFF", margin: 0, letterSpacing: "-0.01em" }}>
+              {/* Identity details */}
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h1 className="text-2xl font-bold tracking-tight text-[#001743] leading-tight">
                     {displayName}
                   </h1>
+
                   {isEkycVerified ? (
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: "#86EFAC",
-                        background: "rgba(22, 163, 74, 0.22)",
-                        border: "1px solid rgba(134, 239, 172, 0.35)",
-                        padding: "3px 10px",
-                        borderRadius: 9999,
-                      }}
-                    >
-                      <Icons.Check size={12} /> Đã xác thực eKYC
+                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-0.5 text-xs font-bold text-emerald-700 shadow-2xs">
+                      <ShieldCheck size={13} /> Đã xác thực eKYC
                     </span>
                   ) : (
                     <button
+                      type="button"
                       onClick={() => handleTabChange("ekyc")}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 5,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: "#FDE047",
-                        background: "rgba(245, 158, 11, 0.25)",
-                        border: "1px solid rgba(253, 224, 71, 0.4)",
-                        padding: "3px 10px",
-                        borderRadius: 9999,
-                        cursor: "pointer",
-                      }}
-                      title="Bấm để chuyển tới tab xác thực eKYC"
+                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-0.5 text-xs font-bold text-amber-800 shadow-2xs hover:bg-amber-100 transition-colors"
+                      title="Nhấn để hoàn tất xác thực danh tính"
                     >
-                      <Icons.Clock size={11} /> Chưa xác thực eKYC (Bấm để nộp)
+                      <Clock size={12} /> Chưa eKYC (Nhấn để nộp)
                     </button>
                   )}
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 14, color: "rgba(255, 255, 255, 0.72)", fontSize: 13, flexWrap: "wrap", marginBottom: 10 }}>
+                <div className="flex flex-wrap items-center gap-2.5 text-xs text-slate-600">
                   <span>{displayEmail}</span>
-                  {displayPhone && <><span>·</span><span>{displayPhone}</span></>}
-                  {displayIdentity && <><span>·</span><span>CCCD: {displayIdentity}</span></>}
+                  {displayPhone && (
+                    <>
+                      <span className="text-slate-300">•</span>
+                      <span className="font-mono">{displayPhone}</span>
+                    </>
+                  )}
+                  {displayIdentity && (
+                    <>
+                      <span className="text-slate-300">•</span>
+                      <span>CCCD: <strong className="font-mono">{displayIdentity}</strong></span>
+                    </>
+                  )}
                 </div>
 
-                <div className="profile-hero-meta" style={{ display: "flex", gap: 20, fontSize: 12, color: "rgba(255, 255, 255, 0.65)" }}>
-                  <span>Thành viên từ: <strong style={{ color: "#FFFFFF" }}>01/2025</strong></span>
-                  <span>·</span>
-                  <span>
-                    Trạng thái định danh:{" "}
-                    <strong style={{ color: isEkycVerified ? "#86EFAC" : "#FDE047" }}>
-                      {isEkycVerified ? "Đã đối soát CCCD" : "Chờ nộp hồ sơ eKYC"}
-                    </strong>
-                  </span>
+                <div className="text-[11.5px] text-slate-500 flex items-center gap-2">
+                  <span>Thành viên TrustSim</span>
+                  <span className="text-slate-300">•</span>
+                  <span>Bảo chứng định danh đa tầng</span>
                 </div>
               </div>
             </div>
 
             {/* Right Column: Real-time Wallet Card */}
-            <div
-              className="profile-wallet-card"
-              style={{
-                background: "#FFFFFF",
-                borderRadius: 12,
-                padding: "20px 24px",
-                minWidth: 290,
-                color: "#001743",
-                boxShadow: "0 14px 34px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08)",
-                border: "1px solid rgba(255, 255, 255, 0.8)",
-                display: "flex",
-                flexDirection: "column",
-                gap: 12,
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: 11, fontWeight: 800, color: "#6B7280", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+            <div className="rounded-[24px] border border-white/95 bg-white/85 p-5 shadow-[0_10px_30px_rgba(0,23,67,0.06)] backdrop-blur-xl min-w-[280px] space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   Số Dư Khả Dụng
                 </span>
-                <span style={{ fontSize: 11, color: "#16A34A", fontWeight: 700, background: "#F0FDF4", padding: "2px 6px", borderRadius: 4 }}>
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                   Hoạt động
                 </span>
               </div>
 
               <div>
-                <div style={{ fontSize: 24, fontWeight: 900, color: "#E4011E", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em", lineHeight: 1 }}>
-                  {availableBalance.toLocaleString("vi-VN")} <span style={{ fontSize: 15, fontWeight: 700 }}>₫</span>
+                <div className="font-mono text-2xl font-bold text-[#001743] tabular-nums leading-none">
+                  {availableBalance.toLocaleString("vi-VN")}{" "}
+                  <span className="text-sm font-semibold text-slate-500">₫</span>
                 </div>
                 {lockedBalance > 0 && (
-                  <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 4 }}>
-                    Tạm giữ cọc: {lockedBalance.toLocaleString("vi-VN")} ₫
+                  <div className="mt-1 text-[11.5px] font-medium text-slate-500">
+                    Ký quỹ giữ cọc: <strong className="font-mono">{lockedBalance.toLocaleString("vi-VN")} ₫</strong>
                   </div>
                 )}
               </div>
 
-              {/* Action Buttons Solid */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, paddingTop: 4 }}>
+              {/* Action Buttons: Pill shapes */}
+              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
                 <button
+                  type="button"
                   onClick={() => setDepositModalOpen(true)}
-                  style={{
-                    padding: "8px 12px",
-                    borderRadius: 6,
-                    background: "#E4011E",
-                    color: "#FFFFFF",
-                    border: "none",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 4,
-                  }}
+                  className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-[#0B2A6B] to-[#001743] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition-transform hover:-translate-y-0.5 active:scale-95"
                 >
-                  <Icons.Plus /> Nạp tiền
+                  <Plus size={14} /> Nạp tiền
                 </button>
                 <button
+                  type="button"
                   onClick={() => setWithdrawModalOpen(true)}
-                  style={{
-                    padding: "8px 12px",
-                    borderRadius: 6,
-                    background: "#F3F4F6",
-                    color: "#001743",
-                    border: "1px solid #D1D5DB",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 4,
-                  }}
+                  className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white hover:bg-slate-50 px-3.5 py-2 text-xs font-bold text-[#001743] shadow-xs transition-colors active:scale-95"
                 >
-                  <Icons.ArrowUpRight /> Rút tiền
+                  <ArrowUpRight size={14} /> Rút tiền
                 </button>
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════
-          2. NAVIGATION: Modern Underline Tabs Bar (Sticky Top)
-      ═══════════════════════════════════════════════════════════ */}
-      <div className="profile-workspace" style={{ maxWidth: 1180, margin: "0 auto", padding: "28px 20px 60px", display: "grid", gridTemplateColumns: "220px minmax(0, 1fr)", gap: 28, alignItems: "start" }}>
-        <aside className="profile-sidebar" style={{ background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: 10, padding: 10, position: "sticky", top: 92 }}>
-          <div style={{ padding: "10px 12px 12px", borderBottom: "1px solid #F0F2F5", marginBottom: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#98A2B3", textTransform: "uppercase", letterSpacing: ".08em" }}>Tài khoản</div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "#101828", marginTop: 4 }}>Không gian cá nhân</div>
-          </div>
-          <nav style={{ display: "grid", gap: 3 }} aria-label="Điều hướng hồ sơ">
-            {TABS.map((tab) => {
-              const isActive = activeTab === tab.key;
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => handleTabChange(tab.key)}
-                  aria-current={isActive ? "page" : undefined}
-                  style={{
-                    padding: "11px 12px",
-                    background: isActive ? "#FDEBEC" : "transparent",
-                    border: "none",
-                    borderLeft: `3px solid ${isActive ? "#E4011E" : "transparent"}`,
-                    color: isActive ? "#B42318" : "#667085",
-                    fontSize: 13,
-                    fontWeight: isActive ? 700 : 500,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    textAlign: "left",
-                    width: "100%",
-                    borderRadius: 6,
-                    transition: "all 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) e.currentTarget.style.color = "#001743";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) e.currentTarget.style.color = "#4B5563";
-                  }}
-                >
-                  <Icon />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-        </aside>
-
-        <main className="profile-content" style={{ minWidth: 0 }}>
-          <div className="flex items-center justify-between gap-4 mb-5">
-            <div>
-              <div className="text-xs text-slate-400 font-semibold tracking-wide">
-                Tài khoản / {TABS.find((tab) => tab.key === activeTab)?.label}
-              </div>
-              <h1 className="text-2xl font-black text-[#001743] tracking-tight font-inter mt-1 m-0">
-                {TABS.find((tab) => tab.key === activeTab)?.label}
-              </h1>
-            </div>
-          </div>
-
-          <div>
-            {activeTab === "overview" && (
-              <OverviewTab
-                user={user}
-                profile={profile}
-                walletBalance={availableBalance}
-                isEkycVerified={isEkycVerified}
-                onNavigateTab={handleTabChange}
-                addToast={addToast}
-              />
-            )}
-            {activeTab === "ekyc" && (
-              <EkycTab
-                kycStatus={kycStatus}
-                kycHistory={kycHistory}
-                isVerified={isEkycVerified}
-                loading={loadingKyc}
-                onRefresh={fetchKyc}
-                addToast={addToast}
-              />
-            )}
-            {activeTab === "auctions" && (
-              <OwnedSimsTab
-                isEkycVerified={isEkycVerified}
-                addToast={addToast}
-                onNavigateToEkyc={() => handleTabChange("ekyc")}
-              />
-            )}
-            {activeTab === "bids" && (
-              <BidsTab
-                addToast={addToast}
-                onNavigateTab={handleTabChange}
-              />
-            )}
-            {activeTab === "settlements" && (
-              <SettlementsTab
-                addToast={addToast}
-                onOpenDeposit={() => setDepositModalOpen(true)}
-              />
-            )}
-            {activeTab === "transactions" && (
-              <TransactionsTab
-                onOpenDeposit={() => setDepositModalOpen(true)}
-                onOpenWithdraw={() => setWithdrawModalOpen(true)}
-                addToast={addToast}
-                refreshTrigger={walletRefreshKey}
-              />
-            )}
-            {activeTab === "contracts" && <ContractsTab addToast={addToast} />}
-            {activeTab === "settings" && (
-              <SettingsTab user={user} profile={profile} addToast={addToast} />
-            )}
-          </div>
-        </main>
+        </section>
       </div>
+
+      {/* ═══ 2. PROFILE WORKSPACE: SIDEBAR & ACTIVE TAB ═════ */}
+      <div className="mx-auto max-w-[1180px] w-full px-3 sm:px-6 py-6 flex-1">
+        <div className="grid grid-cols-1 md:grid-cols-[230px_minmax(0,1fr)] gap-7 items-start">
+          {/* Floating Sidebar Navigation Pill Card */}
+          <aside className="rounded-[28px] border border-[rgba(0,23,67,0.08)] bg-white p-3 shadow-xs sticky top-24 backdrop-blur-sm space-y-1">
+            <div className="px-3 py-2 border-b border-slate-100 mb-1.5">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">
+                Tài khoản
+              </span>
+              <div className="text-sm font-bold text-[#001743]">Không gian cá nhân</div>
+            </div>
+
+            <nav className="space-y-1" aria-label="Điều hướng tài khoản">
+              {TABS.map((tab) => {
+                const isActive = activeTab === tab.key;
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => handleTabChange(tab.key)}
+                    aria-current={isActive ? "page" : undefined}
+                    className={`w-full flex items-center gap-2.5 rounded-full px-3.5 py-2.5 text-xs transition-all duration-150 cursor-pointer ${
+                      isActive
+                        ? "bg-[#001743] text-white font-bold shadow-xs"
+                        : "text-slate-600 hover:text-[#001743] hover:bg-slate-100 font-semibold"
+                    }`}
+                  >
+                    <Icon size={15} />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </aside>
+
+          {/* Active Tab Main Content */}
+          <main className="min-w-0 space-y-5">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(0,23,67,0.08)] bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-2xs mb-1">
+                  <span>Hồ sơ</span>
+                  <span className="text-slate-300">•</span>
+                  <span className="text-[#001743] font-bold">
+                    {TABS.find((tab) => tab.key === activeTab)?.label}
+                  </span>
+                </span>
+                <h2 className="text-2xl font-bold tracking-tight text-[#001743] mt-1 m-0">
+                  {TABS.find((tab) => tab.key === activeTab)?.label}
+                </h2>
+              </div>
+            </div>
+
+            {/* Tab Body Render */}
+            <div className="rounded-[28px] border border-[rgba(0,23,67,0.08)] bg-white p-5 sm:p-7 shadow-xs">
+              {activeTab === "overview" && (
+                <OverviewTab
+                  user={user}
+                  profile={profile}
+                  walletBalance={availableBalance}
+                  isEkycVerified={isEkycVerified}
+                  onNavigateTab={handleTabChange}
+                  addToast={addToast}
+                />
+              )}
+              {activeTab === "ekyc" && (
+                <EkycTab
+                  kycStatus={kycStatus}
+                  kycHistory={kycHistory}
+                  isVerified={isEkycVerified}
+                  loading={loadingKyc}
+                  onRefresh={fetchKyc}
+                  addToast={addToast}
+                />
+              )}
+              {activeTab === "auctions" && (
+                <OwnedSimsTab
+                  isEkycVerified={isEkycVerified}
+                  addToast={addToast}
+                  onNavigateToEkyc={() => handleTabChange("ekyc")}
+                />
+              )}
+              {activeTab === "bids" && (
+                <BidsTab addToast={addToast} onNavigateTab={handleTabChange} />
+              )}
+              {activeTab === "settlements" && (
+                <SettlementsTab
+                  addToast={addToast}
+                  onOpenDeposit={() => setDepositModalOpen(true)}
+                />
+              )}
+              {activeTab === "transactions" && (
+                <TransactionsTab
+                  onOpenDeposit={() => setDepositModalOpen(true)}
+                  onOpenWithdraw={() => setWithdrawModalOpen(true)}
+                  addToast={addToast}
+                  refreshTrigger={walletRefreshKey}
+                />
+              )}
+              {activeTab === "contracts" && <ContractsTab addToast={addToast} />}
+              {activeTab === "settings" && (
+                <SettingsTab user={user} profile={profile} addToast={addToast} />
+              )}
+            </div>
+          </main>
+        </div>
+      </div>
+
+      <Footer />
     </div>
   );
 }
 
 export default function ProfilePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center text-sm text-slate-500">Đang tải hồ sơ...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#F7F8FD] flex items-center justify-center text-sm text-slate-500">
+          Đang tải hồ sơ tài khoản...
+        </div>
+      }
+    >
       <ProfilePageInner />
     </Suspense>
   );

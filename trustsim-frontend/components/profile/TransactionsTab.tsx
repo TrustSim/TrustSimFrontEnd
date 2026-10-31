@@ -116,252 +116,251 @@ export default function TransactionsTab({
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* Action Header & Filters */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+    <div className="flex flex-col gap-6">
+      {/* ── 1. Action Header & Primary Buttons ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-100">
         <div>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: "#001743", margin: 0 }}>
+          <h2 className="text-xl font-extrabold text-[#001743] m-0 tracking-tight">
             Lịch sử biến động số dư ví
           </h2>
-          <p style={{ fontSize: 12, color: "#6B7280", margin: 0, marginTop: 2 }}>
-            Toàn bộ các giao dịch nạp, rút và biến động số dư tài khoản của bạn
+          <p className="text-xs text-slate-500 m-0 mt-1">
+            Toàn bộ các giao dịch nạp, rút và biến động số dư tài khoản của bạn trên nền tảng
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          {/* Filter Type */}
+        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+          <Link
+            href="/profile?tab=contracts"
+            className="rounded-full bg-slate-100 hover:bg-slate-200 text-[#001743] border border-slate-200/80 px-4 py-2 text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-2xs"
+          >
+            <FileText size={14} />
+            <span>Tiến trình hợp đồng</span>
+          </Link>
+          <button
+            type="button"
+            onClick={onOpenDeposit}
+            className="rounded-full bg-[#001743] hover:bg-[#002875] text-white px-4 py-2 text-xs font-bold inline-flex items-center gap-1.5 shadow-md shadow-navy-950/15 transition-all active:scale-95 cursor-pointer"
+          >
+            <Icons.Plus size={14} />
+            <span>Nạp tiền ví</span>
+          </button>
+          <button
+            type="button"
+            onClick={onOpenWithdraw}
+            className="rounded-full bg-white hover:bg-slate-50 text-[#001743] border border-slate-200 px-4 py-2 text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer"
+          >
+            <Icons.ArrowUpRight size={14} />
+            <span>Rút tiền</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── 2. Filters & Search Box ── */}
+      <div className="rounded-[24px] border border-slate-100/90 bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.03)] space-y-3.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Filter Source */}
           <select
             value={sourceFilter}
             onChange={(e) => {
               setSourceFilter(e.target.value as typeof sourceFilter);
               setPageIndex(1);
             }}
-            style={{
-              padding: "7px 12px",
-              fontSize: 12.5,
-              fontWeight: 600,
-              borderRadius: 6,
-              border: "1px solid #D1D5DB",
-              background: "#FFFFFF",
-              color: "#374151",
-              outline: "none",
-            }}
+            aria-label="Lọc nguồn giao dịch"
+            className="rounded-full px-4 py-2 text-xs font-bold border border-slate-200 bg-white text-slate-700 outline-none hover:border-slate-300 focus:border-[#001743] transition-colors cursor-pointer shadow-2xs"
           >
             <option value="ALL">Tất cả nguồn giao dịch</option>
-            <option value="WALLET">Nạp/rút ngân hàng</option>
+            <option value="WALLET">Nạp / Rút ngân hàng</option>
             <option value="AUCTION">Tất cả đấu giá</option>
             <option value="AUCTION_DEPOSIT">Tiền cọc đấu giá</option>
             <option value="ESCROW">Thanh toán Escrow</option>
             <option value="COMPENSATION">Tiền bồi thường</option>
           </select>
 
-          <select value={directionFilter} onChange={(event) => { setDirectionFilter(event.target.value as typeof directionFilter); setPageIndex(1); }} aria-label="Lọc hướng dòng tiền" style={{ padding: "7px 12px", fontSize: 12.5, fontWeight: 600, borderRadius: 6, border: "1px solid #D1D5DB", background: "#FFFFFF", color: "#374151" }}>
-            <option value="ALL">Tất cả thu/chi</option><option value="CREDIT">Tiền vào</option><option value="DEBIT">Tiền ra</option><option value="LOCK">Tạm khóa</option>
+          <select
+            value={directionFilter}
+            onChange={(e) => {
+              setDirectionFilter(e.target.value as typeof directionFilter);
+              setPageIndex(1);
+            }}
+            aria-label="Lọc hướng dòng tiền"
+            className="rounded-full px-4 py-2 text-xs font-bold border border-slate-200 bg-white text-slate-700 outline-none hover:border-slate-300 focus:border-[#001743] transition-colors cursor-pointer shadow-2xs"
+          >
+            <option value="ALL">Tất cả thu / chi</option>
+            <option value="CREDIT">Tiền vào (+)</option>
+            <option value="DEBIT">Tiền ra (-)</option>
+            <option value="LOCK">Tạm khóa giữ</option>
           </select>
 
-          <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value as typeof statusFilter); setPageIndex(1); }} aria-label="Lọc trạng thái giao dịch" style={{ padding: "7px 12px", fontSize: 12.5, fontWeight: 600, borderRadius: 6, border: "1px solid #D1D5DB", background: "#FFFFFF", color: "#374151" }}>
-            <option value="ALL">Tất cả trạng thái</option><option value="PENDING">Đang xử lý</option><option value="SUCCESS">Thành công</option><option value="FAILED">Thất bại</option>
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value as typeof statusFilter);
+              setPageIndex(1);
+            }}
+            aria-label="Lọc trạng thái giao dịch"
+            className="rounded-full px-4 py-2 text-xs font-bold border border-slate-200 bg-white text-slate-700 outline-none hover:border-slate-300 focus:border-[#001743] transition-colors cursor-pointer shadow-2xs"
+          >
+            <option value="ALL">Tất cả trạng thái</option>
+            <option value="PENDING">Đang xử lý</option>
+            <option value="SUCCESS">Thành công</option>
+            <option value="FAILED">Thất bại</option>
           </select>
 
-          {/* Filter Status */}
           <select
             value={sortOrder}
             onChange={(e) => {
               setSortOrder(Number(e.target.value) as SortOrder);
               setPageIndex(1);
             }}
-            style={{
-              padding: "7px 12px",
-              fontSize: 12.5,
-              fontWeight: 600,
-              borderRadius: 6,
-              border: "1px solid #D1D5DB",
-              background: "#FFFFFF",
-              color: "#374151",
-              outline: "none",
-            }}
+            aria-label="Sắp xếp thời gian"
+            className="rounded-full px-4 py-2 text-xs font-bold border border-slate-200 bg-white text-slate-700 outline-none hover:border-slate-300 focus:border-[#001743] transition-colors cursor-pointer shadow-2xs ml-auto"
           >
             <option value={SortOrder.Desc}>Mới nhất trước</option>
             <option value={SortOrder.Asc}>Cũ nhất trước</option>
           </select>
+        </div>
 
-          {/* Action Buttons */}
-          <Link
-            href="/profile?tab=contracts"
-            className="btn-outline"
-            style={{ padding: "7px 14px", fontSize: 12.5, borderRadius: 6, display: "flex", alignItems: "center", gap: 5, textDecoration: "none", color: "#001743" }}
-          >
-            <FileText size={15} /> Tiến trình hợp đồng SIM
-          </Link>
-          <button
-            type="button"
-            onClick={onOpenDeposit}
-            className="btn-red"
-            style={{ padding: "7px 14px", fontSize: 12.5, borderRadius: 6, display: "flex", alignItems: "center", gap: 4 }}
-          >
-            <Icons.Plus size={15} /> Nạp tiền
-          </button>
-          <button
-            type="button"
-            onClick={onOpenWithdraw}
-            className="btn-outline"
-            style={{ padding: "7px 14px", fontSize: 12.5, borderRadius: 6, display: "flex", alignItems: "center", gap: 4 }}
-          >
-            <Icons.ArrowUpRight size={15} /> Rút tiền
-          </button>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100">
+          <input
+            value={keyword}
+            onChange={(e) => {
+              setKeyword(e.target.value);
+              setPageIndex(1);
+            }}
+            placeholder="Tìm theo mã tham chiếu, ghi chú..."
+            className="rounded-full border border-slate-200 bg-slate-50/50 px-4 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 transition-all font-medium"
+          />
+          <input
+            type="number"
+            min={0}
+            value={minAmount}
+            onChange={(e) => {
+              setMinAmount(e.target.value);
+              setPageIndex(1);
+            }}
+            placeholder="Số tiền tối thiểu (VNĐ)"
+            className="rounded-full border border-slate-200 bg-slate-50/50 px-4 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 transition-all font-medium font-mono tabular-nums"
+          />
+          <input
+            type="number"
+            min={0}
+            value={maxAmount}
+            onChange={(e) => {
+              setMaxAmount(e.target.value);
+              setPageIndex(1);
+            }}
+            placeholder="Số tiền tối đa (VNĐ)"
+            className="rounded-full border border-slate-200 bg-slate-50/50 px-4 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 transition-all font-medium font-mono tabular-nums"
+          />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-2 rounded-lg border border-slate-200 bg-white p-3 sm:grid-cols-3">
-        <label className="text-xs font-semibold text-slate-600"><span className="mb-1 block">Tìm chứng từ hoặc nội dung</span><input value={keyword} onChange={(event) => { setKeyword(event.target.value); setPageIndex(1); }} placeholder="Mã tham chiếu, ghi chú…" className="min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal outline-none focus:border-[#001743]" /></label>
-        <label className="text-xs font-semibold text-slate-600"><span className="mb-1 block">Số tiền tối thiểu</span><input type="number" min={0} value={minAmount} onChange={(event) => { setMinAmount(event.target.value); setPageIndex(1); }} className="min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal outline-none focus:border-[#001743]" /></label>
-        <label className="text-xs font-semibold text-slate-600"><span className="mb-1 block">Số tiền tối đa</span><input type="number" min={0} value={maxAmount} onChange={(event) => { setMaxAmount(event.target.value); setPageIndex(1); }} className="min-h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-normal outline-none focus:border-[#001743]" /></label>
-      </div>
-
-      {/* Transaction List Card */}
-      <div style={{ background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: 8, overflow: "hidden" }}>
+      {/* ── 3. Transaction List Card ── */}
+      <div className="rounded-[28px] border border-slate-100/90 bg-white overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         {loading ? (
-          <div style={{ padding: 40, textAlign: "center", color: "#6B7280", fontSize: 13 }}>
+          <div className="py-16 text-center text-slate-500 text-xs">
+            <span className="w-5 h-5 border-2 border-[#001743]/30 border-t-[#001743] rounded-full animate-spin inline-block mr-2 align-middle" />
             Đang tải dữ liệu giao dịch...
           </div>
         ) : transactions.length === 0 ? (
-          <div style={{ padding: 40, textAlign: "center", color: "#9CA3AF", fontSize: 13 }}>
-            Không tìm thấy giao dịch nào phù hợp với bộ lọc.
+          <div className="py-16 text-center text-slate-400 text-xs">
+            Không tìm thấy giao dịch nào phù hợp với bộ lọc hiện tại.
           </div>
         ) : (
           <div>
-            {transactions.map((tx) => {
-              const isPlus = tx.direction === "CREDIT";
-              const isLock = tx.direction === "LOCK";
-              const badge = getStatusBadge(tx.status);
-              const formattedDate = new Date(tx.createdAt).toLocaleString("vi-VN", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              });
+            <div className="divide-y divide-slate-100">
+              {transactions.map((tx) => {
+                const isPlus = tx.direction === "CREDIT";
+                const isLock = tx.direction === "LOCK";
+                const badge = getStatusBadge(tx.status);
+                const formattedDate = new Date(tx.createdAt).toLocaleString("vi-VN", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
 
-              return (
-                <div
-                  key={tx.id}
-                  style={{
-                    padding: "16px 20px",
-                    borderBottom: "1px solid #F3F4F6",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    flexWrap: "wrap",
-                    gap: 12,
-                    transition: "background 0.15s ease",
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#F8FAFC"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "#FFFFFF"; }}
-                >
-                  {/* Left: Transaction Code & Description */}
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                    <div
-                      style={{
-                        width: 38,
-                        height: 38,
-                        borderRadius: 8,
-                        background: isPlus ? "#F0FDF4" : isLock ? "#FFFBEB" : "#FEF2F2",
-                        color: isPlus ? "#16A34A" : isLock ? "#D97706" : "#DC2626",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                        marginTop: 2,
-                      }}
-                    >
-                      {isPlus ? <Icons.Plus size={16} /> : <Icons.ArrowUpRight size={16} />}
+                return (
+                  <div
+                    key={tx.id}
+                    className="p-4 sm:p-5 flex items-center justify-between flex-wrap gap-3 hover:bg-slate-50/70 transition-colors"
+                  >
+                    {/* Left: Transaction Code & Description */}
+                    <div className="flex items-start gap-3.5 min-w-0">
+                      <div
+                        className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 mt-0.5 ${
+                          isPlus
+                            ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                            : isLock
+                            ? "bg-amber-50 text-amber-600 border border-amber-100"
+                            : "bg-rose-50 text-rose-600 border border-rose-100"
+                        }`}
+                      >
+                        {isPlus ? <Icons.Plus size={18} /> : <Icons.ArrowUpRight size={18} />}
+                      </div>
+
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-bold text-[#001743]">
+                            {getTypeLabel(tx.transactionType)}
+                          </span>
+                          <span
+                            className="text-[10px] font-bold px-2.5 py-0.5 rounded-full"
+                            style={{
+                              background: badge.bg,
+                              color: badge.color,
+                              border: `1px solid ${badge.border}`,
+                            }}
+                          >
+                            {badge.text}
+                          </span>
+                        </div>
+
+                        <div className="text-xs text-slate-500 mt-1 truncate max-w-md">
+                          {tx.description || `Mã giao dịch: ${tx.referenceCode || tx.id}`}
+                        </div>
+
+                        <div className="text-[11px] text-slate-400 mt-0.5">
+                          Mã: <strong className="font-mono text-slate-600">{tx.referenceCode || tx.id}</strong> · {formattedDate}
+                        </div>
+                      </div>
                     </div>
 
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: "#001743" }}>
-                          {getTypeLabel(tx.transactionType)}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 700,
-                            padding: "2px 6px",
-                            borderRadius: 4,
-                            background: badge.bg,
-                            color: badge.color,
-                            border: `1px solid ${badge.border}`,
-                          }}
-                        >
-                          {badge.text}
-                        </span>
+                    {/* Right: Amount & Balance Changes */}
+                    <div className="text-right shrink-0">
+                      <div
+                        className={`text-base sm:text-lg font-black font-mono tabular-nums ${
+                          isPlus ? "text-emerald-600" : isLock ? "text-amber-600" : "text-rose-600"
+                        }`}
+                      >
+                        {isPlus ? "+" : isLock ? "Giữ " : "-"}{tx.amount.toLocaleString("vi-VN")} ₫
                       </div>
 
-                      <div style={{ fontSize: 12, color: "#6B7280", marginTop: 3 }}>
-                        {tx.description || `Mã giao dịch: ${tx.referenceCode || tx.id}`}
-                      </div>
-
-                      <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>
-                        Mã: <strong style={{ fontFamily: "monospace" }}>{tx.referenceCode || tx.id}</strong> · {formattedDate}
-                      </div>
+                      {tx.balanceAfter !== undefined && (
+                        <div className="text-[11px] text-slate-400 mt-1 font-mono tabular-nums">
+                          Số dư sau GD: <strong className="text-slate-700">{tx.balanceAfter.toLocaleString("vi-VN")} ₫</strong>
+                        </div>
+                      )}
                     </div>
                   </div>
-
-                  {/* Right: Amount & Balance Changes */}
-                  <div style={{ textAlign: "right" }}>
-                    <div
-                      style={{
-                        fontSize: 17,
-                        fontWeight: 900,
-                        color: isPlus ? "#16A34A" : isLock ? "#D97706" : "#DC2626",
-                        fontVariantNumeric: "tabular-nums",
-                      }}
-                    >
-                      {isPlus ? "+" : isLock ? "Giữ " : "-"}{tx.amount.toLocaleString("vi-VN")} ₫
-                    </div>
-
-                    {tx.balanceAfter !== undefined && (
-                      <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 3 }}>
-                        Số dư sau GD: <strong style={{ color: "#374151" }}>{tx.balanceAfter.toLocaleString("vi-VN")} ₫</strong>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div
-                style={{
-                  padding: "12px 20px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  background: "#F8F9FA",
-                  borderTop: "1px solid #E5E7EB",
-                  fontSize: 13,
-                }}
-              >
-                <span style={{ color: "#6B7280" }}>
-                  Trang <strong>{pageIndex}</strong> / {totalPages}
+              <div className="p-4 px-6 flex items-center justify-between bg-slate-50/60 border-t border-slate-100 text-xs">
+                <span className="text-slate-500">
+                  Trang <strong className="text-[#001743]">{pageIndex}</strong> / {totalPages}
                 </span>
 
-                <div style={{ display: "flex", gap: 8 }}>
+                <div className="flex gap-2">
                   <button
                     type="button"
                     disabled={pageIndex <= 1}
                     onClick={() => setPageIndex((p) => Math.max(1, p - 1))}
-                    style={{
-                      padding: "5px 12px",
-                      borderRadius: 4,
-                      border: "1px solid #D1D5DB",
-                      background: pageIndex <= 1 ? "#E5E7EB" : "#FFFFFF",
-                      color: pageIndex <= 1 ? "#9CA3AF" : "#374151",
-                      cursor: pageIndex <= 1 ? "not-allowed" : "pointer",
-                      fontSize: 12,
-                      fontWeight: 600,
-                    }}
+                    className="rounded-full px-4 py-1.5 border border-slate-200 bg-white text-slate-700 font-bold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs transition-all cursor-pointer text-xs"
                   >
                     ← Trước
                   </button>
@@ -369,16 +368,7 @@ export default function TransactionsTab({
                     type="button"
                     disabled={pageIndex >= totalPages}
                     onClick={() => setPageIndex((p) => Math.min(totalPages, p + 1))}
-                    style={{
-                      padding: "5px 12px",
-                      borderRadius: 4,
-                      border: "1px solid #D1D5DB",
-                      background: pageIndex >= totalPages ? "#E5E7EB" : "#FFFFFF",
-                      color: pageIndex >= totalPages ? "#9CA3AF" : "#374151",
-                      cursor: pageIndex >= totalPages ? "not-allowed" : "pointer",
-                      fontSize: 12,
-                      fontWeight: 600,
-                    }}
+                    className="rounded-full px-4 py-1.5 border border-slate-200 bg-white text-slate-700 font-bold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs transition-all cursor-pointer text-xs"
                   >
                     Sau →
                   </button>

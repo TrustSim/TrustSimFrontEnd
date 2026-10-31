@@ -66,240 +66,130 @@ export default function EkycTab({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       {/* 1. Header & Quick Status Action */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-100">
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#001743", margin: 0 }}>
+          <h2 className="text-xl font-extrabold text-[#001743] m-0 tracking-tight">
             Định danh điện tử CCCD (eKYC)
           </h2>
-          <p style={{ fontSize: 13, color: "#6B7280", margin: "4px 0 0" }}>
+          <p className="text-xs text-slate-500 m-0 mt-1">
             Xác thực danh tính theo tiêu chuẩn an toàn bảo mật TrustSim.
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
           <button
             onClick={onRefresh}
             disabled={loading}
-            className="btn-outline"
-            style={{ padding: "8px 14px", fontSize: 12, borderRadius: 6, display: "flex", alignItems: "center", gap: 6 }}
+            className="rounded-full bg-white hover:bg-slate-50 text-[#001743] border border-slate-200 px-4 py-2 text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
           >
-            <Icons.Refresh size={13} /> {loading ? "Đang tải..." : "Làm mới"}
+            <span className={loading ? "animate-spin" : ""}>
+              <Icons.Refresh size={13} />
+            </span>
+            <span>{loading ? "Đang tải..." : "Làm mới"}</span>
           </button>
           <button
             onClick={() => setIsModalOpen(true)}
             disabled={isPending || loading}
-            className="btn-red"
-            style={{ padding: "8px 16px", fontSize: 13, borderRadius: 6, display: "flex", alignItems: "center", gap: 6, fontWeight: 700, opacity: isPending || loading ? 0.55 : 1, cursor: isPending || loading ? "not-allowed" : "pointer" }}
+            className="rounded-full bg-[#001743] hover:bg-[#002875] text-white px-5 py-2 text-xs font-bold inline-flex items-center gap-1.5 shadow-md shadow-navy-950/15 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             <Icons.ShieldCheck size={16} />
-            {isVerified ? "Cập nhật lại CCCD" : isRejected ? "Nộp lại hồ sơ eKYC" : isPending ? "Đang chờ xác minh" : "Bắt đầu xác thực eKYC"}
+            <span>{isVerified ? "Cập nhật lại CCCD" : isRejected ? "Nộp lại hồ sơ eKYC" : isPending ? "Đang chờ xác minh" : "Bắt đầu xác thực eKYC"}</span>
           </button>
         </div>
       </div>
 
       {/* 2. Status Banner Box */}
       {isVerified ? (
-        <div
-          style={{
-            background: "#F0FDF4",
-            border: "1px solid #86EFAC",
-            borderRadius: 10,
-            padding: "20px 24px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 14,
-            boxShadow: "0 2px 8px rgba(22, 163, 74, 0.08)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-            <div
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: "50%",
-                background: "#DCFCE7",
-                color: "#16A34A",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <Icons.CheckCircle size={24} />
+        <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-[28px] p-6 sm:p-7 flex flex-col gap-5 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+              <Icons.CheckCircle size={26} />
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                <h3 style={{ fontSize: 16, fontWeight: 800, color: "#166534", margin: 0 }}>
+            <div className="flex-1">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h3 className="text-base font-extrabold text-emerald-950 m-0">
                   Tài khoản của bạn đã được xác thực eKYC thành công!
                 </h3>
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    background: "#16A34A",
-                    color: "#FFFFFF",
-                    padding: "2px 8px",
-                    borderRadius: 9999,
-                  }}
-                >
+                <span className="text-[11px] font-bold bg-emerald-600 text-white px-3 py-0.5 rounded-full shadow-2xs">
                   Đã định danh chính chủ
                 </span>
               </div>
-              <p style={{ fontSize: 13, color: "#15803D", margin: "4px 0 0", lineHeight: 1.5 }}>
+              <p className="text-xs text-emerald-800 m-0 mt-1 leading-relaxed">
                 Bạn có đầy đủ quyền hạn mở phiên đấu giá cho SIM chính chủ, tham gia đấu thầu và nạp/rút tiền ví TrustSim an toàn.
               </p>
             </div>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: 12,
-              background: "#FFFFFF",
-              border: "1px solid #BBF7D0",
-              borderRadius: 8,
-              padding: "12px 16px",
-            }}
-          >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-white/90 border border-emerald-100 rounded-[20px] p-4 sm:p-5 shadow-2xs">
             <div>
-              <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 600 }}>Họ và tên:</div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: "#001743" }}>
+              <div className="text-[11px] text-slate-500 font-bold">Họ và tên:</div>
+              <div className="text-sm font-extrabold text-[#001743] mt-0.5">
                 {kycStatus?.fullName || "Nguyễn Văn An"}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 600 }}>Số CCCD:</div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: "#001743", fontVariantNumeric: "tabular-nums" }}>
+              <div className="text-[11px] text-slate-500 font-bold">Số CCCD:</div>
+              <div className="text-sm font-extrabold text-[#001743] font-mono tabular-nums mt-0.5">
                 {kycStatus?.identityNumber || "001201012345"}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 600 }}>Phương thức xác thực:</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#16A34A" }}>
+              <div className="text-[11px] text-slate-500 font-bold">Phương thức xác thực:</div>
+              <div className="text-xs font-bold text-emerald-700 mt-0.5">
                 {formatVerificationMethod(kycStatus?.verificationMethod)}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 600 }}>Ngày thẩm định:</div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>
+              <div className="text-[11px] text-slate-500 font-bold">Ngày thẩm định:</div>
+              <div className="text-xs font-semibold text-slate-700 mt-0.5">
                 {kycStatus?.verifiedAt ? new Date(kycStatus.verifiedAt).toLocaleDateString("vi-VN") : "Hôm nay"}
               </div>
             </div>
           </div>
         </div>
       ) : isPending ? (
-        <div
-          style={{
-            background: "#FFFBEB",
-            border: "1px solid #FCD34D",
-            borderRadius: 10,
-            padding: "20px 24px",
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 14,
-            boxShadow: "0 2px 8px rgba(217, 119, 6, 0.08)",
-          }}
-        >
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: "50%",
-              background: "#FEF3C7",
-              color: "#D97706",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <Icons.Clock size={24} />
+        <div className="bg-amber-50/70 border border-amber-200/80 rounded-[28px] p-6 sm:p-7 flex items-start gap-4 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+          <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+            <Icons.Clock size={26} />
           </div>
-          <div style={{ flex: 1 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: "#92400E", margin: 0 }}>
+          <div className="flex-1">
+            <h3 className="text-base font-extrabold text-amber-950 m-0">
               Hồ sơ eKYC của bạn đang trong tiến trình đối soát tự động
             </h3>
-            <p style={{ fontSize: 13, color: "#B45309", margin: "4px 0 0", lineHeight: 1.5 }}>
+            <p className="text-xs text-amber-800 m-0 mt-1 leading-relaxed">
               Hệ thống đang tự động kiểm tra tính nguyên vẹn của ảnh CCCD và đối chiếu khuôn mặt. Quá trình này thường diễn ra trong vòng 5 - 15 phút.
             </p>
             {kycStatus?.submittedAt && (
-              <div style={{ fontSize: 12, color: "#78350F", marginTop: 6, fontWeight: 600 }}>
+              <div className="text-xs text-amber-900 mt-2 font-semibold">
                 Thời gian nộp: {new Date(kycStatus.submittedAt).toLocaleString("vi-VN")}
               </div>
             )}
           </div>
         </div>
       ) : isRejected ? (
-        <div
-          style={{
-            background: "#FEF2F2",
-            border: "1px solid #FECACA",
-            borderRadius: 10,
-            padding: "20px 24px",
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 14,
-            boxShadow: "0 2px 8px rgba(220, 38, 38, 0.08)",
-          }}
-        >
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: "50%",
-              background: "#FEE2E2",
-              color: "#DC2626",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <Icons.AlertTriangle size={24} />
+        <div className="bg-rose-50/70 border border-rose-200/80 rounded-[28px] p-6 sm:p-7 flex items-start gap-4 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+          <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+            <Icons.AlertTriangle size={26} />
           </div>
-          <div style={{ flex: 1 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: "#991B1B", margin: 0 }}>
+          <div className="flex-1">
+            <h3 className="text-base font-extrabold text-rose-950 m-0">
               Hồ sơ eKYC trước đó không được phê duyệt
             </h3>
-            <p style={{ fontSize: 13, color: "#B91C1C", margin: "4px 0 0", lineHeight: 1.5 }}>
+            <p className="text-xs text-rose-800 m-0 mt-1 leading-relaxed">
               <strong>Lý do từ chối:</strong>{" "}
               {kycStatus?.rejectionReason || "Ảnh chụp CCCD bị lóa sáng, mờ số hoặc khuôn mặt selfie không trùng khớp. Vui lòng bấm nút 'Nộp lại hồ sơ eKYC' để chụp lại rõ 4 góc."}
             </p>
           </div>
         </div>
       ) : (
-        <div
-          style={{
-            background: "#EFF6FF",
-            border: "1px solid #BFDBFE",
-            borderRadius: 10,
-            padding: "20px 24px",
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 14,
-            boxShadow: "0 2px 8px rgba(37, 99, 235, 0.08)",
-          }}
-        >
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: "50%",
-              background: "#DBEAFE",
-              color: "#2563EB",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <Icons.ShieldCheck size={24} />
+        <div className="bg-sky-50/70 border border-sky-200/80 rounded-[28px] p-6 sm:p-7 flex items-start gap-4 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+          <div className="w-12 h-12 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+            <Icons.ShieldCheck size={26} />
           </div>
-          <div style={{ flex: 1 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: "#1E40AF", margin: 0 }}>
+          <div className="flex-1">
+            <h3 className="text-base font-extrabold text-sky-950 m-0">
               Bạn chưa hoàn tất định danh eKYC tài khoản
             </h3>
-            <p style={{ fontSize: 13, color: "#1D4ED8", margin: "4px 0 0", lineHeight: 1.5 }}>
+            <p className="text-xs text-sky-800 m-0 mt-1 leading-relaxed">
               Khi vừa đăng ký tài khoản, bạn mới chỉ xác thực Số điện thoại qua OTP. Hãy bấm nút <strong>"Bắt đầu xác thực eKYC"</strong> ở góc trên để tải lên ảnh CCCD 2 mặt và ảnh selfie khuôn mặt.
             </p>
           </div>
@@ -307,7 +197,7 @@ export default function EkycTab({
       )}
 
       {/* 3. Steps Guide Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           {
             step: "01",
@@ -330,106 +220,109 @@ export default function EkycTab({
         ].map((item, idx) => (
           <div
             key={idx}
-            style={{
-              background: "#FFFFFF",
-              border: "1px solid #E5E7EB",
-              borderRadius: 8,
-              padding: 18,
-              display: "flex",
-              flexDirection: "column",
-              gap: 10,
-            }}
+            className="bg-white border border-slate-100/90 rounded-[24px] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col justify-between gap-4"
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 6,
-                  background: "#F3F4F6",
-                  color: "#001743",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+            <div className="flex justify-between items-center">
+              <div className="w-10 h-10 rounded-2xl bg-slate-100 text-[#001743] flex items-center justify-center">
                 {item.icon}
               </div>
-              <span style={{ fontSize: 18, fontWeight: 900, color: "#E5E7EB" }}>{item.step}</span>
+              <span className="text-xl font-black text-slate-200 font-mono">{item.step}</span>
             </div>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: "#001743" }}>{item.title}</div>
-              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 3, lineHeight: 1.4 }}>{item.desc}</div>
+              <div className="text-sm font-bold text-[#001743]">{item.title}</div>
+              <div className="text-xs text-slate-500 mt-1 leading-relaxed">{item.desc}</div>
             </div>
           </div>
         ))}
       </div>
 
       {/* 4. History Table */}
-      <div style={{ background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: 10, overflow: "hidden" }}>
-        <div style={{ padding: "16px 20px", borderBottom: "1px solid #E5E7EB", background: "#F8F9FA", display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "end" }}>
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: "#001743", margin: 0 }}>
+      <div className="bg-white border border-slate-100/90 rounded-[28px] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        <div className="p-5 px-6 border-b border-slate-100 bg-slate-50/70 flex justify-between gap-4 flex-wrap items-center">
+          <h3 className="text-sm font-extrabold text-[#001743] m-0">
             Lịch sử nộp hồ sơ eKYC
           </h3>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <input value={idCardNumber} onChange={(event) => setIdCardNumber(event.target.value)} aria-label="Lọc theo số căn cước" placeholder="Số CCCD" style={{ minHeight: 38, border: "1px solid #D1D5DB", borderRadius: 6, padding: "0 10px", fontSize: 12 }} />
-            <select value={historyStatus} onChange={(event) => setHistoryStatus(event.target.value as typeof historyStatus)} aria-label="Lọc trạng thái hồ sơ" style={{ minHeight: 38, border: "1px solid #D1D5DB", borderRadius: 6, padding: "0 10px", fontSize: 12, background: "white" }}><option value="">Tất cả trạng thái</option><option value="PENDING_VERIFICATION">Đang đối soát</option><option value="VERIFIED">Đã duyệt</option><option value="REJECTED">Bị từ chối</option><option value="EXPIRED">Hết hiệu lực</option></select>
+          <div className="flex gap-2.5 flex-wrap">
+            <input
+              value={idCardNumber}
+              onChange={(event) => setIdCardNumber(event.target.value)}
+              aria-label="Lọc theo số căn cước"
+              placeholder="Tìm theo số CCCD..."
+              className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs text-slate-700 outline-none focus:border-[#001743] shadow-2xs font-mono"
+            />
+            <select
+              value={historyStatus}
+              onChange={(event) => setHistoryStatus(event.target.value as typeof historyStatus)}
+              aria-label="Lọc trạng thái hồ sơ"
+              className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-[#001743] shadow-2xs cursor-pointer"
+            >
+              <option value="">Tất cả trạng thái</option>
+              <option value="PENDING_VERIFICATION">Đang đối soát</option>
+              <option value="VERIFIED">Đã duyệt</option>
+              <option value="REJECTED">Bị từ chối</option>
+              <option value="EXPIRED">Hết hiệu lực</option>
+            </select>
           </div>
         </div>
 
-        {historyLoading ? <div style={{ padding: "28px 20px", textAlign: "center", color: "#6B7280", fontSize: 13 }}>Đang tải lịch sử eKYC…</div> : historyItems.length > 0 ? (
-          <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: "#F9FAFB", borderBottom: "1px solid #E5E7EB", color: "#4B5563", fontWeight: 700 }}>
-                <th style={{ padding: "12px 16px" }}>Mã hồ sơ</th>
-                <th style={{ padding: "12px 16px" }}>Thời gian gửi</th>
-                <th style={{ padding: "12px 16px" }}>Độ khớp khuôn mặt</th>
-                <th style={{ padding: "12px 16px" }}>Trạng thái</th>
-                <th style={{ padding: "12px 16px" }}>Ghi chú thẩm định</th>
-              </tr>
-            </thead>
-            <tbody>
-              {historyItems.map((item, idx) => {
-                const isItemVerified = ekycService.isVerified(item);
-                const isItemPending = item.verificationStatus === 0 || item.verificationStatus === "PENDING_VERIFICATION";
-                return (
-                  <tr key={item.id || idx} style={{ borderBottom: "1px solid #F3F4F6" }}>
-                    <td style={{ padding: "12px 16px", fontWeight: 700, color: "#001743", fontVariantNumeric: "tabular-nums" }}>
-                      #{item.id ? item.id.substring(0, 8).toUpperCase() : `KYC-00${idx + 1}`}
-                    </td>
-                    <td style={{ padding: "12px 16px", color: "#4B5563" }}>
-                      {item.submittedAt ? new Date(item.submittedAt).toLocaleString("vi-VN") : "10/09/2026, 10:30"}
-                    </td>
-                    <td style={{ padding: "12px 16px", fontWeight: 700, color: "#001743" }}>
-                      {item.faceSimilarityScore ? `${item.faceSimilarityScore.toFixed(1)}%` : "99.2%"}
-                    </td>
-                    <td style={{ padding: "12px 16px" }}>
-                      {isItemVerified ? (
-                        <span style={{ fontSize: 11.5, fontWeight: 700, color: "#16A34A", background: "#F0FDF4", padding: "2px 8px", borderRadius: 4, border: "1px solid #BBF7D0" }}>
-                          Đã duyệt thành công
-                        </span>
-                      ) : isItemPending ? (
-                        <span style={{ fontSize: 11.5, fontWeight: 700, color: "#D97706", background: "#FFFBEB", padding: "2px 8px", borderRadius: 4, border: "1px solid #FDE68A" }}>
-                          Đang đối soát
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: 11.5, fontWeight: 700, color: "#DC2626", background: "#FEF2F2", padding: "2px 8px", borderRadius: 4, border: "1px solid #FECACA" }}>
-                          Bị từ chối
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ padding: "12px 16px", color: "#6B7280", fontSize: 12 }}>
-                      {item.rejectionReason || (isItemVerified ? "Đối soát sinh trắc học thành công" : isItemPending ? "Đang tiến hành đối soát" : "Chưa đạt yêu cầu thẩm định")}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        {historyLoading ? (
+          <div className="py-16 text-center text-slate-500 text-xs">
+            <span className="w-5 h-5 border-2 border-[#001743]/30 border-t-[#001743] rounded-full animate-spin inline-block mr-2 align-middle" />
+            Đang tải lịch sử eKYC…
+          </div>
+        ) : historyItems.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-50/50 border-b border-slate-100 text-slate-500 font-bold">
+                  <th className="py-3.5 px-6">Mã hồ sơ</th>
+                  <th className="py-3.5 px-6">Thời gian gửi</th>
+                  <th className="py-3.5 px-6">Độ khớp khuôn mặt</th>
+                  <th className="py-3.5 px-6">Trạng thái</th>
+                  <th className="py-3.5 px-6">Ghi chú thẩm định</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {historyItems.map((item, idx) => {
+                  const isItemVerified = ekycService.isVerified(item);
+                  const isItemPending = item.verificationStatus === 0 || item.verificationStatus === "PENDING_VERIFICATION";
+                  return (
+                    <tr key={item.id || idx} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-3.5 px-6 font-bold text-[#001743] font-mono tabular-nums">
+                        #{item.id ? item.id.substring(0, 8).toUpperCase() : `KYC-00${idx + 1}`}
+                      </td>
+                      <td className="py-3.5 px-6 text-slate-600">
+                        {item.submittedAt ? new Date(item.submittedAt).toLocaleString("vi-VN") : "10/09/2026, 10:30"}
+                      </td>
+                      <td className="py-3.5 px-6 font-bold text-[#001743] font-mono tabular-nums">
+                        {item.faceSimilarityScore ? `${item.faceSimilarityScore.toFixed(1)}%` : "99.2%"}
+                      </td>
+                      <td className="py-3.5 px-6">
+                        {isItemVerified ? (
+                          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-3 py-0.5 rounded-full border border-emerald-200">
+                            Đã duyệt thành công
+                          </span>
+                        ) : isItemPending ? (
+                          <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-3 py-0.5 rounded-full border border-amber-200">
+                            Đang đối soát
+                          </span>
+                        ) : (
+                          <span className="text-[11px] font-bold text-rose-700 bg-rose-50 px-3 py-0.5 rounded-full border border-rose-200">
+                            Bị từ chối
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-6 text-slate-500 text-xs">
+                        {item.rejectionReason || (isItemVerified ? "Đối soát sinh trắc học thành công" : isItemPending ? "Đang tiến hành đối soát" : "Chưa đạt yêu cầu thẩm định")}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         ) : (
-          <div style={{ padding: "28px 20px", textAlign: "center", color: "#9CA3AF", fontSize: 13 }}>
+          <div className="py-16 text-center text-slate-400 text-xs">
             Chưa có lịch sử nộp hồ sơ eKYC nào. Bấm nút <strong>"Bắt đầu xác thực eKYC"</strong> để bắt đầu.
           </div>
         )}
@@ -1858,8 +1751,7 @@ function EkycWizardModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="btn-outline"
-                style={{ padding: "8px 16px", fontSize: 12.5, borderRadius: 6 }}
+                className="rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 px-5 py-2 text-xs font-bold shadow-2xs transition-all cursor-pointer"
               >
                 Hủy bỏ
               </button>
@@ -1867,18 +1759,7 @@ function EkycWizardModal({
                 type="button"
                 disabled={!frontImage}
                 onClick={() => setStep(2)}
-                className="btn-red"
-                style={{
-                  padding: "9px 22px",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  borderRadius: 6,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  opacity: !frontImage ? 0.5 : 1,
-                  cursor: !frontImage ? "not-allowed" : "pointer",
-                }}
+                className="rounded-full bg-[#001743] hover:bg-[#002875] text-white px-5 py-2 text-xs font-bold inline-flex items-center gap-1.5 shadow-md shadow-navy-950/15 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
               >
                 Tiếp tục sang Bước 2 <Icons.ArrowRight size={16} />
               </button>
@@ -1890,8 +1771,7 @@ function EkycWizardModal({
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="btn-outline"
-                style={{ padding: "8px 16px", fontSize: 12.5, borderRadius: 6 }}
+                className="rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 px-5 py-2 text-xs font-bold shadow-2xs transition-all cursor-pointer"
               >
                 ← Quay lại Bước 1
               </button>
@@ -1899,18 +1779,7 @@ function EkycWizardModal({
                 type="button"
                 disabled={!backImage}
                 onClick={() => setStep(3)}
-                className="btn-red"
-                style={{
-                  padding: "9px 22px",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  borderRadius: 6,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  opacity: !backImage ? 0.5 : 1,
-                  cursor: !backImage ? "not-allowed" : "pointer",
-                }}
+                className="rounded-full bg-[#001743] hover:bg-[#002875] text-white px-5 py-2 text-xs font-bold inline-flex items-center gap-1.5 shadow-md shadow-navy-950/15 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
               >
                 Tiếp tục sang Bước 3 <Icons.ArrowRight size={16} />
               </button>
@@ -1922,8 +1791,7 @@ function EkycWizardModal({
               <button
                 type="button"
                 onClick={() => setStep(2)}
-                className="btn-outline"
-                style={{ padding: "8px 16px", fontSize: 12.5, borderRadius: 6 }}
+                className="rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 px-5 py-2 text-xs font-bold shadow-2xs transition-all cursor-pointer"
               >
                 ← Quay lại Bước 2
               </button>
@@ -1931,18 +1799,7 @@ function EkycWizardModal({
                 type="button"
                 disabled={submitting || !frontImage || !backImage || !selfieImage}
                 onClick={handleSubmitAll}
-                className="btn-red"
-                style={{
-                  padding: "9px 24px",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  borderRadius: 6,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  opacity: submitting || !frontImage || !backImage || !selfieImage ? 0.6 : 1,
-                  cursor: submitting || !frontImage || !backImage || !selfieImage ? "not-allowed" : "pointer",
-                }}
+                className="rounded-full bg-[#001743] hover:bg-[#002875] text-white px-6 py-2 text-xs font-bold inline-flex items-center gap-1.5 shadow-md shadow-navy-950/15 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
               >
                 <Icons.ShieldCheck size={16} />
                 {submitting ? "Đang gửi hồ sơ thẩm định..." : "Gửi hồ sơ thẩm định eKYC"}
