@@ -169,11 +169,10 @@ function FilterPopover<T extends { key: string }>({
       <button
         type="button"
         onClick={onToggle}
-        className={`inline-flex h-[38px] cursor-pointer items-center gap-2 rounded-full px-3.5 text-xs font-semibold whitespace-nowrap transition-all duration-150 border ${
-          isActive
+        className={`inline-flex h-[38px] cursor-pointer items-center gap-2 rounded-full px-3.5 text-xs font-semibold whitespace-nowrap transition-all duration-150 border ${isActive
             ? "border-[#001743] bg-[#001743] text-white shadow-[0_4px_12px_rgba(0,23,67,0.18)]"
             : "border-[rgba(0,23,67,0.08)] bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50/80 shadow-xs"
-        }`}
+          }`}
       >
         <span className={`flex items-center ${isActive ? "text-white" : "text-slate-400"}`}>
           {icon}
@@ -181,9 +180,8 @@ function FilterPopover<T extends { key: string }>({
         <span>{label}</span>
         <ChevronDown
           size={13}
-          className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""} ${
-            isActive ? "text-white/70" : "text-slate-400"
-          }`}
+          className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""} ${isActive ? "text-white/70" : "text-slate-400"
+            }`}
         />
       </button>
 
@@ -200,11 +198,10 @@ function FilterPopover<T extends { key: string }>({
                   key={item.key}
                   type="button"
                   onClick={() => onChange(item.key)}
-                  className={`flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition-colors duration-100 ${
-                    isSelected
+                  className={`flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition-colors duration-100 ${isSelected
                       ? "bg-[#001743]/[0.06] font-bold text-[#001743]"
                       : "text-slate-700 hover:bg-slate-100/80 font-medium"
-                  }`}
+                    }`}
                 >
                   <div className="min-w-0 flex-1">{renderOption(item, isSelected)}</div>
                   {isSelected && <Check size={14} className="shrink-0 text-[#001743] ml-2" />}
@@ -276,10 +273,10 @@ export default function AuctionsPage() {
             color: carrier.carrierName.toLowerCase().includes("viettel")
               ? "#E4011E"
               : carrier.carrierName.toLowerCase().includes("mobi")
-              ? "#0284C7"
-              : carrier.carrierName.toLowerCase().includes("vina")
-              ? "#2563EB"
-              : "#EA580C",
+                ? "#0284C7"
+                : carrier.carrierName.toLowerCase().includes("vina")
+                  ? "#2563EB"
+                  : "#EA580C",
           })),
         ]);
         setCategoryOptions([
@@ -393,12 +390,12 @@ export default function AuctionsPage() {
         sortBy === "price-asc"
           ? { sortBy: AuctionSortBy.CurrentPrice, sortOrder: SortOrder.Asc }
           : sortBy === "price-desc"
-          ? { sortBy: AuctionSortBy.CurrentPrice, sortOrder: SortOrder.Desc }
-          : sortBy === "ending-soon"
-          ? { sortBy: AuctionSortBy.EndAt, sortOrder: SortOrder.Asc }
-          : sortBy === "bids-desc"
-          ? { sortBy: AuctionSortBy.BidCount, sortOrder: SortOrder.Desc }
-          : { sortBy: AuctionSortBy.CreatedDate, sortOrder: SortOrder.Desc };
+            ? { sortBy: AuctionSortBy.CurrentPrice, sortOrder: SortOrder.Desc }
+            : sortBy === "ending-soon"
+              ? { sortBy: AuctionSortBy.EndAt, sortOrder: SortOrder.Asc }
+              : sortBy === "bids-desc"
+                ? { sortBy: AuctionSortBy.BidCount, sortOrder: SortOrder.Desc }
+                : { sortBy: AuctionSortBy.CreatedDate, sortOrder: SortOrder.Desc };
 
       const res = await auctionService.getAuctions({
         keyword: debouncedKeyword.trim() || undefined,
@@ -613,9 +610,8 @@ export default function AuctionsPage() {
                           <button
                             key={i}
                             onClick={() => setHeroIndex(i)}
-                            className={`h-1.5 rounded-full cursor-pointer transition-all duration-200 ${
-                              i === heroIndex ? "w-5 bg-[#001743]" : "w-1.5 bg-[#001743]/20 hover:bg-[#001743]/40"
-                            }`}
+                            className={`h-1.5 rounded-full cursor-pointer transition-all duration-200 ${i === heroIndex ? "w-5 bg-[#001743]" : "w-1.5 bg-[#001743]/20 hover:bg-[#001743]/40"
+                              }`}
                             aria-label={`Chuyển đến phiên ${i + 1}`}
                           />
                         ))}
@@ -845,24 +841,21 @@ export default function AuctionsPage() {
                       setStatusTab(tab.key);
                       setPageIndex(1);
                     }}
-                    className={`inline-flex cursor-pointer items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 ${
-                      isActive
+                    className={`inline-flex cursor-pointer items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 ${isActive
                         ? "bg-[#001743] text-white shadow-xs"
                         : "text-slate-600 hover:bg-slate-200/60"
-                    }`}
+                      }`}
                   >
                     {tab.dot && (
                       <span
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          isActive ? "bg-emerald-400 animate-pulse" : "bg-emerald-500"
-                        }`}
+                        className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-400 animate-pulse" : "bg-emerald-500"
+                          }`}
                       />
                     )}
                     <span>{tab.label}</span>
                     <span
-                      className={`rounded-full px-1.5 py-0.2 text-[10.5px] font-bold tabular-nums ${
-                        isActive ? "bg-white/20 text-white" : "bg-slate-200/80 text-slate-600"
-                      }`}
+                      className={`rounded-full px-1.5 py-0.2 text-[10.5px] font-bold tabular-nums ${isActive ? "bg-white/20 text-white" : "bg-slate-200/80 text-slate-600"
+                        }`}
                     >
                       {tab.count}
                     </span>
@@ -885,11 +878,10 @@ export default function AuctionsPage() {
                     setTypeFilter(m.key);
                     setPageIndex(1);
                   }}
-                  className={`cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition-all duration-150 ${
-                    typeFilter === m.key
+                  className={`cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition-all duration-150 ${typeFilter === m.key
                       ? "bg-[#001743] text-white shadow-2xs"
                       : "text-slate-600 hover:text-slate-900"
-                  }`}
+                    }`}
                 >
                   {m.label}
                 </button>
@@ -904,104 +896,104 @@ export default function AuctionsPage() {
             categoryFilter !== "all" ||
             sortBy !== "default" ||
             typeFilter !== "all") && (
-            <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
-                Đang lọc theo:
-              </span>
-
-              {debouncedKeyword && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-700 shadow-2xs">
-                  Từ khóa: <strong className="text-[#001743] font-mono">"{debouncedKeyword}"</strong>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSearchInput("");
-                      setDebouncedKeyword("");
-                    }}
-                    className="cursor-pointer text-slate-400 hover:text-slate-600 ml-0.5"
-                  >
-                    <X size={12} />
-                  </button>
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+                  Đang lọc theo:
                 </span>
-              )}
 
-              {carrierFilter !== "all" && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-700 shadow-2xs">
-                  Nhà mạng: <strong className="text-[#001743]">{selectedCarrier.name}</strong>
-                  <button
-                    type="button"
-                    onClick={() => setCarrierFilter("all")}
-                    className="cursor-pointer text-slate-400 hover:text-slate-600 ml-0.5"
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              )}
+                {debouncedKeyword && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-700 shadow-2xs">
+                    Từ khóa: <strong className="text-[#001743] font-mono">"{debouncedKeyword}"</strong>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchInput("");
+                        setDebouncedKeyword("");
+                      }}
+                      className="cursor-pointer text-slate-400 hover:text-slate-600 ml-0.5"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                )}
 
-              {priceFilter !== "all" && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-700 shadow-2xs">
-                  Khoảng giá: <strong className="text-[#001743]">{selectedPrice.label}</strong>
-                  <button
-                    type="button"
-                    onClick={() => setPriceFilter("all")}
-                    className="cursor-pointer text-slate-400 hover:text-slate-600 ml-0.5"
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              )}
+                {carrierFilter !== "all" && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-700 shadow-2xs">
+                    Nhà mạng: <strong className="text-[#001743]">{selectedCarrier.name}</strong>
+                    <button
+                      type="button"
+                      onClick={() => setCarrierFilter("all")}
+                      className="cursor-pointer text-slate-400 hover:text-slate-600 ml-0.5"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                )}
 
-              {categoryFilter !== "all" && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-700 shadow-2xs">
-                  Cấu trúc: <strong className="text-[#001743]">{selectedCategory.label}</strong>
-                  <button
-                    type="button"
-                    onClick={() => setCategoryFilter("all")}
-                    className="cursor-pointer text-slate-400 hover:text-slate-600 ml-0.5"
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              )}
+                {priceFilter !== "all" && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-700 shadow-2xs">
+                    Khoảng giá: <strong className="text-[#001743]">{selectedPrice.label}</strong>
+                    <button
+                      type="button"
+                      onClick={() => setPriceFilter("all")}
+                      className="cursor-pointer text-slate-400 hover:text-slate-600 ml-0.5"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                )}
 
-              {typeFilter !== "all" && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-700 shadow-2xs">
-                  Hình thức:{" "}
-                  <strong className="text-[#001743]">
-                    {typeFilter === "english" ? "Kiểu Anh" : "Kiểu Hà Lan"}
-                  </strong>
-                  <button
-                    type="button"
-                    onClick={() => setTypeFilter("all")}
-                    className="cursor-pointer text-slate-400 hover:text-slate-600 ml-0.5"
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              )}
+                {categoryFilter !== "all" && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-700 shadow-2xs">
+                    Cấu trúc: <strong className="text-[#001743]">{selectedCategory.label}</strong>
+                    <button
+                      type="button"
+                      onClick={() => setCategoryFilter("all")}
+                      className="cursor-pointer text-slate-400 hover:text-slate-600 ml-0.5"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                )}
 
-              {sortBy !== "default" && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-700 shadow-2xs">
-                  Sắp xếp: <strong className="text-[#001743]">{selectedSort.label}</strong>
-                  <button
-                    type="button"
-                    onClick={() => setSortBy("default")}
-                    className="cursor-pointer text-slate-400 hover:text-slate-600 ml-0.5"
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              )}
+                {typeFilter !== "all" && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-700 shadow-2xs">
+                    Hình thức:{" "}
+                    <strong className="text-[#001743]">
+                      {typeFilter === "english" ? "Kiểu Anh" : "Kiểu Hà Lan"}
+                    </strong>
+                    <button
+                      type="button"
+                      onClick={() => setTypeFilter("all")}
+                      className="cursor-pointer text-slate-400 hover:text-slate-600 ml-0.5"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                )}
 
-              <button
-                type="button"
-                onClick={handleResetFilters}
-                className="text-[11.5px] font-bold text-slate-500 hover:text-[#001743] cursor-pointer underline ml-1"
-              >
-                Xóa tất cả
-              </button>
-            </div>
-          )}
+                {sortBy !== "default" && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-700 shadow-2xs">
+                    Sắp xếp: <strong className="text-[#001743]">{selectedSort.label}</strong>
+                    <button
+                      type="button"
+                      onClick={() => setSortBy("default")}
+                      className="cursor-pointer text-slate-400 hover:text-slate-600 ml-0.5"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="text-[11.5px] font-bold text-slate-500 hover:text-[#001743] cursor-pointer underline ml-1"
+                >
+                  Xóa tất cả
+                </button>
+              </div>
+            )}
         </div>
       </section>
 
@@ -1122,11 +1114,10 @@ export default function AuctionsPage() {
             <button
               onClick={() => setPageIndex((p) => Math.max(1, p - 1))}
               disabled={pageIndex <= 1}
-              className={`inline-flex items-center gap-1 rounded-full px-4 py-2 text-xs font-bold transition-all border ${
-                pageIndex <= 1
+              className={`inline-flex items-center gap-1 rounded-full px-4 py-2 text-xs font-bold transition-all border ${pageIndex <= 1
                   ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
                   : "border-slate-200 bg-white text-[#001743] hover:bg-slate-50 shadow-xs cursor-pointer"
-              }`}
+                }`}
             >
               <ChevronLeft size={14} />
               Trước
@@ -1148,11 +1139,10 @@ export default function AuctionsPage() {
                   <button
                     key={pageNum}
                     onClick={() => setPageIndex(pageNum)}
-                    className={`grid h-8 w-8 place-items-center rounded-full text-xs font-bold transition-all cursor-pointer ${
-                      pageIndex === pageNum
+                    className={`grid h-8 w-8 place-items-center rounded-full text-xs font-bold transition-all cursor-pointer ${pageIndex === pageNum
                         ? "bg-[#001743] text-white shadow-xs"
                         : "text-slate-600 hover:bg-slate-200/70"
-                    }`}
+                      }`}
                   >
                     {pageNum}
                   </button>
@@ -1163,11 +1153,10 @@ export default function AuctionsPage() {
             <button
               onClick={() => setPageIndex((p) => Math.min(totalPages, p + 1))}
               disabled={pageIndex >= totalPages}
-              className={`inline-flex items-center gap-1 rounded-full px-4 py-2 text-xs font-bold transition-all border ${
-                pageIndex >= totalPages
+              className={`inline-flex items-center gap-1 rounded-full px-4 py-2 text-xs font-bold transition-all border ${pageIndex >= totalPages
                   ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
                   : "border-slate-200 bg-white text-[#001743] hover:bg-slate-50 shadow-xs cursor-pointer"
-              }`}
+                }`}
             >
               Sau
               <ChevronRight size={14} />
@@ -1176,8 +1165,6 @@ export default function AuctionsPage() {
         )}
       </main>
 
-      {/* ═══ 6. FOOTER ═══════════════════════════════════════ */}
-      <Footer />
     </div>
   );
 }

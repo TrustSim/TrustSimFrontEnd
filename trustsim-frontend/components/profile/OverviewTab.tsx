@@ -51,6 +51,29 @@ interface ActivityItem {
   isPositive?: boolean;
 }
 
+function formatBigCurrency(val: number) {
+  const formatted = (val || 0).toLocaleString("vi-VN");
+  let compactSummary = "";
+  if (val >= 1_000_000_000_000) {
+    compactSummary = `~${(val / 1_000_000_000_000).toLocaleString("vi-VN", { maximumFractionDigits: 2 })} nghìn tỷ ₫`;
+  } else if (val >= 1_000_000_000) {
+    compactSummary = `~${(val / 1_000_000_000).toLocaleString("vi-VN", { maximumFractionDigits: 2 })} tỷ ₫`;
+  } else if (val >= 1_000_000) {
+    compactSummary = `~${(val / 1_000_000).toLocaleString("vi-VN", { maximumFractionDigits: 1 })} triệu ₫`;
+  }
+
+  let sizeClass = "text-2xl";
+  if (formatted.length > 15) {
+    sizeClass = "text-base sm:text-lg";
+  } else if (formatted.length > 11) {
+    sizeClass = "text-lg sm:text-xl";
+  } else if (formatted.length > 8) {
+    sizeClass = "text-xl sm:text-2xl";
+  }
+
+  return { formatted, compactSummary, sizeClass };
+}
+
 export default function OverviewTab({
   user,
   profile,
@@ -262,41 +285,52 @@ export default function OverviewTab({
       {/* ── 4 KPI Stats Cards: Soft-Cloud Navy ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Stat 1: Wallet Balance */}
-        <div
-          onClick={() => onNavigateTab("transactions")}
-          className="rounded-[22px] border border-[rgba(0,23,67,0.08)] bg-white p-4.5 shadow-xs flex justify-between items-start cursor-pointer hover:-translate-y-1 hover:shadow-md hover:border-[#001743]/20 transition-all group"
-        >
-          <div>
-            <span className="text-xs text-slate-500 font-semibold block mb-1">
-              Số dư khả dụng
-            </span>
-            <div className="text-2xl font-bold text-[#001743] font-mono tabular-nums leading-none">
-              {walletBalance.toLocaleString("vi-VN")}{" "}
-              <span className="text-sm font-semibold text-slate-500">₫</span>
+        {(() => {
+          const { formatted, compactSummary, sizeClass } = formatBigCurrency(walletBalance);
+          return (
+            <div
+              onClick={() => onNavigateTab("transactions")}
+              className="rounded-[22px] border border-[rgba(0,23,67,0.08)] bg-white p-4.5 shadow-xs flex justify-between items-start gap-3 cursor-pointer hover:-translate-y-1 hover:shadow-md hover:border-[#001743]/20 transition-all group overflow-hidden"
+              title={`Số dư khả dụng: ${walletBalance.toLocaleString("vi-VN")} ₫`}
+            >
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <span className="text-xs text-slate-500 font-semibold block mb-1">
+                  Số dư khả dụng
+                </span>
+                <div className={`${sizeClass} font-bold text-[#001743] font-mono tabular-nums leading-tight truncate`}>
+                  {formatted}{" "}
+                  <span className="text-xs font-semibold text-slate-500">₫</span>
+                </div>
+                {compactSummary ? (
+                  <div className="text-[11px] font-bold text-indigo-600 font-mono mt-0.5 truncate">
+                    {compactSummary}
+                  </div>
+                ) : null}
+                <div className="text-[11px] text-slate-400 mt-2 flex items-center gap-1.5 font-medium">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  Bảo chứng ví 100%
+                </div>
+              </div>
+              <div className="h-10 w-10 rounded-2xl bg-[#F1F3FF] text-[#001743] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <Wallet size={18} />
+              </div>
             </div>
-            <div className="text-[11px] text-slate-400 mt-2 flex items-center gap-1.5 font-medium">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              Bảo chứng ví 100%
-            </div>
-          </div>
-          <div className="h-10 w-10 rounded-2xl bg-[#F1F3FF] text-[#001743] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <Wallet size={18} />
-          </div>
-        </div>
+          );
+        })()}
 
         {/* Stat 2: Owned SIMs */}
         <div
           onClick={() => onNavigateTab("auctions")}
-          className="rounded-[22px] border border-[rgba(0,23,67,0.08)] bg-white p-4.5 shadow-xs flex justify-between items-start cursor-pointer hover:-translate-y-1 hover:shadow-md hover:border-[#001743]/20 transition-all group"
+          className="rounded-[22px] border border-[rgba(0,23,67,0.08)] bg-white p-4.5 shadow-xs flex justify-between items-start gap-3 cursor-pointer hover:-translate-y-1 hover:shadow-md hover:border-[#001743]/20 transition-all group overflow-hidden"
         >
-          <div>
+          <div className="min-w-0 flex-1 overflow-hidden">
             <span className="text-xs text-slate-500 font-semibold block mb-1">
               Kho SIM sở hữu
             </span>
-            <div className="text-2xl font-bold text-[#001743] font-mono tabular-nums leading-none">
+            <div className="text-2xl font-bold text-[#001743] font-mono tabular-nums leading-none truncate">
               {loading ? "..." : `${stats.ownedSimsCount} SIM`}
             </div>
-            <div className="text-[11px] text-slate-400 mt-2 font-medium">
+            <div className="text-[11px] text-slate-400 mt-2 font-medium truncate">
               {stats.ownedSimsCount > 0 ? "Sẵn sàng niêm yết đấu giá" : "Chưa nhập số vào kho"}
             </div>
           </div>
@@ -308,16 +342,16 @@ export default function OverviewTab({
         {/* Stat 3: Transfer Contracts */}
         <div
           onClick={() => onNavigateTab("contracts")}
-          className="rounded-[22px] border border-[rgba(0,23,67,0.08)] bg-white p-4.5 shadow-xs flex justify-between items-start cursor-pointer hover:-translate-y-1 hover:shadow-md hover:border-[#001743]/20 transition-all group"
+          className="rounded-[22px] border border-[rgba(0,23,67,0.08)] bg-white p-4.5 shadow-xs flex justify-between items-start gap-3 cursor-pointer hover:-translate-y-1 hover:shadow-md hover:border-[#001743]/20 transition-all group overflow-hidden"
         >
-          <div>
+          <div className="min-w-0 flex-1 overflow-hidden">
             <span className="text-xs text-slate-500 font-semibold block mb-1">
               Hợp đồng chuyển nhượng
             </span>
-            <div className="text-2xl font-bold text-[#001743] font-mono tabular-nums leading-none">
+            <div className="text-2xl font-bold text-[#001743] font-mono tabular-nums leading-none truncate">
               {loading ? "..." : `${stats.tradesCount} HĐ`}
             </div>
-            <div className="text-[11px] text-slate-400 mt-2 font-medium">
+            <div className="text-[11px] text-slate-400 mt-2 font-medium truncate">
               {stats.activeTradesCount > 0
                 ? `${stats.activeTradesCount} hợp đồng đang xử lý`
                 : "Bảo đảm ký quỹ 100%"}
@@ -331,20 +365,20 @@ export default function OverviewTab({
         {/* Stat 4: Transactions */}
         <div
           onClick={() => onNavigateTab("transactions")}
-          className="rounded-[22px] border border-[rgba(0,23,67,0.08)] bg-white p-4.5 shadow-xs flex justify-between items-start cursor-pointer hover:-translate-y-1 hover:shadow-md hover:border-[#001743]/20 transition-all group"
+          className="rounded-[22px] border border-[rgba(0,23,67,0.08)] bg-white p-4.5 shadow-xs flex justify-between items-start gap-3 cursor-pointer hover:-translate-y-1 hover:shadow-md hover:border-[#001743]/20 transition-all group overflow-hidden"
         >
-          <div>
+          <div className="min-w-0 flex-1 overflow-hidden">
             <span className="text-xs text-slate-500 font-semibold block mb-1">
-              Lượt giao dịch ví
+              Biến động ví
             </span>
-            <div className="text-2xl font-bold text-[#001743] font-mono tabular-nums leading-none">
-              {loading ? "..." : `${stats.transactionsCount} lượt`}
+            <div className="text-2xl font-bold text-[#001743] font-mono tabular-nums leading-none truncate">
+              {loading ? "..." : `${stats.transactionsCount} GD`}
             </div>
-            <div className="text-[11px] text-slate-400 mt-2 font-medium">
-              Nạp VietQR & Rút tiền
+            <div className="text-[11px] text-slate-400 mt-2 font-medium truncate">
+              Nạp/rút &amp; ký quỹ tự động
             </div>
           </div>
-          <div className="h-10 w-10 rounded-2xl bg-[#FFFBEB] text-amber-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+          <div className="h-10 w-10 rounded-2xl bg-[#FAF5FF] text-purple-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
             <ArrowUpRight size={18} />
           </div>
         </div>

@@ -102,9 +102,18 @@ Nền `#F4F6FC`, bên trong thẻ trắng kính bo `32px`, grid `1.4fr + 3 cột
 - Bắt buộc `@media (prefers-reduced-motion: reduce)` tắt animation/transition.
 - Focus ring: `outline: 3px solid rgba(76,95,213,.35); outline-offset: 3px`.
 
-## 5. Responsive
-- Breakpoint: `980px` (lưới 3→2 cột, how-it-works 2→1) và `680px` (1 cột, search bar wrap, ẩn thẻ xòe bên, giảm padding, bo nhỏ lại 24–28px).
-- Không để tràn ngang; số tiền lớn phải `overflow-wrap`/giảm cỡ chữ, không vỡ layout.
+## 5. Responsive & Layout Workbench
+
+- **Breakpoint:** `980px` (lưới 3→2 cột, how-it-works 2→1) và `680px` (1 cột, search bar wrap, ẩn thẻ xòe bên, giảm padding, bo nhỏ lại 24–28px).
+- **Quy tắc vàng: Scroll Component chứ KHÔNG scroll trang (Profile / Dashboard / Workbench):**
+  - Hạn chế tối đa việc người dùng phải cuộn cả trang màn hình trình duyệt chỉ để chạm tới nội dung chính (hợp đồng SIM, sổ cái giao dịch, kho SIM...).
+  - Hero profile / header tài khoản phải được tinh gọn chiều cao (compact). Sidebar cố định trong tầm mắt (`sticky`).
+  - Khung nội dung của từng tab con có thanh cuộn nội bộ (`max-h-[calc(100vh-...)] overflow-y-auto overscroll-contain custom-scrollbar`). Người dùng cuộn xem danh sách ngay trong component.
+  - **Không hiển thị breadcrumb / header tab lặp lại** (ví dụ `Hồ sơ • Tên tab` + `H2 Tên tab` ở đầu nội dung). Giảm khoảng trắng thừa để ưu tiên hiển thị nghiệp vụ.
+- **Xử lý số tiền / số dư lớn (999 tỷ+):**
+  - Luôn bọc container số liệu trong `min-w-0 flex-1 overflow-hidden`, áp dụng `tabular-nums truncate`.
+  - Tự động co nhỏ kích cỡ font chữ khi chuỗi số dài (`formatted.length > 11 ? text-lg/xl : text-2xl`).
+  - Bổ sung tóm tắt đơn vị ước lượng (`~999 tỷ ₫` hoặc `~1.5 nghìn tỷ ₫`) kèm thuộc tính `title` hiển thị số tiền chính xác, tuyệt đối không để tràn layout.
 - Touch target tối thiểu 40px.
 
 ## 6. Quy tắc kỹ thuật

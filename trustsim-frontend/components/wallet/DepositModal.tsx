@@ -1,6 +1,6 @@
-/* Hallmark · component: modal · genre: modern-minimal · theme: trustsim-navy
+/* Hallmark · component: modal · genre: soft-cloud-navy · theme: trustsim-navy
  * states: default · hover · focus-visible · active · disabled · loading · error · success
- * contrast: pass (46–50)
+ * compliance: TRUSTSIM_DESIGN_SYSTEM.md (Soft-Cloud Navy, compact no-scroll layout, pill buttons, tabular-nums)
  */
 
 "use client";
@@ -17,12 +17,9 @@ import {
   Loader2,
   Clock,
   ShieldCheck,
-  Zap,
   QrCode,
-  Building2,
   Sparkles,
   AlertCircle,
-  HelpCircle,
 } from "lucide-react";
 import { addDemoDeposit, walletService } from "@/services/walletService";
 import type { DepositResponseDto } from "@/types/wallet";
@@ -36,14 +33,14 @@ export interface DepositModalProps {
 }
 
 const PRESET_AMOUNTS = [
-  { label: "50.000 ₫", val: 50_000 },
-  { label: "100.000 ₫", val: 100_000 },
-  { label: "200.000 ₫", val: 200_000 },
-  { label: "500.000 ₫", val: 500_000 },
-  { label: "1.000.000 ₫", val: 1_000_000 },
-  { label: "2.000.000 ₫", val: 2_000_000 },
-  { label: "5.000.000 ₫", val: 5_000_000 },
-  { label: "10.000.000 ₫", val: 10_000_000 },
+  { label: "50k", full: "50.000 ₫", val: 50_000 },
+  { label: "100k", full: "100.000 ₫", val: 100_000 },
+  { label: "200k", full: "200.000 ₫", val: 200_000 },
+  { label: "500k", full: "500.000 ₫", val: 500_000 },
+  { label: "1.000k", full: "1.000.000 ₫", val: 1_000_000 },
+  { label: "2.000k", full: "2.000.000 ₫", val: 2_000_000 },
+  { label: "5.000k", full: "5.000.000 ₫", val: 5_000_000 },
+  { label: "10.000k", full: "10.000.000 ₫", val: 10_000_000 },
 ];
 
 const DEMO_DEPOSIT_ENABLED =
@@ -92,7 +89,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     }
   }, [isOpen, initialAmount]);
 
-  // Auto-polling trạng thái giao dịch nạp tiền qua SePay Webhook
+  // Auto-polling SePay Webhook
   useEffect(() => {
     if (!depositData?.transactionId || isCompleted || !isOpen) return;
 
@@ -113,7 +110,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
           setIsCompleted(true);
         }
       } catch {
-        // Bỏ qua lỗi mạng tạm thời trong lúc chờ webhook xử lý
+        // Bỏ qua lỗi mạng tạm thời
       }
     };
 
@@ -126,7 +123,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     };
   }, [depositData?.transactionId, isCompleted, isOpen]);
 
-  // Bộ đếm thời gian hiệu lực mã QR (1800 giây = 30 phút)
+  // Bộ đếm thời gian mã QR (30 phút)
   useEffect(() => {
     if (!depositData || timeLeft <= 0 || isCompleted) return;
     const timer = setInterval(() => {
@@ -135,7 +132,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     return () => clearInterval(timer);
   }, [depositData, timeLeft, isCompleted]);
 
-  // Xử lý khi nạp tiền hoàn tất
+  // Hoàn tất nạp tiền
   useEffect(() => {
     if (!isCompleted || !isOpen) return;
 
@@ -279,7 +276,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#001743]/60 backdrop-blur-xs transition-opacity duration-150 animate-in fade-in"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/45 backdrop-blur-xs transition-opacity duration-150 animate-in fade-in"
       onClick={(e) => {
         if (e.target === e.currentTarget && !loading) {
           if (isCompleted && onSuccessRef.current) onSuccessRef.current();
@@ -290,17 +287,17 @@ export const DepositModal: React.FC<DepositModalProps> = ({
       aria-modal="true"
       aria-labelledby="deposit-modal-title"
     >
-      <div className="relative w-full max-w-lg bg-white rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden flex flex-col max-h-[calc(100vh-2rem)] animate-in fade-in zoom-in-95 duration-150">
-        {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+      <div className="relative w-full max-w-lg bg-white rounded-3xl border border-slate-100 shadow-[0_20px_60px_-15px_rgba(0,23,67,0.2)] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
+        {/* Modal Header - Compact & Sleek */}
+        <div className="px-5 py-3.5 border-b border-slate-100 bg-gradient-to-b from-slate-50/90 to-white flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#001743] flex items-center justify-center shadow-xs border border-white/10 shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-[#001743] flex items-center justify-center shadow-xs text-white shrink-0">
               <Image
                 src="/logo/S-White-Logo.png"
                 alt="TrustSim"
-                width={22}
-                height={22}
-                className="w-5 h-5 object-contain"
+                width={20}
+                height={20}
+                className="w-4.5 h-4.5 object-contain"
               />
             </div>
             <div>
@@ -309,19 +306,19 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   {isCompleted
                     ? "Nạp tiền thành công"
                     : depositData
-                    ? "Chuyển khoản VietQR SePay"
+                    ? "Quét mã VietQR SePay"
                     : "Nạp tiền vào ví TrustSim"}
                 </h2>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                   Tự động 24/7
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-[11px] text-slate-500 font-medium">
                 {isCompleted
-                  ? "Số dư khả dụng đã được cập nhật vào ví"
+                  ? "Số dư khả dụng đã được cập nhật"
                   : depositData
-                  ? "Quét mã QR bằng App ngân hàng để cộng tiền tức thì"
-                  : "Cổng thanh toán chuẩn NAPAS 247 · Tối thiểu 10.000 ₫"}
+                  ? "Mở App Ngân hàng quét QR để vào ví tức thì"
+                  : "Cổng NAPAS 24/7 · Nạp tối thiểu 10.000 ₫"}
               </p>
             </div>
           </div>
@@ -332,134 +329,74 @@ export const DepositModal: React.FC<DepositModalProps> = ({
               onCloseRef.current();
             }}
             disabled={loading}
-            className="p-2 text-slate-400 hover:text-[#001743] hover:bg-slate-200/60 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#001743] disabled:opacity-40 cursor-pointer"
-            aria-label="Đóng cửa sổ"
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-400 hover:text-[#001743] transition-all cursor-pointer focus-visible:outline-none disabled:opacity-40"
+            aria-label="Đóng"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Step Progression Strip (Khi chưa hoàn tất) */}
-        {!isCompleted && (
-          <div className="px-5 py-2.5 bg-white border-b border-slate-100 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2 font-medium">
-              <span
-                className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                  !depositData
-                    ? "bg-[#001743] text-white"
-                    : "bg-emerald-100 text-emerald-700"
-                }`}
-              >
-                {!depositData ? "1" : <Check size={11} />}
-              </span>
-              <span className={!depositData ? "font-bold text-[#001743]" : "text-slate-500"}>
-                1. Chọn số tiền
-              </span>
-            </div>
-            <div className="w-8 h-[1px] bg-slate-200" />
-            <div className="flex items-center gap-2 font-medium">
-              <span
-                className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                  depositData
-                    ? "bg-[#001743] text-white"
-                    : "bg-slate-100 text-slate-400"
-                }`}
-              >
-                2
-              </span>
-              <span className={depositData ? "font-bold text-[#001743]" : "text-slate-400"}>
-                2. Quét mã VietQR
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Content Body */}
-        <div className="p-5 overflow-y-auto flex-1">
+        {/* Modal Content - Everything within sight, NO SCROLL */}
+        <div className="p-5">
           {isCompleted ? (
-            /* ═══ BƯỚC 3: DIGITAL FINANCIAL RECEIPT (BIÊN LAI ĐIỆN TỬ THÀNH CÔNG) ═══ */
-            <div className="flex flex-col items-center text-center py-2 animate-in fade-in duration-200">
-              <div className="w-16 h-16 rounded-full bg-emerald-50 border-2 border-emerald-200 text-emerald-600 flex items-center justify-center mb-3 shadow-xs">
-                <CheckCircle2 className="w-9 h-9" />
+            /* ═══ BƯỚC 3: DIGITAL FINANCIAL RECEIPT ═══ */
+            <div className="flex flex-col items-center text-center py-1">
+              <div className="w-12 h-12 rounded-full bg-emerald-50 border-2 border-emerald-300 text-emerald-600 flex items-center justify-center mb-2 shadow-xs">
+                <CheckCircle2 className="w-7 h-7" />
               </div>
 
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200/80 mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 mb-1">
                 Giao Dịch Đã Quyết Toán
               </span>
-              <h3 className="text-xl font-black text-[#001743]">
-                Nạp tiền thành công!
-              </h3>
-              <div className="text-2xl font-black text-emerald-600 font-mono tabular-nums my-2">
+              <h3 className="text-base font-bold text-[#001743]">Nạp tiền thành công!</h3>
+              <div className="text-2xl font-black text-emerald-600 font-mono tabular-nums my-1">
                 +{(depositData?.amount ?? amount).toLocaleString("vi-VN")}{" "}
-                <span className="text-sm font-bold">₫</span>
+                <span className="text-xs font-bold">₫</span>
               </div>
-              <p className="text-xs text-slate-500 mb-5">
-                Số dư ví TrustSim đã được cộng tự động và sẵn sàng đặt cọc hoặc trả giá.
+              <p className="text-xs text-slate-500 mb-3">
+                Số dư đã sẵn sàng để tham gia đấu giá hoặc thanh toán hợp đồng.
               </p>
 
-              {/* Digital Receipt Voucher Card */}
-              <div className="w-full bg-slate-50 border border-slate-200/90 rounded-2xl p-4 mb-5 text-xs text-slate-600 flex flex-col gap-2.5 text-left shadow-2xs">
-                <div className="flex justify-between items-center pb-2 border-b border-slate-200/80">
-                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                    Biên lai điện tử
-                  </span>
-                  <span className="font-mono text-[11px] text-slate-500">
-                    {new Date().toLocaleTimeString("vi-VN")} · {new Date().toLocaleDateString("vi-VN")}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Mã giao dịch:</span>
-                  <span className="font-mono font-bold text-[#001743] tracking-wide">
+              {/* Receipt Summary Box */}
+              <div className="w-full bg-slate-50 border border-slate-200/80 rounded-xl p-3 mb-3 text-xs text-slate-600 flex flex-col gap-1.5 text-left">
+                <div className="flex justify-between items-center pb-1.5 border-b border-slate-200/70 text-[11px]">
+                  <span className="font-semibold text-slate-400">Mã giao dịch:</span>
+                  <span className="font-mono font-bold text-[#001743]">
                     {depositData?.transactionCode || "GD-SEPAY-SUCCESS"}
                   </span>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center text-[11px]">
                   <span className="text-slate-500">Kênh thanh toán:</span>
                   <span className="font-semibold text-[#001743]">
-                    {isDemoDeposit ? "Nạp tiền giả lập (môi trường demo)" : "VietQR SePay (Tự động 24/7)"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center border-t border-dashed border-slate-200 pt-2.5">
-                  <span className="text-slate-500">Trạng thái:</span>
-                  <span className="inline-flex items-center gap-1.5 font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Thành công 100%
+                    {isDemoDeposit ? "Giả lập nạp tiền" : "VietQR SePay (24/7)"}
                   </span>
                 </div>
               </div>
 
-              {/* Auto-close Progress Bar */}
-              <div className="w-full mb-4 text-center">
-                <span className="text-xs text-slate-500">
-                  Cửa sổ sẽ tự động đóng sau <strong className="text-slate-700 font-mono">{autoCloseCountdown}s</strong>…
-                </span>
-                <div className="w-full h-1.5 bg-slate-100 rounded-full mt-2 overflow-hidden">
-                  <div
-                    className="h-full bg-emerald-500 transition-all duration-1000 ease-linear rounded-full"
-                    style={{ width: `${(autoCloseCountdown / 3) * 100}%` }}
-                  />
-                </div>
-              </div>
+              {/* Auto close progress */}
+              <p className="text-[11px] text-slate-400 mb-3">
+                Cửa sổ tự đóng sau <strong className="text-slate-700 font-mono">{autoCloseCountdown}s</strong>…
+              </p>
 
               <button
                 type="button"
                 onClick={handleComplete}
-                className="w-full py-3 px-4 rounded-xl bg-[#001743] hover:bg-[#00266B] text-white text-xs font-bold transition-all shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#001743] active:scale-[0.99] cursor-pointer"
+                className="w-full py-2.5 px-5 rounded-full bg-[#001743] hover:bg-[#0A2558] text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-98"
               >
-                Xác nhận & Đóng ngay
+                Xác nhận & Đóng
               </button>
             </div>
           ) : !depositData ? (
-            /* ═══ BƯỚC 1: CHỌN SỐ TIỀN & PHƯƠNG THỨC NẠP ═══ */
-            <div className="flex flex-col gap-4 animate-in fade-in duration-150">
-              {/* Input Amount Section */}
+            /* ═══ BƯỚC 1: NHẬP SỐ TIỀN & TẠO QR ═══ */
+            <div className="flex flex-col gap-3">
+              {/* Input Amount */}
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs font-bold text-[#001743]">
-                    Số tiền muốn nạp (VNĐ) <span className="text-[#E4011E]">*</span>
+                    Số tiền cần nạp (VNĐ) <span className="text-rose-500">*</span>
                   </label>
-                  <span className="text-[11px] font-semibold text-slate-400">
-                    Tối thiểu: <strong className="text-slate-700 font-mono">10.000 ₫</strong>
+                  <span className="text-[11px] text-slate-400">
+                    Tối thiểu: <strong className="text-slate-600 font-mono">10.000 ₫</strong>
                   </span>
                 </div>
 
@@ -470,35 +407,31 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                     onChange={handleCustomInputChange}
                     placeholder="Nhập số tiền (VD: 500.000)"
                     autoFocus
-                    className={`w-full py-3.5 pl-4 pr-14 text-lg font-black font-mono tabular-nums text-[#001743] bg-white border rounded-xl outline-none transition-all ${
+                    className={`w-full py-2.5 pl-3.5 pr-12 text-base font-black font-mono tabular-nums text-[#001743] bg-slate-50/70 border rounded-xl outline-none transition-all focus:bg-white ${
                       error
-                        ? "border-rose-400 ring-2 ring-rose-100 focus:border-rose-500"
-                        : "border-slate-200 hover:border-slate-300 focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/15"
+                        ? "border-rose-400 ring-2 ring-rose-100"
+                        : "border-slate-200 hover:border-slate-300 focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10"
                     }`}
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 font-mono">
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 font-mono">
                     ₫
                   </span>
                 </div>
 
-                {error ? (
-                  <p className="text-xs text-rose-600 font-medium mt-1.5 flex items-center gap-1">
-                    <AlertCircle size={13} className="shrink-0" />
+                {error && (
+                  <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
+                    <AlertCircle size={12} className="shrink-0" />
                     <span>{error}</span>
-                  </p>
-                ) : (
-                  <p className="text-[11px] text-slate-500 mt-1.5">
-                    Hệ thống sẽ tạo mã QR tương ứng để quý khách quét và nạp tự động.
                   </p>
                 )}
               </div>
 
-              {/* Curated Preset Chips */}
+              {/* Preset Chips */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                  Chọn nhanh hạn mức phổ biến:
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Chọn nhanh hạn mức:
                 </label>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-4 gap-1.5">
                   {PRESET_AMOUNTS.map((item) => {
                     const isSelected = amount === item.val;
                     return (
@@ -506,198 +439,144 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                         key={item.val}
                         type="button"
                         onClick={() => handleSelectPreset(item.val)}
-                        className={`py-2.5 px-2 text-xs rounded-xl border font-mono tabular-nums transition-all text-center cursor-pointer active:scale-[0.98] ${
+                        className={`py-1.5 px-1 text-xs rounded-full border font-mono tabular-nums transition-all text-center cursor-pointer active:scale-95 ${
                           isSelected
-                            ? "bg-[#001743] text-white border-[#001743] font-bold shadow-xs ring-2 ring-[#001743]/20"
-                            : "bg-slate-50/70 hover:bg-slate-100/90 text-slate-700 border-slate-200/80 font-medium"
+                            ? "bg-[#001743] text-white border-[#001743] font-bold shadow-xs"
+                            : "bg-white hover:bg-slate-50 text-slate-700 border-slate-200 font-medium"
                         }`}
                       >
-                        {item.label}
+                        {item.full}
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* VietQR Assurance Box */}
-              <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 text-xs text-slate-600 flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#001743] text-white flex items-center justify-center shrink-0 mt-0.5">
-                  <ShieldCheck size={16} />
+              {/* VietQR Note & Demo Sandbox in one compact row */}
+              <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-xs">
+                <div className="flex items-center gap-2 text-slate-600 text-[11px]">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>VietQR SePay tự động 24/7 · Vào ví sau 5–30s</span>
                 </div>
-                <div className="leading-relaxed">
-                  <strong className="text-[#001743] block font-bold text-xs">
-                    Cổng nạp VietQR SePay tự động 24/7
-                  </strong>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Hỗ trợ tất cả ứng dụng Ngân hàng Việt Nam (VCB, MB, TCB, BIDV, VPB...) và ví MoMo, Viettel Money. Tiền vào ví sau 5–30 giây.
-                  </p>
-                </div>
+                {DEMO_DEPOSIT_ENABLED && (
+                  <button
+                    type="button"
+                    onClick={handleDemoDeposit}
+                    disabled={loading || amount < 10_000}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold transition-all cursor-pointer active:scale-95 shrink-0"
+                    title="Nạp tiền thử nghiệm trên trình duyệt"
+                  >
+                    <Sparkles className="w-3 h-3 text-amber-600" />
+                    <span>Thử nghiệm</span>
+                  </button>
+                )}
               </div>
 
               {/* Submit CTA */}
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={handleCreateDeposit}
-                  disabled={loading || amount < 10_000}
-                  className="w-full py-3.5 px-4 rounded-xl bg-[#001743] hover:bg-[#00266B] disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#001743] active:scale-[0.99] cursor-pointer"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Đang tạo mã VietQR…</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Tiếp tục tạo mã nạp {amount > 0 ? `${amount.toLocaleString("vi-VN")} ₫` : ""}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {DEMO_DEPOSIT_ENABLED && (
-                <div className="mt-1 rounded-xl border border-dashed border-amber-300 bg-amber-50/70 p-3.5">
-                  <div className="flex items-start gap-2.5">
-                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-amber-900">Môi trường thử nghiệm</p>
-                      <p className="mt-0.5 text-[11px] leading-relaxed text-amber-800/80">
-                        Không cần quét mã hoặc chuyển tiền thật. Số dư giả lập chỉ lưu trên trình duyệt này.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={handleDemoDeposit}
-                        disabled={loading || amount < 10_000}
-                        className="mt-2.5 inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-amber-400 bg-white px-3 text-xs font-bold text-amber-900 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        <Sparkles className="h-3.5 w-3.5" />
-                        Giả lập nạp {amount > 0 ? `${amount.toLocaleString("vi-VN")} ₫` : "tiền"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={handleCreateDeposit}
+                disabled={loading || amount < 10_000}
+                className="w-full py-3 px-5 rounded-full bg-[#001743] hover:bg-[#0A2558] disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Đang tạo mã VietQR…</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Tạo mã QR nạp {amount > 0 ? `${amount.toLocaleString("vi-VN")} ₫` : ""}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
             </div>
           ) : (
-            /* ═══ BƯỚC 2: VIETQR PAYMENT COCKPIT (QUÉT MÃ & THÔNG TIN CHUYỂN KHOẢN) ═══ */
-            <div className="flex flex-col gap-3.5 animate-in fade-in duration-150">
-              {/* Countdown Banner */}
-              <div className="flex items-center justify-between bg-rose-50/80 border border-rose-200/90 rounded-xl px-4 py-2.5 text-xs text-rose-900 shadow-2xs">
-                <span className="flex items-center gap-2 font-medium">
-                  <Clock className="w-4 h-4 text-rose-600 animate-pulse" />
-                  <span>Mã nạp có hiệu lực trong:</span>
+            /* ═══ BƯỚC 2: QUÉT MÃ VIETQR (COMPACT 2-COLUMN, NO SCROLL) ═══ */
+            <div className="flex flex-col gap-3">
+              {/* Countdown Bar */}
+              <div className="flex items-center justify-between bg-rose-50 border border-rose-200 rounded-xl px-3.5 py-1.5 text-xs text-rose-900">
+                <span className="flex items-center gap-1.5 font-medium text-[11px]">
+                  <Clock className="w-3.5 h-3.5 text-rose-600 animate-pulse" />
+                  <span>Mã có hiệu lực:</span>
                 </span>
-                <span className="font-mono font-black text-rose-700 text-sm tabular-nums">
+                <span className="font-mono font-bold text-rose-700 text-xs tabular-nums">
                   {formatCountdown(timeLeft)}
                 </span>
               </div>
 
-              {/* QR Code Presentation Box */}
-              <div className="flex flex-col items-center bg-slate-50/90 border border-slate-200/90 rounded-2xl p-4">
-                <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm relative group">
+              {/* Side-by-Side: QR Code + Transfer Details */}
+              <div className="grid grid-cols-[140px_1fr] gap-3 items-center bg-slate-50/70 border border-slate-200/80 rounded-2xl p-3">
+                {/* QR Code Presentation */}
+                <div className="flex flex-col items-center justify-center bg-white p-2 rounded-xl border border-slate-200 shadow-2xs">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={depositData.qrCodeUrl}
-                    alt="VietQR SePay Payment"
-                    className="w-44 h-44 object-contain block mx-auto rounded-lg"
+                    alt="VietQR"
+                    className="w-32 h-32 object-contain rounded-lg"
                   />
-                  <div className="text-[10px] font-bold text-slate-400 text-center mt-2 flex items-center justify-center gap-1 font-mono">
-                    <QrCode size={12} />
-                    <span>VietQR · SePay Automatic Gateway</span>
-                  </div>
-                </div>
-                <p className="text-[11px] text-slate-500 text-center mt-3 leading-relaxed max-w-xs">
-                  Mở ứng dụng <strong>Ngân hàng</strong> hoặc <strong>MoMo / ZaloPay</strong> để quét mã QR chuyển khoản chính xác tuyệt đối.
-                </p>
-              </div>
-
-              {/* Transfer Spec Table */}
-              <div className="bg-white border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100 text-xs shadow-2xs">
-                {/* Số tiền */}
-                <div className="p-3.5 flex justify-between items-center">
-                  <div>
-                    <span className="text-[11px] text-slate-400 font-medium block">Số tiền cần chuyển:</span>
-                    <span className="font-mono font-black text-base text-[#E4011E] tabular-nums mt-0.5 block">
-                      {depositData.amount.toLocaleString("vi-VN")} ₫
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(String(depositData.amount), "amount")}
-                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
-                      copiedField === "amount"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
-                    }`}
-                  >
-                    {copiedField === "amount" ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Đã chép</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5 text-slate-500" />
-                        <span>Sao chép</span>
-                      </>
-                    )}
-                  </button>
+                  <span className="text-[9px] font-mono font-bold text-slate-400 mt-1">VietQR 24/7</span>
                 </div>
 
-                {/* Nội dung chuyển khoản BẮT BUỘC (CRITICAL HIGHLIGHT) */}
-                <div className="p-3.5 bg-amber-50/70 border-y border-amber-200 flex justify-between items-center">
-                  <div className="min-w-0 pr-3">
-                    <span className="text-[10px] font-bold text-amber-900 uppercase tracking-wider block">
-                      Nội dung chuyển khoản (BẮT BUỘC):
-                    </span>
-                    <span className="font-mono font-black text-sm text-amber-950 tabular-nums break-all mt-0.5 block">
-                      {depositData.transferContent}
-                    </span>
-                    <span className="text-[10px] text-amber-700/90 block mt-0.5">
-                      Vui lòng giữ nguyên nội dung để được cộng tiền tự động
-                    </span>
+                {/* Transfer Info */}
+                <div className="flex flex-col gap-2 min-w-0">
+                  {/* Số tiền */}
+                  <div className="bg-white px-3 py-2 rounded-xl border border-slate-200/80 flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">Số tiền:</span>
+                      <span className="font-mono font-black text-sm text-[#001743] tabular-nums">
+                        {depositData.amount.toLocaleString("vi-VN")} ₫
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(String(depositData.amount), "amount")}
+                      className="px-2 py-1 rounded-full text-[10px] font-bold border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition-all cursor-pointer"
+                    >
+                      {copiedField === "amount" ? "Đã chép" : "Sao chép"}
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(depositData.transferContent, "content")}
-                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer shadow-xs ${
-                      copiedField === "content"
-                        ? "bg-emerald-600 text-white"
-                        : "bg-amber-600 hover:bg-amber-700 text-white active:scale-[0.98]"
-                    }`}
-                  >
-                    {copiedField === "content" ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-white" />
-                        <span>Đã chép mã</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5 text-white" />
-                        <span>Sao chép mã</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
 
-              {/* Status Listening Indicator */}
-              <div className="flex items-center justify-center gap-2 py-2 text-slate-500 text-xs">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="font-medium text-slate-600">
-                  Hệ thống đang tự động lắng nghe giao dịch chuyển khoản…
-                </span>
+                  {/* Nội dung bắt buộc */}
+                  <div className="bg-amber-50/90 border border-amber-200 px-3 py-2 rounded-xl flex items-center justify-between">
+                    <div className="min-w-0 pr-2">
+                      <span className="text-[10px] font-bold text-amber-900 uppercase block">
+                        Nội dung (BẮT BUỘC):
+                      </span>
+                      <span className="font-mono font-black text-xs text-amber-950 truncate block">
+                        {depositData.transferContent}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(depositData.transferContent, "content")}
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all shrink-0 cursor-pointer ${
+                        copiedField === "content"
+                          ? "bg-emerald-600 text-white"
+                          : "bg-amber-600 hover:bg-amber-700 text-white"
+                      }`}
+                    >
+                      {copiedField === "content" ? "Đã chép" : "Sao chép"}
+                    </button>
+                  </div>
+
+                  {/* Listening pill */}
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-500 pt-0.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                    <span className="truncate">Đang tự động nhận diện chuyển khoản…</span>
+                  </div>
+                </div>
               </div>
 
               {/* Back CTA */}
               <button
                 type="button"
                 onClick={() => setDepositData(null)}
-                className="w-full py-3 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#001743] active:scale-[0.99] cursor-pointer"
+                className="w-full py-2.5 px-4 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Quay lại đổi số tiền nạp</span>
+                <span>Chọn lại số tiền</span>
               </button>
             </div>
           )}
