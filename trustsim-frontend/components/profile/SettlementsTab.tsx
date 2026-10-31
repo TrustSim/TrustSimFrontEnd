@@ -215,53 +215,49 @@ export default function SettlementsTab({ addToast, onOpenDeposit }: SettlementsT
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <p className="m-0 text-sm text-slate-500">Các phiên đã kết thúc và đang chờ bạn xử lý.</p>
-        <div className="flex items-center gap-5 text-xs text-slate-500">
-          <span><strong className="block text-base text-[#001743] font-bold">{totalCount}</strong>cần làm</span>
-          <span><strong className="block text-base text-[#001743] font-bold">{counts.urgent}</strong>sắp hết hạn</span>
+    <div className="space-y-3.5">
+      {/* ── Header Toolbar with Filter Pills (Compact) ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-slate-100">
+        <div className="flex flex-wrap items-center gap-1.5" aria-label="Lọc theo vai trò">
+          {([
+            ["ALL", "Tất cả"],
+            ["WINNER", "Người thắng"],
+            ["RUNNER_UP", "Á quân"],
+            ["SELLER", "Người bán"],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={filter === value}
+              onClick={() => { setFilter(value); setPageIndex(1); }}
+              className={`rounded-full border px-3 py-1 text-xs font-bold transition-all cursor-pointer ${
+                filter === value
+                  ? "border-[#001743] bg-[#001743] text-white shadow-2xs"
+                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => fetchSettlements(true)}
+            aria-label="Tải lại danh sách"
+            title="Tải lại danh sách"
+            className="grid size-7 place-items-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs"
+          >
+            <RefreshCw className={`size-3 text-slate-500 ${refreshing ? "animate-spin" : ""}`} aria-hidden />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-3 text-[11px] text-slate-500 shrink-0">
+          <span><strong className="text-xs text-[#001743] font-bold mr-1">{totalCount}</strong>cần làm</span>
+          <span>•</span>
+          <span><strong className="text-xs text-rose-600 font-bold mr-1">{counts.urgent}</strong>sắp hết hạn</span>
         </div>
       </div>
 
-      <section className="overflow-hidden rounded-[28px] border border-slate-100/90 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)]" aria-labelledby="settlement-list-title">
-        <header className="flex flex-col gap-4 border-b border-slate-100 px-6 py-5 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 id="settlement-list-title" className="m-0 text-base font-extrabold text-[#001743]">Việc cần bạn xử lý</h2>
-            <p className="mt-1 mb-0 text-xs text-slate-500">Sắp xếp theo hạn gần nhất, không phụ thuộc vai trò.</p>
-          </div>
-          <div className="flex flex-wrap gap-2" aria-label="Lọc theo vai trò">
-            {([
-              ["ALL", "Tất cả"],
-              ["WINNER", "Người thắng"],
-              ["RUNNER_UP", "Á quân"],
-              ["SELLER", "Người bán"],
-            ] as const).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={filter === value}
-                onClick={() => { setFilter(value); setPageIndex(1); }}
-                className={`min-h-9 rounded-full border px-4 text-xs font-bold transition-all cursor-pointer ${
-                  filter === value
-                    ? "border-[#001743] bg-[#001743] text-white shadow-2xs"
-                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => fetchSettlements(true)}
-              aria-label="Tải lại danh sách"
-              title="Tải lại danh sách"
-              className="grid size-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs"
-            >
-              <RefreshCw className={`size-4 ${refreshing ? "animate-spin text-[#001743]" : ""}`} aria-hidden />
-            </button>
-          </div>
-        </header>
+      <div className="space-y-3">
 
         {loadError ? (
           <div className="px-5 py-16 text-center">
@@ -337,7 +333,7 @@ export default function SettlementsTab({ addToast, onOpenDeposit }: SettlementsT
             </footer>
           </>
         )}
-      </section>
+      </div>
 
       {selected ? (
         <div className="profile-modal-backdrop fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-navy-950/40 backdrop-blur-xs" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !actionLoading) setSelected(null); }}>

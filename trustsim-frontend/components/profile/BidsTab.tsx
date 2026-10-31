@@ -211,248 +211,215 @@ export default function BidsTab({
   }, [role, buyerAuctions, sellerAuctions]);
 
   return (
-    <div className="space-y-6">
-      {/* ── SECTION 1: Institutional Header & Master Actions ── */}
-      <div className="bg-white border border-slate-100/90 rounded-[28px] p-6 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-80 h-full opacity-[0.03] pointer-events-none bg-[radial-gradient(#001743_1px,transparent_1px)] [background-size:12px_12px]" />
+    <div className="space-y-3.5">
+      {/* ── Top Bar: Dual-Role Switcher & Master Action Controls ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-slate-100">
+        {/* Dual Role Segmented Switcher */}
+        <div className="inline-flex p-1 bg-slate-100 rounded-full border border-slate-200/80 self-start">
+          <button
+            type="button"
+            onClick={() => {
+              setRole("buyer");
+              setStatusFilter("ALL");
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full transition-all cursor-pointer ${
+              role === "buyer"
+                ? "bg-white text-[#001743] shadow-xs font-bold"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <ShoppingBag size={13} className={role === "buyer" ? "text-[#001743]" : "text-slate-400"} />
+            <span>Tôi đặt cọc (Mua)</span>
+            <span
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono tabular-nums ${
+                role === "buyer" ? "bg-[#001743] text-white font-bold" : "bg-slate-200 text-slate-700"
+              }`}
+            >
+              {buyerAuctions.length}
+            </span>
+          </button>
 
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase bg-[#001743]/5 text-[#001743] border border-[#001743]/10">
-                <Gavel size={12} className="text-[#001743]" />
-                <span>Danh mục đấu giá tài khoản</span>
-              </span>
-            </div>
+          <button
+            type="button"
+            onClick={() => {
+              setRole("seller");
+              setStatusFilter("ALL");
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full transition-all cursor-pointer ${
+              role === "seller"
+                ? "bg-white text-[#001743] shadow-xs font-bold"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <Tag size={13} className={role === "seller" ? "text-emerald-600" : "text-slate-400"} />
+            <span>Tôi tạo phiên (Bán)</span>
+            <span
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono tabular-nums ${
+                role === "seller" ? "bg-[#001743] text-white font-bold" : "bg-slate-200 text-slate-700"
+              }`}
+            >
+              {sellerAuctions.length}
+            </span>
+          </button>
+        </div>
 
-            <h1 className="text-xl font-extrabold tracking-tight text-[#001743] mt-2">
-              Quản lý các phiên đấu giá
-            </h1>
-            <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
-              Theo dõi các phiên bạn đang tham gia hoặc đang quản lý. Những phiên cần thanh toán hay xác nhận đã được chuyển sang tab Hoàn tất giao dịch.
-            </p>
-          </div>
-
-          {/* Action Hub */}
-          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+        {/* Action Controls & View Mode */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="inline-flex p-0.5 bg-slate-100 rounded-full border border-slate-200/70">
             <button
               type="button"
-              onClick={() => fetchData(true)}
-              disabled={loading || refreshing}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-full text-xs font-bold transition-all disabled:opacity-50 shadow-2xs cursor-pointer active:scale-95"
-              title="Đồng bộ lại từ máy chủ"
+              onClick={() => setViewMode("cards")}
+              className={`p-1 px-2 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
+                viewMode === "cards" ? "bg-white text-[#001743] shadow-2xs font-bold" : "text-slate-500 hover:text-slate-800"
+              }`}
+              title="Dạng thẻ"
             >
-              <RefreshCw size={13} className={refreshing ? "animate-spin text-[#001743]" : ""} />
-              <span>{refreshing ? "Đang đồng bộ…" : "Đồng bộ"}</span>
+              <LayoutGrid size={13} />
             </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              className={`p-1 px-2 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
+                viewMode === "table" ? "bg-white text-[#001743] shadow-2xs font-bold" : "text-slate-500 hover:text-slate-800"
+              }`}
+              title="Dạng bảng"
+            >
+              <List size={13} />
+            </button>
+          </div>
 
-            {role === "seller" ? (
-              <button
-                type="button"
-                onClick={() => (onNavigateTab ? onNavigateTab("auctions") : null)}
-                className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#001743] hover:bg-[#002875] text-white rounded-full text-xs font-bold transition-all shadow-md shadow-navy-950/15 cursor-pointer active:scale-95"
-              >
-                <Plus size={15} strokeWidth={2.5} />
-                <span>Khởi tạo phiên đấu giá</span>
-              </button>
-            ) : (
-              <Link
-                href="/auctions"
-                className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#001743] hover:bg-[#002875] text-white rounded-full text-xs font-bold transition-all shadow-md shadow-navy-950/15 cursor-pointer active:scale-95"
-              >
-                <Sparkles size={14} className="text-amber-400" />
-                <span>Sàn SIM đang đấu giá</span>
-              </Link>
-            )}
+          <button
+            type="button"
+            onClick={() => fetchData(true)}
+            disabled={loading || refreshing}
+            className="inline-flex items-center gap-1 px-3 py-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-full text-xs font-bold transition-all disabled:opacity-50 shadow-2xs cursor-pointer active:scale-95"
+            title="Đồng bộ lại từ máy chủ"
+          >
+            <RefreshCw size={11} className={refreshing ? "animate-spin text-[#001743]" : ""} />
+            <span>{refreshing ? "Đang đồng bộ…" : "Đồng bộ"}</span>
+          </button>
+
+          {role === "seller" ? (
+            <button
+              type="button"
+              onClick={() => (onNavigateTab ? onNavigateTab("auctions") : null)}
+              className="inline-flex items-center gap-1 px-3.5 py-1 bg-[#001743] hover:bg-[#0A2558] text-white rounded-full text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
+            >
+              <Plus size={13} strokeWidth={2.5} />
+              <span>Khởi tạo phiên</span>
+            </button>
+          ) : (
+            <Link
+              href="/auctions"
+              className="inline-flex items-center gap-1 px-3.5 py-1 bg-[#001743] hover:bg-[#0A2558] text-white rounded-full text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
+            >
+              <Sparkles size={12} className="text-amber-400" />
+              <span>Sàn đấu giá</span>
+            </Link>
+          )}
+        </div>
+      </div>
+
+      {/* ── Metrics Ribbon (Compact) ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+        <div className="p-2.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between shadow-2xs">
+          <div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              {role === "buyer" ? "Đã tham gia" : "Đang quản lý"}
+            </div>
+            <div className="text-base font-bold text-[#001743] font-mono tabular-nums">
+              {portfolioMetrics.total} <span className="text-[10px] text-slate-400 font-medium">phiên</span>
+            </div>
+          </div>
+          <div className="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-700 flex items-center justify-center">
+            {role === "buyer" ? <ShoppingBag size={13} /> : <Tag size={13} />}
           </div>
         </div>
 
-        {/* ── SECTION 2: Clean High-Trust Financial Metrics Ribbon ── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-6 mt-6 border-t border-slate-100">
-          <div className="p-4 bg-slate-50/70 border border-slate-100 rounded-[20px] flex items-center justify-between">
-            <div>
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                {role === "buyer" ? "Phiên đã tham gia" : "Phiên đang quản lý"}
-              </div>
-              <div className="text-lg font-bold text-[#001743] font-mono tabular-nums mt-0.5">
-                {portfolioMetrics.total}
-              </div>
-            </div>
-            <div className="w-9 h-9 rounded-2xl bg-white border border-slate-200/70 flex items-center justify-center text-slate-700 shadow-2xs">
-              {role === "buyer" ? <ShoppingBag size={16} /> : <Tag size={16} />}
+        <div className="p-2.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between shadow-2xs">
+          <div>
+            <div className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Đang diễn ra</div>
+            <div className="text-base font-bold text-emerald-950 font-mono tabular-nums flex items-center gap-1">
+              <span>{portfolioMetrics.activeCount}</span>
+              {portfolioMetrics.activeCount > 0 && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              )}
             </div>
           </div>
+          <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center">
+            <TrendingUp size={13} />
+          </div>
+        </div>
 
-          <div className="p-4 bg-slate-50/70 border border-slate-100 rounded-[20px] flex items-center justify-between">
-            <div>
-              <div className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Đang diễn ra trực tiếp</div>
-              <div className="text-lg font-bold text-emerald-950 font-mono tabular-nums mt-0.5 flex items-center gap-1.5">
-                <span>{portfolioMetrics.activeCount} phiên</span>
-                {portfolioMetrics.activeCount > 0 && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                )}
-              </div>
+        <div className="p-2.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between shadow-2xs">
+          <div>
+            <div className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">
+              {role === "buyer" ? "Cọc bảo đảm" : "Tổng cọc người mua"}
             </div>
-            <div className="w-9 h-9 rounded-2xl bg-emerald-50 border border-emerald-200/70 flex items-center justify-center text-emerald-700 shadow-2xs">
-              <TrendingUp size={16} />
+            <div className="text-xs font-bold text-blue-950 font-mono tabular-nums">
+              {formatVND(portfolioMetrics.totalDepositLocked)}
             </div>
           </div>
+          <div className="w-7 h-7 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center">
+            <Lock size={13} />
+          </div>
+        </div>
 
-          <div className="p-4 bg-slate-50/70 border border-slate-100 rounded-[20px] flex items-center justify-between">
-            <div>
-              <div className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">
-                {role === "buyer" ? "Cọc đang bảo đảm" : "Tổng cọc người mua"}
-              </div>
-              <div className="text-sm font-bold text-blue-950 font-mono tabular-nums mt-0.5">
-                {formatVND(portfolioMetrics.totalDepositLocked)}
-              </div>
-            </div>
-            <div className="w-9 h-9 rounded-2xl bg-blue-50 border border-blue-200/70 flex items-center justify-center text-blue-700 shadow-2xs">
-              <Lock size={16} />
+        <div className="p-2.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between shadow-2xs">
+          <div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Đã kết thúc</div>
+            <div className="text-base font-bold text-slate-900 font-mono tabular-nums">
+              {portfolioMetrics.completedCount} <span className="text-[10px] text-slate-400 font-medium">phiên</span>
             </div>
           </div>
-
-          <div className="p-4 bg-slate-50/70 border border-slate-100 rounded-[20px] flex items-center justify-between">
-            <div>
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Đã kết thúc</div>
-              <div className="text-lg font-bold text-slate-900 font-mono tabular-nums mt-0.5 flex items-center gap-1.5">
-                <span>{portfolioMetrics.completedCount} phiên</span>
-              </div>
-            </div>
-            <div className="w-9 h-9 rounded-2xl bg-white border border-slate-200/70 flex items-center justify-center text-slate-600 shadow-2xs">
-              <CheckCircle2 size={16} />
-            </div>
+          <div className="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-600 flex items-center justify-center">
+            <CheckCircle2 size={13} />
           </div>
         </div>
       </div>
 
-      {/* ── SECTION 4: Dual-Role Switcher & Interactive Control Console ── */}
-      <div className="bg-white border border-slate-100/90 rounded-[28px] p-5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          {/* Dual Role Segmented Switcher */}
-          <div className="inline-flex p-1 bg-slate-100/90 rounded-full border border-slate-200/80 self-start">
+      {/* ── Status Filter Chips & Search Bar (Compact) ── */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 p-2 bg-slate-50/70 border border-slate-200/80 rounded-xl shadow-2xs">
+        <div className="flex items-center gap-1 flex-wrap w-full sm:w-auto">
+          {[
+            { id: "ALL", label: "Tất cả" },
+            { id: "ACTIVE", label: "Đang diễn ra" },
+            { id: "SCHEDULE", label: "Sắp mở" },
+            { id: "END", label: "Đã chốt" },
+          ].map((f) => (
             <button
+              key={f.id}
               type="button"
-              onClick={() => {
-                setRole("buyer");
-                setStatusFilter("ALL");
-              }}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-full transition-all duration-150 cursor-pointer ${
-                role === "buyer"
-                  ? "bg-white text-[#001743] shadow-xs border border-slate-200/60 font-bold"
-                  : "text-slate-600 hover:text-slate-900"
+              onClick={() => setStatusFilter(f.id as StatusFilter)}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                statusFilter === f.id
+                  ? "bg-[#001743] text-white shadow-2xs"
+                  : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
               }`}
             >
-              <ShoppingBag size={15} className={role === "buyer" ? "text-[#001743]" : "text-slate-400"} />
-              <span>Tôi tham gia đặt cọc (Người mua)</span>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-mono tabular-nums ${
-                  role === "buyer" ? "bg-[#001743] text-white font-bold" : "bg-slate-200 text-slate-700"
-                }`}
-              >
-                {buyerAuctions.length}
-              </span>
+              {f.label}
             </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setRole("seller");
-                setStatusFilter("ALL");
-              }}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-full transition-all duration-150 cursor-pointer ${
-                role === "seller"
-                  ? "bg-white text-[#001743] shadow-xs border border-slate-200/60 font-bold"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Tag size={15} className={role === "seller" ? "text-emerald-600" : "text-slate-400"} />
-              <span>Tôi tạo &amp; sở hữu phiên (Chủ sàn)</span>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-mono tabular-nums ${
-                  role === "seller" ? "bg-[#001743] text-white font-bold" : "bg-slate-200 text-slate-700"
-                }`}
-              >
-                {sellerAuctions.length}
-              </span>
-            </button>
-          </div>
-
-          {/* View Mode Toggle: Cards vs Ledger Table */}
-          <div className="flex items-center gap-2 self-end md:self-auto">
-            <div className="inline-flex p-1 bg-slate-100 rounded-full border border-slate-200/70">
-              <button
-                type="button"
-                onClick={() => setViewMode("cards")}
-                className={`p-1.5 px-2.5 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
-                  viewMode === "cards" ? "bg-white text-[#001743] shadow-2xs font-bold" : "text-slate-500 hover:text-slate-800"
-                }`}
-                title="Hiển thị dạng thẻ trực quan"
-              >
-                <LayoutGrid size={15} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("table")}
-                className={`p-1.5 px-2.5 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
-                  viewMode === "table" ? "bg-white text-[#001743] shadow-2xs font-bold" : "text-slate-500 hover:text-slate-800"
-                }`}
-                title="Hiển thị dạng bảng đối soát sổ cái"
-              >
-                <List size={15} />
-              </button>
-            </div>
-          </div>
+          ))}
         </div>
 
-        {/* Status Filter Chips & Search Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100">
-          <div className="flex items-center gap-1.5 flex-wrap w-full sm:w-auto">
-            <span className="text-[11px] font-semibold text-slate-400 mr-1 flex items-center gap-1">
-              <SlidersHorizontal size={12} />
-              <span>Bộ lọc:</span>
-            </span>
-
-            {[
-              { id: "ALL", label: "Tất cả phiên" },
-              { id: "ACTIVE", label: "Đang diễn ra" },
-              { id: "SCHEDULE", label: "Sắp mở" },
-              { id: "END", label: "Đã chốt phiên" },
-            ].map((f) => (
-              <button
-                key={f.id}
-                type="button"
-                onClick={() => setStatusFilter(f.id as StatusFilter)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-150 cursor-pointer ${
-                  statusFilter === f.id
-                    ? "bg-[#001743] text-white shadow-2xs"
-                    : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/60"
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="relative w-full sm:w-80">
-            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm theo số SIM, mã phiên, nhà mạng…"
-              className="w-full text-xs pl-9 pr-8 py-2 bg-slate-50/50 border border-slate-200 rounded-full font-medium text-[#001743] focus:bg-white focus:border-[#001743] focus:ring-1 focus:ring-[#001743] focus:outline-none transition-all placeholder:text-slate-400"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
-              >
-                <X size={13} />
-              </button>
-            )}
-          </div>
+        <div className="relative w-full sm:w-64">
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Tìm số SIM, mã phiên…"
+            className="w-full text-xs pl-8 pr-7 py-1 bg-white border border-slate-200 rounded-full font-medium text-[#001743] focus:border-[#001743] focus:outline-none transition-all placeholder:text-slate-400 shadow-2xs"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+            >
+              <X size={11} />
+            </button>
+          )}
         </div>
       </div>
 

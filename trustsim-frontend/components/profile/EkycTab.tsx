@@ -64,34 +64,29 @@ export default function EkycTab({
   const isRejected = rawStatus === 2 || rawStatus === "REJECTED";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      {/* 1. Header & Quick Status Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-100">
-        <div>
-          <h2 className="text-xl font-extrabold text-[#001743] m-0 tracking-tight">
-            Định danh điện tử CCCD (eKYC)
-          </h2>
-          <p className="text-xs text-slate-500 m-0 mt-1">
-            Xác thực danh tính theo tiêu chuẩn an toàn bảo mật TrustSim.
-          </p>
-        </div>
-        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+    <div className="flex flex-col gap-3.5">
+      {/* 1. Header Toolbar & Quick Status Action */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-slate-100">
+        <span className="text-xs font-bold text-[#001743]">
+          Định danh điện tử CCCD (eKYC)
+        </span>
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
           <button
             onClick={onRefresh}
             disabled={loading}
-            className="rounded-full bg-white hover:bg-slate-50 text-[#001743] border border-slate-200 px-4 py-2 text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+            className="rounded-full bg-white hover:bg-slate-50 text-[#001743] border border-slate-200 px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
           >
             <span className={loading ? "animate-spin" : ""}>
-              <Icons.Refresh size={13} />
+              <Icons.Refresh size={12} />
             </span>
             <span>{loading ? "Đang tải..." : "Làm mới"}</span>
           </button>
           <button
             onClick={() => setIsModalOpen(true)}
             disabled={isPending || loading}
-            className="rounded-full bg-[#001743] hover:bg-[#002875] text-white px-5 py-2 text-xs font-bold inline-flex items-center gap-1.5 shadow-md shadow-navy-950/15 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="rounded-full bg-[#001743] hover:bg-[#0A2558] text-white px-4 py-1.5 text-xs font-bold inline-flex items-center gap-1.5 shadow-xs transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
-            <Icons.ShieldCheck size={16} />
+            <Icons.ShieldCheck size={14} />
             <span>{isVerified ? "Cập nhật lại CCCD" : isRejected ? "Nộp lại hồ sơ eKYC" : isPending ? "Đang chờ xác minh" : "Bắt đầu xác thực eKYC"}</span>
           </button>
         </div>
@@ -99,187 +94,146 @@ export default function EkycTab({
 
       {/* 2. Status Banner Box */}
       {isVerified ? (
-        <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-[28px] p-6 sm:p-7 flex flex-col gap-5 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-              <Icons.CheckCircle size={26} />
+        <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-4 flex flex-col gap-3 shadow-2xs">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+              <Icons.CheckCircle size={20} />
             </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h3 className="text-base font-extrabold text-emerald-950 m-0">
-                  Tài khoản của bạn đã được xác thực eKYC thành công!
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-xs font-bold text-emerald-950 m-0">
+                  Tài khoản đã xác thực eKYC thành công
                 </h3>
-                <span className="text-[11px] font-bold bg-emerald-600 text-white px-3 py-0.5 rounded-full shadow-2xs">
-                  Đã định danh chính chủ
+                <span className="text-[10px] font-bold bg-emerald-600 text-white px-2.5 py-0.5 rounded-full shadow-2xs">
+                  Chính chủ
                 </span>
               </div>
-              <p className="text-xs text-emerald-800 m-0 mt-1 leading-relaxed">
-                Bạn có đầy đủ quyền hạn mở phiên đấu giá cho SIM chính chủ, tham gia đấu thầu và nạp/rút tiền ví TrustSim an toàn.
+              <p className="text-[11px] text-emerald-800 m-0 mt-0.5 leading-relaxed">
+                Đã mở khóa toàn bộ quyền mở phiên đấu giá, trả giá sàn và bảo hộ ký quỹ chuyển nhượng.
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-white/90 border border-emerald-100 rounded-[20px] p-4 sm:p-5 shadow-2xs">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-white/90 border border-emerald-100 rounded-xl p-3 shadow-2xs">
             <div>
-              <div className="text-[11px] text-slate-500 font-bold">Họ và tên:</div>
-              <div className="text-sm font-extrabold text-[#001743] mt-0.5">
+              <div className="text-[10px] text-slate-400 font-bold">Họ và tên:</div>
+              <div className="text-xs font-bold text-[#001743] mt-0.5 truncate">
                 {kycStatus?.fullName || "Nguyễn Văn An"}
               </div>
             </div>
             <div>
-              <div className="text-[11px] text-slate-500 font-bold">Số CCCD:</div>
-              <div className="text-sm font-extrabold text-[#001743] font-mono tabular-nums mt-0.5">
+              <div className="text-[10px] text-slate-400 font-bold">Số CCCD:</div>
+              <div className="text-xs font-bold text-[#001743] font-mono tabular-nums mt-0.5">
                 {kycStatus?.identityNumber || "001201012345"}
               </div>
             </div>
             <div>
-              <div className="text-[11px] text-slate-500 font-bold">Phương thức xác thực:</div>
-              <div className="text-xs font-bold text-emerald-700 mt-0.5">
+              <div className="text-[10px] text-slate-400 font-bold">Phương thức:</div>
+              <div className="text-[11px] font-bold text-emerald-700 mt-0.5 truncate">
                 {formatVerificationMethod(kycStatus?.verificationMethod)}
               </div>
             </div>
             <div>
-              <div className="text-[11px] text-slate-500 font-bold">Ngày thẩm định:</div>
-              <div className="text-xs font-semibold text-slate-700 mt-0.5">
+              <div className="text-[10px] text-slate-400 font-bold">Ngày thẩm định:</div>
+              <div className="text-[11px] font-semibold text-slate-700 mt-0.5">
                 {kycStatus?.verifiedAt ? new Date(kycStatus.verifiedAt).toLocaleDateString("vi-VN") : "Hôm nay"}
               </div>
             </div>
           </div>
         </div>
       ) : isPending ? (
-        <div className="bg-amber-50/70 border border-amber-200/80 rounded-[28px] p-6 sm:p-7 flex items-start gap-4 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
-          <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-            <Icons.Clock size={26} />
+        <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 flex items-start gap-3 shadow-2xs">
+          <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+            <Icons.Clock size={20} />
           </div>
           <div className="flex-1">
-            <h3 className="text-base font-extrabold text-amber-950 m-0">
-              Hồ sơ eKYC của bạn đang trong tiến trình đối soát tự động
+            <h3 className="text-xs font-bold text-amber-950 m-0">
+              Hồ sơ eKYC đang trong tiến trình đối soát tự động
             </h3>
-            <p className="text-xs text-amber-800 m-0 mt-1 leading-relaxed">
-              Hệ thống đang tự động kiểm tra tính nguyên vẹn của ảnh CCCD và đối chiếu khuôn mặt. Quá trình này thường diễn ra trong vòng 5 - 15 phút.
+            <p className="text-[11px] text-amber-800 m-0 mt-0.5 leading-relaxed">
+              Hệ thống đang tự động kiểm tra tính nguyên vẹn của ảnh CCCD và đối chiếu khuôn mặt.
             </p>
             {kycStatus?.submittedAt && (
-              <div className="text-xs text-amber-900 mt-2 font-semibold">
+              <div className="text-[10px] text-amber-900 mt-1 font-semibold font-mono">
                 Thời gian nộp: {new Date(kycStatus.submittedAt).toLocaleString("vi-VN")}
               </div>
             )}
           </div>
         </div>
       ) : isRejected ? (
-        <div className="bg-rose-50/70 border border-rose-200/80 rounded-[28px] p-6 sm:p-7 flex items-start gap-4 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
-          <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
-            <Icons.AlertTriangle size={26} />
+        <div className="bg-rose-50/70 border border-rose-200/80 rounded-2xl p-4 flex items-start gap-3 shadow-2xs">
+          <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+            <Icons.AlertTriangle size={20} />
           </div>
           <div className="flex-1">
-            <h3 className="text-base font-extrabold text-rose-950 m-0">
+            <h3 className="text-xs font-bold text-rose-950 m-0">
               Hồ sơ eKYC trước đó không được phê duyệt
             </h3>
-            <p className="text-xs text-rose-800 m-0 mt-1 leading-relaxed">
-              <strong>Lý do từ chối:</strong>{" "}
-              {kycStatus?.rejectionReason || "Ảnh chụp CCCD bị lóa sáng, mờ số hoặc khuôn mặt selfie không trùng khớp. Vui lòng bấm nút 'Nộp lại hồ sơ eKYC' để chụp lại rõ 4 góc."}
+            <p className="text-[11px] text-rose-800 m-0 mt-0.5 leading-relaxed">
+              <strong>Lý do:</strong>{" "}
+              {kycStatus?.rejectionReason || "Ảnh CCCD bị lóa sáng, mờ số hoặc selfie không khớp. Vui lòng bấm 'Nộp lại hồ sơ eKYC'."}
             </p>
           </div>
         </div>
       ) : (
-        <div className="bg-sky-50/70 border border-sky-200/80 rounded-[28px] p-6 sm:p-7 flex items-start gap-4 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
-          <div className="w-12 h-12 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
-            <Icons.ShieldCheck size={26} />
+        <div className="bg-sky-50/70 border border-sky-200/80 rounded-2xl p-4 flex items-start gap-3 shadow-2xs">
+          <div className="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+            <Icons.ShieldCheck size={20} />
           </div>
           <div className="flex-1">
-            <h3 className="text-base font-extrabold text-sky-950 m-0">
+            <h3 className="text-xs font-bold text-sky-950 m-0">
               Bạn chưa hoàn tất định danh eKYC tài khoản
             </h3>
-            <p className="text-xs text-sky-800 m-0 mt-1 leading-relaxed">
-              Khi vừa đăng ký tài khoản, bạn mới chỉ xác thực Số điện thoại qua OTP. Hãy bấm nút <strong>"Bắt đầu xác thực eKYC"</strong> ở góc trên để tải lên ảnh CCCD 2 mặt và ảnh selfie khuôn mặt.
+            <p className="text-[11px] text-sky-800 m-0 mt-0.5 leading-relaxed">
+              Hãy bấm nút <strong>"Bắt đầu xác thực eKYC"</strong> ở góc trên để tải ảnh CCCD 2 mặt và ảnh khuôn mặt.
             </p>
           </div>
         </div>
       )}
 
-      {/* 3. Steps Guide Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          {
-            step: "01",
-            title: "Mặt trước CCCD",
-            desc: "Chụp bằng camera hoặc tải ảnh từ thiết bị, rõ 4 góc, đầy đủ họ tên, số căn cước.",
-            icon: <Icons.CreditCard size={20} />,
-          },
-          {
-            step: "02",
-            title: "Mặt sau CCCD",
-            desc: "Chụp bằng camera hoặc tải ảnh từ thiết bị, rõ chip điện tử và 3 dòng mã vạch MRZ.",
-            icon: <Icons.FileText size={20} />,
-          },
-          {
-            step: "03",
-            title: "Ảnh chân dung khuôn mặt",
-            desc: "Bắt buộc chụp trực tiếp qua camera, nhìn thẳng đủ sáng, không sử dụng ảnh tải từ máy.",
-            icon: <Icons.Camera size={20} />,
-          },
-        ].map((item, idx) => (
-          <div
-            key={idx}
-            className="bg-white border border-slate-100/90 rounded-[24px] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col justify-between gap-4"
-          >
-            <div className="flex justify-between items-center">
-              <div className="w-10 h-10 rounded-2xl bg-slate-100 text-[#001743] flex items-center justify-center">
-                {item.icon}
-              </div>
-              <span className="text-xl font-black text-slate-200 font-mono">{item.step}</span>
-            </div>
-            <div>
-              <div className="text-sm font-bold text-[#001743]">{item.title}</div>
-              <div className="text-xs text-slate-500 mt-1 leading-relaxed">{item.desc}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* 4. History Table */}
-      <div className="bg-white border border-slate-100/90 rounded-[28px] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-        <div className="p-5 px-6 border-b border-slate-100 bg-slate-50/70 flex justify-between gap-4 flex-wrap items-center">
-          <h3 className="text-sm font-extrabold text-[#001743] m-0">
-            Lịch sử nộp hồ sơ eKYC
-          </h3>
-          <div className="flex gap-2.5 flex-wrap">
+      {/* 3. History Table */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-2xs">
+        <div className="p-3 px-4 border-b border-slate-100 bg-slate-50/70 flex justify-between gap-3 flex-wrap items-center">
+          <span className="text-xs font-bold text-[#001743]">
+            Lịch sử nộp hồ sơ eKYC ({historyItems.length})
+          </span>
+          <div className="flex gap-2 flex-wrap">
             <input
               value={idCardNumber}
               onChange={(event) => setIdCardNumber(event.target.value)}
               aria-label="Lọc theo số căn cước"
-              placeholder="Tìm theo số CCCD..."
-              className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs text-slate-700 outline-none focus:border-[#001743] shadow-2xs font-mono"
+              placeholder="Tìm số CCCD..."
+              className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700 outline-none focus:border-[#001743] shadow-2xs font-mono"
             />
             <select
               value={historyStatus}
               onChange={(event) => setHistoryStatus(event.target.value as typeof historyStatus)}
               aria-label="Lọc trạng thái hồ sơ"
-              className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-[#001743] shadow-2xs cursor-pointer"
+              className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-700 outline-none focus:border-[#001743] shadow-2xs cursor-pointer"
             >
-              <option value="">Tất cả trạng thái</option>
+              <option value="">Tất cả</option>
               <option value="PENDING_VERIFICATION">Đang đối soát</option>
               <option value="VERIFIED">Đã duyệt</option>
               <option value="REJECTED">Bị từ chối</option>
-              <option value="EXPIRED">Hết hiệu lực</option>
             </select>
           </div>
         </div>
 
         {historyLoading ? (
-          <div className="py-16 text-center text-slate-500 text-xs">
-            <span className="w-5 h-5 border-2 border-[#001743]/30 border-t-[#001743] rounded-full animate-spin inline-block mr-2 align-middle" />
+          <div className="py-10 text-center text-slate-500 text-xs">
+            <span className="w-4 h-4 border-2 border-[#001743]/30 border-t-[#001743] rounded-full animate-spin inline-block mr-2 align-middle" />
             Đang tải lịch sử eKYC…
           </div>
         ) : historyItems.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100 text-slate-500 font-bold">
-                  <th className="py-3.5 px-6">Mã hồ sơ</th>
-                  <th className="py-3.5 px-6">Thời gian gửi</th>
-                  <th className="py-3.5 px-6">Độ khớp khuôn mặt</th>
-                  <th className="py-3.5 px-6">Trạng thái</th>
-                  <th className="py-3.5 px-6">Ghi chú thẩm định</th>
+                <tr className="bg-slate-50/50 border-b border-slate-100 text-slate-500 font-bold text-[11px]">
+                  <th className="py-2.5 px-4">Mã hồ sơ</th>
+                  <th className="py-2.5 px-4">Thời gian gửi</th>
+                  <th className="py-2.5 px-4">Độ khớp khuôn mặt</th>
+                  <th className="py-2.5 px-4">Trạng thái</th>
+                  <th className="py-2.5 px-4">Ghi chú thẩm định</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -288,16 +242,16 @@ export default function EkycTab({
                   const isItemPending = item.verificationStatus === 0 || item.verificationStatus === "PENDING_VERIFICATION";
                   return (
                     <tr key={item.id || idx} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="py-3.5 px-6 font-bold text-[#001743] font-mono tabular-nums">
+                      <td className="py-2.5 px-4 font-bold text-[#001743] font-mono tabular-nums">
                         #{item.id ? item.id.substring(0, 8).toUpperCase() : `KYC-00${idx + 1}`}
                       </td>
-                      <td className="py-3.5 px-6 text-slate-600">
+                      <td className="py-2.5 px-4 text-slate-600 font-mono text-[11px]">
                         {item.submittedAt ? new Date(item.submittedAt).toLocaleString("vi-VN") : "10/09/2026, 10:30"}
                       </td>
-                      <td className="py-3.5 px-6 font-bold text-[#001743] font-mono tabular-nums">
+                      <td className="py-2.5 px-4 font-bold text-[#001743] font-mono tabular-nums">
                         {item.faceSimilarityScore ? `${item.faceSimilarityScore.toFixed(1)}%` : "99.2%"}
                       </td>
-                      <td className="py-3.5 px-6">
+                      <td className="py-2.5 px-4">
                         {isItemVerified ? (
                           <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-3 py-0.5 rounded-full border border-emerald-200">
                             Đã duyệt thành công

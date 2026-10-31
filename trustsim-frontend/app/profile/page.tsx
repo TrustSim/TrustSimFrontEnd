@@ -404,18 +404,18 @@ function ProfilePageInner() {
       </div>
 
       {/* ═══ 2. PROFILE WORKSPACE: SIDEBAR & ACTIVE TAB ═════ */}
-      <div className="mx-auto max-w-[1180px] w-full px-3 sm:px-6 py-4 flex-1">
-        <div className="grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-6 items-start">
+      <div className="mx-auto max-w-[1180px] w-full px-3 sm:px-6 py-2.5 flex-1">
+        <div className="grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-5 items-start">
           {/* Floating Sidebar Navigation Pill Card */}
-          <aside className="rounded-[28px] border border-[rgba(0,23,67,0.08)] bg-white p-3 shadow-xs sticky top-20 backdrop-blur-sm space-y-1 self-start">
-            <div className="px-3 py-2 border-b border-slate-100 mb-1.5">
+          <aside className="rounded-[28px] border border-[rgba(0,23,67,0.08)] bg-white p-2.5 shadow-xs sticky top-20 backdrop-blur-sm space-y-1 self-start">
+            <div className="px-3 py-1.5 border-b border-slate-100 mb-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Tài khoản
               </span>
-              <div className="text-sm font-bold text-[#001743]">Không gian cá nhân</div>
+              <div className="text-xs font-bold text-[#001743]">Không gian cá nhân</div>
             </div>
 
-            <nav className="space-y-1" aria-label="Điều hướng tài khoản">
+            <nav className="space-y-0.5" aria-label="Điều hướng tài khoản">
               {TABS.map((tab) => {
                 const isActive = activeTab === tab.key;
                 const Icon = tab.icon;
@@ -425,13 +425,13 @@ function ProfilePageInner() {
                     type="button"
                     onClick={() => handleTabChange(tab.key)}
                     aria-current={isActive ? "page" : undefined}
-                    className={`w-full flex items-center gap-2.5 rounded-full px-3.5 py-2.5 text-xs transition-all duration-150 cursor-pointer ${
+                    className={`w-full flex items-center gap-2.5 rounded-full px-3 py-2 text-xs transition-all duration-150 cursor-pointer ${
                       isActive
                         ? "bg-[#001743] text-white font-bold shadow-xs"
                         : "text-slate-600 hover:text-[#001743] hover:bg-slate-100 font-semibold"
                     }`}
                   >
-                    <Icon size={15} />
+                    <Icon size={14} />
                     <span>{tab.label}</span>
                   </button>
                 );
@@ -442,7 +442,7 @@ function ProfilePageInner() {
           {/* Active Tab Main Content (Component Scroll Container - No Page Scroll Needed) */}
           <main className="min-w-0">
             {/* Tab Body Render with Component Scroll */}
-            <div className="rounded-[28px] border border-[rgba(0,23,67,0.08)] bg-white p-5 sm:p-7 shadow-xs max-h-[calc(100vh-190px)] overflow-y-auto overscroll-contain custom-profile-scroll">
+            <div className="rounded-[28px] border border-[rgba(0,23,67,0.08)] bg-white p-4 sm:p-5 shadow-xs max-h-[calc(100vh-175px)] overflow-y-auto overscroll-contain custom-profile-scroll">
               {activeTab === "overview" && (
                 <OverviewTab
                   user={user}

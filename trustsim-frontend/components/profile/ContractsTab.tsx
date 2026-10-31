@@ -239,97 +239,80 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* ── Top Header Section ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-100">
-        <div>
-          <h2 className="text-xl font-extrabold text-[#001743] m-0 tracking-tight">
-            Hợp đồng chuyển nhượng SIM
-          </h2>
-          <p className="text-xs text-slate-500 m-0 mt-1">
-            Tài khoản bảo chứng trung gian bảo vệ an toàn 100% tài chính cho cả bên mua và bên bán
-          </p>
-        </div>
+    <div className="flex flex-col gap-3.5">
+      {/* ── Top Header Section (Compact) ── */}
+      <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+        <span className="text-xs font-bold text-[#001743]">
+          Hợp đồng chuyển nhượng & bảo chứng ({summaryStats.total})
+        </span>
 
         <button
           type="button"
           onClick={handleManualRefresh}
           disabled={refreshing}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-[#001743] shadow-2xs hover:shadow-xs transition-all cursor-pointer self-start sm:self-auto disabled:opacity-60 active:scale-95"
+          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-[11px] font-bold text-[#001743] shadow-2xs transition-all cursor-pointer disabled:opacity-60 active:scale-95"
         >
           <RefreshCw
-            size={13}
+            size={11}
             className={`text-slate-600 ${refreshing ? "animate-spin text-[#001743]" : ""}`}
           />
           <span>{refreshing ? "Đang đồng bộ..." : "Đồng bộ hợp đồng"}</span>
         </button>
       </div>
 
-      {/* ── KPI Overview Summary Cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-100/90 rounded-[24px] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
-          <div className="text-xs text-slate-500 font-bold mb-1">
+      {/* ── KPI Overview Summary Cards (Compact) ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 shadow-2xs">
+          <div className="text-[10px] text-slate-400 font-bold mb-0.5">
             Tổng hợp đồng
           </div>
-          <div className="text-2xl font-black text-[#001743] font-mono tabular-nums">
-            {summaryStats.total} <span className="text-xs font-bold text-slate-400">hồ sơ</span>
-          </div>
-          <div className="text-[11px] text-slate-400 mt-1">
-            Tất cả giao dịch trên hệ thống
+          <div className="text-lg font-black text-[#001743] font-mono tabular-nums">
+            {summaryStats.total} <span className="text-[10px] font-bold text-slate-400">hồ sơ</span>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-100/90 rounded-[24px] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
-          <div className="text-xs text-blue-700 font-bold mb-1">
-            Đang ký quỹ &amp; sang tên
+        <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 shadow-2xs">
+          <div className="text-[10px] text-blue-700 font-bold mb-0.5">
+            Đang sang tên
           </div>
-          <div className="text-2xl font-black text-blue-900 font-mono tabular-nums">
-            {summaryStats.active} <span className="text-xs font-bold text-slate-400">hồ sơ</span>
-          </div>
-          <div className="text-[11px] text-slate-400 mt-1">
-            Đang trong tiến trình chuyển giao
+          <div className="text-lg font-black text-blue-900 font-mono tabular-nums">
+            {summaryStats.active} <span className="text-[10px] font-bold text-slate-400">hồ sơ</span>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-100/90 rounded-[24px] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
-          <div className="text-xs text-emerald-700 font-bold mb-1">
+        <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 shadow-2xs">
+          <div className="text-[10px] text-emerald-700 font-bold mb-0.5">
             Hoàn tất thành công
           </div>
-          <div className="text-2xl font-black text-emerald-900 font-mono tabular-nums">
-            {summaryStats.completed} <span className="text-xs font-bold text-slate-400">hồ sơ</span>
-          </div>
-          <div className="text-[11px] text-slate-400 mt-1">
-            Đã chuyển giao SIM &amp; giải ngân
+          <div className="text-lg font-black text-emerald-900 font-mono tabular-nums">
+            {summaryStats.completed} <span className="text-[10px] font-bold text-slate-400">hồ sơ</span>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-100/90 rounded-[24px] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
-          <div className="text-xs text-slate-500 font-bold mb-1">
+        <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 shadow-2xs">
+          <div className="text-[10px] text-slate-400 font-bold mb-0.5">
             Tổng giá trị ký quỹ
           </div>
-          <div className="text-xl font-black text-[#001743] font-mono tabular-nums">
+          <div className="text-base font-black text-[#001743] font-mono tabular-nums">
             {summaryStats.totalEscrow.toLocaleString("vi-VN")}{" "}
-            <span className="text-xs font-bold">₫</span>
-          </div>
-          <div className="text-[11px] text-slate-400 mt-1">
-            Được bảo hiểm giao dịch 100%
+            <span className="text-[10px] font-bold">₫</span>
           </div>
         </div>
       </div>
 
-      {/* ── Search & Filter Toolbar ── */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white border border-slate-100/90 rounded-[24px] p-4 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
-        <div className="relative flex-1 min-w-[220px]">
+      {/* ── Search & Filter Toolbar (Compact) ── */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-slate-50/70 border border-slate-200/80 rounded-xl p-2.5 shadow-2xs">
+        <div className="relative flex-1 min-w-[200px]">
           <Search
-            size={15}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+            size={13}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
           />
           <input
             type="text"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
-            placeholder="Tìm theo mã hợp đồng, số SIM, tên đối tác..."
-            className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50/50 border border-slate-200 rounded-full text-[#001743] placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#001743] transition-colors"
+            placeholder="Tìm theo mã HĐ, số SIM, tên đối tác..."
+            className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-full text-[#001743] placeholder:text-slate-400 focus:outline-none focus:border-[#001743] transition-colors shadow-2xs"
           />
         </div>
 
@@ -340,7 +323,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
               setStatusFilter(e.target.value);
               setPageIndex(1);
             }}
-            className="px-4 py-2 text-xs font-bold bg-white border border-slate-200 rounded-full text-slate-700 focus:outline-none focus:border-[#001743] cursor-pointer shadow-2xs"
+            className="px-3 py-1.5 text-xs font-bold bg-white border border-slate-200 rounded-full text-slate-700 focus:outline-none focus:border-[#001743] cursor-pointer shadow-2xs"
           >
             <option value="ALL">Tất cả trạng thái</option>
             <option value="PendingEscrow">Chờ nộp ký quỹ</option>
@@ -354,9 +337,9 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
 
       {/* ── Contracts List ── */}
       {loading ? (
-        <div className="bg-white border border-slate-100/90 rounded-[28px] p-12 text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        <div className="bg-slate-50/50 border border-slate-200/80 rounded-2xl p-8 text-center">
           <RefreshCw
-            size={24}
+            size={20}
             className="animate-spin text-[#001743] mx-auto mb-2"
           />
           <div className="text-xs font-bold text-slate-600">

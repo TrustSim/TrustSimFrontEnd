@@ -886,58 +886,55 @@ export default function OwnedSimsTab({
   };
 
   return (
-    <div className="flex flex-col gap-5">
-      {/* ── 1. Header Toolbar & View Mode Toggle ── */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-200">
-        <div>
-          <h2 className="text-xl font-extrabold text-[#001743] flex items-center gap-2 m-0 tracking-tight">
-            Kho SIM sở hữu của bạn
-          </h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Quản lý danh sách SIM cá nhân và SIM trúng đấu giá trực tiếp từ cơ sở dữ liệu.
-          </p>
-        </div>
+    <div className="flex flex-col gap-3.5">
+      {/* ── 1. Header Toolbar & View Mode Toggle (Compact) ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-slate-100">
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-bold text-[#001743]">
+            Kho SIM sở hữu ({ownedSims.length})
+          </span>
 
-        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap sm:flex-nowrap shrink-0">
           {/* Segmented Control Toggle: Dạng bảng vs Thẻ SIM */}
-          <div className="inline-flex p-1 bg-slate-100/90 rounded-full border border-slate-200/80 shadow-2xs gap-1 shrink-0">
+          <div className="inline-flex p-0.5 bg-slate-100 rounded-full border border-slate-200/80 shadow-2xs gap-0.5 shrink-0">
             <button
               type="button"
               onClick={() => setViewMode("table")}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                 viewMode === "table"
                   ? "bg-white text-[#001743] shadow-xs"
                   : "text-slate-500 hover:text-slate-800"
               }`}
-              title="Chuyển sang chế độ xem bảng chi tiết"
+              title="Dạng bảng"
             >
-              <TableIcon size={14} strokeWidth={2} />
-              <span>Dạng bảng</span>
+              <TableIcon size={12} strokeWidth={2} />
+              <span>Bảng</span>
             </button>
             <button
               type="button"
               onClick={() => setViewMode("grid")}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                 viewMode === "grid"
                   ? "bg-[#001743] text-white shadow-xs"
                   : "text-slate-500 hover:text-slate-800"
               }`}
-              title="Chuyển sang chế độ xem thẻ SIM Luxury độc đáo"
+              title="Dạng thẻ"
             >
-              <LayoutGrid size={14} strokeWidth={2} />
+              <LayoutGrid size={12} strokeWidth={2} />
               <span>Thẻ SIM</span>
             </button>
           </div>
+        </div>
 
-          {/* Nút Làm mới đồng bộ kích thước chuẩn */}
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
+          {/* Nút Làm mới */}
           <button
             type="button"
             onClick={fetchSimsFromDb}
             disabled={loading}
-            className="h-[36px] px-3.5 inline-flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700 disabled:opacity-60 rounded-full text-xs font-bold shadow-2xs transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95"
+            className="px-3 py-1 inline-flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 disabled:opacity-60 rounded-full text-xs font-bold shadow-2xs transition-all cursor-pointer shrink-0 active:scale-95"
             title="Làm mới dữ liệu từ Database"
           >
-            <RefreshCw size={13} className={loading ? "animate-spin text-[#001743]" : "text-slate-500"} />
+            <RefreshCw size={11} className={loading ? "animate-spin text-[#001743]" : "text-slate-500"} />
             <span>Làm mới</span>
           </button>
 
@@ -945,21 +942,21 @@ export default function OwnedSimsTab({
           <button
             type="button"
             onClick={handleOpenAddModal}
-            className="h-[36px] px-4 inline-flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-[#001743] rounded-full text-xs font-bold shadow-2xs hover:border-[#001743] transition-all cursor-pointer active:scale-95 shrink-0 whitespace-nowrap"
+            className="px-3 py-1 inline-flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#001743] rounded-full text-xs font-bold shadow-2xs hover:border-[#001743] transition-all cursor-pointer active:scale-95 shrink-0"
           >
-            <Plus size={15} strokeWidth={2.5} />
-            <span>Thêm SIM cá nhân</span>
+            <Plus size={13} strokeWidth={2.5} />
+            <span>Thêm SIM</span>
           </button>
 
           {/* Nút Mở phiên đấu giá */}
           <button
             type="button"
             onClick={() => handleOpenCreateAuction()}
-            className="h-[36px] px-4 inline-flex items-center gap-1.5 bg-[#001743] hover:bg-[#002875] text-white rounded-full text-xs font-bold shadow-md shadow-navy-950/15 hover:shadow-lg transition-all cursor-pointer active:scale-95 shrink-0 whitespace-nowrap"
+            className="px-3.5 py-1 inline-flex items-center gap-1 bg-[#001743] hover:bg-[#0A2558] text-white rounded-full text-xs font-bold shadow-xs transition-all cursor-pointer active:scale-95 shrink-0"
             title="Tạo phiên đấu giá cho số SIM đã xác thực"
           >
-            <Gavel size={14} strokeWidth={2.2} />
-            <span>Tạo phiên đấu giá</span>
+            <Gavel size={12} strokeWidth={2.2} />
+            <span>Tạo đấu giá</span>
           </button>
         </div>
       </div>

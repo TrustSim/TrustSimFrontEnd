@@ -116,48 +116,36 @@ export default function TransactionsTab({
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* ── 1. Action Header & Primary Buttons ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-100">
-        <div>
-          <h2 className="text-xl font-extrabold text-[#001743] m-0 tracking-tight">
-            Lịch sử biến động số dư ví
-          </h2>
-          <p className="text-xs text-slate-500 m-0 mt-1">
-            Toàn bộ các giao dịch nạp, rút và biến động số dư tài khoản của bạn trên nền tảng
-          </p>
-        </div>
+    <div className="flex flex-col gap-3.5">
+      {/* ── 1. Action Header Toolbar (Compact) ── */}
+      <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+        <span className="text-xs font-bold text-[#001743]">
+          Lịch sử biến động số dư ví
+        </span>
 
-        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
-          <Link
-            href="/profile?tab=contracts"
-            className="rounded-full bg-slate-100 hover:bg-slate-200 text-[#001743] border border-slate-200/80 px-4 py-2 text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-2xs"
-          >
-            <FileText size={14} />
-            <span>Tiến trình hợp đồng</span>
-          </Link>
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onOpenDeposit}
-            className="rounded-full bg-[#001743] hover:bg-[#002875] text-white px-4 py-2 text-xs font-bold inline-flex items-center gap-1.5 shadow-md shadow-navy-950/15 transition-all active:scale-95 cursor-pointer"
+            className="rounded-full bg-[#001743] hover:bg-[#0A2558] text-white px-3.5 py-1 text-xs font-bold inline-flex items-center gap-1 shadow-2xs transition-all active:scale-95 cursor-pointer"
           >
-            <Icons.Plus size={14} />
-            <span>Nạp tiền ví</span>
+            <Icons.Plus size={12} />
+            <span>Nạp tiền</span>
           </button>
           <button
             type="button"
             onClick={onOpenWithdraw}
-            className="rounded-full bg-white hover:bg-slate-50 text-[#001743] border border-slate-200 px-4 py-2 text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer"
+            className="rounded-full bg-white hover:bg-slate-50 text-[#001743] border border-slate-200 px-3 py-1 text-xs font-bold inline-flex items-center gap-1 shadow-2xs transition-all active:scale-95 cursor-pointer"
           >
-            <Icons.ArrowUpRight size={14} />
+            <Icons.ArrowUpRight size={12} />
             <span>Rút tiền</span>
           </button>
         </div>
       </div>
 
-      {/* ── 2. Filters & Search Box ── */}
-      <div className="rounded-[24px] border border-slate-100/90 bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.03)] space-y-3.5">
-        <div className="flex items-center gap-2.5 flex-wrap">
+      {/* ── 2. Filters & Search Box (Compact) ── */}
+      <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-2.5 shadow-2xs space-y-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {/* Filter Source */}
           <select
             value={sourceFilter}
@@ -166,14 +154,14 @@ export default function TransactionsTab({
               setPageIndex(1);
             }}
             aria-label="Lọc nguồn giao dịch"
-            className="rounded-full px-4 py-2 text-xs font-bold border border-slate-200 bg-white text-slate-700 outline-none hover:border-slate-300 focus:border-[#001743] transition-colors cursor-pointer shadow-2xs"
+            className="rounded-full px-3 py-1 text-xs font-bold border border-slate-200 bg-white text-slate-700 outline-none focus:border-[#001743] transition-colors cursor-pointer shadow-2xs"
           >
-            <option value="ALL">Tất cả nguồn giao dịch</option>
-            <option value="WALLET">Nạp / Rút ngân hàng</option>
-            <option value="AUCTION">Tất cả đấu giá</option>
-            <option value="AUCTION_DEPOSIT">Tiền cọc đấu giá</option>
-            <option value="ESCROW">Thanh toán Escrow</option>
-            <option value="COMPENSATION">Tiền bồi thường</option>
+            <option value="ALL">Tất cả nguồn</option>
+            <option value="WALLET">Nạp / Rút ví</option>
+            <option value="AUCTION">Đấu giá</option>
+            <option value="AUCTION_DEPOSIT">Tiền cọc</option>
+            <option value="ESCROW">Ký quỹ Escrow</option>
+            <option value="COMPENSATION">Bồi thường</option>
           </select>
 
           <select
@@ -183,12 +171,12 @@ export default function TransactionsTab({
               setPageIndex(1);
             }}
             aria-label="Lọc hướng dòng tiền"
-            className="rounded-full px-4 py-2 text-xs font-bold border border-slate-200 bg-white text-slate-700 outline-none hover:border-slate-300 focus:border-[#001743] transition-colors cursor-pointer shadow-2xs"
+            className="rounded-full px-3 py-1 text-xs font-bold border border-slate-200 bg-white text-slate-700 outline-none focus:border-[#001743] transition-colors cursor-pointer shadow-2xs"
           >
             <option value="ALL">Tất cả thu / chi</option>
-            <option value="CREDIT">Tiền vào (+)</option>
-            <option value="DEBIT">Tiền ra (-)</option>
-            <option value="LOCK">Tạm khóa giữ</option>
+            <option value="CREDIT">Cộng tiền (+)</option>
+            <option value="DEBIT">Trừ tiền (-)</option>
+            <option value="LOCK">Khóa giữ cọc</option>
           </select>
 
           <select
@@ -198,7 +186,7 @@ export default function TransactionsTab({
               setPageIndex(1);
             }}
             aria-label="Lọc trạng thái giao dịch"
-            className="rounded-full px-4 py-2 text-xs font-bold border border-slate-200 bg-white text-slate-700 outline-none hover:border-slate-300 focus:border-[#001743] transition-colors cursor-pointer shadow-2xs"
+            className="rounded-full px-3 py-1 text-xs font-bold border border-slate-200 bg-white text-slate-700 outline-none focus:border-[#001743] transition-colors cursor-pointer shadow-2xs"
           >
             <option value="ALL">Tất cả trạng thái</option>
             <option value="PENDING">Đang xử lý</option>
@@ -213,14 +201,14 @@ export default function TransactionsTab({
               setPageIndex(1);
             }}
             aria-label="Sắp xếp thời gian"
-            className="rounded-full px-4 py-2 text-xs font-bold border border-slate-200 bg-white text-slate-700 outline-none hover:border-slate-300 focus:border-[#001743] transition-colors cursor-pointer shadow-2xs ml-auto"
+            className="rounded-full px-3 py-1 text-xs font-bold border border-slate-200 bg-white text-slate-700 outline-none focus:border-[#001743] transition-colors cursor-pointer shadow-2xs ml-auto"
           >
-            <option value={SortOrder.Desc}>Mới nhất trước</option>
-            <option value={SortOrder.Asc}>Cũ nhất trước</option>
+            <option value={SortOrder.Desc}>Mới nhất</option>
+            <option value={SortOrder.Asc}>Cũ nhất</option>
           </select>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1.5 border-t border-slate-200/60">
           <input
             value={keyword}
             onChange={(e) => {
@@ -228,7 +216,7 @@ export default function TransactionsTab({
               setPageIndex(1);
             }}
             placeholder="Tìm theo mã tham chiếu, ghi chú..."
-            className="rounded-full border border-slate-200 bg-slate-50/50 px-4 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 transition-all font-medium"
+            className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-800 outline-none focus:border-[#001743] transition-all font-medium shadow-2xs"
           />
           <input
             type="number"
@@ -239,7 +227,7 @@ export default function TransactionsTab({
               setPageIndex(1);
             }}
             placeholder="Số tiền tối thiểu (VNĐ)"
-            className="rounded-full border border-slate-200 bg-slate-50/50 px-4 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 transition-all font-medium font-mono tabular-nums"
+            className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-800 outline-none focus:border-[#001743] transition-all font-medium font-mono tabular-nums shadow-2xs"
           />
           <input
             type="number"
@@ -250,7 +238,7 @@ export default function TransactionsTab({
               setPageIndex(1);
             }}
             placeholder="Số tiền tối đa (VNĐ)"
-            className="rounded-full border border-slate-200 bg-slate-50/50 px-4 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:border-[#001743] focus:ring-2 focus:ring-[#001743]/10 transition-all font-medium font-mono tabular-nums"
+            className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-800 outline-none focus:border-[#001743] transition-all font-medium font-mono tabular-nums shadow-2xs"
           />
         </div>
       </div>
