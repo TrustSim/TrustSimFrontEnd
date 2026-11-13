@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { authService } from "@/services/authService";
 import { ToastContainer, ToastMessage } from "@/components/ui/Toast";
-import MobileAuthIntro from "@/components/auth/MobileAuthIntro";
+import AuthShowcase from "@/components/auth/AuthShowcase";
 
 /* ─── Clean Line SVG Icons ────────────────────────────────── */
 const Icons = {
@@ -62,7 +62,6 @@ function LoginFormContent() {
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showMobileForm, setShowMobileForm] = useState(searchParams?.get("form") === "1");
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const addToast = (toast: Omit<ToastMessage, "id">) => {
@@ -123,15 +122,15 @@ function LoginFormContent() {
     }
   };
 
-  return (<>
-    {!showMobileForm && <MobileAuthIntro onLogin={() => setShowMobileForm(true)} onRegister={() => { window.location.href = "/register?form=1"; }} />}
-    <div className={`mobile-auth-legacy ${showMobileForm ? "mobile-auth-form-open" : ""}`} style={{ minHeight: "calc(100vh - 64px)", paddingTop: 84, paddingBottom: 64, background: "#F8F9FA", display: "flex", alignItems: "center" }}>
+  return (
+    <div className="auth-page" style={{ minHeight: "calc(100vh - 64px)", paddingTop: 84, paddingBottom: 64, background: "#F8F9FA", display: "flex", alignItems: "center" }}>
       {/* Toast Notification Container */}
       <ToastContainer toasts={toasts} onClose={removeToast} />
 
       <div className="container" style={{ maxWidth: 1040, margin: "0 auto", padding: "0 16px" }}>
         {/* Main Card Container */}
         <div
+          className="auth-layout"
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1.15fr",
@@ -142,6 +141,7 @@ function LoginFormContent() {
             overflow: "hidden",
           }}
         >
+          <AuthShowcase />
           {/* ─── LEFT BRAND PANEL (Fintech Highlights) ─── */}
           <div
             className="auth-brand-panel"
@@ -428,7 +428,6 @@ function LoginFormContent() {
         }
       `}</style>
     </div>
-  </>
   );
 }
 

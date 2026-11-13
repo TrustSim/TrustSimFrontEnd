@@ -29,7 +29,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     if (pathname !== "/login" && pathname !== "/register") return;
     const onFocus = (event: FocusEvent) => {
       const target = event.target;
-      if (!(target instanceof HTMLInputElement) || !target.closest(".mobile-auth-form-open")) return;
+      if (!(target instanceof HTMLInputElement) || !target.closest(".auth-page")) return;
       window.setTimeout(() => target.scrollIntoView({ block: "center", behavior: "smooth" }), 180);
     };
     document.addEventListener("focusin", onFocus);
@@ -61,7 +61,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   }
 
   return (
-    <div className={pathname === "/login" || pathname === "/register" ? "auth-app-shell" : undefined} style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <ToastContainer toasts={toasts} onClose={removeToast} />
       <Navbar />
       <main style={{ flex: 1 }}>{children}</main>
