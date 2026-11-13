@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { tradeService } from "@/services/tradeService";
 import { formatPhoneNumber } from "@/services/simService";
@@ -105,24 +105,6 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
   };
 
   const filteredTrades = trades;
-
-  // Compute summary stats from current trade list
-  const summaryStats = useMemo(() => {
-    const total = totalCount || trades.length;
-    const active = trades.filter(
-      (t) =>
-        t.status === "PendingEscrow" ||
-        t.status === "PendingSignature" ||
-        t.status === "PendingTransfer"
-    ).length;
-    const completed = trades.filter((t) => t.status === "Completed").length;
-    const totalEscrow = trades.reduce(
-      (acc, t) => acc + (t.escrowAmount || 0),
-      0
-    );
-
-    return { total, active, completed, totalEscrow };
-  }, [totalCount, trades]);
 
   // Escrow status badge mapping
   const getEscrowBadge = (status: EscrowStatus) => {
@@ -239,18 +221,19 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
   };
 
   return (
-    <div className="flex flex-col gap-3.5">
-      {/* ── Top Header Section (Compact) ── */}
-      <div className="flex items-center justify-between pb-1 border-b border-slate-100">
-        <span className="text-xs font-bold text-[#001743]">
-          Hợp đồng chuyển nhượng & bảo chứng ({summaryStats.total})
-        </span>
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[#001743]/10 pb-5">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-[-0.04em] text-[#001743]">Giao dịch SIM của bạn</h2>
+          <p className="mt-1 text-sm text-[#5b6477]">Theo dõi ký quỹ, hợp đồng và bàn giao trong một tiến trình.</p>
+          <p className="mt-2 text-xs text-[#98a1b3]">{totalCount} hồ sơ</p>
+        </div>
 
         <button
           type="button"
           onClick={handleManualRefresh}
           disabled={refreshing}
-          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-[11px] font-bold text-[#001743] shadow-2xs transition-all cursor-pointer disabled:opacity-60 active:scale-95"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-[#001743]/10 bg-white/70 px-3 py-2 text-xs font-semibold text-[#001743] transition-colors hover:bg-white disabled:opacity-60"
         >
           <RefreshCw
             size={11}
@@ -260,48 +243,8 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
         </button>
       </div>
 
-      {/* ── KPI Overview Summary Cards (Compact) ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 shadow-2xs">
-          <div className="text-[10px] text-slate-400 font-bold mb-0.5">
-            Tổng hợp đồng
-          </div>
-          <div className="text-lg font-black text-[#001743] font-mono tabular-nums">
-            {summaryStats.total} <span className="text-[10px] font-bold text-slate-400">hồ sơ</span>
-          </div>
-        </div>
-
-        <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 shadow-2xs">
-          <div className="text-[10px] text-blue-700 font-bold mb-0.5">
-            Đang sang tên
-          </div>
-          <div className="text-lg font-black text-blue-900 font-mono tabular-nums">
-            {summaryStats.active} <span className="text-[10px] font-bold text-slate-400">hồ sơ</span>
-          </div>
-        </div>
-
-        <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 shadow-2xs">
-          <div className="text-[10px] text-emerald-700 font-bold mb-0.5">
-            Hoàn tất thành công
-          </div>
-          <div className="text-lg font-black text-emerald-900 font-mono tabular-nums">
-            {summaryStats.completed} <span className="text-[10px] font-bold text-slate-400">hồ sơ</span>
-          </div>
-        </div>
-
-        <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 shadow-2xs">
-          <div className="text-[10px] text-slate-400 font-bold mb-0.5">
-            Tổng giá trị ký quỹ
-          </div>
-          <div className="text-base font-black text-[#001743] font-mono tabular-nums">
-            {summaryStats.totalEscrow.toLocaleString("vi-VN")}{" "}
-            <span className="text-[10px] font-bold">₫</span>
-          </div>
-        </div>
-      </div>
-
       {/* ── Search & Filter Toolbar (Compact) ── */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-slate-50/70 border border-slate-200/80 rounded-xl p-2.5 shadow-2xs">
+      <div className="flex flex-col items-stretch justify-between gap-2.5 border-b border-[#001743]/10 pb-5 sm:flex-row sm:items-center">
         <div className="relative flex-1 min-w-[200px]">
           <Search
             size={13}
@@ -312,7 +255,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             placeholder="Tìm theo mã HĐ, số SIM, tên đối tác..."
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-full text-[#001743] placeholder:text-slate-400 focus:outline-none focus:border-[#001743] transition-colors shadow-2xs"
+            className="w-full rounded-lg border border-[#001743]/10 bg-white px-3 py-2.5 pl-8 text-sm text-[#001743] outline-none transition-colors placeholder:text-[#98a1b3] focus:border-[#4c5fd5]"
           />
         </div>
 
@@ -323,7 +266,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
               setStatusFilter(e.target.value);
               setPageIndex(1);
             }}
-            className="px-3 py-1.5 text-xs font-bold bg-white border border-slate-200 rounded-full text-slate-700 focus:outline-none focus:border-[#001743] cursor-pointer shadow-2xs"
+            className="cursor-pointer rounded-lg border border-[#001743]/10 bg-white px-3 py-2.5 text-xs font-semibold text-[#001743] outline-none focus:border-[#4c5fd5]"
           >
             <option value="ALL">Tất cả trạng thái</option>
             <option value="PendingEscrow">Chờ nộp ký quỹ</option>
@@ -368,7 +311,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
           </Link>
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="overflow-hidden rounded-xl border border-[#001743]/10 bg-white/80 divide-y divide-[#001743]/10">
           {filteredTrades.map((trade) => {
             const escrowBadge = getEscrowBadge(trade.escrowStatus);
             const tradeBadge = getTradeStatusBadge(trade.status);
@@ -387,12 +330,12 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
             return (
               <div
                 key={trade.id}
-                className="bg-white border border-slate-100/90 rounded-[24px] p-5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-lg transition-all flex flex-col gap-4"
+                className="flex flex-col gap-4 p-5 transition-colors hover:bg-[#f7f8fd] sm:p-6"
               >
                 {/* Header: Code, Badges & Date */}
                 <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-2xl bg-slate-100 text-[#001743] flex items-center justify-center shrink-0">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f1f3ff] text-[#001743]">
                       <FileText size={15} />
                     </div>
                     <span className="text-xs font-black text-[#001743] font-mono">
@@ -444,17 +387,17 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
                   {/* Col 1: Phone number */}
                   <div>
-                    <div className="text-[10.5px] text-slate-400 font-semibold uppercase tracking-wider">
+                    <div className="text-xs text-[#5b6477]">
                       Số SIM chuyển nhượng
                     </div>
-                    <div className="text-xl font-black text-[#001743] font-mono tracking-wide mt-0.5 tabular-nums">
+                    <div className="mt-0.5 font-mono text-xl font-bold tabular-nums text-[#001743]">
                       {formatPhoneNumber(trade.simPhoneNumber)}
                     </div>
                   </div>
 
                   {/* Col 2: Escrow Amount */}
                   <div>
-                    <div className="text-[10.5px] text-slate-400 font-semibold uppercase tracking-wider">
+                    <div className="text-xs text-[#5b6477]">
                       Tiền ký quỹ bảo chứng
                     </div>
                     <div className="text-xl font-black text-[#001743] font-mono tabular-nums mt-0.5">
@@ -465,7 +408,7 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
 
                   {/* Col 3: Counterparty */}
                   <div>
-                    <div className="text-[10.5px] text-slate-400 font-semibold uppercase tracking-wider">
+                    <div className="text-xs text-[#5b6477]">
                       Đối tác giao dịch
                     </div>
                     <div className="text-xs font-bold text-slate-700 truncate mt-0.5">
@@ -479,13 +422,13 @@ export default function ContractsTab({ addToast }: ContractsTabProps) {
                 </div>
 
                 {/* Visual 4-Step Progress Bar */}
-                <div className="bg-slate-50/70 border border-slate-100 rounded-[18px] p-3.5">
+                <div className="border-t border-[#001743]/10 pt-4">
                   <div className="grid grid-cols-4 gap-2 text-center">
                     {[
                       { step: 1, label: "1. Ký quỹ" },
-                      { step: 2, label: "2. Ký hợp đồng" },
-                      { step: 3, label: "3. Sang tên SIM" },
-                      { step: 4, label: "4. Giải ngân" },
+                      { step: 2, label: "2. Ký OTP" },
+                      { step: 3, label: "3. Bằng chứng" },
+                      { step: 4, label: "4. Xác nhận & giải ngân" },
                     ].map((s) => {
                       const isDone = currentStep > s.step;
                       const isCurrent = currentStep === s.step;

@@ -97,16 +97,16 @@ export default function AdminSidebar({
 
   return (
     <aside
-      className={`admin-sidebar fixed top-0 bottom-0 left-0 z-50 bg-[#07132b] border-r border-[#15274d] flex flex-col transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] select-none ${
+      className={`admin-sidebar fixed top-0 bottom-0 left-0 z-50 flex flex-col transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] select-none ${
         /* Mobile/Tablet drawer: trượt vào khi mobileOpen, trượt ra ngoài khi đóng */
-        mobileOpen ? "translate-x-0 w-[248px] shadow-2xl" : "-translate-x-full"
+        mobileOpen ? "translate-x-0 w-[248px] shadow-lg" : "-translate-x-full"
       } ${
         /* Desktop: luôn hiện diện cố định, điều khiển theo collapsed */
         collapsed ? "lg:translate-x-0 lg:w-[68px]" : "lg:translate-x-0 lg:w-[248px]"
       }`}
     >
       {/* Brand Header */}
-      <div className="h-[60px] border-b border-[#15274d] flex items-center justify-between px-4">
+      <div className="h-[60px] border-b border-[#e1e6f2] flex items-center justify-between px-4">
         <Link
           href="/admin"
           onClick={() => onCloseMobile?.()}
@@ -122,8 +122,8 @@ export default function AdminSidebar({
             priority
           />
           {isExpanded && (
-            <span className="text-white font-semibold tracking-tight text-[14px] truncate">
-              TrustSim <span className="text-slate-400 font-normal text-xs">Workbench</span>
+            <span className="text-[#001743] font-semibold tracking-tight text-[14px] truncate">
+              TrustSim <span className="text-[#66718b] font-normal text-xs">Quản trị</span>
             </span>
           )}
         </Link>
@@ -133,7 +133,7 @@ export default function AdminSidebar({
           <button
             type="button"
             onClick={onCloseMobile}
-            className="lg:hidden p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            className="lg:hidden p-1.5 rounded-md text-slate-500 hover:text-[#001743] hover:bg-[#eaf0ff] transition-colors cursor-pointer"
             aria-label="Đóng thanh điều hướng"
           >
             <X size={18} />
@@ -146,7 +146,7 @@ export default function AdminSidebar({
         {ADMIN_NAV_SECTIONS.map((section) => (
           <div key={section.title}>
             {isExpanded && (
-              <div className="px-3 pb-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.12em]">
+              <div className="px-3 pb-1.5 text-[10px] font-semibold text-[#77839e] uppercase tracking-[0.08em]">
                 {section.title}
               </div>
             )}
@@ -163,8 +163,8 @@ export default function AdminSidebar({
                     title={!isExpanded ? item.label : undefined}
                     className={`group flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium transition-colors duration-150 relative ${
                       isActive
-                        ? "bg-white/[0.08] text-white font-semibold border-l-2 border-[#E4011E] pl-[10px]"
-                        : "text-slate-300 hover:text-white hover:bg-white/[0.05] border-l-2 border-transparent"
+                        ? "bg-[#e9efff] text-[#001743] font-semibold border-l-2 border-[#4c5fd5] pl-[10px]"
+                        : "text-[#52617b] hover:text-[#001743] hover:bg-[#f1f4fc] border-l-2 border-transparent"
                     }`}
                   >
                     {/* Icon with relative positioning for dot indicator */}
@@ -173,7 +173,7 @@ export default function AdminSidebar({
                         size={16}
                         strokeWidth={1.75}
                         className={`shrink-0 transition-colors duration-150 ${
-                          isActive ? "text-[#ff4d61]" : "text-slate-400 group-hover:text-white"
+                          isActive ? "text-[#4c5fd5]" : "text-[#8290aa] group-hover:text-[#001743]"
                         }`}
                       />
                       {/* Dot indicator: only shown in collapsed mode when badge exists */}
@@ -199,7 +199,7 @@ export default function AdminSidebar({
                             ? "bg-[#E4011E] text-white"
                             : item.badgeType === "warning"
                             ? "bg-amber-100 text-amber-900"
-                            : "bg-slate-700 text-slate-200"
+                              : "bg-[#e9efff] text-[#001743]"
                         }`}
                       >
                         {item.badge}
@@ -214,7 +214,7 @@ export default function AdminSidebar({
       </nav>
 
       {/* Sidebar Footer */}
-      <div className="p-3 border-t border-[#15274d] bg-[#07132b]">
+      <div className="p-3 border-t border-[#e1e6f2]">
         {!isExpanded ? (
           <div className="flex flex-col items-center gap-1">
             <Link
@@ -222,7 +222,7 @@ export default function AdminSidebar({
               onClick={() => onCloseMobile?.()}
               title="Về trang người dùng"
               aria-label="Về trang người dùng"
-              className="flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors"
+              className="flex items-center justify-center p-2 rounded-md text-slate-500 hover:text-[#001743] hover:bg-[#eaf0ff] transition-colors"
             >
               <Home size={16} strokeWidth={1.5} />
             </Link>
@@ -230,7 +230,7 @@ export default function AdminSidebar({
               onClick={onToggleCollapse}
               title="Mở rộng thanh điều hướng"
               aria-label="Mở rộng thanh điều hướng"
-              className="hidden lg:flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+              className="hidden lg:flex items-center justify-center p-2 rounded-md text-slate-500 hover:text-[#001743] hover:bg-[#eaf0ff] transition-colors cursor-pointer"
             >
               <ChevronRight size={16} strokeWidth={1.5} />
             </button>
@@ -242,7 +242,7 @@ export default function AdminSidebar({
               onClick={() => onCloseMobile?.()}
               title="Về trang người dùng"
               aria-label="Về trang người dùng"
-              className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-white py-1 px-2 rounded hover:bg-white/[0.06] transition-colors"
+              className="flex items-center gap-1.5 text-xs text-[#52617b] hover:text-[#001743] py-1 px-2 rounded hover:bg-[#eaf0ff] transition-colors"
             >
               <Home size={14} strokeWidth={1.5} />
               <span>Sàn đấu giá</span>
@@ -251,7 +251,7 @@ export default function AdminSidebar({
               onClick={onToggleCollapse}
               title="Thu gọn thanh điều hướng"
               aria-label="Thu gọn thanh điều hướng"
-              className="hidden lg:flex items-center justify-center p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+              className="hidden lg:flex items-center justify-center p-1.5 rounded-md text-slate-500 hover:text-[#001743] hover:bg-[#eaf0ff] transition-colors cursor-pointer"
             >
               <ChevronLeft size={16} strokeWidth={1.5} />
             </button>

@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Button, Tag as AntTag } from "antd";
+import { Button, Input, Tag as AntTag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   Plus,
@@ -859,29 +859,15 @@ export function AdminCarriersTab() {
       {/* ── 2. Filter Toolbar Card ── */}
       <div className="bg-white border border-[#E2E8F0] rounded-[8px] p-3 flex flex-wrap items-center justify-between gap-3 shadow-xs">
         <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
-          <div className="relative w-full sm:w-72">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
+          <div className="w-full sm:w-72">
+            <Input allowClear prefix={<Search size={15} className="text-slate-400" />}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
                 setPageIndex(1);
               }}
               placeholder="Tìm theo tên nhà mạng, mã hoặc đầu số..."
-              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none"
             />
-            {search && (
-              <button
-                onClick={() => {
-                  setSearch("");
-                  setPageIndex(1);
-                }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X size={12} />
-              </button>
-            )}
           </div>
           <button
             onClick={load}

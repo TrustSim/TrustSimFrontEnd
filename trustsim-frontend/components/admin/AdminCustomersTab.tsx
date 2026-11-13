@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Button, Tag as AntTag } from "antd";
+import { Button, Input, InputNumber, Tag as AntTag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   Users,
@@ -531,27 +531,16 @@ export function AdminCustomersTab() {
 
         {/* Search Bar + Controls */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100">
-          <div className="relative w-full sm:w-96">
-            <Search size={15} strokeWidth={1.5} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
+          <div className="w-full sm:w-96">
+            <Input allowClear prefix={<Search size={15} strokeWidth={1.5} className="text-slate-400" />}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm theo tên khách, username, email, SĐT, CCCD…"
-              className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:border-[#001743] focus:ring-1 focus:ring-[#001743] focus:outline-none transition-colors placeholder:text-slate-400"
             />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
-              >
-                <X size={13} strokeWidth={1.5} />
-              </button>
-            )}
           </div>
           <div className="grid w-full grid-cols-2 gap-2 sm:w-auto">
-            <label className="text-[10px] font-semibold text-slate-500"><span className="mb-1 block">Số dư từ</span><input type="number" min={0} value={minWalletBalance} onChange={(event) => { setMinWalletBalance(event.target.value); setPageIndex(1); }} className="min-h-9 w-full rounded-lg border border-slate-200 px-2 text-xs" /></label>
-            <label className="text-[10px] font-semibold text-slate-500"><span className="mb-1 block">Số dư đến</span><input type="number" min={0} value={maxWalletBalance} onChange={(event) => { setMaxWalletBalance(event.target.value); setPageIndex(1); }} className="min-h-9 w-full rounded-lg border border-slate-200 px-2 text-xs" /></label>
+            <label className="text-[10px] font-semibold text-slate-500"><span className="mb-1 block">Số dư từ</span><InputNumber min={0} value={minWalletBalance === "" ? null : Number(minWalletBalance)} onChange={(value) => { setMinWalletBalance(value === null ? "" : String(value)); setPageIndex(1); }} className="w-full" /></label>
+            <label className="text-[10px] font-semibold text-slate-500"><span className="mb-1 block">Số dư đến</span><InputNumber min={0} value={maxWalletBalance === "" ? null : Number(maxWalletBalance)} onChange={(value) => { setMaxWalletBalance(value === null ? "" : String(value)); setPageIndex(1); }} className="w-full" /></label>
           </div>
 
           <div className="text-xs text-slate-500 font-mono">

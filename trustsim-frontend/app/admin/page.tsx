@@ -411,32 +411,20 @@ export default function AdminControlCenter() {
 
     return (
       <div className="admin-tab admin-tab-dashboard space-y-6">
-        {/* 1. PAGE HEADER (OPEN & BREATHING WORKBENCH HEAD) */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl lg:text-2xl font-bold text-[#001743] tracking-tight">
-                Trung tâm điều hành TrustSim
-              </h1>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200/60">
-                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span>Vận hành ổn định</span>
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mt-1 font-normal">
+        {/* Context and actions; the shared topbar already names the current tab. */}
+        <div className="admin-dashboard-toolbar flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
+          <p className="text-xs text-slate-500 font-normal">
               {new Date().toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })}
               {" · "}
               <span className="font-mono">{liveCount}</span> phiên đang diễn ra
               {" · "}
-              <span className="text-emerald-700 font-medium">Định danh eKYC trực tiếp</span>
               {highRiskAlerts > 0 && (
                 <>
                   {" · "}
                   <span className="text-[#E4011E] font-medium font-mono">{highRiskAlerts} cảnh báo rủi ro</span>
                 </>
               )}
-            </p>
-          </div>
+          </p>
 
           {/* Action Hierarchy: 1 Primary CTA (Navy), 1 Secondary Subtle (Outline) */}
           <div className="flex items-center gap-2.5">
@@ -526,25 +514,22 @@ export default function AdminControlCenter() {
             </div>
           </div>
 
-          {/* Metric 3: eKYC Định danh */}
+          {/* Metric 3: SIM data from inventory API */}
           <div className="bg-white border border-[#e4e7ec] rounded-xl p-4 shadow-2xs flex flex-col justify-between">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-xs font-medium text-slate-500">Định danh eKYC</span>
-              <div className="p-1.5 rounded-md bg-emerald-50 text-emerald-700">
-                <UserCheck size={15} strokeWidth={1.75} />
+              <span className="text-xs font-medium text-slate-500">Kho SIM</span>
+              <div className="p-1.5 rounded-md bg-blue-50 text-[#001743]">
+                <Smartphone size={15} strokeWidth={1.75} />
               </div>
             </div>
             <div className="mt-3">
-              <div className="text-2xl font-bold text-slate-900 tracking-tight flex items-baseline gap-1.5">
-                <span className="text-emerald-700 font-semibold text-lg">AI Tự động</span>
-                <span className="text-xs font-normal text-slate-500">OCR & Liveness</span>
+              <div className="text-2xl font-bold text-[#001743] tracking-tight flex items-baseline gap-1.5">
+                <AnimatedNumber value={sims.length} />
+                <span className="text-xs font-normal text-slate-500">SIM đã tải</span>
               </div>
               <div className="mt-2 pt-2 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
-                <span className="text-emerald-700 font-medium flex items-center gap-1">
-                  <CheckCircle2 size={11} />
-                  <span>Xử lý trực tiếp 24/7</span>
-                </span>
-                <span className="text-slate-400">CCCD/Hộ chiếu</span>
+                <span>{sims.filter((sim) => sim.status === "Available").length} sẵn sàng bán</span>
+                <a href="/admin?tab=sims" className="text-[#001743] font-medium hover:underline">Xem kho SIM</a>
               </div>
             </div>
           </div>
@@ -560,15 +545,15 @@ export default function AdminControlCenter() {
                   ? "text-rose-700 bg-rose-50 border-rose-200/60"
                   : "text-emerald-700 bg-emerald-50 border-emerald-200/60"
               }`}>
-                {highRiskAlerts > 0 ? "CẦN XỬ LÝ" : "AN TOÀN"}
+                {highRiskAlerts > 0 ? "CẦN XỬ LÝ" : "CHƯA KẾT NỐI"}
               </span>
             </div>
             <div className="mt-3">
               <div className={`text-2xl font-bold tabular-nums font-mono tracking-tight flex items-baseline gap-1.5 ${
                 highRiskAlerts > 0 ? "text-[#E4011E]" : "text-emerald-700"
               }`}>
-                <AnimatedNumber value={highRiskAlerts} />
-                <span className="text-xs font-normal text-slate-500">cảnh báo</span>
+                <span>—</span>
+                <span className="text-xs font-normal text-slate-500">chưa có API cảnh báo</span>
               </div>
               <div className="mt-2 pt-2 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
                 <div className={`flex items-center gap-1 font-medium truncate ${
@@ -578,10 +563,10 @@ export default function AdminControlCenter() {
                     highRiskAlerts > 0 ? "bg-rose-600" : "bg-emerald-600"
                   }`}></span>
                   <span className="truncate">
-                    {highRiskAlerts > 0 ? "Nghi vấn đặt giá liên minh" : "Bình thường"}
+                    {highRiskAlerts > 0 ? "Nghi vấn đặt giá liên minh" : "Chưa có dữ liệu đánh giá"}
                   </span>
                 </div>
-                <span className="text-slate-400 font-mono">Real-time</span>
+                <span className="text-slate-400">—</span>
               </div>
             </div>
           </div>
@@ -603,7 +588,7 @@ export default function AdminControlCenter() {
                   ? "bg-rose-50 text-rose-700 border-rose-200/60"
                   : "bg-slate-50 text-slate-500 border-slate-200/60"
                   }`}>
-                  {anomalies.filter((a) => a.status === "open").length} cảnh báo đang mở
+                  Chưa kết nối API
                 </span>
               </div>
 
@@ -624,9 +609,9 @@ export default function AdminControlCenter() {
                       <tr>
                         <td colSpan={6} className="py-12 text-center text-slate-400">
                           <ShieldCheck size={36} className="mx-auto text-emerald-500 mb-2" strokeWidth={1.5} />
-                          <p className="font-semibold text-xs text-[#001743]">Hệ thống vận hành an toàn</p>
+                          <p className="font-semibold text-xs text-[#001743]">Chưa có nguồn dữ liệu cảnh báo</p>
                           <p className="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto">
-                            Chưa có cảnh báo rủi ro hoặc hành vi gian lận nào được ghi nhận từ hệ thống.
+                            Backend hiện chưa cung cấp API cảnh báo bất thường cho bảng này.
                           </p>
                         </td>
                       </tr>

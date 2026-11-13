@@ -1,8 +1,8 @@
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Tag as AntTag } from "antd";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { Input, Select, Tag as AntTag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   Smartphone,
@@ -24,7 +24,6 @@ import {
   Check,
   X,
   Sparkles,
-  ChevronDown,
   ArrowUpDown,
   Filter,
 } from "lucide-react";
@@ -96,9 +95,6 @@ export function AdminSimsTab() {
   const [selectedStatus, setSelectedStatus] = useState<string>("");
 
   // Category Multi-Select Dropdown State
-  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
-  const [categorySearch, setCategorySearch] = useState("");
-  const categoryDropdownRef = useRef<HTMLDivElement>(null);
 
   // Sorting
   const [sortKey, setSortKey] = useState<"phone" | "status" | "category" | "categoryCount" | "carrier" | "created">("phone");
@@ -152,20 +148,6 @@ export function AdminSimsTab() {
       }
     }
     loadMasterData();
-  }, []);
-
-  // Close category dropdown on click outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        categoryDropdownRef.current &&
-        !categoryDropdownRef.current.contains(event.target as Node)
-      ) {
-        setCategoryDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Fetch SIM list from database
@@ -531,221 +513,62 @@ export function AdminSimsTab() {
       <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
           {/* Search Box */}
-          <div className="relative flex-1 min-w-[220px] max-w-sm">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
+          <div className="flex-1 min-w-[220px] max-w-sm">
+            <Input allowClear prefix={<Search size={15} className="text-slate-400" />}
               placeholder="Tìm theo số SIM (ví dụ 0988, 8888)…"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
                 setPageIndex(1);
               }}
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-[#001743] focus:outline-none transition-colors"
             />
           </div>
 
           {/* Carrier Select */}
-          <select
+          <Select
             value={selectedCarrier}
-            onChange={(e) => {
-              setSelectedCarrier(e.target.value);
+            onChange={(value) => {
+              setSelectedCarrier(value);
               setPageIndex(1);
             }}
-            className="text-xs py-1.5 px-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-[#001743] focus:outline-none text-slate-700"
-          >
-            <option value="">Tất cả nhà mạng</option>
-            {carriers.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.carrierName} ({c.carrierCode})
-              </option>
-            ))}
-          </select>
+            className="min-w-44"
+            options={[{ value: "", label: "Tất cả nhà mạng" }, ...carriers.map((c) => ({ value: c.id, label: `${c.carrierName} (${c.carrierCode})` }))]}
+          />
 
-          {/* Category Multi-Select Dropdown with Search & Quick Sorting */}
-          <div className="relative" ref={categoryDropdownRef}>
-            <button
-              type="button"
-              onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
-              className={`text-xs py-1.5 px-3 bg-slate-50 border rounded-lg hover:bg-white focus:outline-none transition-colors flex items-center gap-2 cursor-pointer ${
-                selectedCategories.length > 0
-                  ? "border-[#001743] bg-blue-50/50 text-[#001743] font-semibold ring-1 ring-[#001743]/10"
-                  : "border-slate-200 text-slate-700"
-              }`}
-            >
-              <Tag size={13} className={selectedCategories.length > 0 ? "text-[#001743]" : "text-slate-400"} />
-              <span className="max-w-[150px] truncate">
-                {selectedCategories.length === 0
-                  ? "Tất cả thể loại"
-                  : selectedCategories.length === 1
-                  ? categories.find((c) => c.id === selectedCategories[0])?.categoryName || "1 thể loại"
-                  : `${selectedCategories.length} thể loại đã chọn`}
-              </span>
-              {selectedCategories.length > 1 && (
-                <span className="w-4 h-4 rounded-full bg-[#001743] text-white text-[9px] flex items-center justify-center font-bold">
-                  {selectedCategories.length}
-                </span>
-              )}
-              <ChevronDown size={13} className={`text-slate-400 transition-transform duration-200 ${categoryDropdownOpen ? "rotate-180" : ""}`} />
-            </button>
-
-            {/* Dropdown Menu Popup */}
-            {categoryDropdownOpen && (
-              <div className="absolute top-full left-0 mt-1.5 w-72 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-2.5 animate-in fade-in zoom-in-95 duration-100">
-                {/* Search in Dropdown */}
-                <div className="relative mb-2">
-                  <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Tìm thể loại SIM…"
-                    value={categorySearch}
-                    onChange={(e) => setCategorySearch(e.target.value)}
-                    className="w-full pl-8 pr-7 py-1 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:border-[#001743] focus:outline-none"
-                    autoFocus
-                  />
-                  {categorySearch && (
-                    <button
-                      onClick={() => setCategorySearch("")}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                    >
-                      <X size={12} />
-                    </button>
-                  )}
-                </div>
-
-                {/* Quick actions & stats */}
-                <div className="flex items-center justify-between pb-2 mb-1 border-b border-slate-100 text-[11px]">
-                  <span className="text-slate-500 font-medium">
-                    Đã chọn: <strong className="text-[#001743]">{selectedCategories.length}</strong>/{categories.length}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedCategories(categories.map((c) => c.id));
-                        setPageIndex(1);
-                      }}
-                      className="text-[11px] text-[#001743] hover:underline font-semibold"
-                    >
-                      Chọn tất cả
-                    </button>
-                    <span className="text-slate-300">|</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedCategories([]);
-                        setPageIndex(1);
-                      }}
-                      className="text-[11px] text-rose-600 hover:underline font-semibold"
-                    >
-                      Bỏ chọn
-                    </button>
-                  </div>
-                </div>
-
-                {/* Category List */}
-                <div className="max-h-56 overflow-y-auto space-y-0.5 custom-scrollbar pr-0.5">
-                  {categories
-                    .filter((c) =>
-                      c.categoryName.toLowerCase().includes(categorySearch.toLowerCase())
-                    )
-                    .map((cat) => {
-                      const isChecked = selectedCategories.includes(cat.id);
-                      return (
-                        <label
-                          key={cat.id}
-                          className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer text-xs transition-colors ${
-                            isChecked
-                              ? "bg-blue-50/70 text-[#001743] font-medium"
-                              : "hover:bg-slate-50 text-slate-700"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => {
-                                setSelectedCategories((prev) =>
-                                  isChecked
-                                    ? prev.filter((id) => id !== cat.id)
-                                    : [...prev, cat.id]
-                                );
-                                setPageIndex(1);
-                              }}
-                              className="rounded border-slate-300 text-[#001743] focus:ring-0 cursor-pointer"
-                            />
-                            <span className="truncate">{cat.categoryName}</span>
-                          </div>
-                          {isChecked && <Check size={13} className="text-[#001743] shrink-0" />}
-                        </label>
-                      );
-                    })}
-                  {categories.filter((c) =>
-                    c.categoryName.toLowerCase().includes(categorySearch.toLowerCase())
-                  ).length === 0 && (
-                    <div className="py-4 text-center text-xs text-slate-400">
-                      Không tìm thấy thể loại nào
-                    </div>
-                  )}
-                </div>
-
-                {/* Sorting Quick Options */}
-                <div className="pt-2 mt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                  <span>Sắp xếp:</span>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSortKey("category");
-                        setSortDirection(sortKey === "category" && sortDirection === "asc" ? "desc" : "asc");
-                      }}
-                      className={`px-2 py-0.5 rounded text-[10px] font-semibold border transition-colors ${
-                        sortKey === "category"
-                          ? "bg-[#001743] text-white border-[#001743]"
-                          : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-                      }`}
-                      title="Sắp xếp theo tên thể loại (A-Z)"
-                    >
-                      A-Z {sortKey === "category" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSortKey("categoryCount");
-                        setSortDirection(sortKey === "categoryCount" && sortDirection === "desc" ? "asc" : "desc");
-                      }}
-                      className={`px-2 py-0.5 rounded text-[10px] font-semibold border transition-colors ${
-                        sortKey === "categoryCount"
-                          ? "bg-[#001743] text-white border-[#001743]"
-                          : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-                      }`}
-                      title="Sắp xếp theo số lượng thể loại gán trên SIM"
-                    >
-                      Nhiều thể loại {sortKey === "categoryCount" ? (sortDirection === "desc" ? "↓" : "↑") : ""}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Searchable category filter */}
+          <Select
+            mode="multiple"
+            allowClear
+            maxTagCount="responsive"
+            placeholder="Tất cả thể loại"
+            value={selectedCategories}
+            onChange={(values: string[]) => {
+              setSelectedCategories(values);
+              setPageIndex(1);
+            }}
+            options={categories.map((category) => ({ value: category.id, label: category.categoryName }))}
+            optionFilterProp="label"
+            className="min-w-48 max-w-72"
+          />
 
           {/* Status Select */}
-          <select
+          <Select
             value={selectedStatus}
-            onChange={(e) => {
-              setSelectedStatus(e.target.value);
+            onChange={(value) => {
+              setSelectedStatus(value);
               setPageIndex(1);
             }}
-            className="text-xs py-1.5 px-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-[#001743] focus:outline-none text-slate-700"
-          >
-            <option value="">Tất cả trạng thái</option>
-            <option value="AVAILABLE">Sẵn sàng (Đang bán)</option>
-            <option value="LISTED">Đã niêm yết</option>
-            <option value="IN_AUCTION">Đang đấu giá</option>
-            <option value="TRANFERING">Đang chuyển nhượng</option>
-            <option value="TRANFERED">Đã chuyển nhượng</option>
-            <option value="SUSPENED">Tạm khóa</option>
-          </select>
+            className="min-w-48"
+            options={[
+              { value: "", label: "Tất cả trạng thái" },
+              { value: "AVAILABLE", label: "Sẵn sàng (Đang bán)" },
+              { value: "LISTED", label: "Đã niêm yết" },
+              { value: "IN_AUCTION", label: "Đang đấu giá" },
+              { value: "TRANFERING", label: "Đang chuyển nhượng" },
+              { value: "TRANFERED", label: "Đã chuyển nhượng" },
+              { value: "SUSPENED", label: "Tạm khóa" },
+            ]}
+          />
 
           {/* Clear Filter Button */}
           {(search || selectedCarrier || selectedCategories.length > 0 || selectedStatus) && (

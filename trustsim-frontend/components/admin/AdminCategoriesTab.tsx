@@ -2,10 +2,10 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Button, Tag as AntTag } from "antd";
+import { Button, Input, Tag as AntTag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
-  Plus, Edit3, Trash2, AlertTriangle, X, Check,
+  Plus, Edit3, Trash2, AlertTriangle, Check,
   Loader2, RefreshCw, Tag, TrendingUp, Search,
 } from "lucide-react";
 import {
@@ -362,29 +362,15 @@ export function AdminCategoriesTab() {
       {/* ── 2. Filter Toolbar Card (Matching Kho SIM) ── */}
       <div className="bg-white border border-[#e4e7ec] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
         <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
-          <div className="relative w-full sm:w-72">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
+          <div className="w-full sm:w-72">
+            <Input allowClear prefix={<Search size={15} className="text-slate-400" />}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
                 setPageIndex(1);
               }}
               placeholder="Tìm theo tên thể loại, mã nhận diện, mô tả…"
-              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none transition-colors"
             />
-            {search && (
-              <button
-                onClick={() => {
-                  setSearch("");
-                  setPageIndex(1);
-                }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X size={12} />
-              </button>
-            )}
           </div>
           <button
             onClick={load}

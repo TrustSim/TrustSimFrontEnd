@@ -53,6 +53,8 @@ export interface AuctionDto {
   extensionDurationSeconds: number;
   dutchDecreaseAmount?: number;
   dutchDecreaseIntervalSeconds?: number;
+  dutchNextPrice?: number | null;
+  dutchIsFloorReached?: boolean;
   formatRhythmName?: string;
   categories?: string[];
   isUserRegistered?: boolean;

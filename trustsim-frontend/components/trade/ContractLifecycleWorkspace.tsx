@@ -42,6 +42,8 @@ import { ToastContainer, type ToastMessage } from "@/components/ui/Toast";
 import { authService } from "@/services/authService";
 import { uploadImageToCloudinary } from "@/services/cloudinaryService";
 import { tradeService } from "@/services/tradeService";
+import { disputeService } from "@/services/disputeService";
+import type { DisputeTicketDto } from "@/types/dispute";
 import type {
   ContractPreviewDto,
   SimTransferDetailsDto,
@@ -58,11 +60,10 @@ const MONEY_FORMATTER = new Intl.NumberFormat("vi-VN", {
 });
 
 const STAGES = [
-  { key: "escrow", label: "Ký quỹ", detail: "Tiền được giữ an toàn", icon: WalletCards },
-  { key: "contract", label: "Ký hợp đồng", detail: "Buyer và Seller xác thực", icon: FileSignature },
-  { key: "carrier", label: "Sang tên", detail: "Thực hiện tại nhà mạng", icon: Smartphone },
-  { key: "acceptance", label: "Nghiệm thu", detail: "Buyer kiểm tra và xác nhận", icon: FileCheck2 },
-  { key: "settlement", label: "Giải ngân", detail: "Thanh lý và tất toán", icon: Banknote },
+  { key: "escrow", label: "Ký quỹ", detail: "Giữ tiền bảo chứng", icon: WalletCards },
+  { key: "contract", label: "Ký bằng OTP", detail: "Hai bên xác nhận", icon: FileSignature },
+  { key: "carrier", label: "Nộp bằng chứng", detail: "Biên nhận nhà mạng", icon: Smartphone },
+  { key: "acceptance", label: "Xác nhận & giải ngân", detail: "Kiểm tra SIM, tất toán", icon: FileCheck2 },
 ] as const;
 
 const STATUS_META: Record<string, { label: string; tone: string; description: string }> = {
@@ -115,7 +116,7 @@ function maskedName(value?: string | null) {
 }
 
 function getActiveStage(trade: TradeTransactionDto, transfer: SimTransferDetailsDto | null) {
-  if (trade.status === "Completed") return 4;
+  if (trade.status === "Completed") return 3;
   if (trade.status === "PendingTransfer") {
     return transfer?.proofs?.length || transfer?.canConfirmTransfer ? 3 : 2;
   }
@@ -185,6 +186,9 @@ export default function ContractLifecycleWorkspace({ identifier }: { identifier:
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofDescription, setProofDescription] = useState("");
+  const [disputes, setDisputes] = useState<DisputeTicketDto[]>([]);
+  const [disputeReason, setDisputeReason] = useState("");
+  const [disputeOpen, setDisputeOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -211,6 +215,8 @@ export default function ContractLifecycleWorkspace({ identifier }: { identifier:
       ]);
       setContract(nextContract);
       setTransfer(nextTransfer);
+      const nextDisputes = await disputeService.getDisputes({ tradeId: nextTrade.id, pageSize: 20 }).catch(() => null);
+      setDisputes(nextDisputes?.items ?? []);
     } catch (error) {
       notify({
         type: "error",
@@ -375,6 +381,20 @@ export default function ContractLifecycleWorkspace({ identifier }: { identifier:
     });
   };
 
+  const createDispute = () => {
+    if (!trade || disputeReason.trim().length < 10) {
+      notify({ type: "warning", message: "Mô tả sự cố bằng ít nhất 10 ký tự." });
+      return;
+    }
+    void runAction("dispute", async () => {
+      await disputeService.createDispute({ tradeTransactionId: trade.id, reason: disputeReason.trim() });
+      setDisputeReason("");
+      setDisputeOpen(false);
+      notify({ type: "success", title: "Đã gửi yêu cầu", message: "Khiếu nại đã được ghi nhận để bộ phận phụ trách xem xét." });
+      await loadData(true);
+    });
+  };
+
   const downloadDocument = (kind: DocumentKind) => {
     if (!trade) return;
     void runAction(`download-${kind}`, async () => {
@@ -413,14 +433,15 @@ export default function ContractLifecycleWorkspace({ identifier }: { identifier:
   if (!trade) return <NotFoundState />;
 
   return (
-    <div className="min-h-screen bg-[#f4f6f8] text-slate-900">
+    <div className="min-h-screen bg-[#f7f8fd] text-[#0b1630]">
       <ToastContainer
         toasts={toasts}
         onClose={(id) => setToasts((items) => items.filter((item) => item.id !== id))}
       />
       <Navbar />
 
-      <main className="mx-auto max-w-[1400px] px-4 pb-16 pt-24 sm:px-6 lg:px-8">
+      <main className="relative mx-auto max-w-[1320px] px-4 pb-16 pt-24 sm:px-6 lg:px-8">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-24 -z-0 h-[430px] bg-[radial-gradient(circle_at_18%_28%,rgba(140,156,255,.26),transparent_34%),radial-gradient(circle_at_86%_0%,rgba(223,229,255,.75),transparent_40%)]" />
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <Link href="/profile?tab=contracts" className="inline-flex items-center gap-1.5 font-semibold hover:text-[#001743]">
@@ -440,7 +461,7 @@ export default function ContractLifecycleWorkspace({ identifier }: { identifier:
           </button>
         </div>
 
-        <header className="overflow-hidden rounded-[22px] bg-[#001743] text-white shadow-[0_18px_50px_rgba(0,23,67,0.18)]">
+        <header className="relative overflow-hidden rounded-[20px] border border-white/20 bg-[linear-gradient(125deg,#001743,#0b2a6b_62%,#4c5fd5)] text-white shadow-[0_18px_50px_rgba(0,23,67,0.15)]">
           <div className="grid gap-8 px-6 py-7 md:px-9 lg:grid-cols-[1fr_auto] lg:items-end">
             <div>
               <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -455,7 +476,7 @@ export default function ContractLifecycleWorkspace({ identifier }: { identifier:
               </div>
               <p className="mb-1 text-sm text-blue-200">Hồ sơ chuyển nhượng số thuê bao</p>
               <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-2xl font-black tracking-tight sm:text-3xl">{trade.simPhoneNumber}</h1>
+                <h1 className="text-3xl font-semibold tracking-[-0.045em] sm:text-5xl">{trade.simPhoneNumber}</h1>
                 <span className="font-mono text-sm text-blue-200">{trade.tradeTransactionCode}</span>
                 <CopyButton value={trade.tradeTransactionCode} />
               </div>
@@ -475,8 +496,8 @@ export default function ContractLifecycleWorkspace({ identifier }: { identifier:
             ) : null}
           </div>
 
-          <div className="border-t border-white/10 bg-[#001238] px-5 py-5 md:px-8">
-            <ol className="grid grid-cols-1 gap-2 sm:grid-cols-5">
+          <div className="border-t border-white/15 bg-white/[0.07] px-5 py-5 backdrop-blur-xl md:px-8">
+            <ol className="grid grid-cols-1 gap-2 sm:grid-cols-4">
               {STAGES.map((stage, index) => {
                 const Icon = stage.icon;
                 const complete = trade.status === "Completed" || index < activeStage;
@@ -591,6 +612,20 @@ export default function ContractLifecycleWorkspace({ identifier }: { identifier:
                     <p className="mt-1 text-xs leading-5 opacity-80">{integrity.message}</p>
                   </div>
                 ) : null}
+              </section>
+            ) : null}
+
+            {(isBuyer || isSeller) && trade.status !== "Completed" && !isCancelled ? (
+              <section className="border-t border-[#001743]/10 bg-white/75 px-1 py-5">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-base font-semibold tracking-tight text-[#001743]">Có sự cố khi chuyển nhượng?</h2>
+                    <p className="mt-1 max-w-xl text-sm leading-6 text-[#5b6477]">Ghi rõ sự việc để TrustSim tiếp nhận và xem xét theo hồ sơ giao dịch.</p>
+                  </div>
+                  <button type="button" onClick={() => setDisputeOpen((value) => !value)} className="rounded-lg border border-[#001743]/15 px-4 py-2 text-xs font-semibold text-[#001743] hover:bg-[#f1f3ff]">{disputeOpen ? "Đóng" : "Gửi khiếu nại"}</button>
+                </div>
+                {disputeOpen ? <div className="mt-4 space-y-3"><label htmlFor="trade-dispute-reason" className="block text-xs font-semibold text-[#001743]">Mô tả sự cố</label><textarea id="trade-dispute-reason" value={disputeReason} onChange={(event) => setDisputeReason(event.target.value.slice(0, 1000))} rows={4} placeholder="Điều gì đã xảy ra tại nhà mạng hoặc với SIM?" className="w-full rounded-lg border border-[#001743]/15 bg-white p-3 text-sm outline-none focus:border-[#4c5fd5]" /><div className="flex items-center justify-between text-xs text-[#5b6477]"><span>Ít nhất 10 ký tự · {disputeReason.trim().length}/1000</span><button type="button" onClick={createDispute} disabled={disputeReason.trim().length < 10 || busyAction === "dispute"} className="rounded-lg bg-[#001743] px-4 py-2.5 font-semibold text-white disabled:opacity-40">{busyAction === "dispute" ? "Đang gửi…" : "Gửi yêu cầu"}</button></div></div> : null}
+                {disputes.length > 0 ? <div className="mt-5 border-t border-[#001743]/10 pt-4"><h3 className="text-xs font-semibold text-[#001743]">Yêu cầu đã gửi</h3><div className="mt-2 space-y-2">{disputes.map((item) => <div key={item.id} className="flex flex-wrap justify-between gap-2 border-b border-[#001743]/5 py-2 text-xs"><span className="max-w-xl text-[#5b6477]">{item.reason}</span><span className="font-semibold text-[#001743]">{item.status === "OPEN" ? "Đang tiếp nhận" : item.status === "INVESTIGATING" ? "Đang xem xét" : "Đã xử lý"}</span></div>)}</div></div> : null}
               </section>
             ) : null}
           </div>

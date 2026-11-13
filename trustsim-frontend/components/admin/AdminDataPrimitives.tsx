@@ -20,14 +20,8 @@ export function AdminPageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <section className="admin-page-header">
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
-          <h1 className="tracking-tight">{title}</h1>
-          {badge ? <span className="admin-page-badge shrink-0">{badge}</span> : null}
-        </div>
-        <p className="mt-1">{description}</p>
-      </div>
+    <section className="admin-page-header" aria-label={`${title}. ${description}`}>
+      {badge ? <span className="admin-page-badge shrink-0">{badge}</span> : null}
       {actions ? <div className="admin-page-actions shrink-0">{actions}</div> : null}
     </section>
   );

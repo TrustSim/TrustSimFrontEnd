@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Tag as AntTag } from "antd";
+import { Checkbox, Input, Select, Tag as AntTag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   FileText,
@@ -595,47 +595,20 @@ export function AdminDocumentsTab() {
 
       {/* ─── 3. Search & Filters Bar ─── */}
       <div className="bg-white border border-[#e4e7ec] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
-        <div className="relative flex-1 max-w-md">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
+        <div className="flex-1 max-w-md min-w-56">
+          <Input allowClear prefix={<Search size={15} className="text-slate-400" />}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Tìm kiếm theo tên tài liệu, URL hoặc ID…"
-            className="w-full text-xs pl-9 pr-8 py-1.5 bg-white border border-[#e4e7ec] rounded-lg focus:outline-none focus:border-[#001743] transition-colors"
           />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-            >
-              <X size={13} />
-            </button>
-          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as DocumentStatusEnum | "")} className="min-h-9 rounded-lg border border-[#e4e7ec] bg-white px-2.5 text-xs text-slate-700" aria-label="Lọc trạng thái xử lý">
-            <option value="">Tất cả trạng thái</option>
-            <option value="PENDING">Chờ xử lý</option>
-            <option value="CRAWLING">Đang thu thập</option>
-            <option value="PROCESSING">Đang xử lý</option>
-            <option value="INDEXED">Đã lập chỉ mục</option>
-            <option value="FAILED">Thất bại</option>
-          </select>
-          <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value as DocumentTypeEnum | "")} className="min-h-9 rounded-lg border border-[#e4e7ec] bg-white px-2.5 text-xs text-slate-700" aria-label="Lọc loại tài liệu">
-            <option value="">Tất cả loại</option>
-            {DOCUMENT_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
-          </select>
-          <label className="flex items-center gap-2 text-xs font-medium text-slate-600 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={activeOnly}
-              onChange={(e) => setActiveOnly(e.target.checked)}
-              className="w-3.5 h-3.5 rounded text-[#001743] focus:ring-[#001743] border-slate-300"
-            />
-            <span>Chỉ hiển thị đang kích hoạt</span>
-          </label>
+          <Select value={statusFilter} onChange={(value) => setStatusFilter(value as DocumentStatusEnum | "")} className="min-w-44" aria-label="Lọc trạng thái xử lý" options={[
+            { value: "", label: "Tất cả trạng thái" }, { value: "PENDING", label: "Chờ xử lý" }, { value: "CRAWLING", label: "Đang thu thập" }, { value: "PROCESSING", label: "Đang xử lý" }, { value: "INDEXED", label: "Đã lập chỉ mục" }, { value: "FAILED", label: "Thất bại" },
+          ]} />
+          <Select value={typeFilter} onChange={(value) => setTypeFilter(value as DocumentTypeEnum | "")} className="min-w-40" aria-label="Lọc loại tài liệu" options={[{ value: "", label: "Tất cả loại" }, ...DOCUMENT_TYPES.map((type) => ({ value: type.value, label: type.label }))]} />
+          <Checkbox checked={activeOnly} onChange={(event) => setActiveOnly(event.target.checked)}>Chỉ hiển thị đang kích hoạt</Checkbox>
         </div>
       </div>
 

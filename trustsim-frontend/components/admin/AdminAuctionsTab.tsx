@@ -1,7 +1,7 @@
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
 "use client";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Tag as AntTag } from "antd";
+import { Input, Select, Tag as AntTag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   Gavel,
@@ -12,7 +12,6 @@ import {
   XCircle,
   AlertTriangle,
   RefreshCw,
-  X,
   CheckCircle2,
   Clock,
   Radio,
@@ -501,61 +500,45 @@ export function AdminAuctionsTab() {
       <div className="bg-white border border-[#e4e7ec] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
         <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
           {/* Ô tìm kiếm */}
-          <div className="relative w-full sm:w-64">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
+          <div className="w-full sm:w-64">
+            <Input allowClear prefix={<Search size={15} className="text-slate-400" />}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
                 setPageIndex(1); // Reset trang theo chuẩn
               }}
               placeholder="Tìm theo mã phiên, số SIM…"
-              className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-[#e4e7ec] rounded-lg focus:border-[#001743] focus:outline-none"
             />
-            {search && (
-              <button
-                onClick={() => {
-                  setSearch("");
-                  setPageIndex(1);
-                }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X size={12} />
-              </button>
-            )}
           </div>
 
           {/* Lọc hình thức đấu giá */}
-          <select
+          <Select
             value={typeFilter}
-            onChange={(e) => {
-              setTypeFilter(e.target.value);
+            onChange={(value) => {
+              setTypeFilter(value);
               setPageIndex(1);
             }}
-            className="text-xs py-1.5 px-3 bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none cursor-pointer"
-          >
-            <option value="all">Tất cả hình thức</option>
-            <option value={String(AuctionTypeEnum.ENGLISH)}>Đấu giá kiểu Anh</option>
-            <option value={String(AuctionTypeEnum.DUTCH)}>Đấu giá kiểu Hà Lan</option>
-          </select>
+            className="min-w-44"
+            options={[{ value: "all", label: "Tất cả hình thức" }, { value: String(AuctionTypeEnum.ENGLISH), label: "Đấu giá kiểu Anh" }, { value: String(AuctionTypeEnum.DUTCH), label: "Đấu giá kiểu Hà Lan" }]}
+          />
 
           {/* Lọc trạng thái */}
-          <select
+          <Select
             value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
+            onChange={(value) => {
+              setStatusFilter(value);
               setPageIndex(1);
             }}
-            className="text-xs py-1.5 px-3 bg-white border border-[#D1D5DB] rounded-[6px] focus:border-[#001743] focus:outline-none cursor-pointer"
-          >
-            <option value="all">Tất cả trạng thái</option>
-            <option value={String(AuctionStatusEnum.ACTIVE)}>Đang diễn ra (ACTIVE)</option>
-            <option value={String(AuctionStatusEnum.SCHEDULE)}>Chờ mở thưởng (SCHEDULE)</option>
-            <option value={String(AuctionStatusEnum.DRAFT)}>Bản nháp (DRAFT)</option>
-            <option value={String(AuctionStatusEnum.END)}>Đã kết thúc (END)</option>
-            <option value={String(AuctionStatusEnum.CANCELLED)}>Đã hủy (CANCELLED)</option>
-          </select>
+            className="min-w-48"
+            options={[
+              { value: "all", label: "Tất cả trạng thái" },
+              { value: String(AuctionStatusEnum.ACTIVE), label: "Đang diễn ra" },
+              { value: String(AuctionStatusEnum.SCHEDULE), label: "Chờ mở" },
+              { value: String(AuctionStatusEnum.DRAFT), label: "Bản nháp" },
+              { value: String(AuctionStatusEnum.END), label: "Đã kết thúc" },
+              { value: String(AuctionStatusEnum.CANCELLED), label: "Đã hủy" },
+            ]}
+          />
 
           {/* Nút tải lại */}
           <button

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 export type ToastType = "success" | "error" | "warning" | "info";
 
@@ -81,11 +82,16 @@ const TOAST_STYLES: Record<ToastType, { bg: string; border: string; bar: string;
 };
 
 export const ToastContainer: React.FC<ToastProps> = ({ toasts, onClose }) => {
-  return (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
+  return createPortal(
     <div
       style={{
         position: "fixed",
-        top: 24,
+        top: "max(88px, calc(env(safe-area-inset-top, 0px) + 78px))",
         right: 24,
         zIndex: 99999,
         display: "flex",
@@ -98,7 +104,8 @@ export const ToastContainer: React.FC<ToastProps> = ({ toasts, onClose }) => {
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onClose={() => onClose(toast.id)} />
       ))}
-    </div>
+    </div>,
+    document.body
   );
 };
 

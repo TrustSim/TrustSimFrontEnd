@@ -149,20 +149,20 @@ export default function TradeDocumentViewer({
   }
 
   return (
-    <main className="flex min-h-dvh flex-col bg-slate-200 text-slate-900">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-[#001743] text-white shadow-lg shadow-slate-900/10">
+    <main className="flex min-h-dvh flex-col bg-[#f7f8fd] text-[#0b1630]">
+      <header className="sticky top-0 z-20 border-b border-[#001743]/10 bg-white/85 text-[#001743] backdrop-blur-xl">
         <div className="mx-auto flex min-h-16 w-full max-w-[1600px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <Link
               href={tradeHref}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/20 text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#001743]/10 text-[#001743] transition hover:bg-[#f1f3ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4c5fd5]"
               aria-label="Quay lại hồ sơ giao dịch"
             >
               <ArrowLeft size={19} />
             </Link>
             <div className="min-w-0">
-              <h1 className="truncate text-sm font-bold sm:text-base">{meta.title}</h1>
-              <p className="mt-0.5 truncate text-xs text-blue-100/70">
+              <h1 className="truncate text-sm font-semibold tracking-tight sm:text-base">{meta.title}</h1>
+              <p className="mt-0.5 truncate text-xs text-[#5b6477]">
                 {viewer?.tradeCode || "Đang tải hồ sơ"}
               </p>
             </div>
@@ -173,7 +173,7 @@ export default function TradeDocumentViewer({
               <a
                 href={viewer.pdfUrl}
                 download={fileName}
-                className="inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2.5 text-xs font-bold text-[#001743] transition hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#001743] px-3.5 py-2.5 text-xs font-semibold text-white transition hover:bg-[#0b2a6b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4c5fd5]"
               >
                 <Download size={15} />
                 <span className="hidden sm:inline">Tải PDF</span>
@@ -195,7 +195,7 @@ export default function TradeDocumentViewer({
         <DocumentError message={error} tradeHref={tradeHref} />
       ) : viewer ? (
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex items-center justify-between gap-4 border-b border-slate-300 bg-white px-4 py-2.5 text-xs sm:px-6">
+          <div className="flex items-center justify-between gap-4 border-b border-[#001743]/10 bg-white/70 px-4 py-2.5 text-xs sm:px-6">
             <div className="flex min-w-0 items-center gap-2 text-slate-600">
               {viewer.pdfUrl ? (
                 <FileCheck2 size={16} className="shrink-0 text-emerald-700" />
@@ -217,10 +217,10 @@ export default function TradeDocumentViewer({
             <iframe
               src={`${viewer.pdfUrl}#toolbar=1&navpanes=0&view=FitH`}
               title={meta.title}
-              className="min-h-[calc(100dvh-113px)] w-full flex-1 border-0 bg-slate-300"
+              className="min-h-[calc(100dvh-113px)] w-full flex-1 border-0 bg-[#e9ecf8]"
             />
           ) : (
-            <div className="flex-1 overflow-auto px-3 py-5 sm:px-6 sm:py-8">
+            <div className="flex-1 overflow-auto bg-[radial-gradient(circle_at_20%_0%,rgba(140,156,255,.18),transparent_38%)] px-3 py-5 sm:px-6 sm:py-8">
               <article
                 className="mx-auto max-w-5xl bg-white p-5 shadow-xl shadow-slate-900/10 sm:p-10 lg:p-14"
                 dangerouslySetInnerHTML={{ __html: viewer.html || "" }}

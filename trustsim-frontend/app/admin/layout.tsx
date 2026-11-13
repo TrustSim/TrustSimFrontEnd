@@ -229,7 +229,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const availableBalance = wallet?.availableBalance ?? 0;
 
   return (
-    <div className="admin-shell min-h-screen flex bg-[#f8f9fa] text-[#001743] font-sans antialiased overflow-x-hidden">
+    <div className="admin-shell min-h-screen flex text-[#001743] font-sans antialiased overflow-x-hidden">
       {/* Mobile Drawer Backdrop */}
       {mobileOpen && (
         <div
@@ -255,7 +255,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         } ml-0`}
       >
         {/* Top Header */}
-        <header className="admin-topbar sticky top-0 z-30 h-[60px] bg-white border-b border-[#e4e7ec] px-3 sm:px-6 flex items-center justify-between shadow-xs">
+        <header className="admin-topbar sticky top-0 z-30 h-[60px] border-b px-3 sm:px-6 flex items-center justify-between">
           {/* Breadcrumb / Title with Hamburger Toggle */}
           <div className="flex items-center gap-1.5 sm:gap-2 text-[13px] min-w-0">
             {/* Mobile Hamburger Button */}
@@ -288,12 +288,6 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
           {/* Right Controls */}
           <div className="flex items-center gap-3">
-            {/* System Health Status */}
-            <div className="hidden sm:flex items-center gap-2 pr-4 border-r border-[#e4e7ec] text-slate-500 text-xs font-medium">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <span>Hệ thống trực tuyến</span>
-            </div>
-
             {/* ── Notification Bell ── */}
             <div className="relative" ref={notifRef}>
               <button
@@ -545,7 +539,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center text-xs text-slate-500">
+        <div className="min-h-screen bg-[#f7f8fd] flex items-center justify-center text-xs text-slate-500">
           Đang tải giao diện quản trị…
         </div>
       }
@@ -556,16 +550,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           theme={{
             token: {
               colorPrimary: "#001743",
-              colorInfo: "#2563EB",
+              colorInfo: "#4C5FD5",
               colorSuccess: "#15803D",
               colorWarning: "#B45309",
               colorError: "#C5162E",
-              colorText: "#344054",
+              colorText: "#0B1630",
               colorTextHeading: "#001743",
-              colorTextSecondary: "#667085",
-              colorBorder: "#D0D5DD",
-              colorBorderSecondary: "#E4E7EC",
-              colorBgLayout: "#F6F8FB",
+              colorTextSecondary: "#5B6477",
+              colorBorder: "#D5DBEB",
+              colorBorderSecondary: "#E7EBF5",
+              colorBgLayout: "#F7F8FD",
               colorBgContainer: "#FFFFFF",
               borderRadius: 8,
               controlHeight: 40,
@@ -576,10 +570,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             },
             components: {
               Table: {
-                headerBg: "#F8FAFC",
-                headerColor: "#475467",
-                borderColor: "#E4E7EC",
-                rowHoverBg: "#F8FAFC",
+                headerBg: "#F3F5FB",
+                headerColor: "#52617B",
+                borderColor: "#E7EBF5",
+                rowHoverBg: "#F4F6FC",
                 cellPaddingBlockSM: 11,
                 cellPaddingInlineSM: 14,
               },
@@ -587,7 +581,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               Drawer: { paddingLG: 20 },
               Form: { itemMarginBottom: 16, labelColor: "#344054" },
               Pagination: { itemActiveBg: "#001743" },
-              Tabs: { itemColor: "#667085", itemSelectedColor: "#001743", inkBarColor: "#E4011E" },
+              Tabs: { itemColor: "#667085", itemSelectedColor: "#001743", inkBarColor: "#4C5FD5" },
             },
           }}
         >

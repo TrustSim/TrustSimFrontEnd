@@ -472,6 +472,13 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
   // Giai đoạn 2: Đang diễn ra (ACTIVE) — Đã mở sàn và chưa kết thúc
   const isActivePhase = !isEndedPhase && !isScheduledPhase;
 
+  // Đồng hồ trình duyệt có thể đã qua giờ mở trong khi backend còn đang kích hoạt phiên.
+  useEffect(() => {
+    if (!auction || auction.auctionStatus !== "SCHEDULE" || !isActivePhase) return;
+    const retry = window.setInterval(() => fetchAuctionData(true), 3000);
+    return () => window.clearInterval(retry);
+  }, [auction?.auctionStatus, isActivePhase, auctionId]);
+
   // Tự động kích hoạt đồng bộ nhẹ với backend khi chạm mốc chuyển pha
   const transitionNotifiedRef = useRef<{ toActive?: boolean; toEnd?: boolean }>({});
   useEffect(() => {
@@ -564,8 +571,8 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
     const progressPercent = Math.min(100, Math.max(0, ((interval - currentCycleElapsed) / interval) * 100));
 
     const computedPrice = Math.max(reserve, startPrice - completedCycles * decreaseAmount);
-    const isFloorReached = computedPrice <= reserve;
-    const nextPrice = isFloorReached ? reserve : Math.max(reserve, computedPrice - decreaseAmount);
+    const isFloorReached = auction.dutchIsFloorReached ?? computedPrice <= reserve;
+    const nextPrice = auction.dutchNextPrice ?? (isFloorReached ? reserve : Math.max(reserve, computedPrice - decreaseAmount));
 
     const diffToEnd = Math.max(0, endMs - now);
     const totalHours = Math.floor(diffToEnd / (1000 * 60 * 60));
@@ -588,37 +595,22 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
     };
   }, [auction, isDutch, now, startMs, endMs]);
 
-  // Đồng bộ giá hiển thị khi nhịp giảm Hà Lan thay đổi (chạy thuần túy ở frontend)
+  // Giá do API xác định theo thời gian và giá sàn; tải lại mỗi nhịp để tránh
+  // trình duyệt tự tính sai khi giá sàn không được công khai.
   const lastCompletedCyclesRef = useRef<number>(-1);
   useEffect(() => {
     if (!isActivePhase || !isDutch || !auction) return;
 
     if (lastCompletedCyclesRef.current === -1) {
       lastCompletedCyclesRef.current = dutchCalc.completedCycles;
-      if (auction.currentPrice !== dutchCalc.computedPrice) {
-        setAuction((prev) => (prev ? { ...prev, currentPrice: dutchCalc.computedPrice } : null));
-        setBidAmountInput(dutchCalc.computedPrice.toLocaleString("vi-VN"));
-      }
       return;
     }
 
     if (dutchCalc.completedCycles > lastCompletedCyclesRef.current) {
       lastCompletedCyclesRef.current = dutchCalc.completedCycles;
-      setAuction((prev) => (prev ? { ...prev, currentPrice: dutchCalc.computedPrice } : null));
-      setBidAmountInput(dutchCalc.computedPrice.toLocaleString("vi-VN"));
-      setPriceFlash(true);
-      setTimeout(() => setPriceFlash(false), 1200);
-
-      if (!dutchCalc.isFloorReached) {
-        addToast({
-          type: "info",
-          title: "📉 Giá vừa hạ!",
-          message: `Mức giá hiện tại vừa giảm còn ${formatPrice(dutchCalc.computedPrice)}.`,
-          duration: 3500,
-        });
-      }
+      fetchAuctionData(true);
     }
-  }, [dutchCalc.completedCycles, dutchCalc.computedPrice, dutchCalc.isFloorReached, isActivePhase, isDutch]);
+  }, [dutchCalc.completedCycles, isActivePhase, isDutch]);
 
   const animatedPrice = useCountUp(auction?.currentPrice || 0, 500);
 
@@ -733,6 +725,10 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
   const renderAuctionDeskAction = () => {
     if (isEndedPhase) {
       return <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-center text-xs font-semibold text-slate-600">Phiên đấu giá đã kết thúc</div>;
+    }
+
+    if (isActivePhase && auction?.auctionStatus === "SCHEDULE") {
+      return <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-center text-xs font-semibold text-slate-600">Đang mở phiên đấu giá…</div>;
     }
 
     if (currentUser?.userId === auction?.authorId) {
@@ -1152,7 +1148,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                                   </div>
                                   <span className="text-[11px] text-slate-500">
                                     {dutchCalc.isFloorReached ? (
-                                      <strong className="text-rose-600">Đã chạm giá sàn tối thiểu ({formatPrice(auction.reservePrice)}) - Dừng giảm</strong>
+                                      <strong className="text-rose-600">Đã chạm giá sàn{auction.reservePrice > 0 ? ` (${formatPrice(auction.reservePrice)})` : ""} — dừng giảm</strong>
                                     ) : (
                                       <>
                                         Giá tiếp theo: <strong className="font-mono text-emerald-700">{formatPrice(dutchCalc.nextPrice)}</strong>
