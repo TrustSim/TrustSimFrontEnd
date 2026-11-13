@@ -16,6 +16,7 @@ import { AdminDocumentsTab } from "@/components/admin/AdminDocumentsTab";
 import { AdminAuditLogsTab } from "@/components/admin/AdminAuditLogsTab";
 import { AdminFinancialActivityTab } from "@/components/admin/AdminFinancialActivityTab";
 import { AdminAnomaliesTab } from "@/components/admin/AdminAnomaliesTab";
+import ChatWorkspace from "@/components/chat/ChatWorkspace";
 import ImportExportBar from "@/components/admin/ImportExportBar";
 import { ExcelColumnDef } from "@/services/excelService";
 import { auctionService, type AuctionDto } from "@/services/auctionService";
@@ -1066,6 +1067,7 @@ export default function AdminControlCenter() {
       {currentTab === "audit-logs" && <AdminAuditLogsTab />}
       {currentTab === "ledger" && <AdminLedgerTab />}
       {currentTab === "anomalies" && <AdminAnomaliesTab />}
+      {currentTab === "support-chat" && <ChatWorkspace staff />}
       {currentTab === "settings" && <AdminSettingsTab />}
 
 

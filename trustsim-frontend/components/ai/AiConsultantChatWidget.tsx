@@ -95,12 +95,14 @@ export function AiConsultantChatWidget() {
   const [fengShuiElement, setFengShuiElement] = useState("");
 
   const abortControllerRef = useRef<AbortController | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const chatListRef = useRef<HTMLDivElement | null>(null);
+  const nearBottomRef = useRef(true);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Tự động cuộn xuống cuối khi có tin nhắn mới
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
-    messagesEndRef.current?.scrollIntoView({ behavior });
+    const list = chatListRef.current;
+    if (list && nearBottomRef.current) list.scrollTo({ top: list.scrollHeight, behavior });
   }, []);
 
   useEffect(() => {
@@ -117,7 +119,9 @@ export function AiConsultantChatWidget() {
       }
     };
     window.addEventListener("open_ai_chat", handleOpenChat);
-    return () => window.removeEventListener("open_ai_chat", handleOpenChat);
+    const handleHumanOpen = () => setIsOpen(false);
+    window.addEventListener("open_human_chat", handleHumanOpen);
+    return () => { window.removeEventListener("open_ai_chat", handleOpenChat); window.removeEventListener("open_human_chat", handleHumanOpen); };
   }, []);
 
   useEffect(() => {
@@ -402,6 +406,7 @@ export function AiConsultantChatWidget() {
           <button
             type="button"
             onClick={() => {
+              window.dispatchEvent(new Event("open_ai_chat"));
               setIsOpen(true);
               setIsMinimized(false);
             }}
@@ -610,7 +615,7 @@ export function AiConsultantChatWidget() {
               )}
 
               {/* Vùng cuộn tin nhắn */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+              <div ref={chatListRef} onScroll={(event) => { const list = event.currentTarget; nearBottomRef.current = list.scrollHeight - list.scrollTop - list.clientHeight < 96; }} className="min-h-0 flex-1 overflow-y-auto p-4 space-y-4 text-xs">
                 {hasMoreMessages ? (
                   <div className="text-center"><button type="button" onClick={() => void loadOlderMessages()} disabled={messagesLoading} className="min-h-9 rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-semibold text-[#001743] hover:bg-slate-50 disabled:opacity-50">{messagesLoading ? "Đang tải…" : "Tải tin nhắn cũ hơn"}</button></div>
                 ) : null}
@@ -756,7 +761,6 @@ export function AiConsultantChatWidget() {
                     </div>
                   ))
                 )}
-                <div ref={messagesEndRef} />
               </div>
 
               {/* ── Footer: Ô nhập liệu & Nút gửi ── */}

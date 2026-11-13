@@ -22,6 +22,7 @@ import {
   BookOpen,
   ScrollText,
   WalletCards,
+  MessageCircle,
   X,
 } from "lucide-react";
 
@@ -68,6 +69,7 @@ export const ADMIN_NAV_SECTIONS: NavSection[] = [
   {
     title: "Vận hành & An toàn",
     items: [
+      { id: "support-chat", label: "Hộp thư hỗ trợ", tab: "support-chat", icon: MessageCircle },
       { id: "documents", label: "Tài liệu & Chính sách", tab: "documents", icon: FileText },
       { id: "audit-logs", label: "Nhật ký kiểm toán", tab: "audit-logs", icon: ScrollText },
       { id: "disputes", label: "Khiếu nại", tab: "disputes", icon: AlertOctagon },

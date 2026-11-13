@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { AiConsultantChatWidget } from "@/components/ai/AiConsultantChatWidget";
+import { HumanSupportChatWidget } from "@/components/chat/HumanSupportChatWidget";
 import { ToastContainer, ToastMessage } from "@/components/ui/Toast";
 
 export function showToast(toast: Omit<ToastMessage, "id">) {
@@ -66,6 +67,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       <Navbar />
       <main style={{ flex: 1 }}>{children}</main>
       <Footer />
+      <HumanSupportChatWidget />
       <AiConsultantChatWidget />
     </div>
   );

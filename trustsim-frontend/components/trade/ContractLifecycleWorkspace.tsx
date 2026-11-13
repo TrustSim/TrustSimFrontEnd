@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -27,6 +28,7 @@ import {
   Fingerprint,
   LoaderCircle,
   LockKeyhole,
+  MessageCircle,
   RefreshCw,
   Send,
   ShieldCheck,
@@ -42,6 +44,7 @@ import { ToastContainer, type ToastMessage } from "@/components/ui/Toast";
 import { authService } from "@/services/authService";
 import { uploadImageToCloudinary } from "@/services/cloudinaryService";
 import { tradeService } from "@/services/tradeService";
+import { chatService } from "@/services/chatService";
 import { disputeService } from "@/services/disputeService";
 import type { DisputeTicketDto } from "@/types/dispute";
 import type {
@@ -175,6 +178,7 @@ function CopyButton({ value }: { value: string }) {
 }
 
 export default function ContractLifecycleWorkspace({ identifier }: { identifier: string }) {
+  const router = useRouter();
   const [trade, setTrade] = useState<TradeTransactionDto | null>(null);
   const [contract, setContract] = useState<ContractPreviewDto | null>(null);
   const [transfer, setTransfer] = useState<SimTransferDetailsDto | null>(null);
@@ -640,6 +644,17 @@ export default function ContractLifecycleWorkspace({ identifier }: { identifier:
             <InfoCard title="Các bên tham gia" icon={<UserRound size={17} />}>
               <Party name={trade.buyerName} role="Bên mua · Nhận SIM" signed={contract?.buyerSigned} self={isBuyer} />
               <Party name={trade.sellerName} role="Bên bán · Chuyển quyền" signed={contract?.sellerSigned} self={isSeller} />
+              {contract?.isFullySigned && (isBuyer || isSeller) && (
+                <button type="button" disabled={busyAction === "chat"} onClick={async () => {
+                  setBusyAction("chat");
+                  try {
+                    const conversation = await chatService.direct(isBuyer ? trade.sellerId : trade.buyerId);
+                    router.push(`/messages?conversation=${conversation.id}`);
+                  } catch (error) {
+                    notify({ type: "error", title: "Không thể mở hội thoại", message: error instanceof Error ? error.message : "Vui lòng thử lại." });
+                  } finally { setBusyAction(null); }
+                }} className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-[#001743]/15 px-3 py-2.5 text-xs font-semibold text-[#001743] hover:bg-[#f1f3ff] disabled:opacity-50"><MessageCircle size={16} />{busyAction === "chat" ? "Đang mở…" : `Nhắn cho ${isBuyer ? "người bán" : "người mua"}`}</button>
+              )}
             </InfoCard>
 
             <InfoCard title="Mốc thời gian" icon={<Clock3 size={17} />}>
