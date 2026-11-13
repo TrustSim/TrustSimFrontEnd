@@ -49,6 +49,7 @@ import {
 import { Pagination } from "@/components/ui/Pagination";
 import { AdminSortButton, toggleSort, type SortDirection } from "@/components/admin/AdminPrimitives";
 import { AdminDataTable, AdminIconButton, AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
+import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 
 // --- Brand color map ---
 const BRAND_COLORS: Record<string, string> = {
@@ -828,7 +829,7 @@ export function AdminCarriersTab() {
     { title: <AdminSortButton label="Nhà mạng" active={sortKey === "name"} direction={sortDirection} onClick={() => changeSort("name")} />, key: "carrier", width: 230, render: (_, carrier) => <div className="flex items-center gap-3"><CarrierAvatar name={carrier.carrierName} logo={carrier.logoImg || undefined} /><div><strong className="block text-xs text-[var(--admin-ink)]">{carrier.carrierName}</strong><span className="font-mono text-[11px] text-slate-500">{carrier.carrierCode}</span></div></div> },
     { title: <AdminSortButton label="Mã viết tắt" active={sortKey === "code"} direction={sortDirection} onClick={() => changeSort("code")} />, dataIndex: "carrierCode", key: "carrierCode", width: 130, render: (value) => <AntTag>{value}</AntTag> },
     { title: <AdminSortButton label={`Dải đầu số (${prefixes.length})`} active={sortKey === "prefixes"} direction={sortDirection} onClick={() => changeSort("prefixes")} />, key: "prefixes", render: (_, carrier) => { const values = prefixesByCarrier[carrier.id] || []; return <div className="flex flex-wrap gap-1">{values.length ? values.slice(0, 6).map((prefix) => <AntTag key={prefix.id}>{prefix.prefixValue}</AntTag>) : <Button type="link" size="small" onClick={(event) => { event.stopPropagation(); openEdit(carrier); }}>Thêm đầu số</Button>}{values.length > 6 ? <AntTag>+{values.length - 6}</AntTag> : null}</div>; } },
-    { title: "Trạng thái", key: "status", width: 130, align: "center", render: () => <AntTag color="success">Hoạt động</AntTag> },
+    { title: "Trạng thái", key: "status", width: 130, align: "center", render: () => <AdminStatusBadge status="Hoạt động" /> },
     { title: "Thao tác", key: "actions", width: 104, fixed: "right", align: "right", render: (_, carrier) => <div className="flex justify-end gap-1" onClick={(event) => event.stopPropagation()}><AdminIconButton label="Chỉnh sửa nhà mạng" icon={Edit3} onClick={() => openEdit(carrier)} /><AdminIconButton label="Xóa nhà mạng" icon={Trash2} danger onClick={() => setDeleteTarget(carrier)} /></div> },
   ];
 

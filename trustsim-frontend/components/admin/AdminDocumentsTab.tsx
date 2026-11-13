@@ -527,7 +527,7 @@ export function AdminDocumentsTab() {
       {/* ─── 2. KPI Overview Cards ─── */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
         {/* Total Docs */}
-        <div className="bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs flex items-center gap-3.5">
+        <div className="admin-kpi bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
             <FileText size={18} strokeWidth={1.75} />
           </div>
@@ -542,7 +542,7 @@ export function AdminDocumentsTab() {
         </div>
 
         {/* External Links */}
-        <div className="bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs flex items-center gap-3.5">
+        <div className="admin-kpi bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
             <Globe size={18} strokeWidth={1.75} />
           </div>
@@ -557,7 +557,7 @@ export function AdminDocumentsTab() {
         </div>
 
         {/* Direct Uploads / Internal */}
-        <div className="bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs flex items-center gap-3.5">
+        <div className="admin-kpi bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center shrink-0">
             <Cpu size={18} strokeWidth={1.75} />
           </div>
@@ -572,7 +572,7 @@ export function AdminDocumentsTab() {
         </div>
 
         {/* Latest Update */}
-        <div className="bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs flex items-center gap-3.5">
+        <div className="admin-kpi bg-white border border-[#e4e7ec] rounded-xl p-3.5 shadow-2xs flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
             <Calendar size={18} strokeWidth={1.75} />
           </div>

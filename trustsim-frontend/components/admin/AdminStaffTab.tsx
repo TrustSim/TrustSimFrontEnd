@@ -54,6 +54,7 @@ import ImportExportBar from "@/components/admin/ImportExportBar";
 import { ExcelColumnDef } from "@/services/excelService";
 import { SortOrder, UserAccountSortBy } from "@/types/common";
 import { AdminDataTable, AdminIconButton } from "@/components/admin/AdminDataPrimitives";
+import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 
 const STAFF_EXPORT_COLUMNS: ExcelColumnDef<AdminUserDetailDto>[] = [
   { header: "Mã nhân sự", key: "id", width: 15 },
@@ -192,7 +193,7 @@ export function AdminStaffTab() {
     { title: "Liên hệ & định danh", key: "contact", width: 190, render: (_, member) => <div><span className="block font-mono text-xs">{member.phoneNumber || "Chưa đăng ký"}</span><span className="text-[11px] text-slate-500">{member.identityNumber ? `CCCD •••• ${member.identityNumber.slice(-4)}` : "Chưa nộp CCCD"}</span></div> },
     { title: "Phân cấp kiểm toán", key: "role", width: 210, render: () => <AntTag color={activeSegment === "admins" ? "purple" : "blue"}>{activeSegment === "admins" ? "Tier-3 · Toàn quyền" : "Tier-1 · Tư vấn"}</AntTag> },
     { title: <AdminSortButton label="Ngày cấp phép" active={sortKey === "date"} direction={sortDirection} onClick={() => changeSort("date")} />, dataIndex: "createdDate", key: "date", width: 135, render: (value) => value ? new Date(value).toLocaleDateString("vi-VN") : "—" },
-    { title: "Tình trạng", dataIndex: "isActive", key: "status", width: 135, align: "center", render: (value) => <AntTag color={value ? "success" : "error"}>{value ? "Hoạt động" : "Tạm đình chỉ"}</AntTag> },
+    { title: "Tình trạng", dataIndex: "isActive", key: "status", width: 135, align: "center", render: (value) => <AdminStatusBadge status={value ? "Hoạt động" : "Tạm đình chỉ"} /> },
     { title: "Thao tác", key: "actions", width: 136, fixed: "right", align: "right", render: (_, member) => <div className="flex justify-end gap-1" onClick={(event) => event.stopPropagation()}><AdminIconButton label="Xem hồ sơ" icon={Eye} onClick={() => openView(member)} /><AdminIconButton label="Chỉnh sửa nhân sự" icon={Edit3} onClick={() => openEdit(member)} /><AdminIconButton label={member.isActive ? "Khóa tài khoản" : "Mở khóa tài khoản"} icon={member.isActive ? Lock : Unlock} danger={member.isActive} onClick={() => setStatusConfirm({ user: member, targetStatus: !member.isActive })} /></div> },
   ];
 
@@ -280,7 +281,7 @@ export function AdminStaffTab() {
   return (
     <div className="admin-tab admin-tab-staff space-y-4">
       {/* ── SECTION 1: Institutional Context Header & Master Action Bar ── */}
-      <div className="rounded-xl border border-[#e4e7ec] bg-white p-4 shadow-xs">
+      <div className="admin-summary-shell rounded-xl border border-[#e4e7ec] bg-white p-4 shadow-xs">
 
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
           <div>
@@ -343,7 +344,7 @@ export function AdminStaffTab() {
 
         {/* ── SECTION 2: Clean High-Trust KPI Metrics Ribbon ── */}
         <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 md:grid-cols-4">
-          <div className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
+          <div className="admin-kpi p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
             <div>
               <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tổng nhân sự trực</div>
               <div className="text-lg font-bold text-[#001743] font-mono tabular-nums mt-0.5">{totalCount}</div>
@@ -353,7 +354,7 @@ export function AdminStaffTab() {
             </div>
           </div>
 
-          <div className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
+          <div className="admin-kpi p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
             <div>
               <div className="text-[10px] font-bold text-purple-700 uppercase tracking-wider">Tier-3 Clearance</div>
               <div className="text-lg font-bold text-purple-950 font-mono tabular-nums mt-0.5">
@@ -365,7 +366,7 @@ export function AdminStaffTab() {
             </div>
           </div>
 
-          <div className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
+          <div className="admin-kpi p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
             <div>
               <div className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Tier-1 Support</div>
               <div className="text-lg font-bold text-blue-950 font-mono tabular-nums mt-0.5">
@@ -377,7 +378,7 @@ export function AdminStaffTab() {
             </div>
           </div>
 
-          <div className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
+          <div className="admin-kpi p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
             <div>
               <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tình trạng kiểm toán</div>
               <div className="flex items-center gap-1.5 mt-0.5 text-xs font-semibold text-emerald-700 font-mono">

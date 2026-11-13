@@ -49,6 +49,7 @@ import {
 import { getSims, SimNumberDto } from "@/services/simService";
 import { AuctionSortBy, SortOrder } from "@/types/common";
 import { AdminDataTable, AdminIconButton, AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
+import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import { exportTableToExcel } from "@/services/excelService";
 
 // Helper định dạng tiền tệ VNĐ
@@ -402,37 +403,15 @@ export function AdminAuctionsTab() {
   const renderStatusBadge = (status: number | AuctionStatusEnum) => {
     switch (status) {
       case AuctionStatusEnum.ACTIVE:
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60 whitespace-nowrap shrink-0">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-            <span>Đang live</span>
-          </span>
-        );
+        return <AdminStatusBadge status="ACTIVE" label="Đang live" />;
       case AuctionStatusEnum.SCHEDULE:
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-[4px] text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap shrink-0">
-            <Clock size={10} />
-            <span>Chờ mở</span>
-          </span>
-        );
+        return <AdminStatusBadge status="SCHEDULE" label="Chờ mở" />;
       case AuctionStatusEnum.DRAFT:
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-[4px] text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap shrink-0">
-            Bản nháp
-          </span>
-        );
+        return <AdminStatusBadge status="DRAFT" label="Bản nháp" />;
       case AuctionStatusEnum.END:
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-[4px] text-[10px] font-bold bg-[#001743] text-white whitespace-nowrap shrink-0">
-            Đã kết thúc
-          </span>
-        );
+        return <AdminStatusBadge status="END" label="Đã kết thúc" tone="success" />;
       case AuctionStatusEnum.CANCELLED:
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-[4px] text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap shrink-0">
-            Đã hủy
-          </span>
-        );
+        return <AdminStatusBadge status="CANCELLED" label="Đã hủy" />;
       default:
         return <span className="text-slate-400 whitespace-nowrap shrink-0">—</span>;
     }

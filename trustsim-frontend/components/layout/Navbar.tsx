@@ -687,7 +687,7 @@ function formatRelativeTime(dateStr?: string) {
   }
 }
 
-function NotificationDropdown() {
+export function NotificationDropdown() {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItemDto[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -967,7 +967,7 @@ function NotificationDropdown() {
 /* ═══════════════════════════════════════════════════════════════
    SUBCOMPONENT: User Menu Dropdown (Menu tài khoản sang trọng)
 ═══════════════════════════════════════════════════════════════ */
-function UserMenuDropdown({ user, isAdmin }: { user: AuthResponseDto; isAdmin: boolean }) {
+export function UserMenuDropdown({ user, isAdmin }: { user: AuthResponseDto; isAdmin: boolean }) {
   const [open, setOpen] = useState(false);
   const [wallet, setWallet] = useState<WalletDto | null>(null);
   const [depositModalOpen, setDepositModalOpen] = useState(false);

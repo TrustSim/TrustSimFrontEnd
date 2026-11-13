@@ -33,7 +33,7 @@ import { DisputeTicketSortBy, SortOrder } from "@/types/common";
 import { Button, DatePicker, Input, Select } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
-import { AdminDataTable, AdminFilterBar, AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
+import { AdminDataTable, AdminFilterBar, AdminIconButton, AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
 
 // Helper định dạng tiền tệ VNĐ
 const formatVND = (value: number) =>
@@ -275,7 +275,7 @@ export default function AdminDisputesTab() {
     { title: "Nội dung", dataIndex: "reason", key: "reason", width: 260, render: (value: string) => <p className="line-clamp-2 text-xs leading-relaxed text-slate-600" title={value}>{value}</p> },
     { title: "Trạng thái", dataIndex: "status", key: "status", width: 150, align: "center", render: (value: DisputeStatus) => { const badge = getStatusBadge(value); return <span className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[10px] font-bold whitespace-nowrap shrink-0 ${badge.bg}`}><span className={`h-1.5 w-1.5 rounded-full ${badge.dot}`} />{badge.label}</span>; } },
     { title: "Ngày tạo", dataIndex: "createdDate", key: "createdDate", width: 150, render: (value?: string) => <span className="whitespace-nowrap font-mono text-[11px] text-slate-600">{value ? new Date(value).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}</span> },
-    { title: "Thao tác", key: "actions", align: "right", fixed: "right", width: 116, render: (_, item) => { const pending = item.status === "OPEN" || item.status === "INVESTIGATING"; return <Button size="small" icon={<Eye size={13} />} onClick={() => openDetail(item)}>{pending ? "Thẩm định" : "Chi tiết"}</Button>; } },
+    { title: "Thao tác", key: "actions", align: "right", fixed: "right", width: 92, render: (_, item) => <AdminIconButton label={item.status === "OPEN" || item.status === "INVESTIGATING" ? "Thẩm định khiếu nại" : "Xem chi tiết khiếu nại"} icon={Eye} onClick={() => openDetail(item)} /> },
   ];
 
   return (

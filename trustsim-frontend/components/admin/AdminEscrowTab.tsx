@@ -25,7 +25,8 @@ import type { TradeTransactionDto, TradeTransactionStatus } from "@/types/trade"
 import { Button, DatePicker, Input, InputNumber, Select } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
-import { AdminDataTable, AdminFilterBar, AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
+import { AdminDataTable, AdminFilterBar, AdminIconButton, AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
+import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 
 const STATUS_OPTIONS: Array<{ value: TradeTransactionStatus; label: string }> = [
   { value: "PendingEscrow", label: "Chờ ký quỹ" },
@@ -244,7 +245,7 @@ export default function AdminEscrowTab() {
       render: (value: TradeTransactionStatus) => {
         const meta = getStatusMeta(value);
         const step = getPipelineStep(value);
-        return <div><span className={`inline-flex rounded border px-2 py-0.5 text-[10px] font-bold whitespace-nowrap shrink-0 ${meta.cls}`}>{meta.label}</span><div className="mx-auto mt-2 flex w-20 gap-1">{[1,2,3,4,5].map((item) => <span key={item} className={`h-1 flex-1 rounded-full ${item <= step ? (value === "Disputed" ? "bg-rose-500" : "bg-emerald-500") : "bg-slate-200"}`} />)}</div></div>;
+        return <div><AdminStatusBadge status={value} label={meta.label} /><div className="mx-auto mt-2 flex w-20 gap-1">{[1,2,3,4,5].map((item) => <span key={item} className={`h-1 flex-1 rounded-full ${item <= step ? (value === "Disputed" ? "bg-rose-500" : "bg-emerald-500") : "bg-slate-200"}`} />)}</div></div>;
       },
     },
     {
@@ -259,7 +260,7 @@ export default function AdminEscrowTab() {
       fixed: "right",
       align: "right",
       width: 92,
-      render: (_, trade) => <Button size="small" icon={<Eye size={13} />} onClick={(event) => { event.stopPropagation(); setSelectedTrade(trade); }}>Xem</Button>,
+      render: (_, trade) => <div onClick={(event) => event.stopPropagation()}><AdminIconButton label="Xem giao dịch ký quỹ" icon={Eye} onClick={() => setSelectedTrade(trade)} /></div>,
     },
   ], [sortBy, sortDirection]);
 
@@ -330,7 +331,7 @@ export default function AdminEscrowTab() {
       <RightDrawer open={Boolean(selectedTrade)} onClose={() => setSelectedTrade(null)} title="Chi tiết giao dịch ký quỹ" badge={selectedTrade?.tradeTransactionCode} badgeCls="bg-[#001743] text-white" size="lg">
         {selectedTrade && <>
           <DrawerBody>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Giá trị ký quỹ</p><p className="mt-1 font-mono text-xl font-bold text-[#001743]">{formatVND(Number(selectedTrade.escrowAmount))}</p><span className={`mt-3 inline-flex rounded border px-2 py-0.5 text-[10px] font-bold ${getStatusMeta(selectedTrade.status).cls}`}>{getStatusMeta(selectedTrade.status).label}</span></div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Giá trị ký quỹ</p><p className="mt-1 font-mono text-xl font-bold text-[#001743]">{formatVND(Number(selectedTrade.escrowAmount))}</p><AdminStatusBadge status={selectedTrade.status} label={getStatusMeta(selectedTrade.status).label} /></div>
             <DrawerSection title="Các bên tham gia"><div className="grid gap-3 sm:grid-cols-2"><div className="rounded-lg border border-slate-200 p-3"><p className="text-[10px] font-semibold uppercase text-slate-400">Người mua</p><p className="mt-1 text-xs font-bold text-[#001743]">{selectedTrade.buyerName || "Chưa có tên hiển thị"}</p><p className="mt-1 break-all font-mono text-[10px] text-slate-400">{selectedTrade.buyerId}</p></div><div className="rounded-lg border border-slate-200 p-3"><p className="text-[10px] font-semibold uppercase text-slate-400">Người bán</p><p className="mt-1 text-xs font-bold text-[#001743]">{selectedTrade.sellerName || "Chưa có tên hiển thị"}</p><p className="mt-1 break-all font-mono text-[10px] text-slate-400">{selectedTrade.sellerId}</p></div></div></DrawerSection>
             <DrawerSection title="Tiến độ nghiệp vụ"><div className="space-y-2">{PIPELINE.map((label, index) => { const itemStep = index + 1; const currentStep = getPipelineStep(selectedTrade.status); const done = itemStep <= currentStep; return <div key={label} className={`flex items-center gap-3 rounded-lg border p-3 ${done ? "border-emerald-200 bg-emerald-50/40" : "border-slate-200"}`}><span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${done ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400"}`}>{done ? <CheckCircle2 size={13} /> : itemStep}</span><span className={`text-xs font-semibold ${done ? "text-slate-800" : "text-slate-400"}`}>{label}</span></div>; })}</div></DrawerSection>
             <DrawerSection title="Mốc thời gian"><dl className="grid grid-cols-[150px_1fr] gap-x-3 gap-y-2 text-xs"><dt className="text-slate-500">Khởi tạo</dt><dd className="font-medium text-slate-800">{formatDateTime(selectedTrade.createdDate)}</dd><dt className="text-slate-500">Hạn ký quỹ</dt><dd>{formatDateTime(selectedTrade.escrowDeadline)}</dd><dt className="text-slate-500">Hạn ký hợp đồng</dt><dd>{formatDateTime(selectedTrade.signingDeadline)}</dd><dt className="text-slate-500">Hạn sang tên</dt><dd>{formatDateTime(selectedTrade.transferDeadline)}</dd><dt className="text-slate-500">Hoàn tất</dt><dd>{formatDateTime(selectedTrade.completedAt)}</dd></dl></DrawerSection>

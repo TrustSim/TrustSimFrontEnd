@@ -26,7 +26,8 @@ import { LedgerJournalSortBy, SortOrder, type PagedResult } from "@/types/common
 import { Button, DatePicker, Input, InputNumber, Select } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
-import { AdminDataTable, AdminFilterBar, AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
+import { AdminDataTable, AdminFilterBar, AdminIconButton, AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
+import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 /** Safe formatVND — returns "—" for NaN/undefined/null */
@@ -46,30 +47,29 @@ const formatDate = (d?: string) => {
 
 const LOAI_GIAO_DICH_LABELS: Record<string, string> = {
   TOP_UP: "Nạp tiền",
-  WITHDRAW: "Rút tiền",
-  ESCROW_LOCK: "Khóa ký quỹ",
-  ESCROW_RELEASE: "Giải phóng ký quỹ",
-  ESCROW_FORFEIT: "Thu ký quỹ",
-  FEE: "Phí dịch vụ",
-  ADJUSTMENT: "Điều chỉnh thủ công",
+  WITHDRAW_LOCK: "Khóa tiền chờ rút",
+  WITHDRAW_COMPLETED: "Chi trả rút tiền",
+  WITHDRAW_REFUND: "Hoàn tiền rút thất bại",
+  AUCTION_DEPOSIT_LOCK: "Khóa cọc đấu giá",
+  AUCTION_DEPOSIT_RELEASED: "Hoàn cọc đấu giá",
+  AUCTION_DEPOSIT_FORFEITED: "Thu cọc đấu giá vi phạm",
+  ESCROW_HOLD: "Giữ ký quỹ giao dịch",
+  ESCROW_RELEASE: "Giải ngân ký quỹ",
+  ESCROW_REFUND: "Hoàn ký quỹ cho người mua",
+  ADMIN_ADJUSTMENT: "Điều chỉnh kế toán",
+  ADMIN_PROFIT_WITHDRAW: "Rút lợi nhuận sàn",
+  SELLER_LISTING_DEPOSIT_LOCK: "Khóa cọc mở phiên của người bán",
+  SELLER_LISTING_DEPOSIT_RELEASED: "Hoàn cọc mở phiên cho người bán",
+  SELLER_LISTING_DEPOSIT_FORFEITED: "Thu cọc mở phiên vi phạm",
+  AUCTION_PROGRESSIVE_DEPOSIT_LOCK: "Khóa cọc bổ sung sau đấu giá",
 };
+
+const getLedgerTransactionLabel = (type?: string) => type ? LOAI_GIAO_DICH_LABELS[type] || type : "—";
+const getJournalStatusLabel = (status?: string) => status === "POSTED" ? "Đã ghi sổ" : status === "REVERSED" ? "Đã đảo bút toán" : status || "—";
 
 // ─── Badges ───────────────────────────────────────────────────────────────────
 function LoaiGiaoDichBadge({ type }: { type: string }) {
-  const map: Record<string, string> = {
-    TOP_UP: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    WITHDRAW: "bg-rose-50 text-rose-700 border-rose-200",
-    ESCROW_LOCK: "bg-amber-50 text-amber-700 border-amber-200",
-    ESCROW_RELEASE: "bg-blue-50 text-blue-700 border-blue-200",
-    ESCROW_FORFEIT: "bg-orange-50 text-orange-700 border-orange-200",
-    FEE: "bg-purple-50 text-purple-700 border-purple-200",
-    ADJUSTMENT: "bg-slate-100 text-slate-600 border-slate-200",
-  };
-  return (
-    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${map[type] || "bg-slate-100 text-slate-500 border-slate-200"}`}>
-      {LOAI_GIAO_DICH_LABELS[type] || type}
-    </span>
-  );
+  return <AdminStatusBadge status={type} label={getLedgerTransactionLabel(type)} tone="info" />;
 }
 
 function ChuKyBadge({ valid }: { valid?: boolean }) {
@@ -107,7 +107,7 @@ function KpiCard({
   return (
     <div
       onClick={onClick}
-      className={`bg-white border border-slate-200/80 rounded-xl p-4 shadow-2xs flex items-center justify-between ${
+      className={`admin-kpi bg-white border border-slate-200/80 rounded-xl p-4 shadow-2xs flex items-center justify-between ${
         onClick ? "cursor-pointer hover:border-slate-300 hover:shadow-xs transition-[border-color,box-shadow] duration-150" : ""
       }`}
     >
@@ -192,11 +192,7 @@ function ChiTietModal({ journal, onClose }: { journal: LedgerJournalDto; onClose
             </div>
             <div className="flex items-start gap-3">
               <span className="text-xs text-slate-500 w-32 shrink-0">Trạng thái:</span>
-              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
-                journal.status === "POSTED"
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                  : "bg-amber-50 text-amber-700 border-amber-200"
-              }`}>{journal.statusName || journal.status}</span>
+              <AdminStatusBadge status={journal.status} label={getJournalStatusLabel(journal.status)} tone={journal.status === "POSTED" ? "success" : "warning"} />
             </div>
             <div className="flex items-start gap-3">
               <span className="text-xs text-slate-500 w-32 shrink-0">Chữ ký ECDsa:</span>
@@ -742,7 +738,7 @@ export default function AdminLedgerTab() {
       render: (value: string, journal) => (
         <div>
           <div className="font-mono font-semibold text-[#001743] text-[11px]">{value}</div>
-          <div className="text-[10px] text-slate-400">{journal.transactionTypeName || journal.transactionType}</div>
+          <div className="text-[10px] text-slate-400">{getLedgerTransactionLabel(journal.transactionType)}</div>
         </div>
       ),
     },
@@ -764,10 +760,8 @@ export default function AdminLedgerTab() {
       dataIndex: "status",
       key: "status",
       align: "center",
-      render: (value: string, journal) => (
-        <span className={`inline-flex rounded border px-2 py-0.5 text-[10px] font-bold ${value === "POSTED" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-700"}`}>
-          {journal.statusName || value}
-        </span>
+      render: (value: string) => (
+        <AdminStatusBadge status={value} label={getJournalStatusLabel(value)} tone={value === "POSTED" ? "success" : "warning"} />
       ),
     },
     {
@@ -782,11 +776,7 @@ export default function AdminLedgerTab() {
       align: "right",
       fixed: "right",
       width: 92,
-      render: (_, journal) => (
-        <Button size="small" icon={<Eye size={13} />} loading={detailLoading} onClick={() => handleViewDetail(journal.id)}>
-          Xem
-        </Button>
-      ),
+      render: (_, journal) => <AdminIconButton label="Xem phiếu kế toán" icon={Eye} disabled={detailLoading} onClick={() => handleViewDetail(journal.id)} />,
     },
   ];
 

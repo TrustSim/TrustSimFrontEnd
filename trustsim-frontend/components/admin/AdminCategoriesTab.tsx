@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Button, Input, Tag as AntTag } from "antd";
+import { Button, Input } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   Plus, Edit3, Trash2, AlertTriangle, Check,
@@ -20,6 +20,7 @@ import { Pagination } from "@/components/ui/Pagination";
 import { AdminSortButton, toggleSort, type SortDirection } from "@/components/admin/AdminPrimitives";
 import { simValidators } from "@/utils/validators";
 import { AdminDataTable, AdminIconButton, AdminPageHeader } from "@/components/admin/AdminDataPrimitives";
+import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 
 // --- Delete Modal ---
 function DeleteModal({ name, onConfirm, onCancel, loading }: {
@@ -328,10 +329,10 @@ export function AdminCategoriesTab() {
       key: "multiplier",
       width: 180,
       align: "center",
-      render: (_, cat) => <AntTag color="geekblue" icon={<TrendingUp size={12} aria-hidden="true" />}>x{cat.valuationMultiplier.toFixed(1)} AI Score</AntTag>,
+      render: (_, cat) => <AdminStatusBadge status="Hệ số định giá" label={`x${cat.valuationMultiplier.toFixed(1)} AI Score`} tone="info" />,
     },
     { title: "Quy tắc nhận diện & mô tả", dataIndex: "description", key: "description", ellipsis: true, render: (value) => value || <span className="text-slate-400">Chưa có mô tả chi tiết</span> },
-    { title: "Thanh khoản dự báo", key: "liquidity", width: 150, align: "center", render: (_, cat) => <AntTag color="success">{cat.valuationMultiplier >= 3 ? "Rất cao (A+)" : "Cao (A)"}</AntTag> },
+    { title: "Thanh khoản dự báo", key: "liquidity", width: 150, align: "center", render: (_, cat) => <AdminStatusBadge status="Dự báo thanh khoản" label={cat.valuationMultiplier >= 3 ? "Rất cao (A+)" : "Cao (A)"} tone="info" /> },
     {
       title: "Thao tác",
       key: "actions",

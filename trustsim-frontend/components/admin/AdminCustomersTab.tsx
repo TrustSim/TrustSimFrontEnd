@@ -48,6 +48,7 @@ import ImportExportBar from "@/components/admin/ImportExportBar";
 import { ExcelColumnDef, exportTableToExcel } from "@/services/excelService";
 import { SortOrder, UserAccountSortBy } from "@/types/common";
 import { AdminDataTable, AdminIconButton } from "@/components/admin/AdminDataPrimitives";
+import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 
 // Format currency
 const formatVND = (value: number) =>
@@ -272,10 +273,10 @@ export function AdminCustomersTab() {
   const tableColumns: ColumnsType<AdminUserDetailDto> = [
     { title: <AdminSortButton label="Khách hàng" active={sortKey === "name"} direction={sortDirection} onClick={() => changeSort("name")} />, key: "customer", width: 260, render: (_, customer) => <div className="flex items-center gap-3"><BankingCustomerAvatar name={customer.fullName || customer.userName} avatar={customer.avatarImg} isActive={customer.isActive} /><div className="min-w-0"><strong className="block truncate text-xs text-[var(--admin-ink)]">{customer.fullName || customer.userName}</strong><span className="block truncate text-[11px] text-slate-500">@{customer.userName} · {customer.email}</span></div></div> },
     { title: "Liên hệ & CCCD", key: "contact", width: 190, render: (_, customer) => <div><span className="block font-mono text-xs">{customer.phoneNumber || "Chưa cập nhật"}</span><span className="text-[11px] text-slate-500">{customer.identityNumber ? `CCCD •••• ${customer.identityNumber.slice(-4)}` : "Chưa có CCCD"}</span></div> },
-    { title: "Định danh eKYC", dataIndex: "verificationStatus", key: "kyc", width: 140, render: (value) => { const badge = getKycBadge(value); return <AntTag color={String(value).toUpperCase().includes("VERIFIED") ? "success" : "default"}>{badge.label}</AntTag>; } },
-    { title: "Chữ ký số PKI", dataIndex: "hasPkiKeys", key: "pki", width: 130, align: "center", render: (value) => <AntTag color={value ? "success" : "default"}>{value ? "Đã cấp PKI" : "Chưa cấp"}</AntTag> },
+    { title: "Định danh eKYC", dataIndex: "verificationStatus", key: "kyc", width: 140, render: (value) => { const badge = getKycBadge(value); return <AdminStatusBadge status={String(value)} label={badge.label} tone={badge.label.includes("Đã thẩm định") ? "success" : badge.label.includes("Chờ") ? "warning" : badge.label.includes("từ chối") ? "danger" : "neutral"} />; } },
+    { title: "Chữ ký số PKI", dataIndex: "hasPkiKeys", key: "pki", width: 130, align: "center", render: (value) => <AdminStatusBadge status={value ? "Đã cấp" : "Chưa cấp"} label={value ? "Đã cấp PKI" : "Chưa cấp"} /> },
     { title: <AdminSortButton label="Ví khả dụng" align="right" active={sortKey === "wallet"} direction={sortDirection} onClick={() => changeSort("wallet")} />, key: "wallet", width: 180, align: "right", render: (_, customer) => <div><strong className="block whitespace-nowrap font-mono text-xs text-[var(--admin-ink)]">{formatVND(customer.availableBalance)}</strong>{customer.lockedBalance > 0 ? <span className="text-[11px] text-amber-700">Ký quỹ {formatVND(customer.lockedBalance)}</span> : null}</div> },
-    { title: "Trạng thái", dataIndex: "isActive", key: "status", width: 125, align: "center", render: (value) => <AntTag color={value ? "success" : "error"}>{value ? "Hoạt động" : "Tạm khóa"}</AntTag> },
+    { title: "Trạng thái", dataIndex: "isActive", key: "status", width: 125, align: "center", render: (value) => <AdminStatusBadge status={value ? "Hoạt động" : "Tạm khóa"} /> },
     { title: "Thao tác", key: "actions", width: 104, fixed: "right", align: "right", render: (_, customer) => <div className="flex justify-end gap-1" onClick={(event) => event.stopPropagation()}><AdminIconButton label="Xem hồ sơ" icon={Eye} onClick={() => openDetail(customer)} /><AdminIconButton label={customer.isActive ? "Khóa tài khoản" : "Mở khóa tài khoản"} icon={customer.isActive ? Lock : Unlock} danger={customer.isActive} onClick={() => setStatusConfirm({ user: customer, targetStatus: !customer.isActive })} /></div> },
   ];
 
@@ -346,7 +347,7 @@ export function AdminCustomersTab() {
   return (
     <div className="admin-tab admin-tab-customers space-y-4">
       {/* ── SECTION 1: Institutional Context Header & Master Action Bar ── */}
-      <div className="rounded-xl border border-[#e4e7ec] bg-white p-4 shadow-xs">
+      <div className="admin-summary-shell rounded-xl border border-[#e4e7ec] bg-white p-4 shadow-xs">
 
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
           <div>
@@ -409,7 +410,7 @@ export function AdminCustomersTab() {
 
         {/* ── SECTION 2: Clean High-Trust KPI Metrics Ribbon ── */}
         <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 md:grid-cols-4">
-          <div className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
+          <div className="admin-kpi p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
             <div>
               <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tổng khách hàng</div>
               <div className="text-lg font-bold text-[#001743] font-mono tabular-nums mt-0.5">{totalCount}</div>
@@ -419,7 +420,7 @@ export function AdminCustomersTab() {
             </div>
           </div>
 
-          <div className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
+          <div className="admin-kpi p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
             <div>
               <div className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Đã xác thực eKYC</div>
               <div className="text-lg font-bold text-emerald-950 font-mono tabular-nums mt-0.5">{verifiedCount} tài khoản</div>
@@ -429,7 +430,7 @@ export function AdminCustomersTab() {
             </div>
           </div>
 
-          <div className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
+          <div className="admin-kpi p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
             <div>
               <div className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Ví khả dụng (Trang này)</div>
               <div className="text-sm font-bold text-blue-950 font-mono tabular-nums mt-0.5">
@@ -441,7 +442,7 @@ export function AdminCustomersTab() {
             </div>
           </div>
 
-          <div className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
+          <div className="admin-kpi p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between">
             <div>
               <div className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Đóng băng ký quỹ</div>
               <div className="text-sm font-bold text-amber-950 font-mono tabular-nums mt-0.5">
@@ -854,21 +855,15 @@ export function AdminCustomersTab() {
                 </div>
 
                 <div className="flex flex-col items-end gap-2">
-                  <span
-                    className={`px-2.5 py-1 rounded-md text-[10px] font-bold border ${
-                      getKycBadge(selectedCustomer.verificationStatus).cls
-                    }`}
-                  >
-                    {getKycBadge(selectedCustomer.verificationStatus).label}
-                  </span>
+                  <AdminStatusBadge
+                    status={String(selectedCustomer.verificationStatus)}
+                    label={getKycBadge(selectedCustomer.verificationStatus).label}
+                    tone={selectedCustomer.verificationStatus === VerificationStatusEnum.VERIFIED ? "success" : selectedCustomer.verificationStatus === VerificationStatusEnum.PENDING_VERIFICATION ? "warning" : selectedCustomer.verificationStatus === VerificationStatusEnum.REJECTED ? "danger" : "neutral"}
+                  />
                   {selectedCustomer.isActive ? (
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      Đang hoạt động
-                    </span>
+                    <AdminStatusBadge status="Hoạt động" label="Đang hoạt động" />
                   ) : (
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                      Đã tạm khóa
-                    </span>
+                    <AdminStatusBadge status="Tạm khóa" label="Đã tạm khóa" />
                   )}
                 </div>
               </div>

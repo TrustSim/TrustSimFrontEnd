@@ -11,7 +11,6 @@ export const ADMIN_ICON_SIZE = 16;
 export function AdminPageHeader({
   title,
   description,
-  badge,
   actions,
 }: {
   title: string;
@@ -21,7 +20,6 @@ export function AdminPageHeader({
 }) {
   return (
     <section className="admin-page-header" aria-label={`${title}. ${description}`}>
-      {badge ? <span className="admin-page-badge shrink-0">{badge}</span> : null}
       {actions ? <div className="admin-page-actions shrink-0">{actions}</div> : null}
     </section>
   );
