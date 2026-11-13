@@ -676,7 +676,7 @@ export default function AuctionPaymentTerminalPage({
                               <span>Trạng thái thanh toán bảo chứng:</span>
                             </div>
                             <div className="text-[11px] text-emerald-700 mt-0.5">
-                              Đã nộp 100% vào tài khoản ký quỹ TrustSim Escrow
+                              Đã nộp 100% vào tài khoản ký quỹ TrustSim
                             </div>
                           </div>
 

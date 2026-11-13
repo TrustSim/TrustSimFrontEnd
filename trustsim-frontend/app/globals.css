@@ -1,5 +1,23 @@
 @import "tailwindcss";
 
+@media (min-width: 0px) {
+  .auth-app-shell > header, .auth-app-shell > footer, .auth-app-shell > div:has(> .fixed.bottom-4) { display: none !important; }
+  .auth-app-shell > .fixed { display: none !important; }
+  .auth-app-shell main { min-height: 100dvh; }
+  .mobile-auth-legacy { display: none !important; }
+  .mobile-auth-legacy.mobile-auth-form-open { display: block !important; min-height: 100dvh !important; padding: 14px 0 40px !important; background: radial-gradient(circle at 85% 10%, #e0e5ff, transparent 36%), #f7f8fd !important; }
+  .mobile-auth-legacy.mobile-auth-form-open > div { padding: 0 20px !important; }
+  .mobile-auth-legacy.mobile-auth-form-open > div { max-width: 500px !important; margin: 0 auto !important; }
+  .mobile-auth-legacy.mobile-auth-form-open > div > div { display: block !important; border: 0 !important; box-shadow: none !important; background: transparent !important; }
+  .mobile-auth-legacy.mobile-auth-form-open .auth-brand-panel { display: none !important; }
+  .mobile-auth-legacy.mobile-auth-form-open > div > div > div:last-child { padding: 20px 0 !important; }
+  .mobile-auth-legacy.mobile-auth-form-open h1 { font-family: var(--font-inter), sans-serif; font-size: 30px !important; font-weight: 600 !important; letter-spacing: -.045em !important; line-height: 1.08 !important; }
+  .mobile-auth-legacy.mobile-auth-form-open input:not([type=checkbox]) { min-height: 48px; font-size: 16px !important; border-radius: 10px !important; scroll-margin-bottom: 34vh; }
+  .mobile-auth-legacy.mobile-auth-form-open form button[type=submit] { min-height: 48px; border-radius: 10px !important; background: linear-gradient(180deg,#0b2a6b,#001743) !important; box-shadow: 0 6px 16px #00174330 !important; }
+  .mobile-auth-legacy.mobile-auth-form-open form button[title] { min-width: 44px; min-height: 44px; right: 1px !important; padding: 12px !important; }
+  .mobile-auth-legacy.mobile-auth-form-open form { padding-bottom: max(28px, env(safe-area-inset-bottom)); }
+}
+
 /* =============================================
    TRUSTSIM DESIGN SYSTEM v2
    Brand: White + #E4011E (Red)

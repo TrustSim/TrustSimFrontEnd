@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { authService } from "@/services/authService";
 import { ToastContainer, ToastMessage } from "@/components/ui/Toast";
 import { identityValidators } from "@/utils/validators";
+import MobileAuthIntro from "@/components/auth/MobileAuthIntro";
 
 /* --- Inline SVG Icons ---------------------------------------- */
 const Icons = {
@@ -63,6 +64,8 @@ type Step = "form" | "otp";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [showMobileForm, setShowMobileForm] = useState(false);
+  useEffect(() => { if (new URLSearchParams(window.location.search).get("form") === "1") setShowMobileForm(true); }, []);
   const [step, setStep] = useState<Step>("form");
   const [loading, setLoading] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -192,8 +195,9 @@ export default function RegisterPage() {
     { label: "Xác thực Email OTP", desc: "Mã 6 số gửi tới hộp thư" },
   ];
 
-  return (
-    <div style={{ minHeight: "calc(100vh - 64px)", paddingTop: 76, paddingBottom: 40, background: "#F8F9FA", display: "flex", alignItems: "center" }}>
+  return (<>
+    {!showMobileForm && <MobileAuthIntro onRegister={() => setShowMobileForm(true)} onLogin={() => { window.location.href = "/login?form=1"; }} />}
+    <div className={`mobile-auth-legacy ${showMobileForm ? "mobile-auth-form-open" : ""}`} style={{ minHeight: "calc(100vh - 64px)", paddingTop: 76, paddingBottom: 40, background: "#F8F9FA", display: "flex", alignItems: "center" }}>
       <ToastContainer toasts={toasts} onClose={removeToast} />
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 16px", width: "100%" }}>
         <div style={{ display: "grid", gridTemplateColumns: "0.85fr 1.35fr", background: "#FFFFFF", borderRadius: 10, border: "1px solid #E5E7EB", boxShadow: "0 4px 28px rgba(0,23,67,0.07)", overflow: "hidden" }}>
@@ -334,5 +338,5 @@ export default function RegisterPage() {
         @media (max-width: 820px) { .auth-brand-panel { display: none !important; } }
       `}</style>
     </div>
-  );
+  </>);
 }

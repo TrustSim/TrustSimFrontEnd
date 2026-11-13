@@ -25,6 +25,16 @@ interface AppShellProps {
  */
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const pathname = usePathname();
+  useEffect(() => {
+    if (pathname !== "/login" && pathname !== "/register") return;
+    const onFocus = (event: FocusEvent) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement) || !target.closest(".mobile-auth-form-open")) return;
+      window.setTimeout(() => target.scrollIntoView({ block: "center", behavior: "smooth" }), 180);
+    };
+    document.addEventListener("focusin", onFocus);
+    return () => document.removeEventListener("focusin", onFocus);
+  }, [pathname]);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   useEffect(() => {
@@ -51,7 +61,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+    <div className={pathname === "/login" || pathname === "/register" ? "auth-app-shell" : undefined} style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <ToastContainer toasts={toasts} onClose={removeToast} />
       <Navbar />
       <main style={{ flex: 1 }}>{children}</main>

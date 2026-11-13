@@ -369,7 +369,7 @@ export default function ContractLifecycleWorkspace({ identifier }: { identifier:
       notify({
         type: "success",
         title: "Giao dịch đã hoàn tất",
-        message: "Biên bản thanh lý được niêm phong và Escrow đã giải ngân.",
+        message: "Biên bản thanh lý được niêm phong và ký quỹ đã giải ngân.",
       });
       await loadData(true);
     });
@@ -597,7 +597,7 @@ export default function ContractLifecycleWorkspace({ identifier }: { identifier:
 
           <aside className="space-y-5">
             <InfoCard title="Tài chính bảo chứng" icon={<LockKeyhole size={17} />}>
-              <InfoRow label="Giá trị Escrow" value={money(trade.escrowAmount)} strong />
+              <InfoRow label="Giá trị ký quỹ" value={money(trade.escrowAmount)} strong />
               <InfoRow label="Trạng thái" value={trade.escrowStatus} />
               {transfer ? <><InfoRow label="Phí nền tảng" value={money(transfer.platformFeeAmount)} /><InfoRow label="Seller thực nhận" value={money(transfer.netSellerPayout)} strong /></> : <InfoRow label="Phí khi hoàn tất" value="5% giá trị giao dịch" />}
             </InfoCard>
